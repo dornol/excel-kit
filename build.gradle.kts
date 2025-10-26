@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.dornol"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 repositories {
     mavenCentral()
@@ -26,6 +26,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.withType<Javadoc>().configureEach {
+    options.encoding = "UTF-8"
 }
 
 signing {
