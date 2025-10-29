@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.dornol"
-version = "0.1.0"
+version = "0.1.1"
 
 repositories {
     mavenCentral()
@@ -44,7 +44,7 @@ mavenPublishing {
 
     pom {
         name = "excel-kit"
-        description = "Id Generator Kit"
+        description = "Simple Excel download and upload kit"
         url = "https://github.com/dornol/excel-kit/"
 
         licenses {

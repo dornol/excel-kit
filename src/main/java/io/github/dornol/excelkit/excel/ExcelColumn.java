@@ -193,11 +193,58 @@ class ExcelColumn<T> {
             return new ExcelColumnBuilder<>(writer, name, function);
         }
 
+
+        /**
+         * Conditionally finalizes the current column and adds a new column if the condition is true.
+         *
+         * @param name      the name of the new column
+         * @param condition the condition that determines if the column should be added
+         * @param function  the function to extract values for the new column
+         * @return a new builder for the next column, or the same builder if condition is false
+         */
+        public ExcelColumnBuilder<T> columnIf(String name, boolean condition, ExcelRowFunction<T, Object> function) {
+            if (!condition) {
+                return this;
+            }
+            this.writer.addColumn(this.build());
+            return new ExcelColumnBuilder<>(writer, name, function);
+        }
+
+        /**
+         * Finalizes the current column and adds a new column using a simple Function.
+         *
+         * @param name     the name of the new column
+         * @param function the function to extract values for the new column
+         * @return a new builder for the next column
+         */
         public ExcelColumnBuilder<T> column(String name, Function<T, Object> function) {
             this.writer.addColumn(this.build());
             return new ExcelColumnBuilder<>(writer, name, (r, c) -> function.apply(r));
         }
 
+        /**
+         * Conditionally finalizes the current column and adds a new column using a simple Function if the condition is true.
+         *
+         * @param name      the name of the new column
+         * @param condition the condition that determines if the column should be added
+         * @param function  the function to extract values for the new column
+         * @return a new builder for the next column, or the same builder if condition is false
+         */
+        public ExcelColumnBuilder<T> columnIf(String name, boolean condition, Function<T, Object> function) {
+            if (!condition) {
+                return this;
+            }
+            this.writer.addColumn(this.build());
+            return new ExcelColumnBuilder<>(writer, name, (r, c) -> function.apply(r));
+        }
+
+        /**
+         * Finalizes the current column and adds a new column with a constant value.
+         *
+         * @param name  the name of the new column
+         * @param value the constant value for all cells in this column
+         * @return a new builder for the next column
+         */
         public ExcelColumnBuilder<T> constColumn(String name, Object value) {
             this.writer.addColumn(this.build());
             return new ExcelColumnBuilder<>(writer, name, (r, c) -> value);
