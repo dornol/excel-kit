@@ -1,0 +1,35 @@
+name: maven-publish.yml
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Set up gradle.properties
+        run: |
+          mkdir -p ~/.gradle
+          echo "mavenCentralUsername=${{ secrets.MAVEN_CENTRAL_USERNAME }}" >> ~/.gradle/gradle.properties
+          echo "mavenCentralPassword=${{ secrets.MAVEN_CENTRAL_PASSWORD }}" >> ~/.gradle/gradle.properties
+          echo "signing.password=${{ secrets.SIGNING_PASSWORD }}" >> ~/.gradle/gradle.properties
+          echo "signing.keyId=${{ secrets.SIGNING_KEYID }}" >> ~/.gradle/gradle.properties
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.SIGNING_SECRET_KEY }}" > private-key.asc
+          gpg --batch --import private-key.asc  
+
+      - name: Build & Publish
+        run: ./gradlew publish --no-daemon
