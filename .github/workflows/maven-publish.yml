@@ -26,11 +26,9 @@ jobs:
           echo "mavenCentralPassword=${{ secrets.MAVEN_CENTRAL_PASSWORD }}" >> ~/.gradle/gradle.properties
           echo "signing.password=${{ secrets.SIGNING_PASSWORD }}" >> ~/.gradle/gradle.properties
           echo "signing.keyId=${{ secrets.SIGNING_KEYID }}" >> ~/.gradle/gradle.properties
-
-      - name: Import GPG key
-        run: |
-          echo "${{ secrets.SIGNING_SECRET_KEY }}" > private-key.asc
-          gpg --batch --import private-key.asc
+          echo "signing.gnupg.key=${{ secrets.SIGNING_SECRET_KEY }}" >> ~/.gradle/gradle.properties
+          echo "signing.gnupg.passphrase=${{ secrets.SIGNING_PASSWORD }}" >> ~/.gradle/gradle.properties
+          echo "signing.gnupg.executable=gpg" >> ~/.gradle/gradle.properties
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
