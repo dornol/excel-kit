@@ -21,12 +21,12 @@ jobs:
 
       - name: Write GPG key to file
         run: |
+          mkdir -p ~/.gradle
           echo "${{ secrets.SIGNING_SECRET_KEY }}" | base64 --decode > ~/.gradle/secring.gpg
 
 
       - name: Set up gradle.properties
         run: |
-          mkdir -p ~/.gradle
           echo "mavenCentralUsername=${{ secrets.MAVEN_CENTRAL_USERNAME }}" >> ~/.gradle/gradle.properties
           echo "mavenCentralPassword=${{ secrets.MAVEN_CENTRAL_PASSWORD }}" >> ~/.gradle/gradle.properties
           echo "signing.password=${{ secrets.SIGNING_PASSWORD }}" >> ~/.gradle/gradle.properties
