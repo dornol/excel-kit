@@ -13,7 +13,7 @@ import java.util.function.BiConsumer;
  * @author dhkim
  * @since 2025-07-19
  */
-record ExcelReadColumn<T>(BiConsumer<T, io.github.dornol.excelkit.excel.ExcelCellData> setter) {
+public record ExcelReadColumn<T>(BiConsumer<T, io.github.dornol.excelkit.excel.ExcelCellData> setter) {
 
     /**
      * Builder for defining multiple Excel read columns fluently.

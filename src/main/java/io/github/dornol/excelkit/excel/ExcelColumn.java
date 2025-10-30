@@ -24,7 +24,7 @@ import java.util.stream.Stream;
  * @author dhkim
  * @since 2025-07-19
  */
-class ExcelColumn<T> {
+public class ExcelColumn<T> {
     private static final Logger log = LoggerFactory.getLogger(ExcelColumn.class);
     private static final int MAX_COLUMN_WIDTH = 255 * 256;
     private final String name;
