@@ -30,7 +30,10 @@ jobs:
       - name: Import GPG key
         run: |
           echo "${{ secrets.SIGNING_SECRET_KEY }}" > private-key.asc
-          gpg --batch --import private-key.asc  
+          gpg --batch --import private-key.asc
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Build & Publish
         run: ./gradlew publish --no-daemon
