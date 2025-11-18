@@ -52,7 +52,7 @@ public class ExcelReader<T> {
      * @param setter A {@code BiConsumer} that sets a value from {@link io.github.dornol.excelkit.excel.ExcelCellData} to the row object
      * @return A builder for further column configuration
      */
-    public ExcelReadColumn.ExcelReadColumnBuilder<T> column(BiConsumer<T, io.github.dornol.excelkit.excel.ExcelCellData> setter) {
+    public ExcelReadColumn.ExcelReadColumnBuilder<T> column(BiConsumer<T, ExcelCellData> setter) {
         return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, setter);
     }
 

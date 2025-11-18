@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.excel;
+package io.github.dornol.excelkit.shared;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +27,8 @@ import java.util.Locale;
  * @author dhkim
  * @since 2025-07-19
  */
-public record ExcelCellData(int columnIndex, String formattedValue) {
-    private static final Logger log = LoggerFactory.getLogger(ExcelCellData.class);
+public record CellData(int columnIndex, String formattedValue) {
+    private static final Logger log = LoggerFactory.getLogger(CellData.class);
     private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd"),
@@ -45,7 +45,7 @@ public record ExcelCellData(int columnIndex, String formattedValue) {
     );
 
 
-    public ExcelCellData {
+    public CellData {
         if (formattedValue == null) {
             formattedValue = "";
         }

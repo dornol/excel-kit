@@ -122,7 +122,7 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
      */
     private class SheetHandler extends DefaultHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
         private T currentInstance;
-        private final List<io.github.dornol.excelkit.excel.ExcelCellData> currentRow = new ArrayList<>();
+        private final List<ExcelCellData> currentRow = new ArrayList<>();
         private final List<String> headerNames = new ArrayList<>();
         private final Consumer<ExcelReadResult<T>> consumer;
         private List<String> messages;
@@ -167,9 +167,9 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
         public void cell(String cellReference, String formattedValue, XSSFComment comment) {
             int colIndex = getColumnIndex(cellReference);
             while (currentRow.size() < colIndex) {
-                currentRow.add(new io.github.dornol.excelkit.excel.ExcelCellData(currentRow.size(), null));
+                currentRow.add(new ExcelCellData(currentRow.size(), null));
             }
-            currentRow.add(new io.github.dornol.excelkit.excel.ExcelCellData(colIndex, formattedValue));
+            currentRow.add(new ExcelCellData(colIndex, formattedValue));
         }
 
         /**
@@ -177,7 +177,7 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
          */
         private void extractHeaderNames() {
             headerNames.addAll(currentRow.stream()
-                    .map(io.github.dornol.excelkit.excel.ExcelCellData::formattedValue)
+                    .map(ExcelCellData::formattedValue)
                     .toList());
         }
 

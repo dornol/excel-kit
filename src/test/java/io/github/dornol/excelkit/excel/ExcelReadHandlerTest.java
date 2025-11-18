@@ -139,14 +139,14 @@ class ExcelReadHandlerTest {
     /**
      * Creates a setter function for the name field.
      */
-    private BiConsumer<TestPerson, io.github.dornol.excelkit.excel.ExcelCellData> createNameSetter() {
+    private BiConsumer<TestPerson, ExcelCellData> createNameSetter() {
         return (person, cellData) -> person.setName(cellData.asString());
     }
     
     /**
      * Creates a setter function for the age field.
      */
-    private BiConsumer<TestPerson, io.github.dornol.excelkit.excel.ExcelCellData> createAgeSetter() {
+    private BiConsumer<TestPerson, ExcelCellData> createAgeSetter() {
         return (person, cellData) -> person.setAge(cellData.asInt());
     }
     

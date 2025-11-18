@@ -15,6 +15,7 @@ dependencies {
     compileOnly("org.apache.poi:poi-ooxml:5.4.1")
     compileOnly("org.slf4j:slf4j-api:2.0.17")
     compileOnly("jakarta.validation:jakarta.validation-api:3.1.1")
+    compileOnly("com.opencsv:opencsv:5.12.0")
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

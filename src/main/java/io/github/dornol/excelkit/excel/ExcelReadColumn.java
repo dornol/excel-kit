@@ -13,7 +13,7 @@ import java.util.function.BiConsumer;
  * @author dhkim
  * @since 2025-07-19
  */
-public record ExcelReadColumn<T>(BiConsumer<T, io.github.dornol.excelkit.excel.ExcelCellData> setter) {
+public record ExcelReadColumn<T>(BiConsumer<T, ExcelCellData> setter) {
 
     /**
      * Builder for defining multiple Excel read columns fluently.
@@ -22,7 +22,7 @@ public record ExcelReadColumn<T>(BiConsumer<T, io.github.dornol.excelkit.excel.E
      */
     public static class ExcelReadColumnBuilder<T> {
         private final ExcelReader<T> reader;
-        private final BiConsumer<T, io.github.dornol.excelkit.excel.ExcelCellData> setter;
+        private final BiConsumer<T, ExcelCellData> setter;
 
         /**
          * Constructs a new column builder.
@@ -30,7 +30,7 @@ public record ExcelReadColumn<T>(BiConsumer<T, io.github.dornol.excelkit.excel.E
          * @param reader The parent {@link ExcelReader}
          * @param setter The setter function to bind a column value to a field
          */
-        ExcelReadColumnBuilder(ExcelReader<T> reader, BiConsumer<T, io.github.dornol.excelkit.excel.ExcelCellData> setter) {
+        ExcelReadColumnBuilder(ExcelReader<T> reader, BiConsumer<T, ExcelCellData> setter) {
             this.reader = reader;
             this.setter = setter;
         }
@@ -45,7 +45,7 @@ public record ExcelReadColumn<T>(BiConsumer<T, io.github.dornol.excelkit.excel.E
          * @param setter The setter function for the next column
          * @return A new builder instance for chaining the next column
          */
-        public ExcelReadColumnBuilder<T> column(BiConsumer<T, io.github.dornol.excelkit.excel.ExcelCellData> setter) {
+        public ExcelReadColumnBuilder<T> column(BiConsumer<T, ExcelCellData> setter) {
             buildCurrentAndAddToReader();
             return new ExcelReadColumnBuilder<>(reader, setter);
         }
