@@ -4,9 +4,6 @@ plugins {
     id("signing")
 }
 
-group = "io.github.dornol"
-version = "0.1.2"
-
 dependencies {
     compileOnly("org.apache.poi:poi-ooxml:5.4.1")
     compileOnly("org.slf4j:slf4j-api:2.0.17")
