@@ -29,7 +29,7 @@ class TempResourceContainerTest {
         // Cleanup
         try {
             Files.delete(tempDir);
-        } catch (IOException e) {
+        } catch (IOException _) {
             // Ignore cleanup errors in tests
         }
     }
@@ -52,7 +52,7 @@ class TempResourceContainerTest {
         try {
             Files.delete(tempFile);
             Files.delete(tempDir);
-        } catch (IOException e) {
+        } catch (IOException _) {
             // Ignore cleanup errors in tests
         }
     }

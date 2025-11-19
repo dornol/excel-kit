@@ -25,7 +25,7 @@ class TempResourceCreatorTest {
         // Cleanup
         try {
             Files.delete(tempDir);
-        } catch (IOException e) {
+        } catch (IOException _) {
             // Ignore cleanup errors in tests
         }
     }
@@ -54,7 +54,7 @@ class TempResourceCreatorTest {
         try {
             Files.delete(tempFile);
             Files.delete(tempDir);
-        } catch (IOException e) {
+        } catch (IOException _) {
             // Ignore cleanup errors in tests
         }
     }
