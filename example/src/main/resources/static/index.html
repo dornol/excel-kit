@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<p id="memory">Loading memory usage...</p>
+
+<div>
+    <form action="/download-excel-with-password" target="_blank">
+        <label for="password">
+            <span>password</span>
+            <input type="text" name="password" id="password" placeholder="password" value="1234">
+        </label>
+        <button type="submit" style="background-color: lightblue;">Download Excel (with password)</button>
+    </form>
+</div>
+
+<div>
+    <a href="/download-excel" target="_blank">
+        <button style="background-color: lightblue;">Download Excel (book list excel.xlsx)</button>
+    </a>
+</div>
+
+<div>
+    <a href="/download-excel-types" target="_blank">
+        <button style="background-color: lightyellow;">Download Excel Type Test (type test excel.xlsx)</button>
+    </a>
+</div>
+
+<div>
+    <a href="/download-csv" target="_blank">
+        <button>Download CSV (book list csv.csv)</button>
+    </a>
+</div>
+
+<div>
+    <form action="/read-and-save" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" id="" required>
+        <button type="submit" style="background-color: lightblue;">Upload and save (book list excel.xlsx)</button>
+    </form>
+</div>
+
+<div>
+    <form action="/read-excel" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" id="" required>
+        <button type="submit" style="background-color: lightyellow;">Upload (type test excel.xlsx)</button>
+    </form>
+</div>
+
+<div>
+    <form action="/read-csv" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" id="" required>
+        <button type="submit">Upload (book list csv.csv)</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let memoryElement = document.getElementById('memory');
+        setInterval(() => {
+            fetch('/memory')
+                .then(async (response) => {
+                    if (response.ok) {
+                        memoryElement.innerText = await response.text();
+                    } else {
+                        memoryElement.innerText = 'Failed to retrieve memory usage.';
+                    }
+                })
+                .catch(err => {
+                    memoryElement.innerText = 'Error retrieving memory usage.';
+                    console.error(err);
+                })
+        }, 300)
+    })
+</script>
+
+</body>
+</html>
