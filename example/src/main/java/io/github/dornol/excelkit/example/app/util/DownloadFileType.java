@@ -36,7 +36,7 @@ public enum DownloadFileType {
             encoded = URLEncoder.encode(csvFilename, StandardCharsets.UTF_8)
                     .replace("+", "%20")
                     .replace("%2B", "+"); // 선택적으로 '+' 복원
-        } catch (Exception _) {
+        } catch (Exception e) {
             encoded = fallback;
         }
 

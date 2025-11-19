@@ -77,7 +77,7 @@ public record CellData(int columnIndex, String formattedValue) {
                     .trim();
 
             return NumberFormat.getNumberInstance(locale).parse(cleaned);
-        } catch (ParseException _) {
+        } catch (ParseException e) {
             log.warn("Failed to parse number (col {}): '{}'", columnIndex, formattedValue);
             throw new IllegalArgumentException("Failed to parse number: " + formattedValue);
         }
@@ -161,7 +161,7 @@ public record CellData(int columnIndex, String formattedValue) {
         for (var formatter : DATETIME_FORMAT_PATTERNS) {
             try {
                 return LocalDateTime.parse(formattedValue, formatter);
-            } catch (Exception _) {
+            } catch (Exception e) {
                 /* skip */
             }
         }
@@ -202,7 +202,7 @@ public record CellData(int columnIndex, String formattedValue) {
         for (var format : DATE_FORMAT_PATTERNS) {
             try {
                 return LocalDate.parse(formattedValue, format);
-            } catch (Exception _) {
+            } catch (Exception e) {
                 /* skip */
             }
         }
