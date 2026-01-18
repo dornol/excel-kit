@@ -57,6 +57,10 @@
     </form>
 </div>
 
+<div>
+    <button type="button" id="gc">GC</button>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         let memoryElement = document.getElementById('memory');
@@ -74,6 +78,10 @@
                     console.error(err);
                 })
         }, 300)
+
+        document.getElementById('gc').addEventListener('click', () => {
+            fetch('/gc');
+        })
     })
 </script>
 

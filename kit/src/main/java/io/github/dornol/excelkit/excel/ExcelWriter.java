@@ -1,6 +1,9 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -11,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static io.github.dornol.excelkit.excel.ExcelStyleSupporter.titleStyle;
 
 /**
  * ExcelWriter is a utility class for generating large Excel files using Apache POI's SXSSFWorkbook.
@@ -25,6 +30,8 @@ public class ExcelWriter<T> {
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final int maxRowsOfSheet;
     private final CellStyle headerStyle;
+    private String title;
+    private CellStyle titleStyle;
 
     private SXSSFSheet sheet;
     private ExcelCursor cursor;
@@ -69,6 +76,72 @@ public class ExcelWriter<T> {
      */
     public ExcelWriter() {
         this(255, 255, 255, 1_000_000);
+    }
+
+    /**
+     * Sets the title for the Excel sheet with default font size and color.
+     *
+     * @param title The title text to display at the top
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> title(String title) {
+        if (this.title != null) {
+            throw new IllegalStateException("title setting already exists");
+        }
+
+        this.title = title;
+        this.titleStyle = titleStyle(
+                this.wb,
+                HorizontalAlignment.CENTER,
+                IndexedColors.BLACK,
+                0);
+
+        return this;
+    }
+
+    /**
+     * Sets the title for the Excel sheet with a specified font size.
+     *
+     * @param title    The title text to display at the top
+     * @param fontSize Font size in points
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> title(String title, int fontSize) {
+        if (this.title != null) {
+            throw new IllegalStateException("title setting already exists");
+        }
+
+        this.title = title;
+        this.titleStyle = titleStyle(
+                this.wb,
+                HorizontalAlignment.CENTER,
+                IndexedColors.BLACK,
+                fontSize);
+
+        return this;
+    }
+
+    /**
+     * Sets the title for the Excel sheet with a specified font size and color.
+     *
+     * @param title    The title text to display at the top
+     * @param fontSize Font size in points
+     * @param color    The text color
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> title(String title, int fontSize, IndexedColors color) {
+        if (this.title != null) {
+            throw new IllegalStateException("title setting already exists");
+        }
+
+        this.title = title;
+        this.titleStyle = titleStyle(
+                this.wb,
+                HorizontalAlignment.CENTER,
+                color,
+                fontSize);
+
+        return this;
     }
 
     /**
@@ -126,7 +199,11 @@ public class ExcelWriter<T> {
         }
 
         this.sheet = wb.createSheet();
-        this.cursor = new ExcelCursor();
+        this.cursor = new ExcelCursor(this.title != null ? 2 : 0);
+
+        if (this.title != null) {
+            setSheetTitle();
+        }
 
         setColumnHeaders();
 
@@ -148,6 +225,20 @@ public class ExcelWriter<T> {
      */
     ExcelHandler write(Stream<T> stream) {
         return this.write(stream, (rowData, consumer) -> {});
+    }
+
+    /**
+     * Internal method to set the sheet title and merge cells across columns.
+     */
+    private void setSheetTitle() {
+        CellRangeAddress region = new CellRangeAddress(0, 1, 0, this.columns.size() - 1);
+
+        sheet.addMergedRegion(region);
+
+        SXSSFRow titleRow = sheet.createRow(0);
+        SXSSFCell cell = titleRow.createCell(0);
+        cell.setCellValue(title);
+        cell.setCellStyle(titleStyle);
     }
 
     /**
@@ -173,6 +264,7 @@ public class ExcelWriter<T> {
         cursor.plusTotal();
         if (isOverMaxRows()) {
             turnOverSheet();
+            setSheetTitle();
             setColumnHeaders();
         }
         SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());

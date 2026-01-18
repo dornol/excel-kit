@@ -26,8 +26,8 @@ class ExcelStyleSupporter {
      * Creates a bold, centered header cell style with a specified background color.
      * Automatically sets the font color to white if the background is dark.
      *
-     * @param wb           SXSSFWorkbook instance
-     * @param headerColor  Background color of the header (XSSFColor)
+     * @param wb          SXSSFWorkbook instance
+     * @param headerColor Background color of the header (XSSFColor)
      * @return Configured CellStyle for headers
      */
     static CellStyle headerStyle(SXSSFWorkbook wb, XSSFColor headerColor) {
@@ -96,6 +96,38 @@ class ExcelStyleSupporter {
             DataFormat dataFormat = wb.createDataFormat();
             nowStyle.setDataFormat(dataFormat.getFormat(format));
         }
+        nowStyle.setBorderTop(BorderStyle.THIN);
+        nowStyle.setBorderBottom(BorderStyle.THIN);
+        nowStyle.setBorderLeft(BorderStyle.THIN);
+        nowStyle.setBorderRight(BorderStyle.THIN);
+        nowStyle.setWrapText(true);
+        return nowStyle;
+    }
+
+
+    /**
+     * Creates a title cell style with specific alignment, color, and font size.
+     *
+     * @param wb        SXSSFWorkbook instance
+     * @param alignment Title horizontal alignment
+     * @param color     Font color for the title
+     * @param fontSize  Font size in points
+     * @return Configured CellStyle for the title
+     */
+    static CellStyle titleStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, IndexedColors color, int fontSize) {
+        CellStyle nowStyle = wb.createCellStyle();
+
+        nowStyle.setAlignment(alignment);
+
+        Font font = wb.createFont();
+        if (fontSize > 0) {
+            font.setFontHeightInPoints((short) fontSize);
+        }
+        font.setColor(color.index);
+        font.setBold(true);
+
+        nowStyle.setFont(font);
+
         nowStyle.setBorderTop(BorderStyle.THIN);
         nowStyle.setBorderBottom(BorderStyle.THIN);
         nowStyle.setBorderLeft(BorderStyle.THIN);

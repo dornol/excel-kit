@@ -77,4 +77,10 @@ public class WebController {
         );
     }
 
+    @ResponseBody
+    @GetMapping("/gc")
+    public void gc() {
+        System.gc();
+    }
+
 }

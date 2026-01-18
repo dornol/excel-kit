@@ -31,7 +31,7 @@ public class BookDataInitializer implements CommandLineRunner {
 
         for (int i = 0; i < total; i += batchSize) {
             List<Object[]> batch = new ArrayList<>();
-            for (int j = 0; j < batchSize; j++) {
+            for (int j = 0; j < Math.min(batchSize, total - i); j++) {
                 long id = i + j + 1L;
                 batch.add(new Object[]{
                         randomText(1, 200), // title

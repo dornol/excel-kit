@@ -274,4 +274,22 @@ public record CellData(int columnIndex, String formattedValue) {
         return number != null ? new BigDecimal(number.toString()) : null;
     }
 
+    /**
+     * Checks if the value is null.
+     *
+     * @return {@code true} if the formatted value is null, otherwise {@code false}
+     */
+    public boolean isNull() {
+        return formattedValue == null;
+    }
+
+    /**
+     * Checks if the value is null or empty/blank.
+     *
+     * @return {@code true} if the formatted value is null or consists only of whitespace
+     */
+    public boolean isEmpty() {
+        return this.isNull() || formattedValue.isBlank();
+    }
+
 }

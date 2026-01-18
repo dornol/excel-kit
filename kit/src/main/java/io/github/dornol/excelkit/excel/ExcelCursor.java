@@ -11,6 +11,7 @@ package io.github.dornol.excelkit.excel;
  * @since 2025-07-19
  */
 public class ExcelCursor {
+    private final int baseRow;
     private int rowOfSheet;
     private int currentTotal;
 
@@ -18,7 +19,17 @@ public class ExcelCursor {
      * Creates a new ExcelCursor with row index and total count initialized to 0.
      */
     ExcelCursor() {
-        this.rowOfSheet = 0;
+        this(0);
+    }
+
+    /**
+     * Creates a new ExcelCursor starting from a specific row index.
+     *
+     * @param baseRow The starting row index for each sheet (e.g., if there's a title)
+     */
+    ExcelCursor(int baseRow) {
+        this.baseRow = baseRow;
+        this.rowOfSheet = baseRow;
         this.currentTotal = 0;
     }
 
@@ -34,7 +45,7 @@ public class ExcelCursor {
      * Typically called when a new sheet is created.
      */
     void initRow() {
-        this.rowOfSheet = 0;
+        this.rowOfSheet = this.baseRow;
     }
 
     /**

@@ -4,18 +4,30 @@ import io.github.dornol.excelkit.example.app.dto.BookDto;
 import io.github.dornol.excelkit.example.app.dto.BookReadDto;
 import io.github.dornol.excelkit.excel.*;
 import jakarta.validation.Validator;
+import org.apache.poi.ss.usermodel.IndexedColors;
 
 import java.io.InputStream;
 import java.util.stream.Stream;
 
+/**
+ * Example mapper for Book entities to Excel.
+ * Demonstrates how to use ExcelWriter for exports and ExcelReader for imports.
+ */
 public class BookExcelMapper {
 
     private BookExcelMapper() {
         /* empty */
     }
 
+    /**
+     * Configures and returns an ExcelHandler for exporting BookDto data.
+     *
+     * @param stream Stream of BookDto data
+     * @return ExcelHandler for outputting the file
+     */
     public static ExcelHandler getHandler(Stream<BookDto> stream) {
         return new ExcelWriter<BookDto>(0xCC, 0xFF, 0x99)
+                .title("this is my title", 24, IndexedColors.DARK_BLUE)
                 .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.INTEGER)
                 .column("id", BookDto::id).type(ExcelDataType.LONG)
                 .column("title", BookDto::title)
@@ -27,6 +39,13 @@ public class BookExcelMapper {
                 .write(stream);
     }
 
+    /**
+     * Configures and returns an ExcelReadHandler for importing BookReadDto data.
+     *
+     * @param inputStream Excel file input stream
+     * @param validator   Optional bean validator
+     * @return ExcelReadHandler for reading the file
+     */
     public static ExcelReadHandler<BookReadDto> getReadHandler(InputStream inputStream, Validator validator) {
         return new ExcelReader<>(BookReadDto::new, validator)
                 .column((r, d) -> {})
