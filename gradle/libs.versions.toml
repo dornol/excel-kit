@@ -1,0 +1,28 @@
+[versions]
+poi = "5.4.1"
+slf4j = "2.0.17"
+jakarta-validation = "3.1.1"
+opencsv = "5.12.0"
+jspecify = "1.0.0"
+junit = "5.10.0"
+hibernate-validator = "7.0.5.Final"
+vanniktech-publish = "0.34.0"
+spring-boot = "3.5.7"
+spring-dependency-management = "1.1.7"
+
+[libraries]
+poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+hibernate-validator = { module = "org.hibernate:hibernate-validator", version.ref = "hibernate-validator" }
+
+[plugins]
+vanniktech-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-publish" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }

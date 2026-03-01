@@ -1,22 +1,22 @@
 plugins {
     id("java")
-    id("com.vanniktech.maven.publish") version "0.34.0"
+    alias(libs.plugins.vanniktech.publish)
     id("signing")
 }
 
 dependencies {
-    compileOnly("org.apache.poi:poi-ooxml:5.4.1")
-    compileOnly("org.slf4j:slf4j-api:2.0.17")
-    compileOnly("jakarta.validation:jakarta.validation-api:3.1.1")
-    compileOnly("com.opencsv:opencsv:5.12.0")
-    compileOnly("org.jspecify:jspecify:1.0.0")
+    compileOnly(libs.poi.ooxml)
+    compileOnly(libs.slf4j.api)
+    compileOnly(libs.jakarta.validation.api)
+    compileOnly(libs.opencsv)
+    compileOnly(libs.jspecify)
 
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.apache.poi:poi-ooxml:5.4.1")
-    testImplementation("org.slf4j:slf4j-simple:2.0.17")
-    testImplementation("org.hibernate:hibernate-validator:7.0.5.Final")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.poi.ooxml)
+    testImplementation(libs.slf4j.simple)
+    testImplementation(libs.hibernate.validator)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.test {
@@ -27,15 +27,11 @@ tasks.withType<Javadoc>().configureEach {
     options.encoding = "UTF-8"
 }
 
-signing {
-    sign(publishing.publications)
-}
-
 mavenPublishing {
     signAllPublications()
     publishToMavenCentral()
 
-    coordinates("io.github.dornol", "excel-kit", "$version")
+    coordinates("io.github.dornol", "excel-kit", project.version.toString())
 
     pom {
         name = "excel-kit"
