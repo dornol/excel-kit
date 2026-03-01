@@ -1,33 +1,33 @@
-package io.github.dornol.excelkit.excel;
+package io.github.dornol.excelkit.shared;
 
 /**
- * Tracks the current writing position within an Excel export operation.
+ * Tracks the current writing position during an export operation.
  * <p>
- * Used internally during streaming writing to track row position within the current sheet
+ * Used internally during streaming writing to track row position within the current sheet (or file)
  * and the total number of rows processed globally (across multiple sheets).
  * This allows support for sheet rollover, row-based formatting, and row-level indexing.
  *
  * @author dhkim
  * @since 2025-07-19
  */
-public class ExcelCursor {
+public class Cursor {
     private final int baseRow;
     private int rowOfSheet;
     private int currentTotal;
 
     /**
-     * Creates a new ExcelCursor with row index and total count initialized to 0.
+     * Creates a new Cursor with row index and total count initialized to 0.
      */
-    ExcelCursor() {
+    public Cursor() {
         this(0);
     }
 
     /**
-     * Creates a new ExcelCursor starting from a specific row index.
+     * Creates a new Cursor starting from a specific row index.
      *
      * @param baseRow The starting row index for each sheet (e.g., if there's a title)
      */
-    ExcelCursor(int baseRow) {
+    public Cursor(int baseRow) {
         this.baseRow = baseRow;
         this.rowOfSheet = baseRow;
         this.currentTotal = 0;
@@ -36,22 +36,22 @@ public class ExcelCursor {
     /**
      * Increments the current row index in the current sheet by 1.
      */
-    void plusRow() {
+    public void plusRow() {
         this.rowOfSheet++;
     }
 
     /**
-     * Resets the current sheet's row index to 0.
-     * Typically called when a new sheet is created.
+     * Resets the current sheet's row index to the base row.
+     * Typically called when a new sheet or file section is created.
      */
-    void initRow() {
+    public void initRow() {
         this.rowOfSheet = this.baseRow;
     }
 
     /**
      * Increments the total number of processed rows (across all sheets) by 1.
      */
-    void plusTotal() {
+    public void plusTotal() {
         this.currentTotal++;
     }
 

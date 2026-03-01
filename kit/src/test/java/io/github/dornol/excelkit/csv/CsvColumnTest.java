@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.shared.Cursor;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,7 +53,7 @@ class CsvColumnTest {
         // Arrange
         String name = "Column";
         String testData = "Test Data";
-        CsvCursor cursor = new CsvCursor();
+        Cursor cursor = new Cursor();
         CsvRowFunction<String, Object> function = (data, cursor1) -> data + "-processed";
         CsvColumn<String> column = new CsvColumn<>(name, function);
 
@@ -68,7 +69,7 @@ class CsvColumnTest {
         // Arrange
         String name = "Column";
         String testData = "Test Data";
-        CsvCursor cursor = new CsvCursor();
+        Cursor cursor = new Cursor();
         CsvRowFunction<String, Object> function = (data, cursor1) -> {
             throw new RuntimeException("Test exception");
         };

@@ -17,15 +17,33 @@ import static org.junit.jupiter.api.Assertions.*;
 class ExcelWriterTest {
 
     @Test
-    void write_shouldThrowWhenLessThanTwoColumns() {
+    void write_shouldThrowWhenNoColumns() {
         // Arrange
         ExcelWriter<String> writer = new ExcelWriter<>();
 
         // Act & Assert
-        assertThrows(IllegalStateException.class, () -> {
-            writer.column("A", (row, c) -> row)
-                  .write(Stream.of("x", "y"));
+        assertThrows(ExcelWriteException.class, () -> {
+            writer.write(Stream.of("x", "y"));
         });
+    }
+
+    @Test
+    void write_shouldSucceedWithSingleColumn() throws IOException {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a", "b");
+
+        // Act
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        assertNotNull(handler);
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+            assertTrue(bos.toByteArray().length > 0);
+        }
     }
 
     @Test

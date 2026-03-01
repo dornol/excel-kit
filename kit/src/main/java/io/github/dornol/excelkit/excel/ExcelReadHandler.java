@@ -1,10 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.AbstractReadHandler;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadResult;
-import io.github.dornol.excelkit.shared.TempResourceContainer;
-import io.github.dornol.excelkit.shared.TempResourceCreator;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.util.XMLHelper;
@@ -13,20 +11,14 @@ import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
 import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -35,28 +27,24 @@ import java.util.function.Supplier;
  * <p>
  * This handler parses sheet data row by row, maps values to Java objects, and performs optional validation.
  * It is optimized for large files and avoids loading the entire workbook into memory.
- *
  * <p>
- * For large or complex Excel files, the following POI internal limits are adjusted:
+ * For large or complex Excel files, you may need to adjust POI's internal limits via
+ * {@link ExcelReader#configureLargeFileSupport()} before reading. This adjusts:
  * <ul>
- *     <li>{@code ZipSecureFile.setMaxFileCount(10_000_000)} — Increases the maximum number of internal file entries to avoid security exceptions for large files.</li>
- *     <li>{@code IOUtils.setByteArrayMaxOverride(2_000_000_000)} — Increases the maximum allowable in-memory byte array size to support large embedded binary data.</li>
+ *     <li>{@code ZipSecureFile.setMaxFileCount} — maximum number of internal zip entries</li>
+ *     <li>{@code IOUtils.setByteArrayMaxOverride} — maximum in-memory byte array size</li>
  * </ul>
- * Be cautious when adjusting these values, as it may affect application memory usage and security.
- * </p>
  *
  * @param <T> The target row data type to map each row into
  * @author dhkim
  * @since 2025-07-19
  */
-public class ExcelReadHandler<T> extends TempResourceContainer {
-    private static final Logger log = LoggerFactory.getLogger(ExcelReadHandler.class);
+public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final List<ExcelReadColumn<T>> columns;
-    private final Supplier<T> instanceSupplier;
-    private final Validator validator;
+    private final int sheetIndex;
 
     /**
-     * Constructs a handler for reading Excel files.
+     * Constructs a handler for reading the first sheet of an Excel file.
      *
      * @param inputStream      The input stream of the uploaded Excel file
      * @param columns          The list of column setters to apply per row
@@ -64,27 +52,28 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
      * @param validator        Optional bean validator for validating mapped instances
      */
     ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
-        if (inputStream == null) {
-            throw new IllegalArgumentException("InputStream cannot be null");
-        }
+        this(inputStream, columns, instanceSupplier, validator, 0);
+    }
+
+    /**
+     * Constructs a handler for reading a specific sheet of an Excel file.
+     *
+     * @param inputStream      The input stream of the uploaded Excel file
+     * @param columns          The list of column setters to apply per row
+     * @param instanceSupplier A supplier to instantiate new row objects
+     * @param validator        Optional bean validator for validating mapped instances
+     * @param sheetIndex       The zero-based index of the sheet to read
+     */
+    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex) {
+        super(inputStream, instanceSupplier, validator, ".xlsx");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
         }
-        if (instanceSupplier == null) {
-            throw new IllegalArgumentException("Instance supplier cannot be null");
+        if (sheetIndex < 0) {
+            throw new IllegalArgumentException("sheetIndex must be non-negative");
         }
         this.columns = columns;
-        this.instanceSupplier = instanceSupplier;
-        this.validator = validator;
-        try {
-            setTempDir(TempResourceCreator.createTempDirectory());
-            setTempFile(TempResourceCreator.createTempFile(getTempDir(), UUID.randomUUID().toString(), ".xlsx"));
-            try (InputStream is = inputStream) {
-                Files.copy(is, getTempFile(), StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+        this.sheetIndex = sheetIndex;
     }
 
     /**
@@ -107,12 +96,25 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
             XSSFSheetXMLHandler sheetParser = new XSSFSheetXMLHandler(styles, ss, sheetHandler, false);
             parser.setContentHandler(sheetParser);
 
-            try (InputStream sheet = reader.getSheetsData().next()) {
-                parser.parse(new InputSource(sheet));
+            Iterator<InputStream> sheetsData = reader.getSheetsData();
+            int currentIndex = 0;
+            while (sheetsData.hasNext()) {
+                try (InputStream sheet = sheetsData.next()) {
+                    if (currentIndex == sheetIndex) {
+                        parser.parse(new InputSource(sheet));
+                        break;
+                    }
+                }
+                currentIndex++;
+            }
+            if (currentIndex < sheetIndex) {
+                throw new ExcelReadException("Sheet index " + sheetIndex + " not found. File has " + (currentIndex + 1) + " sheet(s).");
             }
 
+        } catch (ExcelReadException e) {
+            throw e;
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to read excel", e);
+            throw new ExcelReadException("Failed to read excel", e);
         } finally {
             close();
         }
@@ -157,7 +159,7 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
             }
 
             boolean mappingSuccess = mapValuesToInstance();
-            boolean validationSuccess = mappingSuccess && validateIfNeeded();
+            boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
 
             consumer.accept(new ReadResult<>(currentInstance, validationSuccess, messages));
         }
@@ -194,43 +196,20 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
             for (int i = 0; i < columns.size(); i++) {
                 if (i >= currentRow.size()) continue;
 
-                try {
-                    columns.get(i).setter().accept(currentInstance, currentRow.get(i));
-                } catch (Exception e) {
+                if (!mapColumn(columns.get(i).setter(), currentInstance, currentRow.get(i),
+                        i, headerNames, getOrCreateMessages())) {
                     success = false;
-                    if (messages == null) {
-                        messages = new ArrayList<>();
-                    }
-                    String header = (i < headerNames.size()) ? headerNames.get(i) : "column#" + i;
-                    messages.add("Failed to set column: " + header);
-                    log.warn("Column mapping failed", e);
                 }
             }
 
             return success;
         }
 
-        /**
-         * Validates the current instance using Bean Validation (if enabled).
-         *
-         * @return true if valid, false if any constraint violations occurred
-         */
-        private boolean validateIfNeeded() {
-            if (validator == null) {
-                return true;
-            }
-
-            Set<ConstraintViolation<T>> violations = validator.validate(currentInstance);
-            if (violations.isEmpty()) return true;
-
+        private List<String> getOrCreateMessages() {
             if (messages == null) {
                 messages = new ArrayList<>();
             }
-            violations.stream()
-                    .map(ConstraintViolation::getMessage)
-                    .forEach(messages::add);
-
-            return false;
+            return messages;
         }
 
         /**
@@ -248,7 +227,6 @@ public class ExcelReadHandler<T> extends TempResourceContainer {
          * @return The zero-based column index
          */
         private int getColumnIndex(String cellReference) {
-            // 예: "C5" => 2 (0-based)
             StringBuilder sb = new StringBuilder();
             for (char c : cellReference.toCharArray()) {
                 if (Character.isLetter(c)) sb.append(c);

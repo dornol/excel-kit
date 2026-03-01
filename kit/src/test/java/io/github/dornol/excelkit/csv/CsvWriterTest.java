@@ -124,9 +124,9 @@ class CsvWriterTest {
         // Act & Assert
         handler.consumeOutputStream(outputStream1); // First call should succeed
         
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(CsvWriteException.class, () -> {
             handler.consumeOutputStream(outputStream2); // Second call should throw exception
-        }, "Second call to consumeOutputStream should throw IllegalStateException");
+        }, "Second call to consumeOutputStream should throw CsvWriteException");
     }
     
     /**

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFCell;
@@ -64,7 +65,7 @@ class ExcelColumnTest {
         // Arrange
         String name = "Column";
         String testData = "Test Data";
-        ExcelCursor cursor = new ExcelCursor();
+        Cursor cursor = new Cursor();
         ExcelRowFunction<String, Object> testFunction = (data, cursor1) -> data + "-processed";
         ExcelColumn<String> column = new ExcelColumn<>(name, testFunction, cellStyle, columnSetter);
 
@@ -80,7 +81,7 @@ class ExcelColumnTest {
         // Arrange
         String name = "Column";
         String testData = "Test Data";
-        ExcelCursor cursor = new ExcelCursor();
+        Cursor cursor = new Cursor();
         ExcelRowFunction<String, Object> exceptionFunction = (data, cursor1) -> {
             throw new RuntimeException("Test exception");
         };

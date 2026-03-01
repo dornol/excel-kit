@@ -65,9 +65,9 @@ class ExcelHandlerTest {
         ByteArrayOutputStream secondOutputStream = new ByteArrayOutputStream();
 
         // Act & Assert
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(ExcelWriteException.class, () -> {
             handler.consumeOutputStream(secondOutputStream);
-        }, "consumeOutputStream should throw IllegalStateException when already consumed");
+        }, "consumeOutputStream should throw ExcelWriteException when already consumed");
 
         secondOutputStream.close();
     }
@@ -95,9 +95,9 @@ class ExcelHandlerTest {
         ByteArrayOutputStream secondOutputStream = new ByteArrayOutputStream();
 
         // Act & Assert
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(ExcelWriteException.class, () -> {
             handler.consumeOutputStreamWithPassword(secondOutputStream, "test123");
-        }, "consumeOutputStreamWithPassword should throw IllegalStateException when already consumed");
+        }, "consumeOutputStreamWithPassword should throw ExcelWriteException when already consumed");
 
         secondOutputStream.close();
     }

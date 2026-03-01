@@ -43,14 +43,14 @@ public class CsvHandler extends TempResourceContainer {
      */
     public void consumeOutputStream(OutputStream outputStream) {
         if (consumed) {
-            throw new IllegalStateException("Already consumed");
+            throw new CsvWriteException("Already consumed");
         }
         try {
             try (InputStream is = Files.newInputStream(getTempFile())) {
                 is.transferTo(outputStream);
             }
         } catch (IOException e) {
-            throw new IllegalStateException(e);
+            throw new CsvWriteException("Failed to write CSV", e);
         } finally {
             consumed = true;
             super.close();

@@ -5,6 +5,8 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
+import java.util.Map;
+
 /**
  * ExcelStyleSupporter
  * <p>
@@ -80,15 +82,21 @@ class ExcelStyleSupporter {
     }
 
     /**
-     * Creates a generic cell style with the given alignment and data format.
-     * All borders are thin, and text wrapping is enabled.
+     * Returns a cached cell style for the given alignment and data format.
+     * If no cached style exists for the combination, a new one is created and cached.
      *
      * @param wb        SXSSFWorkbook instance
      * @param alignment Cell horizontal alignment (e.g., CENTER, LEFT)
      * @param format    Data format string (e.g., "yyyy-mm-dd", "#,##0")
+     * @param cache     Style cache keyed by alignment+format combination
      * @return Configured CellStyle for body cells
      */
-    static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format) {
+    static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format, Map<String, CellStyle> cache) {
+        String key = alignment.name() + "|" + format;
+        return cache.computeIfAbsent(key, k -> createCellStyle(wb, alignment, format));
+    }
+
+    private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format) {
         CellStyle nowStyle = wb.createCellStyle();
 
         nowStyle.setAlignment(alignment);

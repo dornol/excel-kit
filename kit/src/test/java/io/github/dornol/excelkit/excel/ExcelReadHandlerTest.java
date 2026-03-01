@@ -28,7 +28,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
@@ -138,6 +138,83 @@ class ExcelReadHandlerTest {
         assertFalse(invalidResult2.messages().isEmpty(), "Second invalid result should have error messages");
     }
     
+    @Test
+    void read_shouldReadSecondSheet() throws IOException {
+        Path multiSheetFile = tempDir.resolve("multi-sheet.xlsx");
+        createMultiSheetExcelFile(multiSheetFile);
+
+        List<TestPerson> results = new ArrayList<>();
+        Consumer<ReadResult<TestPerson>> consumer = result -> {
+            if (result.success()) {
+                results.add(result.data());
+            }
+        };
+
+        try (InputStream is = Files.newInputStream(multiSheetFile)) {
+            new ExcelReader<>(TestPerson::new, validator)
+                    .sheetIndex(1)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is)
+                    .read(consumer);
+        }
+
+        assertEquals(2, results.size());
+        assertEquals("Dave", results.get(0).getName());
+        assertEquals(40, results.get(0).getAge());
+        assertEquals("Eve", results.get(1).getName());
+        assertEquals(28, results.get(1).getAge());
+    }
+
+    @Test
+    void read_shouldReadSecondSheetViaBuilderOverload() throws IOException {
+        Path multiSheetFile = tempDir.resolve("multi-sheet2.xlsx");
+        createMultiSheetExcelFile(multiSheetFile);
+
+        List<TestPerson> results = new ArrayList<>();
+        Consumer<ReadResult<TestPerson>> consumer = result -> {
+            if (result.success()) {
+                results.add(result.data());
+            }
+        };
+
+        try (InputStream is = Files.newInputStream(multiSheetFile)) {
+            new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is, 1)
+                    .read(consumer);
+        }
+
+        assertEquals(2, results.size());
+        assertEquals("Dave", results.get(0).getName());
+    }
+
+    @Test
+    void read_shouldThrowForInvalidSheetIndex() throws IOException {
+        Path singleSheetFile = tempDir.resolve("single-sheet.xlsx");
+        createTestExcelFile(singleSheetFile);
+
+        try (InputStream is = Files.newInputStream(singleSheetFile)) {
+            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
+                    .sheetIndex(5)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is);
+
+            assertThrows(ExcelReadException.class, () -> handler.read(r -> {}));
+        }
+    }
+
+    @Test
+    void constructor_shouldThrowForNegativeSheetIndex() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
+            columns.add(new ExcelReadColumn<>(createNameSetter()));
+            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, -1);
+        });
+    }
+
     /**
      * Creates a setter function for the name field.
      */
@@ -204,6 +281,34 @@ class ExcelReadHandlerTest {
         }
     }
     
+    /**
+     * Creates a test Excel file with multiple sheets.
+     */
+    private void createMultiSheetExcelFile(Path filePath) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            // Sheet 1
+            Sheet sheet1 = workbook.createSheet("Sheet1");
+            Row header1 = sheet1.createRow(0);
+            header1.createCell(0).setCellValue("Name");
+            header1.createCell(1).setCellValue("Age");
+            createDataRow(sheet1, 1, "Alice", 30);
+            createDataRow(sheet1, 2, "Bob", 25);
+            createDataRow(sheet1, 3, "Charlie", 35);
+
+            // Sheet 2
+            Sheet sheet2 = workbook.createSheet("Sheet2");
+            Row header2 = sheet2.createRow(0);
+            header2.createCell(0).setCellValue("Name");
+            header2.createCell(1).setCellValue("Age");
+            createDataRow(sheet2, 1, "Dave", 40);
+            createDataRow(sheet2, 2, "Eve", 28);
+
+            try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
+                workbook.write(fos);
+            }
+        }
+    }
+
     private void createDataRow(Sheet sheet, int rowNum, String name, int age) {
         Row row = sheet.createRow(rowNum);
         Cell nameCell = row.createCell(0);

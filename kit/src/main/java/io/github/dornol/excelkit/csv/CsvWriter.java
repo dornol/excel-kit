@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.shared.Cursor;
 import io.github.dornol.excelkit.shared.TempResourceCreator;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -80,7 +82,7 @@ public class CsvWriter<T> {
         try (OutputStream os = Files.newOutputStream(tempFile)) {
             writeTempFile(stream, os);
         } catch (IOException e) {
-            throw new IllegalStateException(e);
+            throw new CsvWriteException("Failed to write CSV", e);
         }
 
         return new CsvHandler(tempDir, tempFile);
@@ -98,13 +100,14 @@ public class CsvWriter<T> {
                 sequential;
                 var writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))
         ) {
-            CsvCursor cursor = new CsvCursor();
+            Cursor cursor = new Cursor();
             cursor.initRow();
 
             // 헤더 출력
             writer.println(columns.stream()
                     .map(CsvColumn::getName)
-                    .reduce((a, b) -> a + "," + b).orElse(""));
+                    .map(CsvWriter::escapeCsv)
+                    .collect(Collectors.joining(",")));
             cursor.plusRow();
 
             // 데이터 출력
@@ -114,8 +117,7 @@ public class CsvWriter<T> {
                 String line = columns.stream()
                         .map(col -> col.applyFunction(row, cursor))
                         .map(CsvWriter::escapeCsv)
-                        .reduce((a, b) -> a + "," + b)
-                        .orElse("");
+                        .collect(Collectors.joining(","));
                 writer.println(line);
             });
         }

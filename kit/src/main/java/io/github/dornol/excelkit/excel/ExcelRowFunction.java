@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.Cursor;
 
 /**
  * A functional interface for mapping a row of data to a cell value, optionally using cursor information.
@@ -24,5 +25,5 @@ public interface ExcelRowFunction<T, R> {
      * @param cursor  The cursor tracking the current sheet / row position
      * @return The value to write into the cell
      */
-    R apply(T rowData, ExcelCursor cursor);
+    R apply(T rowData, Cursor cursor);
 }

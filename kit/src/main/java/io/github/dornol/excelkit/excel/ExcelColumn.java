@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFCell;
@@ -48,7 +49,7 @@ public class ExcelColumn<T> {
      * @param cursor  the current cursor (position)
      * @return the cell value
      */
-    Object applyFunction(T rowData, ExcelCursor cursor) {
+    Object applyFunction(T rowData, Cursor cursor) {
         try {
             return function.apply(rowData, cursor);
         } catch (Exception e) {
@@ -177,7 +178,7 @@ public class ExcelColumn<T> {
                 this.dataFormat = this.dataType.getDefaultFormat(); // format 먼저
             }
             if (this.style == null) {
-                this.style = ExcelStyleSupporter.cellStyle(writer.getWb(), this.alignment, this.dataFormat); // format 반영됨
+                this.style = ExcelStyleSupporter.cellStyle(writer.getWb(), this.alignment, this.dataFormat, writer.getCellStyleCache());
             }
             if (this.columnSetter == null) {
                 this.columnSetter = this.dataType.getSetter();

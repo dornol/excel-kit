@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -11,7 +12,9 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -25,16 +28,17 @@ import static io.github.dornol.excelkit.excel.ExcelStyleSupporter.titleStyle;
  * @param <T> The data type of each row to be written into the Excel file
  * @since 2025-07-19
  */
-public class ExcelWriter<T> {
+public class ExcelWriter<T> implements AutoCloseable {
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final int maxRowsOfSheet;
     private final CellStyle headerStyle;
+    private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private String title;
     private CellStyle titleStyle;
 
     private SXSSFSheet sheet;
-    private ExcelCursor cursor;
+    private Cursor cursor;
 
 
     /**
@@ -85,18 +89,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> title(String title) {
-        if (this.title != null) {
-            throw new IllegalStateException("title setting already exists");
-        }
-
-        this.title = title;
-        this.titleStyle = titleStyle(
-                this.wb,
-                HorizontalAlignment.CENTER,
-                IndexedColors.BLACK,
-                0);
-
-        return this;
+        return title(title, 0, IndexedColors.BLACK);
     }
 
     /**
@@ -107,18 +100,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> title(String title, int fontSize) {
-        if (this.title != null) {
-            throw new IllegalStateException("title setting already exists");
-        }
-
-        this.title = title;
-        this.titleStyle = titleStyle(
-                this.wb,
-                HorizontalAlignment.CENTER,
-                IndexedColors.BLACK,
-                fontSize);
-
-        return this;
+        return title(title, fontSize, IndexedColors.BLACK);
     }
 
     /**
@@ -131,7 +113,7 @@ public class ExcelWriter<T> {
      */
     public ExcelWriter<T> title(String title, int fontSize, IndexedColors color) {
         if (this.title != null) {
-            throw new IllegalStateException("title setting already exists");
+            throw new ExcelWriteException("title setting already exists");
         }
 
         this.title = title;
@@ -194,12 +176,12 @@ public class ExcelWriter<T> {
      * @return ExcelHandler wrapping the workbook
      */
     ExcelHandler write(Stream<T> stream, ExcelConsumer<T> consumer) {
-        if (this.columns.size() < 2) {
-            throw new IllegalStateException("columns setting required");
+        if (this.columns.isEmpty()) {
+            throw new ExcelWriteException("columns setting required");
         }
 
         this.sheet = wb.createSheet();
-        this.cursor = new ExcelCursor(this.title != null ? 2 : 0);
+        this.cursor = new Cursor(this.title != null ? 2 : 0);
 
         if (this.title != null) {
             setSheetTitle();
@@ -264,7 +246,9 @@ public class ExcelWriter<T> {
         cursor.plusTotal();
         if (isOverMaxRows()) {
             turnOverSheet();
-            setSheetTitle();
+            if (this.title != null) {
+                setSheetTitle();
+            }
             setColumnHeaders();
         }
         SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
@@ -320,5 +304,24 @@ public class ExcelWriter<T> {
      */
     SXSSFWorkbook getWb() {
         return wb;
+    }
+
+    Map<String, CellStyle> getCellStyleCache() {
+        return cellStyleCache;
+    }
+
+    /**
+     * Closes the underlying workbook, releasing any resources.
+     * <p>
+     * This is a safety net for cases where {@link #write(Stream)} is never called.
+     * If the workbook has already been consumed via {@link ExcelHandler}, this is a no-op.
+     */
+    @Override
+    public void close() {
+        try {
+            wb.close();
+        } catch (Exception e) {
+            // already closed or disposed — safe to ignore
+        }
     }
 }

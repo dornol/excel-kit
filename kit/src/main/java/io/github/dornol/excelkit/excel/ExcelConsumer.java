@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.Cursor;
+
 /**
  * A functional interface for consuming row data during Excel export.
  * <p>
@@ -20,6 +22,6 @@ public interface ExcelConsumer<T> {
      * @param rowData The row data object
      * @param cursor  The current cursor with row/sheet position information
      */
-    void accept(T rowData, ExcelCursor cursor);
+    void accept(T rowData, Cursor cursor);
 
 }

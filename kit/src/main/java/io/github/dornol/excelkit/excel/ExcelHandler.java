@@ -44,7 +44,7 @@ public class ExcelHandler {
      */
     public void consumeOutputStream(OutputStream outputStream) throws IOException {
         if (consumed) {
-            throw new IllegalStateException("Already consumed");
+            throw new ExcelWriteException("Already consumed");
         }
         try {
             wb.write(outputStream);
@@ -66,7 +66,7 @@ public class ExcelHandler {
      */
     public void consumeOutputStreamWithPassword(OutputStream outputStream, String password) throws IOException {
         if (consumed) {
-            throw new IllegalStateException("Already consumed");
+            throw new ExcelWriteException("Already consumed");
         }
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
@@ -79,7 +79,7 @@ public class ExcelHandler {
             try (OutputStream encOut = enc.getDataStream(fs)) {
                 wb.write(encOut);
             } catch (GeneralSecurityException e) {
-                throw new IllegalStateException(e);
+                throw new ExcelWriteException("Failed to encrypt Excel file", e);
             }
 
             fs.writeFilesystem(outputStream);

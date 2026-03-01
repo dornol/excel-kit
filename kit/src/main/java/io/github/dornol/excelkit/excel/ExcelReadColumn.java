@@ -64,6 +64,20 @@ public record ExcelReadColumn<T>(BiConsumer<T, CellData> setter) {
         }
 
         /**
+         * Finalizes the column definitions and builds an {@link ExcelReadHandler} for reading
+         * from a specific sheet.
+         *
+         * @param inputStream The input stream of the Excel (.xlsx) file
+         * @param sheetIndex  The zero-based index of the sheet to read
+         * @return A configured {@code ExcelReadHandler} instance
+         */
+        public ExcelReadHandler<T> build(InputStream inputStream, int sheetIndex) {
+            buildCurrentAndAddToReader();
+            this.reader.sheetIndex(sheetIndex);
+            return this.reader.build(inputStream);
+        }
+
+        /**
          * Internal method to add the current column definition to the reader.
          */
         private void buildCurrentAndAddToReader() {

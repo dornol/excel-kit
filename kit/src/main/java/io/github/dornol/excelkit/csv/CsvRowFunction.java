@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.shared.Cursor;
+
 /**
  * A functional interface for mapping a row of data to a CSV column value, with optional access to cursor position.
  * <p>
@@ -21,5 +23,5 @@ public interface CsvRowFunction<T, R> {
      * @param cursor  The current cursor indicating row position
      * @return The value to write into the CSV column
      */
-    R apply(T rowData, CsvCursor cursor);
+    R apply(T rowData, Cursor cursor);
 }

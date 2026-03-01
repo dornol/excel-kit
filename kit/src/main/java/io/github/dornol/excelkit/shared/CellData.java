@@ -29,6 +29,33 @@ import java.util.Locale;
  */
 public record CellData(int columnIndex, String formattedValue) {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
+    private static volatile Locale defaultLocale = Locale.KOREA;
+
+    /**
+     * Returns the default locale used by no-arg number parsing methods.
+     *
+     * @return The current default locale
+     */
+    public static Locale getDefaultLocale() {
+        return defaultLocale;
+    }
+
+    /**
+     * Sets the default locale for number parsing.
+     * Affects all subsequent calls to {@link #asNumber()}, {@link #asLong()},
+     * {@link #asInt()}, {@link #asDouble()}, {@link #asFloat()}, and {@link #asBigDecimal()}.
+     * <p>
+     * The default value is {@link Locale#KOREA}.
+     *
+     * @param locale The locale to use as default (must not be null)
+     */
+    public static void setDefaultLocale(Locale locale) {
+        if (locale == null) {
+            throw new IllegalArgumentException("locale must not be null");
+        }
+        defaultLocale = locale;
+    }
+
     private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd"),
@@ -64,7 +91,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @throws IllegalArgumentException if parsing fails
      */
     public Number asNumber(Locale locale) {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return null;
         }
 
@@ -84,11 +111,13 @@ public record CellData(int columnIndex, String formattedValue) {
     }
 
     /**
-     * Parses the value as a {@link Number} using {@link Locale#KOREA} as default.
+     * Parses the value as a {@link Number} using the configured default locale.
      * Returns {@code null} if the value is empty or blank.
+     *
+     * @see #setDefaultLocale(Locale)
      */
     public Number asNumber() {
-        return asNumber(Locale.KOREA);
+        return asNumber(defaultLocale);
     }
 
     /**
@@ -132,7 +161,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @return {@code true} if the value represents a true-like string, otherwise {@code false}
      */
     public boolean asBoolean() {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return false;
         }
         String val = formattedValue.trim().toLowerCase();
@@ -154,7 +183,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * If all patterns fail, a {@link DateTimeParseException} will be thrown.
      */
     public LocalDateTime asLocalDateTime() {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return null;
         }
 
@@ -176,7 +205,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @param format the date-time pattern (e.g., "yyyy-MM-dd HH:mm:ss")
      */
     public LocalDateTime asLocalDateTime(String format) {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return null;
         }
         return LocalDateTime.parse(formattedValue, DateTimeFormatter.ofPattern(format));
@@ -196,7 +225,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * If all patterns fail, a {@link DateTimeParseException} will be thrown.
      */
     public LocalDate asLocalDate() {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return null;
         }
         for (var format : DATE_FORMAT_PATTERNS) {
@@ -216,7 +245,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @param format the date pattern (e.g., "yyyy/MM/dd")
      */
     public LocalDate asLocalDate(String format) {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return null;
         }
         return LocalDate.parse(formattedValue, DateTimeFormatter.ofPattern(format));
@@ -227,7 +256,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Returns {@code null} if the value is empty or blank.
      */
     public LocalTime asLocalTime() {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return null;
         }
         return LocalTime.parse(formattedValue);
@@ -240,7 +269,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @param format the time pattern (e.g., "HH:mm")
      */
     public LocalTime asLocalTime(String format) {
-        if (formattedValue == null || formattedValue.isBlank()) {
+        if (formattedValue.isBlank()) {
             return null;
         }
         return LocalTime.parse(formattedValue, DateTimeFormatter.ofPattern(format));
@@ -275,21 +304,12 @@ public record CellData(int columnIndex, String formattedValue) {
     }
 
     /**
-     * Checks if the value is null.
+     * Checks if the value is empty or blank.
      *
-     * @return {@code true} if the formatted value is null, otherwise {@code false}
-     */
-    public boolean isNull() {
-        return formattedValue == null;
-    }
-
-    /**
-     * Checks if the value is null or empty/blank.
-     *
-     * @return {@code true} if the formatted value is null or consists only of whitespace
+     * @return {@code true} if the formatted value is empty or consists only of whitespace
      */
     public boolean isEmpty() {
-        return this.isNull() || formattedValue.isBlank();
+        return formattedValue.isBlank();
     }
 
 }

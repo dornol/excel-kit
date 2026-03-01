@@ -8,7 +8,7 @@ import org.jspecify.annotations.NonNull;
  * @author dhkim
  * @since 2025-07-19
  */
-public class TempResourceCreateException extends RuntimeException {
+public class TempResourceCreateException extends ExcelKitException {
 
     /**
      * Constructs a new TempResourceCreateException with the specified cause.

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.shared.Cursor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +45,7 @@ public class CsvColumn<T> {
      * @param cursor  The cursor tracking current row index
      * @return The column's value for this row, or null if evaluation fails
      */
-    Object applyFunction(T rowData, CsvCursor cursor) {
+    Object applyFunction(T rowData, Cursor cursor) {
         try {
             return function.apply(rowData, cursor);
         } catch (Exception e) {
