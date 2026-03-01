@@ -7,8 +7,6 @@ import jakarta.validation.Validator;
 
 import java.io.InputStream;
 import java.security.SecureRandom;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -18,16 +16,15 @@ public class TypeTestExcelMapper {
     }
 
     public static ExcelHandler getHandler(Stream<TypeTestDto> stream) {
-        var date = LocalDate.now();
         SecureRandom random = new SecureRandom();
         return new ExcelWriter<TypeTestDto>(147, 252, 42, 1000000)
-                .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.INTEGER)
+                .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
                 .column("string", TypeTestDto::aString)
                 .column("long", TypeTestDto::aLong).type(ExcelDataType.LONG)
                 .column("integer", TypeTestDto::anInteger).type(ExcelDataType.INTEGER)
                 .column("localdatetime", TypeTestDto::aLocalDateTime).type(ExcelDataType.DATETIME)
                 .column("localdate", TypeTestDto::aLocalDate).type(ExcelDataType.DATE)
-                .column("localtime", r -> LocalDateTime.of(date, r.aLocalTime())).type(ExcelDataType.TIME)
+                .column("localtime", TypeTestDto::aLocalTime).type(ExcelDataType.TIME)
                 .column("double", TypeTestDto::aDouble).type(ExcelDataType.DOUBLE)
                 .column("double_percent", TypeTestDto::aDouble).type(ExcelDataType.DOUBLE_PERCENT)
                 .column("float", TypeTestDto::aFloat).type(ExcelDataType.FLOAT)

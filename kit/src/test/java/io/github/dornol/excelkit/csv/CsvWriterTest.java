@@ -75,7 +75,7 @@ class CsvWriterTest {
         String[] lines = csvContent.split("\\r?\\n");
         
         assertEquals(4, lines.length, "CSV should have 4 lines (header + 3 data rows)");
-        assertEquals("Name,Age,Index,Type", lines[0], "Header line should match column names");
+        assertEquals("\uFEFFName,Age,Index,Type", lines[0], "Header line should match column names (with BOM)");
         assertEquals("Alice,30,2,Person", lines[1], "First data row should match first test data");
         assertEquals("Bob,25,3,Person", lines[2], "Second data row should match second test data");
         assertEquals("Charlie,35,4,Person", lines[3], "Third data row should match third test data");
@@ -102,7 +102,7 @@ class CsvWriterTest {
         String csvContent = outputStream.toString();
         String[] lines = csvContent.split("\\r?\\n");
         
-        assertEquals("Name", lines[0], "Header line should match column name");
+        assertEquals("\uFEFFName", lines[0], "Header line should match column name (with BOM)");
         assertEquals("\"Alice,with,commas\"", lines[1], "Commas should be escaped with quotes");
         assertEquals("\"Bob \"\"quoted\"\"\"", lines[2], "Quotes should be escaped with double quotes");
         // The actual behavior seems to be that newlines are replaced with spaces or removed

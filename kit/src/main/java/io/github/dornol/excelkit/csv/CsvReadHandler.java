@@ -69,6 +69,8 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
                 consumer.accept(new ReadResult<>(currentInstance, validationSuccess, messages));
             }
+        } catch (CsvReadException e) {
+            throw e;
         } catch (Exception e) {
             throw new CsvReadException("Failed to read CSV", e);
         } finally {
@@ -77,6 +79,9 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private void prepareColumnHeaders(String[] line) {
+        if (line.length > 0 && line[0] != null && line[0].startsWith("\uFEFF")) {
+            line[0] = line[0].substring(1);
+        }
         Collections.addAll(headerNames, line);
     }
 }

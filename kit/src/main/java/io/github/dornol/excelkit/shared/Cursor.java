@@ -13,7 +13,7 @@ package io.github.dornol.excelkit.shared;
 public class Cursor {
     private final int baseRow;
     private int rowOfSheet;
-    private int currentTotal;
+    private long currentTotal;
 
     /**
      * Creates a new Cursor with row index and total count initialized to 0.
@@ -69,7 +69,7 @@ public class Cursor {
      *
      * @return Total number of rows written
      */
-    public int getCurrentTotal() {
+    public long getCurrentTotal() {
         return currentTotal;
     }
 }

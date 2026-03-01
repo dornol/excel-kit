@@ -43,6 +43,7 @@ import java.util.function.Supplier;
 public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final List<ExcelReadColumn<T>> columns;
     private final int sheetIndex;
+    private final int headerRowIndex;
 
     /**
      * Constructs a handler for reading the first sheet of an Excel file.
@@ -53,7 +54,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param validator        Optional bean validator for validating mapped instances
      */
     ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0);
+        this(inputStream, columns, instanceSupplier, validator, 0, 0);
     }
 
     /**
@@ -66,6 +67,20 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param sheetIndex       The zero-based index of the sheet to read
      */
     ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex) {
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, 0);
+    }
+
+    /**
+     * Constructs a handler for reading a specific sheet with a custom header row index.
+     *
+     * @param inputStream      The input stream of the uploaded Excel file
+     * @param columns          The list of column setters to apply per row
+     * @param instanceSupplier A supplier to instantiate new row objects
+     * @param validator        Optional bean validator for validating mapped instances
+     * @param sheetIndex       The zero-based index of the sheet to read
+     * @param headerRowIndex   The zero-based index of the header row (rows before this are skipped)
+     */
+    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex, int headerRowIndex) {
         super(inputStream, instanceSupplier, validator, ".xlsx");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
@@ -73,8 +88,12 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         if (sheetIndex < 0) {
             throw new IllegalArgumentException("sheetIndex must be non-negative");
         }
+        if (headerRowIndex < 0) {
+            throw new IllegalArgumentException("headerRowIndex must be non-negative");
+        }
         this.columns = columns;
         this.sheetIndex = sheetIndex;
+        this.headerRowIndex = headerRowIndex;
     }
 
     /**
@@ -154,7 +173,10 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          */
         @Override
         public void endRow(int rowNum) {
-            if (rowNum == 0) {
+            if (rowNum < headerRowIndex) {
+                return;
+            }
+            if (rowNum == headerRowIndex) {
                 extractHeaderNames();
                 return;
             }

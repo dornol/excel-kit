@@ -28,7 +28,7 @@ public class BookExcelMapper {
     public static ExcelHandler getHandler(Stream<BookDto> stream) {
         return new ExcelWriter<BookDto>(0xCC, 0xFF, 0x99)
                 .title("this is my title", 24, IndexedColors.DARK_BLUE)
-                .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.INTEGER)
+                .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
                 .column("id", BookDto::id).type(ExcelDataType.LONG)
                 .column("title", BookDto::title)
                 .column("subtitle", BookDto::subtitle)

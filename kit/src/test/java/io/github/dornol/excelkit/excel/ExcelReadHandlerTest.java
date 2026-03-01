@@ -215,6 +215,43 @@ class ExcelReadHandlerTest {
         });
     }
 
+    @Test
+    void read_shouldSkipRowsBeforeHeaderRowIndex() throws IOException {
+        Path file = tempDir.resolve("header-offset.xlsx");
+        createExcelFileWithHeaderOffset(file);
+
+        List<TestPerson> results = new ArrayList<>();
+        Consumer<ReadResult<TestPerson>> consumer = result -> {
+            if (result.success()) {
+                results.add(result.data());
+            }
+        };
+
+        try (InputStream is = Files.newInputStream(file)) {
+            new ExcelReader<>(TestPerson::new, validator)
+                    .headerRowIndex(2)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is)
+                    .read(consumer);
+        }
+
+        assertEquals(2, results.size());
+        assertEquals("Alice", results.get(0).getName());
+        assertEquals(30, results.get(0).getAge());
+        assertEquals("Bob", results.get(1).getName());
+        assertEquals(25, results.get(1).getAge());
+    }
+
+    @Test
+    void constructor_shouldThrowForNegativeHeaderRowIndex() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
+            columns.add(new ExcelReadColumn<>(createNameSetter()));
+            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 0, -1);
+        });
+    }
+
     /**
      * Creates a setter function for the name field.
      */
@@ -302,6 +339,38 @@ class ExcelReadHandlerTest {
             header2.createCell(1).setCellValue("Age");
             createDataRow(sheet2, 1, "Dave", 40);
             createDataRow(sheet2, 2, "Eve", 28);
+
+            try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
+                workbook.write(fos);
+            }
+        }
+    }
+
+    /**
+     * Creates a test Excel file with metadata rows before the header.
+     * Row 0: "Report Title"
+     * Row 1: "Generated: 2025-01-01"
+     * Row 2: Header (Name, Age)
+     * Row 3+: Data
+     */
+    private void createExcelFileWithHeaderOffset(Path filePath) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Test");
+
+            // Metadata rows
+            Row metaRow0 = sheet.createRow(0);
+            metaRow0.createCell(0).setCellValue("Report Title");
+            Row metaRow1 = sheet.createRow(1);
+            metaRow1.createCell(0).setCellValue("Generated: 2025-01-01");
+
+            // Header row at index 2
+            Row headerRow = sheet.createRow(2);
+            headerRow.createCell(0).setCellValue("Name");
+            headerRow.createCell(1).setCellValue("Age");
+
+            // Data rows
+            createDataRow(sheet, 3, "Alice", 30);
+            createDataRow(sheet, 4, "Bob", 25);
 
             try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
                 workbook.write(fos);

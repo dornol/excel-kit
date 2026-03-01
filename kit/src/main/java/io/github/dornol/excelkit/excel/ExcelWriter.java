@@ -30,6 +30,8 @@ import static io.github.dornol.excelkit.excel.ExcelStyleSupporter.titleStyle;
  * @since 2025-07-19
  */
 public class ExcelWriter<T> implements AutoCloseable {
+    private static final int AUTO_WIDTH_SAMPLE_ROWS = 100;
+
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final int maxRowsOfSheet;
@@ -37,6 +39,7 @@ public class ExcelWriter<T> implements AutoCloseable {
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private String title;
     private CellStyle titleStyle;
+    private float rowHeightInPoints = 20;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -128,6 +131,21 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Sets the row height for data rows in points.
+     * Defaults to 20 points.
+     *
+     * @param rowHeightInPoints Row height in points (must be positive)
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> rowHeight(float rowHeightInPoints) {
+        if (rowHeightInPoints <= 0) {
+            throw new IllegalArgumentException("rowHeightInPoints must be positive");
+        }
+        this.rowHeightInPoints = rowHeightInPoints;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -196,7 +214,7 @@ public class ExcelWriter<T> implements AutoCloseable {
                 consumer.accept(rowData, cursor);
             });
         }
-        applyColumWidthAllSheets();
+        applyColumnWidthAllSheets();
         return new ExcelHandler(this.wb);
     }
 
@@ -253,7 +271,7 @@ public class ExcelWriter<T> implements AutoCloseable {
             setColumnHeaders();
         }
         SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
-        row.setHeightInPoints(20);
+        row.setHeightInPoints(rowHeightInPoints);
         cursor.plusRow();
 
         for (int j = 0; j < this.columns.size(); j++) {
@@ -262,7 +280,7 @@ public class ExcelWriter<T> implements AutoCloseable {
             Object columnData = column.applyFunction(rowData, cursor);
             column.setColumnData(cell, columnData);
             cell.setCellStyle(column.getStyle());
-            if (cursor.getRowOfSheet() < 100) {
+            if (cursor.getRowOfSheet() < AUTO_WIDTH_SAMPLE_ROWS) {
                 column.fitColumnWidthByValue(columnData);
             }
         }
@@ -288,7 +306,7 @@ public class ExcelWriter<T> implements AutoCloseable {
     /**
      * Applies the calculated column widths to all sheets after writing is complete.
      */
-    private void applyColumWidthAllSheets() {
+    private void applyColumnWidthAllSheets() {
         int numberOfSheets = wb.getNumberOfSheets();
         for (int i = 0; i < numberOfSheets; i++) {
             SXSSFSheet s = wb.getSheetAt(i);

@@ -60,20 +60,22 @@ public record CellData(int columnIndex, String formattedValue) {
         defaultLocale = locale;
     }
 
-    private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(List.of(
+    private static final List<DateTimeFormatter> DEFAULT_DATE_FORMATS = List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd"),
             DateTimeFormatter.ofPattern("MM/dd/yy"),
             DateTimeFormatter.ofPattern("M/d/yy"),
             DateTimeFormatter.ISO_LOCAL_DATE
-    ));
-    private static final List<DateTimeFormatter> DATETIME_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(List.of(
+    );
+    private static final List<DateTimeFormatter> DEFAULT_DATETIME_FORMATS = List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("MM/dd/yy[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("M/d/yy[ HH:mm[:ss]]"),
             DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    ));
+    );
+    private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
+    private static final List<DateTimeFormatter> DATETIME_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
 
     /**
      * Adds a custom date format pattern for {@link #asLocalDate()}.
@@ -113,6 +115,23 @@ public record CellData(int columnIndex, String formattedValue) {
         return Collections.unmodifiableList(DATETIME_FORMAT_PATTERNS);
     }
 
+    /**
+     * Resets the date format patterns to the built-in defaults.
+     * Removes any custom patterns previously added via {@link #addDateFormat(String)}.
+     */
+    public static void resetDateFormats() {
+        DATE_FORMAT_PATTERNS.clear();
+        DATE_FORMAT_PATTERNS.addAll(DEFAULT_DATE_FORMATS);
+    }
+
+    /**
+     * Resets the date-time format patterns to the built-in defaults.
+     * Removes any custom patterns previously added via {@link #addDateTimeFormat(String)}.
+     */
+    public static void resetDateTimeFormats() {
+        DATETIME_FORMAT_PATTERNS.clear();
+        DATETIME_FORMAT_PATTERNS.addAll(DEFAULT_DATETIME_FORMATS);
+    }
 
     public CellData {
         if (formattedValue == null) {

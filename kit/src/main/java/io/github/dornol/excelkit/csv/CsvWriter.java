@@ -147,6 +147,9 @@ public class CsvWriter<T> {
             Cursor cursor = new Cursor();
             cursor.initRow();
 
+            // UTF-8 BOM for Excel compatibility
+            writer.write('\uFEFF');
+
             // Write header row
             writer.println(columns.stream()
                     .map(CsvColumn::getName)

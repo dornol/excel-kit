@@ -91,7 +91,7 @@ class CursorTest {
     void plusTotal_shouldIncrementCurrentTotal() {
         // Arrange
         Cursor cursor = new Cursor();
-        int initialTotal = cursor.getCurrentTotal();
+        long initialTotal = cursor.getCurrentTotal();
 
         // Act
         cursor.plusTotal();

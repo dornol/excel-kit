@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.excel;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 
 /**
@@ -69,9 +70,9 @@ public enum ExcelDataType {
     DATE((cell, value) -> cell.setCellValue((LocalDate) value), ExcelDataFormat.DATE.getFormat()),
 
     /**
-     * LocalDateTime formatted as "HH:mm:ss".
+     * LocalTime formatted as "HH:mm:ss".
      */
-    TIME((cell, value) -> cell.setCellValue((LocalDateTime) value), ExcelDataFormat.TIME.getFormat()),
+    TIME((cell, value) -> cell.setCellValue(((LocalTime) value).atDate(LocalDate.EPOCH)), ExcelDataFormat.TIME.getFormat()),
 
     /**
      * BigDecimal converted to double (2 decimal places).

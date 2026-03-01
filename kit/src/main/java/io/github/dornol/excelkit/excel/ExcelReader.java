@@ -33,6 +33,7 @@ public class ExcelReader<T> {
     private final Supplier<T> instanceSupplier;
     private final Validator validator;
     private int sheetIndex = 0;
+    private int headerRowIndex = 0;
 
     /**
      * Configures Apache POI's internal limits for reading large Excel files.
@@ -86,6 +87,19 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Sets the zero-based row index of the header row.
+     * Rows before this index will be skipped during reading.
+     * Defaults to 0 (the first row).
+     *
+     * @param headerRowIndex The zero-based index of the header row
+     * @return This ExcelReader instance for chaining
+     */
+    public ExcelReader<T> headerRowIndex(int headerRowIndex) {
+        this.headerRowIndex = headerRowIndex;
+        return this;
+    }
+
+    /**
      * Adds a column mapping to the internal list.
      *
      * @param column An Excel column with setter logic
@@ -111,6 +125,6 @@ public class ExcelReader<T> {
      * @return A handler to execute Excel parsing
      */
     public ExcelReadHandler<T> build(@NonNull InputStream inputStream) {
-        return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator, sheetIndex);
+        return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex);
     }
 }
