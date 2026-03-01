@@ -8,7 +8,6 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jspecify.annotations.NonNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -90,7 +89,6 @@ public class ExcelHandler {
             }
 
             // Encrypt from temp file using file-based POIFSFileSystem (low memory)
-            File tempFileObj = tempFile.toFile();
             try (POIFSFileSystem fs = new POIFSFileSystem()) {
                 EncryptionInfo info = new EncryptionInfo(EncryptionMode.agile);
                 Encryptor enc = info.getEncryptor();

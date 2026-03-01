@@ -150,6 +150,45 @@ class ExcelWriterTest {
     }
 
     @Test
+    void write_shouldSetTitleOnEachSheet_whenRolloverWithTitle() {
+        // Arrange: max 2 rows per sheet with title
+        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
+        Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
+
+        // Act
+        ExcelHandler handler = writer
+                .title("Test Title")
+                .column("A", (row, c) -> row)
+                .column("B", (row, c) -> row * 10)
+                .write(data);
+
+        // Assert
+        SXSSFWorkbook wb = writer.getWb();
+        assertEquals(3, wb.getNumberOfSheets(), "Expect 3 sheets when 5 rows with max 2 rows per sheet");
+
+        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            SXSSFSheet s = wb.getSheetAt(i);
+            // Title row (row 0)
+            assertNotNull(s.getRow(0), "Title row must exist on sheet " + i);
+            assertEquals("Test Title", s.getRow(0).getCell(0).getStringCellValue(),
+                    "Title must be set on sheet " + i);
+            // Header row (row 2, after title rows 0-1)
+            assertNotNull(s.getRow(2), "Header row must exist on sheet " + i);
+            assertEquals("A", s.getRow(2).getCell(0).getStringCellValue(),
+                    "Header A must be set on sheet " + i);
+            assertEquals("B", s.getRow(2).getCell(1).getStringCellValue(),
+                    "Header B must be set on sheet " + i);
+        }
+
+        // consume for completeness
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
     void applyColumnWidth_shouldApplySameWidthsAcrossSheets() {
         // Arrange: small max rows to force rollover and values with different lengths
         ExcelWriter<String> writer = new ExcelWriter<>(2);

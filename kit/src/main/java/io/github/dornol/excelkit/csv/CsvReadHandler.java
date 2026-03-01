@@ -45,9 +45,13 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
      */
     public void read(@NonNull Consumer<ReadResult<T>> consumer) {
         try (CSVReader reader = new CSVReader(new InputStreamReader(Files.newInputStream(getTempFile()), StandardCharsets.UTF_8))) {
-            String[] line;
+            String[] headerLine = reader.readNext();
+            if (headerLine == null) {
+                throw new CsvReadException("CSV file is empty or missing header row");
+            }
+            prepareColumnHeaders(headerLine);
 
-            prepareColumnHeaders(reader.readNext());
+            String[] line;
 
             while ((line = reader.readNext()) != null) {
                 T currentInstance = instanceSupplier.get();

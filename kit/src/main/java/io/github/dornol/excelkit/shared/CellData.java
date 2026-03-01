@@ -13,10 +13,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represents a single cell's value read from an Excel file,
@@ -60,14 +60,14 @@ public record CellData(int columnIndex, String formattedValue) {
         defaultLocale = locale;
     }
 
-    private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = new ArrayList<>(List.of(
+    private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd"),
             DateTimeFormatter.ofPattern("MM/dd/yy"),
             DateTimeFormatter.ofPattern("M/d/yy"),
             DateTimeFormatter.ISO_LOCAL_DATE
     ));
-    private static final List<DateTimeFormatter> DATETIME_FORMAT_PATTERNS = new ArrayList<>(List.of(
+    private static final List<DateTimeFormatter> DATETIME_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("MM/dd/yy[ HH:mm[:ss]]"),
@@ -82,7 +82,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @param pattern the date pattern (e.g., "dd.MM.yyyy")
      */
     public static void addDateFormat(@NonNull String pattern) {
-        DATE_FORMAT_PATTERNS.addFirst(DateTimeFormatter.ofPattern(pattern));
+        DATE_FORMAT_PATTERNS.add(0, DateTimeFormatter.ofPattern(pattern));
     }
 
     /**
@@ -92,7 +92,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
      */
     public static void addDateTimeFormat(@NonNull String pattern) {
-        DATETIME_FORMAT_PATTERNS.addFirst(DateTimeFormatter.ofPattern(pattern));
+        DATETIME_FORMAT_PATTERNS.add(0, DateTimeFormatter.ofPattern(pattern));
     }
 
     /**

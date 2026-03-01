@@ -4,6 +4,11 @@ plugins {
     id("signing")
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 dependencies {
     compileOnly(libs.poi.ooxml)
     compileOnly(libs.slf4j.api)
