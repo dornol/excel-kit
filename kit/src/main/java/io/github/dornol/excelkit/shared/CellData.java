@@ -164,7 +164,28 @@ public record CellData(int columnIndex, String formattedValue) {
         if (formattedValue.isBlank()) {
             return false;
         }
-        String val = formattedValue.trim().toLowerCase();
+        return isTrueValue(formattedValue);
+    }
+
+    /**
+     * Converts the value to a nullable {@link Boolean}.
+     * <p>
+     * Returns {@code null} if the value is empty or blank, allowing callers to
+     * distinguish between "no value" and an explicit {@code false}.
+     * Accepts "true", "1", "y", "yes" (case-insensitive) as {@code true};
+     * all other non-blank values are treated as {@code false}.
+     *
+     * @return {@code Boolean.TRUE}, {@code Boolean.FALSE}, or {@code null} if blank
+     */
+    public Boolean asBooleanOrNull() {
+        if (formattedValue.isBlank()) {
+            return null;
+        }
+        return isTrueValue(formattedValue);
+    }
+
+    private static boolean isTrueValue(String value) {
+        String val = value.trim().toLowerCase();
         return val.equals("true") || val.equals("1") || val.equals("y") || val.equals("yes");
     }
 

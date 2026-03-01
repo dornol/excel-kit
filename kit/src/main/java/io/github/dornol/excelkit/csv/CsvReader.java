@@ -7,38 +7,61 @@ import jakarta.validation.Validator;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 /**
- * CSV Reader. 컬럼 정의와 객체 생성 방법, Validator를 가지고 CSV를 읽어 객체로 변환.
+ * Builder-style class for configuring CSV row readers.
+ * <p>
+ * {@code CsvReader} allows you to define how each CSV cell maps to your target object {@code T},
+ * and optionally integrates Bean Validation support.
+ * Once configuration is complete, use {@link #build(InputStream)} to create a {@link CsvReadHandler}.
+ *
+ * @param <T> The type of the object that represents one CSV row
+ * @author dhkim
+ * @since 2025-07-19
  */
 public class CsvReader<T> {
     private final List<CsvReadColumn<T>> columns = new ArrayList<>();
     private final Supplier<T> instanceSupplier;
     private final Validator validator;
 
+    /**
+     * Constructs a CsvReader with instance supplier and optional validator.
+     *
+     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
+     * @param validator        Optional Bean Validation validator (nullable)
+     */
     public CsvReader(Supplier<T> instanceSupplier, Validator validator) {
-        this.instanceSupplier = instanceSupplier;
+        this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.validator = validator;
     }
 
     /**
-     * 컬럼 추가
+     * Adds a column mapping to the internal list.
+     *
+     * @param column A CSV column with setter logic
      */
     void addColumn(CsvReadColumn<T> column) {
         columns.add(column);
     }
 
     /**
-     * CSV 컬럼 빌더 시작
+     * Begins a new column mapping using a setter function.
+     *
+     * @param setter A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return A builder for further column configuration
      */
     public CsvReadColumn.CsvReadColumnBuilder<T> column(BiConsumer<T, CellData> setter) {
         return new CsvReadColumn.CsvReadColumnBuilder<>(this, setter);
     }
 
     /**
-     * CsvReadHandler 생성
+     * Finalizes the configuration and builds a {@link CsvReadHandler} for parsing the given CSV stream.
+     *
+     * @param inputStream The input stream of the CSV file
+     * @return A handler to execute CSV parsing
      */
     public CsvReadHandler<T> build(InputStream inputStream) {
         return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator);

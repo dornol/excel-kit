@@ -33,6 +33,9 @@ public record ExcelReadColumn<T>(BiConsumer<T, CellData> setter) {
          * @param setter The setter function to bind a column value to a field
          */
         ExcelReadColumnBuilder(ExcelReader<T> reader, BiConsumer<T, CellData> setter) {
+            if (setter == null) {
+                throw new IllegalArgumentException("setter must not be null");
+            }
             this.reader = reader;
             this.setter = setter;
         }

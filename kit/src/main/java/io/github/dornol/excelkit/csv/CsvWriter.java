@@ -55,6 +55,38 @@ public class CsvWriter<T> {
     }
 
     /**
+     * Conditionally adds a column using a row+cursor-based function.
+     * If condition is false, the column is not added.
+     *
+     * @param name      The column header
+     * @param condition Whether to include this column
+     * @param function  A function to compute the value for each row
+     * @return This writer instance
+     */
+    public CsvWriter<T> columnIf(String name, boolean condition, CsvRowFunction<T, Object> function) {
+        if (condition) {
+            column(name, function);
+        }
+        return this;
+    }
+
+    /**
+     * Conditionally adds a column using a basic row-only function.
+     * If condition is false, the column is not added.
+     *
+     * @param name      The column header
+     * @param condition Whether to include this column
+     * @param function  A function to compute the value from the row
+     * @return This writer instance
+     */
+    public CsvWriter<T> columnIf(String name, boolean condition, Function<T, Object> function) {
+        if (condition) {
+            column(name, function);
+        }
+        return this;
+    }
+
+    /**
      * Adds a column with a constant value for all rows.
      *
      * @param name  The column header
@@ -114,14 +146,14 @@ public class CsvWriter<T> {
             Cursor cursor = new Cursor();
             cursor.initRow();
 
-            // 헤더 출력
+            // Write header row
             writer.println(columns.stream()
                     .map(CsvColumn::getName)
                     .map(CsvWriter::escapeCsv)
                     .collect(Collectors.joining(",")));
             cursor.plusRow();
 
-            // 데이터 출력
+            // Write data rows
             sequential.forEach(row -> {
                 cursor.plusTotal();
                 cursor.plusRow();

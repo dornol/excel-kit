@@ -6,27 +6,44 @@ import java.io.InputStream;
 import java.util.function.BiConsumer;
 
 /**
- * CSV 컬럼 정의를 나타내는 클래스.
- * @param <T> CSV 데이터를 매핑할 객체 타입
+ * Represents a single CSV column binding for reading.
+ * <p>
+ * Holds a setter function that maps a {@link CellData} into a field of a row object.
+ *
+ * @param <T> The row data type
+ * @author dhkim
+ * @since 2025-07-19
  */
 public record CsvReadColumn<T>(BiConsumer<T, CellData> setter) {
 
     /**
-     * CsvReader에서 컬럼을 체이닝 방식으로 추가하기 위한 빌더 클래스
+     * Builder for defining multiple CSV read columns fluently.
+     *
+     * @param <T> The row data type
      */
     public static class CsvReadColumnBuilder<T> {
         private final CsvReader<T> reader;
         private final BiConsumer<T, CellData> setter;
 
+        /**
+         * Constructs a new column builder.
+         *
+         * @param reader The parent {@link CsvReader}
+         * @param setter The setter function to bind a column value to a field
+         */
         CsvReadColumnBuilder(CsvReader<T> reader, BiConsumer<T, CellData> setter) {
+            if (setter == null) {
+                throw new IllegalArgumentException("setter must not be null");
+            }
             this.reader = reader;
             this.setter = setter;
         }
 
         /**
-         * 다음 컬럼 추가
-         * @param setter 객체에 값을 매핑할 함수
-         * @return 새로운 컬럼 빌더
+         * Adds the current column binding to the reader and begins a new column definition.
+         *
+         * @param setter The setter function for the next column
+         * @return A new builder instance for chaining the next column
          */
         public CsvReadColumnBuilder<T> column(BiConsumer<T, CellData> setter) {
             buildCurrentAndAddToReader();
@@ -34,9 +51,10 @@ public record CsvReadColumn<T>(BiConsumer<T, CellData> setter) {
         }
 
         /**
-         * CSV 읽기 핸들러 생성
-         * @param inputStream CSV 입력 스트림
-         * @return CsvReadHandler
+         * Finalizes the column definitions and builds a {@link CsvReadHandler} for reading.
+         *
+         * @param inputStream The input stream of the CSV file
+         * @return A configured {@code CsvReadHandler} instance
          */
         public CsvReadHandler<T> build(InputStream inputStream) {
             buildCurrentAndAddToReader();
@@ -44,12 +62,11 @@ public record CsvReadColumn<T>(BiConsumer<T, CellData> setter) {
         }
 
         /**
-         * 내부: 현재 컬럼 정의를 CsvReader에 추가
+         * Internal method to add the current column definition to the reader.
          */
         private void buildCurrentAndAddToReader() {
             this.reader.addColumn(new CsvReadColumn<>(this.setter));
         }
     }
-
 
 }
