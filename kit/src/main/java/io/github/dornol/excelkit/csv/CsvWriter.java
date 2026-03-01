@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.shared.Cursor;
 import io.github.dornol.excelkit.shared.TempResourceCreator;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,7 +38,7 @@ public class CsvWriter<T> {
      * @param function A function to compute the value for each row
      * @return This writer instance (for chaining)
      */
-    public CsvWriter<T> column(String name, CsvRowFunction<T, Object> function) {
+    public CsvWriter<T> column(@NonNull String name, @NonNull CsvRowFunction<T, Object> function) {
         var column = new CsvColumn<>(name, function);
         this.columns.add(column);
         return this;
@@ -50,7 +51,7 @@ public class CsvWriter<T> {
      * @param function A function to compute the value from the row
      * @return This writer instance
      */
-    public CsvWriter<T> column(String name, Function<T, Object> function) {
+    public CsvWriter<T> column(@NonNull String name, @NonNull Function<T, Object> function) {
         return column(name, (r, c) -> function.apply(r));
     }
 
@@ -105,7 +106,7 @@ public class CsvWriter<T> {
      * @param stream The row data stream
      * @return A handler for streaming the resulting CSV
      */
-    public CsvHandler write(Stream<T> stream) {
+    public CsvHandler write(@NonNull Stream<T> stream) {
         Path tempDir = TempResourceCreator.createTempDirectory();
         Path tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".csv");
 

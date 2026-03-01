@@ -12,6 +12,7 @@ import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.xml.sax.InputSource;
+import org.jspecify.annotations.NonNull;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -84,7 +85,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      *
      * @param consumer Callback to receive parsed and validated row results
      */
-    public void read(Consumer<ReadResult<T>> consumer) {
+    public void read(@NonNull Consumer<ReadResult<T>> consumer) {
         try (OPCPackage pkg = OPCPackage.open(getTempFile().toFile())) {
             XSSFReader reader = new XSSFReader(pkg);
 

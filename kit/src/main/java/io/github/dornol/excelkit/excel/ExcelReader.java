@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.shared.CellData;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.util.IOUtils;
+import org.jspecify.annotations.NonNull;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public class ExcelReader<T> {
      * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      * @param validator        Optional Bean Validation validator (nullable)
      */
-    public ExcelReader(Supplier<T> instanceSupplier, Validator validator) {
+    public ExcelReader(@NonNull Supplier<T> instanceSupplier, Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.validator = validator;
     }
@@ -109,7 +110,7 @@ public class ExcelReader<T> {
      * @param inputStream The input stream of the Excel file
      * @return A handler to execute Excel parsing
      */
-    public ExcelReadHandler<T> build(InputStream inputStream) {
+    public ExcelReadHandler<T> build(@NonNull InputStream inputStream) {
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator, sheetIndex);
     }
 }

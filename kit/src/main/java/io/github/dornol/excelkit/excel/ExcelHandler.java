@@ -5,6 +5,7 @@ import org.apache.poi.poifs.crypt.EncryptionMode;
 import org.apache.poi.poifs.crypt.Encryptor;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,7 +43,7 @@ public class ExcelHandler {
      * @throws IOException If an I/O error occurs during writing
      * @throws IllegalStateException If this method has already been called
      */
-    public void consumeOutputStream(OutputStream outputStream) throws IOException {
+    public void consumeOutputStream(@NonNull OutputStream outputStream) throws IOException {
         if (consumed) {
             throw new ExcelWriteException("Already consumed");
         }
@@ -64,7 +65,7 @@ public class ExcelHandler {
      * @throws IOException If an I/O or encryption error occurs during writing
      * @throws IllegalStateException If this method has already been called
      */
-    public void consumeOutputStreamWithPassword(OutputStream outputStream, String password) throws IOException {
+    public void consumeOutputStreamWithPassword(@NonNull OutputStream outputStream, @NonNull String password) throws IOException {
         if (consumed) {
             throw new ExcelWriteException("Already consumed");
         }

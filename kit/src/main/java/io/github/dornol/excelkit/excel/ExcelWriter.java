@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.shared.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.jspecify.annotations.NonNull;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
@@ -88,7 +89,7 @@ public class ExcelWriter<T> implements AutoCloseable {
      * @param title The title text to display at the top
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> title(String title) {
+    public ExcelWriter<T> title(@NonNull String title) {
         return title(title, 0, IndexedColors.BLACK);
     }
 
@@ -99,7 +100,7 @@ public class ExcelWriter<T> implements AutoCloseable {
      * @param fontSize Font size in points
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> title(String title, int fontSize) {
+    public ExcelWriter<T> title(@NonNull String title, int fontSize) {
         return title(title, fontSize, IndexedColors.BLACK);
     }
 
@@ -111,7 +112,7 @@ public class ExcelWriter<T> implements AutoCloseable {
      * @param color    The text color
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> title(String title, int fontSize, IndexedColors color) {
+    public ExcelWriter<T> title(@NonNull String title, int fontSize, @NonNull IndexedColors color) {
         if (this.title != null) {
             throw new ExcelWriteException("title setting already exists");
         }
@@ -142,7 +143,7 @@ public class ExcelWriter<T> implements AutoCloseable {
      * @param function Function to extract cell value from row with cursor
      * @return Column builder
      */
-    public ExcelColumn.ExcelColumnBuilder<T> column(String name, ExcelRowFunction<T, Object> function) {
+    public ExcelColumn.ExcelColumnBuilder<T> column(@NonNull String name, @NonNull ExcelRowFunction<T, Object> function) {
         return new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
     }
 
@@ -153,7 +154,7 @@ public class ExcelWriter<T> implements AutoCloseable {
      * @param function Function to extract cell value from row
      * @return Column builder
      */
-    public ExcelColumn.ExcelColumnBuilder<T> column(String name, Function<T, Object> function) {
+    public ExcelColumn.ExcelColumnBuilder<T> column(@NonNull String name, @NonNull Function<T, Object> function) {
         return new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
     }
 

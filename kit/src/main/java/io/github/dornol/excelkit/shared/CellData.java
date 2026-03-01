@@ -3,6 +3,8 @@ package io.github.dornol.excelkit.shared;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.jspecify.annotations.NonNull;
+
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -11,6 +13,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -49,27 +53,65 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @param locale The locale to use as default (must not be null)
      */
-    public static void setDefaultLocale(Locale locale) {
+    public static void setDefaultLocale(@NonNull Locale locale) {
         if (locale == null) {
             throw new IllegalArgumentException("locale must not be null");
         }
         defaultLocale = locale;
     }
 
-    private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = List.of(
+    private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = new ArrayList<>(List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd"),
             DateTimeFormatter.ofPattern("MM/dd/yy"),
             DateTimeFormatter.ofPattern("M/d/yy"),
             DateTimeFormatter.ISO_LOCAL_DATE
-    );
-    private static final List<DateTimeFormatter> DATETIME_FORMAT_PATTERNS = List.of(
+    ));
+    private static final List<DateTimeFormatter> DATETIME_FORMAT_PATTERNS = new ArrayList<>(List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("MM/dd/yy[ HH:mm[:ss]]"),
             DateTimeFormatter.ofPattern("M/d/yy[ HH:mm[:ss]]"),
             DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    );
+    ));
+
+    /**
+     * Adds a custom date format pattern for {@link #asLocalDate()}.
+     * The pattern is inserted at the beginning of the list so it takes priority over built-in patterns.
+     *
+     * @param pattern the date pattern (e.g., "dd.MM.yyyy")
+     */
+    public static void addDateFormat(@NonNull String pattern) {
+        DATE_FORMAT_PATTERNS.addFirst(DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Adds a custom date-time format pattern for {@link #asLocalDateTime()}.
+     * The pattern is inserted at the beginning of the list so it takes priority over built-in patterns.
+     *
+     * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
+     */
+    public static void addDateTimeFormat(@NonNull String pattern) {
+        DATETIME_FORMAT_PATTERNS.addFirst(DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * Returns an unmodifiable view of the currently registered date format patterns.
+     *
+     * @return the list of date format patterns
+     */
+    public static List<DateTimeFormatter> getDateFormats() {
+        return Collections.unmodifiableList(DATE_FORMAT_PATTERNS);
+    }
+
+    /**
+     * Returns an unmodifiable view of the currently registered date-time format patterns.
+     *
+     * @return the list of date-time format patterns
+     */
+    public static List<DateTimeFormatter> getDateTimeFormats() {
+        return Collections.unmodifiableList(DATETIME_FORMAT_PATTERNS);
+    }
 
 
     public CellData {
@@ -90,17 +132,17 @@ public record CellData(int columnIndex, String formattedValue) {
      * @return parsed number, or {@code null} if empty or blank
      * @throws IllegalArgumentException if parsing fails
      */
-    public Number asNumber(Locale locale) {
+    public Number asNumber(@NonNull Locale locale) {
         if (formattedValue.isBlank()) {
             return null;
         }
 
         try {
-            // 공백, NBSP 제거 + 특수 문자 제거
+            // Remove NBSP, currency symbols, and whitespace
             String cleaned = formattedValue
                     .replace("\u00A0", " ")
-                    .replaceAll("[$,₩€%원]", "") // $, ₩, €, %, 원 제거
-                    .replace(" ", "")         // 일반 공백도 제거
+                    .replaceAll("[$,₩€%원]", "")
+                    .replace(" ", "")
                     .trim();
 
             return NumberFormat.getNumberInstance(locale).parse(cleaned);

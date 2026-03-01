@@ -5,6 +5,7 @@ import io.github.dornol.excelkit.shared.AbstractReadHandler;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadResult;
 import jakarta.validation.Validator;
+import org.jspecify.annotations.NonNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -42,7 +43,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
      *
      * @param consumer Callback to receive parsed and validated row results
      */
-    public void read(Consumer<ReadResult<T>> consumer) {
+    public void read(@NonNull Consumer<ReadResult<T>> consumer) {
         try (CSVReader reader = new CSVReader(new InputStreamReader(Files.newInputStream(getTempFile()), StandardCharsets.UTF_8))) {
             String[] line;
 

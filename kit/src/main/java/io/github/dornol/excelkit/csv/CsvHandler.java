@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.shared.TempResourceContainer;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +42,7 @@ public class CsvHandler extends TempResourceContainer {
      * @param outputStream The stream to which the CSV content will be written
      * @throws IllegalStateException If this method has already been called
      */
-    public void consumeOutputStream(OutputStream outputStream) {
+    public void consumeOutputStream(@NonNull OutputStream outputStream) {
         if (consumed) {
             throw new CsvWriteException("Already consumed");
         }

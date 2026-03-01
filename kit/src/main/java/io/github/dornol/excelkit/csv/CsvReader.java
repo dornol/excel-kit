@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.shared.CellData;
 import jakarta.validation.Validator;
+import org.jspecify.annotations.NonNull;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class CsvReader<T> {
      * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      * @param validator        Optional Bean Validation validator (nullable)
      */
-    public CsvReader(Supplier<T> instanceSupplier, Validator validator) {
+    public CsvReader(@NonNull Supplier<T> instanceSupplier, Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.validator = validator;
     }
@@ -63,7 +64,7 @@ public class CsvReader<T> {
      * @param inputStream The input stream of the CSV file
      * @return A handler to execute CSV parsing
      */
-    public CsvReadHandler<T> build(InputStream inputStream) {
+    public CsvReadHandler<T> build(@NonNull InputStream inputStream) {
         return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator);
     }
 }
