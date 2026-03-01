@@ -69,6 +69,9 @@ public class ExcelColumn<T> {
      * Updates the column width based on the logical string length of a value.
      */
     void fitColumnWidthByValue(Object value) {
+        if (value == null) {
+            return;
+        }
         int width = getLogicalLength(String.valueOf(value));
         this.setColumnWidth(Math.max(this.columnWidth, width));
     }

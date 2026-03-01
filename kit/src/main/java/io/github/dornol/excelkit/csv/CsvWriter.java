@@ -74,18 +74,29 @@ public class CsvWriter<T> {
      * @return A handler for streaming the resulting CSV
      */
     public CsvHandler write(Stream<T> stream) {
-        Path tempDir;
-        Path tempFile;
-        tempDir = TempResourceCreator.createTempDirectory();
-        tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".csv");
+        Path tempDir = TempResourceCreator.createTempDirectory();
+        Path tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".csv");
 
         try (OutputStream os = Files.newOutputStream(tempFile)) {
             writeTempFile(stream, os);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            cleanup(tempDir);
             throw new CsvWriteException("Failed to write CSV", e);
         }
 
         return new CsvHandler(tempDir, tempFile);
+    }
+
+    private void cleanup(Path tempDir) {
+        try {
+            try (var files = Files.walk(tempDir)) {
+                files.sorted(java.util.Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try { Files.deleteIfExists(path); } catch (IOException ignored) { }
+                        });
+            }
+        } catch (IOException ignored) {
+        }
     }
 
     /**

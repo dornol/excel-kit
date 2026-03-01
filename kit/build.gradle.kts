@@ -14,6 +14,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.poi.ooxml)
+    testImplementation(libs.opencsv)
     testImplementation(libs.slf4j.simple)
     testImplementation(libs.hibernate.validator)
     testRuntimeOnly(libs.junit.platform.launcher)
