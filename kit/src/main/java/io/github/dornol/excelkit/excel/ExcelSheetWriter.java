@@ -7,7 +7,6 @@ import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.streaming.SXSSFCell;
@@ -24,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.github.dornol.excelkit.excel.ExcelStyleSupporter.titleStyle;
 
 /**
  * Writes data of a specific type to a single sheet within an {@link ExcelWorkbook}.
@@ -48,8 +46,6 @@ public class ExcelSheetWriter<T> {
 
     // Per-sheet settings
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private String title;
-    private CellStyle titleStyle;
     private float rowHeightInPoints = 20;
     private boolean autoFilter = false;
     private int freezePaneRows = 0;
@@ -132,41 +128,6 @@ public class ExcelSheetWriter<T> {
     }
 
     /**
-     * Sets the title for this sheet.
-     *
-     * @param title The title text
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> title(String title) {
-        return title(title, 0, IndexedColors.BLACK);
-    }
-
-    /**
-     * Sets the title with a custom font size.
-     *
-     * @param title    The title text
-     * @param fontSize Font size in points
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> title(String title, int fontSize) {
-        return title(title, fontSize, IndexedColors.BLACK);
-    }
-
-    /**
-     * Sets the title with a custom font size and color.
-     *
-     * @param title    The title text
-     * @param fontSize Font size in points
-     * @param color    The text color
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> title(String title, int fontSize, IndexedColors color) {
-        this.title = title;
-        this.titleStyle = titleStyle(this.wb, HorizontalAlignment.CENTER, color, fontSize);
-        return this;
-    }
-
-    /**
      * Sets the row height for data rows.
      *
      * @param rowHeightInPoints Row height in points
@@ -244,7 +205,9 @@ public class ExcelSheetWriter<T> {
             throw new ExcelWriteException("columns setting required");
         }
 
-        int currentRow = initSheetPreamble();
+        SheetContext context = new SheetContext(this.columns);
+
+        int currentRow = initSheetPreamble(context);
         Cursor cursor = new Cursor(currentRow);
         int headerRowIndex = currentRow;
 
@@ -257,32 +220,19 @@ public class ExcelSheetWriter<T> {
 
         int nextRow = cursor.getRowOfSheet();
         if (this.afterDataWriter != null) {
-            this.afterDataWriter.write(this.sheet, this.wb, nextRow);
+            this.afterDataWriter.write(this.sheet, this.wb, nextRow, context);
         }
 
         applyColumnWidths();
         applyDataValidations(headerRowIndex);
     }
 
-    private int initSheetPreamble() {
+    private int initSheetPreamble(SheetContext context) {
         int currentRow = 0;
-        if (this.title != null) {
-            setSheetTitle();
-            currentRow = 2;
-        }
         if (this.beforeHeaderWriter != null) {
-            currentRow = this.beforeHeaderWriter.write(this.sheet, this.wb, currentRow);
+            currentRow = this.beforeHeaderWriter.write(this.sheet, this.wb, currentRow, context);
         }
         return currentRow;
-    }
-
-    private void setSheetTitle() {
-        CellRangeAddress region = new CellRangeAddress(0, 1, 0, Math.max(this.columns.size() - 1, 0));
-        sheet.addMergedRegion(region);
-        SXSSFRow titleRow = sheet.createRow(0);
-        SXSSFCell cell = titleRow.createCell(0);
-        cell.setCellValue(title);
-        cell.setCellStyle(titleStyle);
     }
 
     private void setColumnHeaders(Cursor cursor) {

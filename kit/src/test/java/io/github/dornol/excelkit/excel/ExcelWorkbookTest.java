@@ -134,34 +134,16 @@ class ExcelWorkbookTest {
     }
 
     @Test
-    void sheetWriter_shouldSupportTitle() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.FOREST_GREEN);
-
-        workbook.<String>sheet("Report")
-                .title("Monthly Report", 16)
-                .column("Item", s -> s)
-                .write(Stream.of("Item1", "Item2"));
-
-        ExcelHandler handler = workbook.finish();
-
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
-            assertTrue(bos.toByteArray().length > 0);
-        }
-        workbook.close();
-    }
-
-    @Test
     void sheetWriter_shouldSupportBeforeHeaderAndAfterData() throws IOException {
         ExcelWorkbook workbook = new ExcelWorkbook();
 
         workbook.<String>sheet("Data")
-                .beforeHeader((sheet, wb, startRow) -> {
+                .beforeHeader((sheet, wb, startRow, context) -> {
                     sheet.createRow(startRow).createCell(0).setCellValue("Generated Report");
                     return startRow + 1;
                 })
                 .column("Name", s -> s)
-                .afterData((sheet, wb, nextRow) -> {
+                .afterData((sheet, wb, nextRow, context) -> {
                     sheet.createRow(nextRow).createCell(0).setCellValue("Total: 2");
                     return nextRow + 1;
                 })

@@ -6,8 +6,6 @@ import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.jspecify.annotations.NonNull;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressList;
@@ -25,8 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import static io.github.dornol.excelkit.excel.ExcelStyleSupporter.titleStyle;
 
 /**
  * ExcelWriter is a utility class for generating large Excel files using Apache POI's SXSSFWorkbook.
@@ -47,8 +43,6 @@ public class ExcelWriter<T> implements AutoCloseable {
     private final int maxRowsOfSheet;
     private final CellStyle headerStyle;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
-    private String title;
-    private CellStyle titleStyle;
     private float rowHeightInPoints = 20;
     private boolean autoFilter = false;
     private int freezePaneRows = 0;
@@ -147,50 +141,6 @@ public class ExcelWriter<T> implements AutoCloseable {
      */
     public ExcelWriter() {
         this(255, 255, 255, 1_000_000);
-    }
-
-    /**
-     * Sets the title for the Excel sheet with default font size and color.
-     *
-     * @param title The title text to display at the top
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> title(@NonNull String title) {
-        return title(title, 0, IndexedColors.BLACK);
-    }
-
-    /**
-     * Sets the title for the Excel sheet with a specified font size.
-     *
-     * @param title    The title text to display at the top
-     * @param fontSize Font size in points
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> title(@NonNull String title, int fontSize) {
-        return title(title, fontSize, IndexedColors.BLACK);
-    }
-
-    /**
-     * Sets the title for the Excel sheet with a specified font size and color.
-     *
-     * @param title    The title text to display at the top
-     * @param fontSize Font size in points
-     * @param color    The text color
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> title(@NonNull String title, int fontSize, @NonNull IndexedColors color) {
-        if (this.title != null) {
-            throw new ExcelWriteException("title setting already exists");
-        }
-
-        this.title = title;
-        this.titleStyle = titleStyle(
-                this.wb,
-                HorizontalAlignment.CENTER,
-                color,
-                fontSize);
-
-        return this;
     }
 
     /**
@@ -387,8 +337,10 @@ public class ExcelWriter<T> implements AutoCloseable {
             throw new ExcelWriteException("columns setting required");
         }
 
+        SheetContext context = new SheetContext(this.columns);
+
         this.sheet = createNamedSheet();
-        int headerStartRow = initSheetPreamble();
+        int headerStartRow = initSheetPreamble(context);
         this.cursor = new Cursor(headerStartRow);
         this.headerRowIndex = headerStartRow;
 
@@ -397,17 +349,17 @@ public class ExcelWriter<T> implements AutoCloseable {
 
         try (stream) {
             stream.forEach(rowData -> {
-                this.handleRowData(rowData);
+                this.handleRowData(rowData, context);
                 consumer.accept(rowData, cursor);
             });
         }
 
         int nextRow = cursor.getRowOfSheet();
         if (this.afterDataWriter != null) {
-            nextRow = this.afterDataWriter.write(this.sheet, this.wb, nextRow);
+            nextRow = this.afterDataWriter.write(this.sheet, this.wb, nextRow, context);
         }
         if (this.afterAllWriter != null) {
-            this.afterAllWriter.write(this.sheet, this.wb, nextRow);
+            this.afterAllWriter.write(this.sheet, this.wb, nextRow, context);
         }
 
         applyDataValidations();
@@ -426,32 +378,15 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
-     * Internal method to set the sheet title and merge cells across columns.
-     */
-    private void setSheetTitle() {
-        CellRangeAddress region = new CellRangeAddress(0, 1, 0, this.columns.size() - 1);
-
-        sheet.addMergedRegion(region);
-
-        SXSSFRow titleRow = sheet.createRow(0);
-        SXSSFCell cell = titleRow.createCell(0);
-        cell.setCellValue(title);
-        cell.setCellStyle(titleStyle);
-    }
-
-    /**
-     * Writes the title (if set) and invokes the beforeHeader callback (if set).
+     * Invokes the beforeHeader callback (if set).
      *
+     * @param context column metadata for the current sheet
      * @return the row index where the column header should be written
      */
-    private int initSheetPreamble() {
+    private int initSheetPreamble(SheetContext context) {
         int currentRow = 0;
-        if (this.title != null) {
-            setSheetTitle();
-            currentRow = 2;
-        }
         if (this.beforeHeaderWriter != null) {
-            currentRow = this.beforeHeaderWriter.write(this.sheet, this.wb, currentRow);
+            currentRow = this.beforeHeaderWriter.write(this.sheet, this.wb, currentRow, context);
         }
         return currentRow;
     }
@@ -487,15 +422,16 @@ public class ExcelWriter<T> implements AutoCloseable {
      * Handles the logic of writing a single row to the sheet, including value mapping and style.
      *
      * @param rowData A row of data
+     * @param context column metadata for the current sheet
      */
-    void handleRowData(T rowData) {
+    void handleRowData(T rowData, SheetContext context) {
         cursor.plusTotal();
         if (isOverMaxRows()) {
             if (this.afterDataWriter != null) {
-                this.afterDataWriter.write(this.sheet, this.wb, cursor.getRowOfSheet());
+                this.afterDataWriter.write(this.sheet, this.wb, cursor.getRowOfSheet(), context);
             }
             turnOverSheet();
-            initSheetPreamble();
+            initSheetPreamble(context);
             setColumnHeaders();
             applySheetOptions();
         }

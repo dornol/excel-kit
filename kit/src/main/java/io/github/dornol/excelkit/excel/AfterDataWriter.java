@@ -21,7 +21,8 @@ public interface AfterDataWriter {
      * @param sheet    the current sheet
      * @param workbook the workbook (useful for creating CellStyles, etc.)
      * @param nextRow  the first row index available for writing (after the last data row)
+     * @param context  column metadata (count, names) for the current sheet
      * @return the next available row index after the written content
      */
-    int write(SXSSFSheet sheet, SXSSFWorkbook workbook, int nextRow);
+    int write(SXSSFSheet sheet, SXSSFWorkbook workbook, int nextRow, SheetContext context);
 }

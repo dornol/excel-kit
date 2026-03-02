@@ -154,45 +154,6 @@ class ExcelWriterTest {
     }
 
     @Test
-    void write_shouldSetTitleOnEachSheet_whenRolloverWithTitle() {
-        // Arrange: max 2 rows per sheet with title
-        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
-        Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
-
-        // Act
-        ExcelHandler handler = writer
-                .title("Test Title")
-                .column("A", (row, c) -> row)
-                .column("B", (row, c) -> row * 10)
-                .write(data);
-
-        // Assert
-        SXSSFWorkbook wb = writer.getWb();
-        assertEquals(3, wb.getNumberOfSheets(), "Expect 3 sheets when 5 rows with max 2 rows per sheet");
-
-        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-            SXSSFSheet s = wb.getSheetAt(i);
-            // Title row (row 0)
-            assertNotNull(s.getRow(0), "Title row must exist on sheet " + i);
-            assertEquals("Test Title", s.getRow(0).getCell(0).getStringCellValue(),
-                    "Title must be set on sheet " + i);
-            // Header row (row 2, after title rows 0-1)
-            assertNotNull(s.getRow(2), "Header row must exist on sheet " + i);
-            assertEquals("A", s.getRow(2).getCell(0).getStringCellValue(),
-                    "Header A must be set on sheet " + i);
-            assertEquals("B", s.getRow(2).getCell(1).getStringCellValue(),
-                    "Header B must be set on sheet " + i);
-        }
-
-        // consume for completeness
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
-        } catch (IOException e) {
-            fail(e);
-        }
-    }
-
-    @Test
     void constructor_withRowAccessWindowSize_shouldCreateWriter() throws IOException {
         // Arrange: use a small buffer size
         ExcelWriter<String> writer = new ExcelWriter<>(255, 255, 255, 1_000_000, 100);
@@ -265,33 +226,6 @@ class ExcelWriterTest {
     }
 
     @Test
-    void write_shouldApplyAutoFilterWithTitle() {
-        // Arrange
-        ExcelWriter<String> writer = new ExcelWriter<>();
-        Stream<String> data = Stream.of("a");
-
-        // Act
-        ExcelHandler handler = writer
-                .title("Title")
-                .autoFilter(true)
-                .column("A", (row, c) -> row)
-                .column("B", (row, c) -> row.length())
-                .write(data);
-
-        // Assert — the auto-filter range should start at row 2 when title is present
-        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
-        assertNotNull(sheet);
-
-        // consume
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
-            assertTrue(bos.toByteArray().length > 0);
-        } catch (IOException e) {
-            fail(e);
-        }
-    }
-
-    @Test
     void write_shouldApplyOptionsOnRolloverSheets() {
         // Arrange: max 2 rows per sheet with auto-filter and freeze pane
         ExcelWriter<Integer> writer = new ExcelWriter<>(2);
@@ -333,7 +267,7 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .beforeHeader((sheet, wb, startRow) -> {
+                .beforeHeader((sheet, wb, startRow, context) -> {
                     sheet.createRow(startRow).createCell(0).setCellValue("Meta1");
                     sheet.createRow(startRow + 1).createCell(0).setCellValue("Meta2");
                     return startRow + 2;
@@ -361,42 +295,6 @@ class ExcelWriterTest {
     }
 
     @Test
-    void beforeHeader_withTitle_shouldWriteAfterTitle() {
-        // Arrange
-        ExcelWriter<String> writer = new ExcelWriter<>();
-        Stream<String> data = Stream.of("x");
-
-        // Act
-        ExcelHandler handler = writer
-                .title("Report Title")
-                .beforeHeader((sheet, wb, startRow) -> {
-                    // startRow should be 2 (after title rows 0-1)
-                    sheet.createRow(startRow).createCell(0).setCellValue("Author: Kim");
-                    return startRow + 1;
-                })
-                .column("A", (row, c) -> row)
-                .write(data);
-
-        // Assert
-        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
-        // Title at row 0
-        assertEquals("Report Title", sheet.getRow(0).getCell(0).getStringCellValue());
-        // beforeHeader at row 2
-        assertEquals("Author: Kim", sheet.getRow(2).getCell(0).getStringCellValue());
-        // Header at row 3
-        assertEquals("A", sheet.getRow(3).getCell(0).getStringCellValue());
-        // Data at row 4
-        assertEquals("x", sheet.getRow(4).getCell(0).getStringCellValue());
-
-        // consume
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
-        } catch (IOException e) {
-            fail(e);
-        }
-    }
-
-    @Test
     void beforeHeader_shouldBeCalledOnEveryRolloverSheet() {
         // Arrange: max 2 rows per sheet
         ExcelWriter<Integer> writer = new ExcelWriter<>(2);
@@ -404,7 +302,7 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .beforeHeader((sheet, wb, startRow) -> {
+                .beforeHeader((sheet, wb, startRow, context) -> {
                     sheet.createRow(startRow).createCell(0).setCellValue("PREAMBLE");
                     return startRow + 1;
                 })
@@ -441,7 +339,7 @@ class ExcelWriterTest {
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .column("B", (row, c) -> row.length())
-                .beforeHeader((sheet, wb, startRow) -> {
+                .beforeHeader((sheet, wb, startRow, context) -> {
                     sheet.createRow(startRow).createCell(0).setCellValue("Custom");
                     return startRow + 1;
                 })
@@ -514,7 +412,7 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterData((sheet, wb, nextRow) -> {
+                .afterData((sheet, wb, nextRow, context) -> {
                     SXSSFRow row = sheet.createRow(nextRow);
                     row.createCell(0).setCellValue("subtotal");
                     return nextRow + 1;
@@ -545,7 +443,7 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterAll((sheet, wb, nextRow) -> {
+                .afterAll((sheet, wb, nextRow, context) -> {
                     SXSSFRow row = sheet.createRow(nextRow);
                     row.createCell(0).setCellValue("grand total");
                     return nextRow + 1;
@@ -581,12 +479,12 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterData((sheet, wb, nextRow) -> {
+                .afterData((sheet, wb, nextRow, context) -> {
                     SXSSFRow row = sheet.createRow(nextRow);
                     row.createCell(0).setCellValue("subtotal");
                     return nextRow + 1;
                 })
-                .afterAll((sheet, wb, nextRow) -> {
+                .afterAll((sheet, wb, nextRow, context) -> {
                     SXSSFRow row = sheet.createRow(nextRow);
                     row.createCell(0).setCellValue("grand total");
                     return nextRow + 1;
@@ -768,7 +666,7 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterData((sheet, wb, nextRow) -> {
+                .afterData((sheet, wb, nextRow, context) -> {
                     SXSSFRow row = sheet.createRow(nextRow);
                     row.createCell(0).setCellValue("subtotal");
                     return nextRow + 1;
@@ -914,6 +812,38 @@ class ExcelWriterTest {
         assertEquals((byte) 255, rgb[0]);
         assertEquals((byte) 235, rgb[1]);
         assertEquals((byte) 156, rgb[2]);
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void sheetContext_shouldProvideColumnCountAndNames() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a");
+        SheetContext[] captured = new SheetContext[1];
+
+        // Act — capture context from beforeHeader callback
+        ExcelHandler handler = writer
+                .beforeHeader((sheet, wb, startRow, context) -> {
+                    captured[0] = context;
+                    return startRow;
+                })
+                .column("Name", (row, c) -> row)
+                .column("Age", (row, c) -> row.length())
+                .column("City", (row, c) -> row.toUpperCase())
+                .write(data);
+
+        // Assert
+        assertNotNull(captured[0], "SheetContext should be provided to beforeHeader");
+        assertEquals(3, captured[0].getColumnCount(), "Column count should match");
+        assertEquals(List.of("Name", "Age", "City"), captured[0].getColumnNames(),
+                "Column names should match in order");
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {

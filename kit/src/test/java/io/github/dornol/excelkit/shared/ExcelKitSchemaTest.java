@@ -80,7 +80,6 @@ class ExcelKitSchemaTest {
     void excelWriter_shouldSupportAdditionalOptions() throws IOException {
         // Act
         ExcelHandler handler = schema.excelWriter()
-                .title("Employee List")
                 .autoFilter(true)
                 .freezePane(1)
                 .write(Stream.of(new TestPerson("Alice", 30)));
@@ -371,7 +370,7 @@ class ExcelKitSchemaTest {
     @Test
     void schemaIsImmutable_multipleWritersShouldBeIndependent() throws IOException {
         // Act - create two writers from same schema
-        ExcelWriter<TestPerson> writer1 = schema.excelWriter().title("Writer 1");
+        ExcelWriter<TestPerson> writer1 = schema.excelWriter().sheetName("Writer 1");
         ExcelWriter<TestPerson> writer2 = schema.excelWriter().autoFilter(true);
 
         // Both should be able to write independently

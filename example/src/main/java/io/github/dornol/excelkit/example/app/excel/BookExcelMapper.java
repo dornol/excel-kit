@@ -4,7 +4,6 @@ import io.github.dornol.excelkit.example.app.dto.BookDto;
 import io.github.dornol.excelkit.example.app.dto.BookReadDto;
 import io.github.dornol.excelkit.excel.*;
 import jakarta.validation.Validator;
-import org.apache.poi.ss.usermodel.IndexedColors;
 
 import java.io.InputStream;
 import java.util.stream.Stream;
@@ -27,7 +26,6 @@ public class BookExcelMapper {
      */
     public static ExcelHandler getHandler(Stream<BookDto> stream) {
         return new ExcelWriter<BookDto>(0xCC, 0xFF, 0x99)
-                .title("this is my title", 24, IndexedColors.DARK_BLUE)
                 .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
                 .column("id", BookDto::id).type(ExcelDataType.LONG)
                 .column("title", BookDto::title)

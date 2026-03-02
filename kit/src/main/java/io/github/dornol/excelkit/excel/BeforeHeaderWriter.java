@@ -22,7 +22,8 @@ public interface BeforeHeaderWriter {
      * @param workbook the workbook (useful for creating CellStyles, etc.)
      * @param startRow the first row index available for writing
      *                 (after the title rows if a title is set, otherwise 0)
+     * @param context  column metadata (count, names) for the current sheet
      * @return the next available row index where the column header should start
      */
-    int write(SXSSFSheet sheet, SXSSFWorkbook workbook, int startRow);
+    int write(SXSSFSheet sheet, SXSSFWorkbook workbook, int startRow, SheetContext context);
 }
