@@ -85,8 +85,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
         }
-        if (sheetIndex < 0) {
-            throw new IllegalArgumentException("sheetIndex must be non-negative");
+        if (sheetIndex < 0 || sheetIndex > 255) {
+            throw new IllegalArgumentException("sheetIndex must be between 0 and 255");
         }
         if (headerRowIndex < 0) {
             throw new IllegalArgumentException("headerRowIndex must be non-negative");

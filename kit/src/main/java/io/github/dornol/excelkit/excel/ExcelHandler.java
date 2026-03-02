@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Handles the final output stage of an Excel export.
@@ -27,7 +29,7 @@ import java.security.GeneralSecurityException;
  */
 public class ExcelHandler {
     private final SXSSFWorkbook wb;
-    private boolean consumed = false;
+    private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
      * Constructs an ExcelHandler wrapping the given workbook.
@@ -48,13 +50,12 @@ public class ExcelHandler {
      * @throws IllegalStateException If this method has already been called
      */
     public void consumeOutputStream(@NonNull OutputStream outputStream) throws IOException {
-        if (consumed) {
+        if (!consumed.compareAndSet(false, true)) {
             throw new ExcelWriteException("Already consumed");
         }
         try {
             wb.write(outputStream);
         } finally {
-            consumed = true;
             wb.close();
         }
     }
@@ -70,11 +71,37 @@ public class ExcelHandler {
      * @throws IllegalStateException If this method has already been called
      */
     public void consumeOutputStreamWithPassword(@NonNull OutputStream outputStream, @NonNull String password) throws IOException {
-        if (consumed) {
-            throw new ExcelWriteException("Already consumed");
-        }
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
+        }
+        encryptAndWrite(outputStream, password);
+    }
+
+    /**
+     * Writes the workbook to the given OutputStream with Excel-compatible password encryption.
+     * <p>
+     * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
+     * The array is zeroed out after encryption completes (or on failure).
+     *
+     * @param outputStream The OutputStream to write the encrypted Excel file to
+     * @param password     The password as a char array (will be zeroed after use)
+     * @throws IOException If an I/O or encryption error occurs during writing
+     * @throws IllegalStateException If this method has already been called
+     */
+    public void consumeOutputStreamWithPassword(@NonNull OutputStream outputStream, @NonNull char[] password) throws IOException {
+        if (password == null || password.length == 0) {
+            throw new IllegalArgumentException("Password cannot be null or empty");
+        }
+        try {
+            encryptAndWrite(outputStream, new String(password));
+        } finally {
+            Arrays.fill(password, '\0');
+        }
+    }
+
+    private void encryptAndWrite(OutputStream outputStream, String password) throws IOException {
+        if (!consumed.compareAndSet(false, true)) {
+            throw new ExcelWriteException("Already consumed");
         }
 
         Path tempDir = TempResourceCreator.createTempDirectory();
@@ -84,7 +111,6 @@ public class ExcelHandler {
             try (OutputStream tempOut = Files.newOutputStream(tempFile)) {
                 wb.write(tempOut);
             } finally {
-                consumed = true;
                 wb.close();
             }
 

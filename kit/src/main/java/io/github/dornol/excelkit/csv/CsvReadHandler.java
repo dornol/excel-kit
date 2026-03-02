@@ -81,6 +81,9 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private void prepareColumnHeaders(String[] line) {
         if (line.length > 0 && line[0] != null && line[0].startsWith("\uFEFF")) {
             line[0] = line[0].substring(1);
+            if (line[0].isEmpty()) {
+                throw new CsvReadException("First header column is empty (contained only BOM character)");
+            }
         }
         Collections.addAll(headerNames, line);
     }

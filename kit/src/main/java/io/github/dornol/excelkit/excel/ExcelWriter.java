@@ -11,6 +11,8 @@ import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +32,9 @@ import static io.github.dornol.excelkit.excel.ExcelStyleSupporter.titleStyle;
  * @since 2025-07-19
  */
 public class ExcelWriter<T> implements AutoCloseable {
+    private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
     private static final int AUTO_WIDTH_SAMPLE_ROWS = 100;
+    private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
@@ -46,6 +50,21 @@ public class ExcelWriter<T> implements AutoCloseable {
 
 
     /**
+     * Constructs an ExcelWriter with a custom header color, maximum rows per sheet, and row access window size.
+     *
+     * @param r                    Red component of the header color (0–255)
+     * @param g                    Green component of the header color (0–255)
+     * @param b                    Blue component of the header color (0–255)
+     * @param maxRowsOfSheet       Maximum number of rows allowed per sheet before creating a new one
+     * @param rowAccessWindowSize  Number of rows kept in memory by SXSSFWorkbook (higher = more memory, lower = less memory)
+     */
+    public ExcelWriter(int r, int g, int b, int maxRowsOfSheet, int rowAccessWindowSize) {
+        this.wb = new SXSSFWorkbook(rowAccessWindowSize);
+        this.maxRowsOfSheet = maxRowsOfSheet;
+        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b}));
+    }
+
+    /**
      * Constructs an ExcelWriter with a custom header color and maximum rows per sheet.
      *
      * @param r               Red component of the header color (0–255)
@@ -54,9 +73,7 @@ public class ExcelWriter<T> implements AutoCloseable {
      * @param maxRowsOfSheet  Maximum number of rows allowed per sheet before creating a new one
      */
     public ExcelWriter(int r, int g, int b, int maxRowsOfSheet) {
-        this.wb = new SXSSFWorkbook(1000);
-        this.maxRowsOfSheet = maxRowsOfSheet;
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b}));
+        this(r, g, b, maxRowsOfSheet, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
     }
 
     /**
@@ -340,7 +357,7 @@ public class ExcelWriter<T> implements AutoCloseable {
         try {
             wb.close();
         } catch (Exception e) {
-            // already closed or disposed — safe to ignore
+            log.debug("ExcelWriter.close() caught exception (likely already closed)", e);
         }
     }
 }

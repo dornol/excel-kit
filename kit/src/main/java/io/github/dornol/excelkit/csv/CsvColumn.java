@@ -48,7 +48,7 @@ public class CsvColumn<T> {
     Object applyFunction(T rowData, Cursor cursor) {
         try {
             return function.apply(rowData, cursor);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("Failed to apply function for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
             return null;
         }

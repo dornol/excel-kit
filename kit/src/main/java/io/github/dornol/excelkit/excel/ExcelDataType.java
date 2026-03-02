@@ -32,32 +32,32 @@ public enum ExcelDataType {
     /**
      * Long integer value.
      */
-    LONG((cell, value) -> cell.setCellValue((Long) value), ExcelDataFormat.NUMBER.getFormat()),
+    LONG((cell, value) -> cell.setCellValue(((Number) value).longValue()), ExcelDataFormat.NUMBER.getFormat()),
 
     /**
      * Integer value.
      */
-    INTEGER((cell, value) -> cell.setCellValue((Integer) value), ExcelDataFormat.NUMBER.getFormat()),
+    INTEGER((cell, value) -> cell.setCellValue(((Number) value).intValue()), ExcelDataFormat.NUMBER.getFormat()),
 
     /**
      * Double value with 2 decimal places.
      */
-    DOUBLE((cell, value) -> cell.setCellValue((Double) value), ExcelDataFormat.NUMBER_2.getFormat()),
+    DOUBLE((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.NUMBER_2.getFormat()),
 
     /**
      * Float value with 2 decimal places.
      */
-    FLOAT((cell, value) -> cell.setCellValue((Float) value), ExcelDataFormat.NUMBER_2.getFormat()),
+    FLOAT((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.NUMBER_2.getFormat()),
 
     /**
      * Double value interpreted as a percentage (e.g. 0.25 → 25%).
      */
-    DOUBLE_PERCENT((cell, value) -> cell.setCellValue((Double) value), ExcelDataFormat.PERCENT.getFormat()),
+    DOUBLE_PERCENT((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.PERCENT.getFormat()),
 
     /**
      * Float value interpreted as a percentage.
      */
-    FLOAT_PERCENT((cell, value) -> cell.setCellValue((Float) value), ExcelDataFormat.PERCENT.getFormat()),
+    FLOAT_PERCENT((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.PERCENT.getFormat()),
 
     /**
      * LocalDateTime formatted as "yyyy-MM-dd HH:mm:ss".

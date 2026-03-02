@@ -52,8 +52,8 @@ public class ExcelColumn<T> {
     Object applyFunction(T rowData, Cursor cursor) {
         try {
             return function.apply(rowData, cursor);
-        } catch (Exception e) {
-            log.error("applyFunction exception caught : {}, {} \n", rowData, cursor, e);
+        } catch (RuntimeException e) {
+            log.error("applyFunction exception caught for column '{}': row={}, cursor={}", name, rowData, cursor, e);
             return null;
         }
     }
@@ -86,8 +86,8 @@ public class ExcelColumn<T> {
         }
         try {
             this.columnSetter.set(cell, columnData);
-        } catch (Exception e) {
-            log.warn("cast error: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            log.warn("Failed to set cell value for column '{}': expected type mismatch (value={})", name, columnData, e);
             cell.setCellValue(String.valueOf(columnData));
         }
     }

@@ -107,6 +107,9 @@ public class CsvWriter<T> {
      * @return A handler for streaming the resulting CSV
      */
     public CsvHandler write(@NonNull Stream<T> stream) {
+        if (this.columns.isEmpty()) {
+            throw new CsvWriteException("columns setting required");
+        }
         Path tempDir = TempResourceCreator.createTempDirectory();
         Path tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".csv");
 
@@ -172,6 +175,7 @@ public class CsvWriter<T> {
 
     /**
      * Escapes CSV value by wrapping in quotes and escaping inner quotes when necessary.
+     * Also defends against CSV injection by prefixing dangerous leading characters with a single quote.
      *
      * @param input The input value (nullable)
      * @return A properly escaped CSV field
@@ -181,10 +185,18 @@ public class CsvWriter<T> {
             return "";
         }
         String value = input.toString();
+        // CSV Injection defense: prefix formula-triggering characters with a single quote
+        if (!value.isEmpty() && isFormulaCharacter(value.charAt(0))) {
+            value = "'" + value;
+        }
         if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    private static boolean isFormulaCharacter(char c) {
+        return c == '=' || c == '+' || c == '-' || c == '@' || c == '\t' || c == '\r';
     }
 
 }

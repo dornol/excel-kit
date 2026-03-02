@@ -106,7 +106,7 @@ class ExcelHandlerTest {
     void consumeOutputStreamWithPassword_shouldThrowExceptionWithNullPassword() {
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            handler.consumeOutputStreamWithPassword(outputStream, null);
+            handler.consumeOutputStreamWithPassword(outputStream, (String) null);
         }, "consumeOutputStreamWithPassword should throw IllegalArgumentException with null password");
     }
 

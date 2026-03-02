@@ -106,8 +106,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             return true;
         } catch (Exception e) {
             String header = (columnIndex < headerNames.size()) ? headerNames.get(columnIndex) : "column#" + columnIndex;
-            messages.add("Failed to set column: " + header);
-            log.warn("Column mapping failed", e);
+            messages.add("Failed to set column '" + header + "': value='" + cellData.formattedValue() + "', reason=" + e.getMessage());
+            log.warn("Column mapping failed for '{}': value='{}'", header, cellData.formattedValue(), e);
             return false;
         }
     }
