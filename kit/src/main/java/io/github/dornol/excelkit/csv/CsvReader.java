@@ -91,6 +91,18 @@ public class CsvReader<T> {
     }
 
     /**
+     * Adds a column mapping using a setter function.
+     * Useful for schema-based column registration.
+     *
+     * @param setter A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> addColumn(BiConsumer<T, CellData> setter) {
+        columns.add(new CsvReadColumn<>(setter));
+        return this;
+    }
+
+    /**
      * Skips one column during reading by adding a no-op column mapping.
      *
      * @return This CsvReader instance for chaining

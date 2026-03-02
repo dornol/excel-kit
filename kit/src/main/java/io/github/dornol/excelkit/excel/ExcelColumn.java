@@ -209,7 +209,7 @@ public class ExcelColumn<T> {
         /**
          * Builds the column definition with all current configurations.
          */
-        private ExcelColumn<T> build() {
+        ExcelColumn<T> build() {
             if (this.dataType == null) {
                 this.type(ExcelDataType.STRING);
             }

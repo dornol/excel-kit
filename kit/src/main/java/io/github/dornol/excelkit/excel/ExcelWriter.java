@@ -233,13 +233,28 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Adds a column with default STRING type using a simple Function.
+     * Useful for schema-based column registration.
+     *
+     * @param name     Column header name
+     * @param function Function to extract cell value from row
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> addColumn(String name, Function<T, Object> function) {
+        ExcelColumn.ExcelColumnBuilder<T> builder =
+                new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
+        this.columns.add(builder.build());
+        return this;
+    }
+
+    /**
      * Writes the stream of row data into an Excel file using custom row-level callback.
      *
      * @param stream   The data stream
      * @param consumer Custom consumer for post-processing row with cursor
      * @return ExcelHandler wrapping the workbook
      */
-    ExcelHandler write(Stream<T> stream, ExcelConsumer<T> consumer) {
+    public ExcelHandler write(Stream<T> stream, ExcelConsumer<T> consumer) {
         if (this.columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
@@ -270,7 +285,7 @@ public class ExcelWriter<T> implements AutoCloseable {
      * @param stream The data stream
      * @return ExcelHandler wrapping the workbook
      */
-    ExcelHandler write(Stream<T> stream) {
+    public ExcelHandler write(Stream<T> stream) {
         return this.write(stream, (rowData, consumer) -> {});
     }
 
