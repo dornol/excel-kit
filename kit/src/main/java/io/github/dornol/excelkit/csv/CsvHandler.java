@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Handles the output stage of a CSV export.
@@ -19,7 +20,7 @@ import java.nio.file.Path;
  * @since 2025-07-19
  */
 public class CsvHandler extends TempResourceContainer {
-    private boolean consumed = false;
+    private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
      * Creates a new CsvHandler wrapping the given temp file and directory.
@@ -43,7 +44,7 @@ public class CsvHandler extends TempResourceContainer {
      * @throws IllegalStateException If this method has already been called
      */
     public void consumeOutputStream(@NonNull OutputStream outputStream) {
-        if (consumed) {
+        if (!consumed.compareAndSet(false, true)) {
             throw new CsvWriteException("Already consumed");
         }
         try {
@@ -53,7 +54,6 @@ public class CsvHandler extends TempResourceContainer {
         } catch (IOException e) {
             throw new CsvWriteException("Failed to write CSV", e);
         } finally {
-            consumed = true;
             super.close();
         }
     }
