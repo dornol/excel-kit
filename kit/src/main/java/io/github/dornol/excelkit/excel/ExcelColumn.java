@@ -186,6 +186,15 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets the background color for this column's cells using a preset color.
+         *
+         * @param color Preset color
+         */
+        public ExcelColumnBuilder<T> backgroundColor(ExcelColor color) {
+            return backgroundColor(color.getR(), color.getG(), color.getB());
+        }
+
+        /**
          * Sets whether this column's font should be bold.
          */
         public ExcelColumnBuilder<T> bold(boolean bold) {

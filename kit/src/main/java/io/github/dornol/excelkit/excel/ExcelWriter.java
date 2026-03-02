@@ -79,6 +79,36 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Constructs an ExcelWriter with a preset header color, maximum rows per sheet, and row access window size.
+     *
+     * @param color              Preset header color
+     * @param maxRowsOfSheet     Maximum number of rows allowed per sheet before creating a new one
+     * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook
+     */
+    public ExcelWriter(ExcelColor color, int maxRowsOfSheet, int rowAccessWindowSize) {
+        this(color.getR(), color.getG(), color.getB(), maxRowsOfSheet, rowAccessWindowSize);
+    }
+
+    /**
+     * Constructs an ExcelWriter with a preset header color and maximum rows per sheet.
+     *
+     * @param color          Preset header color
+     * @param maxRowsOfSheet Maximum number of rows allowed per sheet before creating a new one
+     */
+    public ExcelWriter(ExcelColor color, int maxRowsOfSheet) {
+        this(color.getR(), color.getG(), color.getB(), maxRowsOfSheet);
+    }
+
+    /**
+     * Constructs an ExcelWriter with a preset header color and default max 1,000,000 rows per sheet.
+     *
+     * @param color Preset header color
+     */
+    public ExcelWriter(ExcelColor color) {
+        this(color.getR(), color.getG(), color.getB());
+    }
+
+    /**
      * Constructs an ExcelWriter with white header color and custom sheet row limit.
      *
      * @param maxRowsOfSheet Maximum number of rows per sheet
