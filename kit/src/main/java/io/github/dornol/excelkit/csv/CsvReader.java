@@ -27,6 +27,7 @@ public class CsvReader<T> {
     private final List<CsvReadColumn<T>> columns = new ArrayList<>();
     private final Supplier<T> instanceSupplier;
     private final Validator validator;
+    private int headerRowIndex = 0;
 
     /**
      * Constructs a CsvReader with instance supplier and optional validator.
@@ -40,12 +41,52 @@ public class CsvReader<T> {
     }
 
     /**
+     * Sets the zero-based row index of the header row.
+     * Rows before this index will be skipped during reading.
+     * Defaults to 0 (the first row).
+     *
+     * @param headerRowIndex The zero-based index of the header row
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> headerRowIndex(int headerRowIndex) {
+        this.headerRowIndex = headerRowIndex;
+        return this;
+    }
+
+    /**
      * Adds a column mapping to the internal list.
      *
      * @param column A CSV column with setter logic
      */
     void addColumn(CsvReadColumn<T> column) {
         columns.add(column);
+    }
+
+    /**
+     * Skips one column during reading by adding a no-op column mapping.
+     *
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> skipColumn() {
+        columns.add(new CsvReadColumn<>((instance, cellData) -> {}));
+        return this;
+    }
+
+    /**
+     * Skips the specified number of columns during reading by adding no-op column mappings.
+     *
+     * @param count The number of columns to skip (must be non-negative)
+     * @return This CsvReader instance for chaining
+     * @throws IllegalArgumentException if count is negative
+     */
+    public CsvReader<T> skipColumns(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("skipColumns count must be non-negative");
+        }
+        for (int i = 0; i < count; i++) {
+            columns.add(new CsvReadColumn<>((instance, cellData) -> {}));
+        }
+        return this;
     }
 
     /**
@@ -65,6 +106,6 @@ public class CsvReader<T> {
      * @return A handler to execute CSV parsing
      */
     public CsvReadHandler<T> build(@NonNull InputStream inputStream) {
-        return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator);
+        return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator, headerRowIndex);
     }
 }

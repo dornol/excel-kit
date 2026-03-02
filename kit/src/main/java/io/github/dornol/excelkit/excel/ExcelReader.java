@@ -109,6 +109,33 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Skips one column during reading by adding a no-op column mapping.
+     *
+     * @return This ExcelReader instance for chaining
+     */
+    public ExcelReader<T> skipColumn() {
+        columns.add(new ExcelReadColumn<>((instance, cellData) -> {}));
+        return this;
+    }
+
+    /**
+     * Skips the specified number of columns during reading by adding no-op column mappings.
+     *
+     * @param count The number of columns to skip (must be non-negative)
+     * @return This ExcelReader instance for chaining
+     * @throws IllegalArgumentException if count is negative
+     */
+    public ExcelReader<T> skipColumns(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("skipColumns count must be non-negative");
+        }
+        for (int i = 0; i < count; i++) {
+            columns.add(new ExcelReadColumn<>((instance, cellData) -> {}));
+        }
+        return this;
+    }
+
+    /**
      * Begins a new column mapping using a setter function.
      *
      * @param setter A {@code BiConsumer} that sets a value from {@link io.github.dornol.excelkit.shared.CellData} to the row object

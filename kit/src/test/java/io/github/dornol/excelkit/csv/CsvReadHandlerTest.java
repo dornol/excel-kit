@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -177,6 +178,114 @@ class CsvReadHandlerTest {
                 () -> new CsvReadHandler<>(is, List.of(), TestPerson::new, null));
     }
 
+    @Test
+    void readAsStream_shouldReturnStreamOfResults() {
+        String csv = "Name,Age\nAlice,30\nBob,25\nCharlie,35\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        Stream<ReadResult<TestPerson>> stream = new CsvReader<>(TestPerson::new, validator)
+                .column((p, cell) -> p.name = cell.asString())
+                .column((p, cell) -> p.age = cell.asInt())
+                .build(is)
+                .readAsStream();
+
+        List<String> names = stream
+                .filter(ReadResult::success)
+                .map(r -> r.data().name)
+                .toList();
+
+        assertEquals(3, names.size());
+        assertEquals("Alice", names.get(0));
+        assertEquals("Bob", names.get(1));
+        assertEquals("Charlie", names.get(2));
+    }
+
+    @Test
+    void skipColumn_shouldSkipMiddleColumn() {
+        String csv = "Col1,Col2,Col3\nA1,B1,C1\nA2,B2,C2\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        List<TestPersonThreeCol> results = new ArrayList<>();
+
+        new CsvReader<>(TestPersonThreeCol::new, null)
+                .column((p, cell) -> p.first = cell.asString())
+                .skipColumn()
+                .column((p, cell) -> p.third = cell.asString())
+                .build(is)
+                .read(result -> results.add(result.data()));
+
+        assertEquals(2, results.size());
+        assertEquals("A1", results.get(0).first);
+        assertNull(results.get(0).second);
+        assertEquals("C1", results.get(0).third);
+        assertEquals("A2", results.get(1).first);
+        assertEquals("C2", results.get(1).third);
+    }
+
+    @Test
+    void skipColumns_shouldSkipMultipleColumns() {
+        String csv = "Col1,Col2,Col3\nA1,B1,C1\nA2,B2,C2\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        List<TestPersonThreeCol> results = new ArrayList<>();
+
+        new CsvReader<>(TestPersonThreeCol::new, null)
+                .skipColumns(2)
+                .column((p, cell) -> p.third = cell.asString())
+                .build(is)
+                .read(result -> results.add(result.data()));
+
+        assertEquals(2, results.size());
+        assertNull(results.get(0).first);
+        assertEquals("C1", results.get(0).third);
+        assertEquals("C2", results.get(1).third);
+    }
+
+    @Test
+    void headerRowIndex_shouldSkipMetadataRows() {
+        String csv = "Report Title,,\nGenerated: 2025-01-01,,\nName,Age\nAlice,30\nBob,25\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        List<TestPerson> results = new ArrayList<>();
+
+        new CsvReader<>(TestPerson::new, null)
+                .headerRowIndex(2)
+                .column((p, cell) -> p.name = cell.asString())
+                .column((p, cell) -> p.age = cell.asInt())
+                .build(is)
+                .read(result -> {
+                    if (result.success()) {
+                        results.add(result.data());
+                    }
+                });
+
+        assertEquals(2, results.size());
+        assertEquals("Alice", results.get(0).name);
+        assertEquals(30, results.get(0).age);
+        assertEquals("Bob", results.get(1).name);
+        assertEquals(25, results.get(1).age);
+    }
+
+    @Test
+    void headerRowIndex_shouldThrowForInsufficientRows() {
+        String csv = "only one row\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        CsvReadHandler<TestPerson> handler = new CsvReader<>(TestPerson::new, null)
+                .headerRowIndex(5)
+                .column((p, cell) -> p.name = cell.asString())
+                .build(is);
+
+        assertThrows(CsvReadException.class, () -> handler.read(r -> {}));
+    }
+
+    @Test
+    void constructor_shouldThrowForNegativeHeaderRowIndex() {
+        InputStream is = new ByteArrayInputStream("a\n".getBytes());
+        assertThrows(IllegalArgumentException.class,
+                () -> new CsvReadHandler<>(is, List.of(new CsvReadColumn<>((p, c) -> {})), TestPerson::new, null, -1));
+    }
+
     private CsvReadHandler<TestPerson> buildHandler(String csv, Validator validator) {
         InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
         return new CsvReader<>(TestPerson::new, validator)
@@ -192,5 +301,11 @@ class CsvReadHandlerTest {
         @Min(1)
         @Max(100)
         int age;
+    }
+
+    public static class TestPersonThreeCol {
+        String first;
+        String second;
+        String third;
     }
 }

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -261,6 +262,97 @@ class ExcelReadHandlerTest {
         });
     }
 
+    @Test
+    void readAsStream_shouldReturnStreamOfResults() throws IOException {
+        List<String> names;
+        try (InputStream is = Files.newInputStream(excelFile)) {
+            Stream<ReadResult<TestPerson>> stream = new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is)
+                    .readAsStream();
+
+            names = stream
+                    .filter(ReadResult::success)
+                    .map(r -> r.data().getName())
+                    .toList();
+        }
+
+        assertEquals(3, names.size());
+        assertEquals("Alice", names.get(0));
+        assertEquals("Bob", names.get(1));
+        assertEquals("Charlie", names.get(2));
+    }
+
+    @Test
+    void skipColumn_shouldSkipMiddleColumn() throws IOException {
+        Path file = tempDir.resolve("three-col.xlsx");
+        createThreeColumnExcelFile(file);
+
+        List<TestPersonThreeCol> results = new ArrayList<>();
+        try (InputStream is = Files.newInputStream(file)) {
+            new ExcelReader<>(TestPersonThreeCol::new, null)
+                    .column((p, cell) -> p.first = cell.asString())
+                    .skipColumn()
+                    .column((p, cell) -> p.third = cell.asString())
+                    .build(is)
+                    .read(result -> results.add(result.data()));
+        }
+
+        assertEquals(2, results.size());
+        assertEquals("A1", results.get(0).first);
+        assertNull(results.get(0).second);
+        assertEquals("C1", results.get(0).third);
+        assertEquals("A2", results.get(1).first);
+        assertEquals("C2", results.get(1).third);
+    }
+
+    @Test
+    void skipColumns_shouldSkipMultipleColumns() throws IOException {
+        Path file = tempDir.resolve("three-col-skip.xlsx");
+        createThreeColumnExcelFile(file);
+
+        List<TestPersonThreeCol> results = new ArrayList<>();
+        try (InputStream is = Files.newInputStream(file)) {
+            new ExcelReader<>(TestPersonThreeCol::new, null)
+                    .skipColumns(2)
+                    .column((p, cell) -> p.third = cell.asString())
+                    .build(is)
+                    .read(result -> results.add(result.data()));
+        }
+
+        assertEquals(2, results.size());
+        assertNull(results.get(0).first);
+        assertEquals("C1", results.get(0).third);
+        assertEquals("C2", results.get(1).third);
+    }
+
+    @Test
+    void skipColumn_fromBuilderChain() throws IOException {
+        Path file = tempDir.resolve("three-col-chain.xlsx");
+        createThreeColumnExcelFile(file);
+
+        List<TestPersonThreeCol> results = new ArrayList<>();
+        try (InputStream is = Files.newInputStream(file)) {
+            new ExcelReader<>(TestPersonThreeCol::new, null)
+                    .column((p, cell) -> p.first = cell.asString())
+                    .skipColumn()
+                    .column((p, cell) -> p.third = cell.asString())
+                    .build(is)
+                    .read(result -> results.add(result.data()));
+        }
+
+        assertEquals(2, results.size());
+        assertEquals("A1", results.get(0).first);
+        assertEquals("C1", results.get(0).third);
+    }
+
+    @Test
+    void skipColumns_negativeThrows() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new ExcelReader<>(TestPerson::new, null).skipColumns(-1));
+    }
+
     /**
      * Creates a setter function for the name field.
      */
@@ -396,30 +488,64 @@ class ExcelReadHandlerTest {
     }
     
     /**
+     * Creates a test Excel file with 3 columns: Col1, Col2, Col3.
+     */
+    private void createThreeColumnExcelFile(Path filePath) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Test");
+
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Col1");
+            header.createCell(1).setCellValue("Col2");
+            header.createCell(2).setCellValue("Col3");
+
+            Row row1 = sheet.createRow(1);
+            row1.createCell(0).setCellValue("A1");
+            row1.createCell(1).setCellValue("B1");
+            row1.createCell(2).setCellValue("C1");
+
+            Row row2 = sheet.createRow(2);
+            row2.createCell(0).setCellValue("A2");
+            row2.createCell(1).setCellValue("B2");
+            row2.createCell(2).setCellValue("C2");
+
+            try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
+                workbook.write(fos);
+            }
+        }
+    }
+
+    /**
      * Test class for Excel reading tests.
      */
     public static class TestPerson {
         @NotBlank
         private String name;
-        
+
         @Min(1)
         @Max(100)
         private int age;
-        
+
         public String getName() {
             return name;
         }
-        
+
         public void setName(String name) {
             this.name = name;
         }
-        
+
         public int getAge() {
             return age;
         }
-        
+
         public void setAge(int age) {
             this.age = age;
         }
+    }
+
+    public static class TestPersonThreeCol {
+        String first;
+        String second;
+        String third;
     }
 }

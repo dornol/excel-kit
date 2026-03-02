@@ -29,13 +29,22 @@ import java.util.function.Supplier;
 public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final List<String> headerNames = new ArrayList<>();
     private final List<CsvReadColumn<T>> columns;
+    private final int headerRowIndex;
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
+        this(inputStream, columns, instanceSupplier, validator, 0);
+    }
+
+    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int headerRowIndex) {
         super(inputStream, instanceSupplier, validator, ".csv");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
         }
+        if (headerRowIndex < 0) {
+            throw new IllegalArgumentException("headerRowIndex must be non-negative");
+        }
         this.columns = columns;
+        this.headerRowIndex = headerRowIndex;
     }
 
     /**
@@ -43,8 +52,14 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
      *
      * @param consumer Callback to receive parsed and validated row results
      */
+    @Override
     public void read(@NonNull Consumer<ReadResult<T>> consumer) {
         try (CSVReader reader = new CSVReader(new InputStreamReader(Files.newInputStream(getTempFile()), StandardCharsets.UTF_8))) {
+            for (int i = 0; i < headerRowIndex; i++) {
+                if (reader.readNext() == null) {
+                    throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
+                }
+            }
             String[] headerLine = reader.readNext();
             if (headerLine == null) {
                 throw new CsvReadException("CSV file is empty or missing header row");

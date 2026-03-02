@@ -104,6 +104,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      *
      * @param consumer Callback to receive parsed and validated row results
      */
+    @Override
     public void read(@NonNull Consumer<ReadResult<T>> consumer) {
         try (OPCPackage pkg = OPCPackage.open(getTempFile().toFile())) {
             XSSFReader reader = new XSSFReader(pkg);

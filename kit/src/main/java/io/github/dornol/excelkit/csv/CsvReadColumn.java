@@ -51,6 +51,28 @@ public record CsvReadColumn<T>(BiConsumer<T, CellData> setter) {
         }
 
         /**
+         * Flushes the current column and skips one column by adding a no-op column mapping.
+         *
+         * @return The parent CsvReader for chaining
+         */
+        public CsvReader<T> skipColumn() {
+            buildCurrentAndAddToReader();
+            return reader.skipColumn();
+        }
+
+        /**
+         * Flushes the current column and skips the specified number of columns.
+         *
+         * @param count The number of columns to skip (must be non-negative)
+         * @return The parent CsvReader for chaining
+         * @throws IllegalArgumentException if count is negative
+         */
+        public CsvReader<T> skipColumns(int count) {
+            buildCurrentAndAddToReader();
+            return reader.skipColumns(count);
+        }
+
+        /**
          * Finalizes the column definitions and builds a {@link CsvReadHandler} for reading.
          *
          * @param inputStream The input stream of the CSV file

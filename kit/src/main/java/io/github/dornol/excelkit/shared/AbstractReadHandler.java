@@ -9,10 +9,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * Abstract base class for file read handlers (Excel, CSV).
@@ -64,6 +67,27 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         } catch (IOException e) {
             throw new ExcelKitException("Failed to initialize temporary file", e);
         }
+    }
+
+    /**
+     * Reads the file and invokes the given consumer for each row result.
+     *
+     * @param consumer Callback to receive parsed and validated row results
+     */
+    public abstract void read(Consumer<ReadResult<T>> consumer);
+
+    /**
+     * Reads the file and returns a stream of row results.
+     * <p>
+     * This method collects all results into a list and returns a stream over them.
+     * The underlying file resources are closed before the stream is returned.
+     *
+     * @return A stream of parsed and validated row results
+     */
+    public Stream<ReadResult<T>> readAsStream() {
+        List<ReadResult<T>> results = new ArrayList<>();
+        read(results::add);
+        return results.stream();
     }
 
     /**
