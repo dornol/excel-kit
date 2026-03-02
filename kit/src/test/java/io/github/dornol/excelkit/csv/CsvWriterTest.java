@@ -129,6 +129,66 @@ class CsvWriterTest {
         }, "Second call to consumeOutputStream should throw CsvWriteException");
     }
     
+    @Test
+    void write_shouldThrowWhenNoColumns() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+
+        // Act & Assert
+        assertThrows(CsvWriteException.class, () -> {
+            writer.write(Stream.of(new TestData("Test", 0)));
+        }, "write should throw CsvWriteException when no columns are defined");
+    }
+
+    @Test
+    void write_shouldDefendAgainstCsvInjection() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+        writer.column("Name", data -> data.name);
+
+        List<TestData> dataList = Arrays.asList(
+                new TestData("=CMD('calc')", 1),
+                new TestData("+1+1", 2),
+                new TestData("-1-1", 3),
+                new TestData("@SUM(A1)", 4),
+                new TestData("Normal", 5)
+        );
+
+        // Act
+        CsvHandler handler = writer.write(dataList.stream());
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.consumeOutputStream(outputStream);
+
+        // Assert
+        String csvContent = outputStream.toString();
+        String[] lines = csvContent.split("\\r?\\n");
+
+        assertTrue(lines[1].startsWith("'="), "Formula starting with = should be prefixed with single quote");
+        assertTrue(lines[2].startsWith("'+"), "Formula starting with + should be prefixed with single quote");
+        assertTrue(lines[3].startsWith("'-"), "Formula starting with - should be prefixed with single quote");
+        assertTrue(lines[4].startsWith("'@"), "Formula starting with @ should be prefixed with single quote");
+        assertEquals("Normal", lines[5], "Normal values should not be modified");
+    }
+
+    @Test
+    void columnIf_shouldAddColumnConditionally() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+        writer.column("Name", data -> data.name)
+              .columnIf("Age", false, data -> data.age)
+              .column("End", data -> "end");
+
+        // Act
+        CsvHandler handler = writer.write(Stream.of(new TestData("Test", 30)));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.consumeOutputStream(outputStream);
+
+        // Assert
+        String csvContent = outputStream.toString();
+        String[] lines = csvContent.split("\\r?\\n");
+        assertEquals("\uFEFFName,End", lines[0], "Conditional column with false should be excluded");
+    }
+
     /**
      * Test data class for CSV writer tests.
      */

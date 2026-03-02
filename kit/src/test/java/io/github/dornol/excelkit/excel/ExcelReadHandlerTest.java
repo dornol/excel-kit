@@ -244,6 +244,15 @@ class ExcelReadHandlerTest {
     }
 
     @Test
+    void constructor_shouldThrowForSheetIndexExceeding255() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
+            columns.add(new ExcelReadColumn<>(createNameSetter()));
+            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 256);
+        }, "sheetIndex > 255 should throw IllegalArgumentException");
+    }
+
+    @Test
     void constructor_shouldThrowForNegativeHeaderRowIndex() {
         assertThrows(IllegalArgumentException.class, () -> {
             List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();

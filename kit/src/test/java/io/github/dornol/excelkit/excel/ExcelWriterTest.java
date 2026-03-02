@@ -189,6 +189,25 @@ class ExcelWriterTest {
     }
 
     @Test
+    void constructor_withRowAccessWindowSize_shouldCreateWriter() throws IOException {
+        // Arrange: use a small buffer size
+        ExcelWriter<String> writer = new ExcelWriter<>(255, 255, 255, 1_000_000, 100);
+        Stream<String> data = Stream.of("a", "b", "c");
+
+        // Act
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        assertNotNull(handler);
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+            assertTrue(bos.toByteArray().length > 0);
+        }
+    }
+
+    @Test
     void applyColumnWidth_shouldApplySameWidthsAcrossSheets() {
         // Arrange: small max rows to force rollover and values with different lengths
         ExcelWriter<String> writer = new ExcelWriter<>(2);

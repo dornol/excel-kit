@@ -149,6 +149,21 @@ class CsvReadHandlerTest {
     }
 
     @Test
+    void read_shouldThrowForBomOnlyHeader() {
+        // The first header column contains only the BOM character
+        String csv = "\uFEFF,Age\nAlice,30\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        CsvReadHandler<TestPerson> handler = new CsvReader<>(TestPerson::new, null)
+                .column((p, cell) -> p.name = cell.asString())
+                .column((p, cell) -> p.age = cell.asInt())
+                .build(is);
+
+        assertThrows(CsvReadException.class, () -> handler.read(r -> {}),
+                "Should throw CsvReadException when first header is BOM-only");
+    }
+
+    @Test
     void constructor_shouldThrowForNullColumns() {
         InputStream is = new ByteArrayInputStream("a\n".getBytes());
         assertThrows(IllegalArgumentException.class,

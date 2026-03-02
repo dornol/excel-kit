@@ -111,6 +111,43 @@ class ExcelHandlerTest {
     }
 
     @Test
+    void consumeOutputStreamWithPassword_shouldThrowExceptionWithNullCharArrayPassword() {
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            handler.consumeOutputStreamWithPassword(outputStream, (char[]) null);
+        }, "consumeOutputStreamWithPassword should throw IllegalArgumentException with null char[] password");
+    }
+
+    @Test
+    void consumeOutputStreamWithPassword_shouldThrowExceptionWithEmptyCharArrayPassword() {
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            handler.consumeOutputStreamWithPassword(outputStream, new char[0]);
+        }, "consumeOutputStreamWithPassword should throw IllegalArgumentException with empty char[] password");
+    }
+
+    @Test
+    void consumeOutputStreamWithPassword_charArray_shouldWriteEncryptedWorkbook() throws IOException {
+        // Arrange
+        createSampleWorkbookContent();
+        Path excelFile = tempDir.resolve("encrypted-char.xlsx");
+        char[] password = "test123".toCharArray();
+
+        // Act
+        try (FileOutputStream fos = new FileOutputStream(excelFile.toFile())) {
+            handler.consumeOutputStreamWithPassword(fos, password);
+        }
+
+        // Assert
+        assertTrue(Files.exists(excelFile), "Encrypted Excel file should be created");
+        assertTrue(Files.size(excelFile) > 0, "Encrypted Excel file should have content");
+        // Password should be zeroed out after use
+        for (char c : password) {
+            assertEquals('\0', c, "Password char array should be zeroed after use");
+        }
+    }
+
+    @Test
     void consumeOutputStream_shouldCloseWorkbookAfterWriting() throws IOException {
         // Arrange
         SXSSFWorkbook testWorkbook = new SXSSFWorkbook();
