@@ -250,15 +250,13 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          * @return The zero-based column index
          */
         private int getColumnIndex(String cellReference) {
-            StringBuilder sb = new StringBuilder();
-            for (char c : cellReference.toCharArray()) {
-                if (Character.isLetter(c)) sb.append(c);
-                else break;
-            }
-            String col = sb.toString();
             int colIdx = 0;
-            for (char c : col.toCharArray()) {
-                colIdx = colIdx * 26 + (c - 'A' + 1);
+            for (char c : cellReference.toCharArray()) {
+                if (!Character.isLetter(c)) break;
+                colIdx = colIdx * 26 + (Character.toUpperCase(c) - 'A' + 1);
+                if (colIdx > 16_384) { // Excel max column: XFD = 16,384
+                    throw new ExcelReadException("Column index exceeds Excel maximum (XFD): " + cellReference);
+                }
             }
             return colIdx - 1;
         }

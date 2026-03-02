@@ -74,8 +74,8 @@ public record CellData(int columnIndex, String formattedValue) {
             DateTimeFormatter.ofPattern("M/d/yy[ HH:mm[:ss]]"),
             DateTimeFormatter.ISO_LOCAL_DATE_TIME
     );
-    private static final List<DateTimeFormatter> DATE_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
-    private static final List<DateTimeFormatter> DATETIME_FORMAT_PATTERNS = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
+    private static volatile List<DateTimeFormatter> dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
+    private static volatile List<DateTimeFormatter> dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
 
     /**
      * Adds a custom date format pattern for {@link #asLocalDate()}.
@@ -84,7 +84,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @param pattern the date pattern (e.g., "dd.MM.yyyy")
      */
     public static void addDateFormat(@NonNull String pattern) {
-        DATE_FORMAT_PATTERNS.add(0, DateTimeFormatter.ofPattern(pattern));
+        dateFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
     }
 
     /**
@@ -94,7 +94,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
      */
     public static void addDateTimeFormat(@NonNull String pattern) {
-        DATETIME_FORMAT_PATTERNS.add(0, DateTimeFormatter.ofPattern(pattern));
+        dateTimeFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
     }
 
     /**
@@ -103,7 +103,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @return the list of date format patterns
      */
     public static List<DateTimeFormatter> getDateFormats() {
-        return Collections.unmodifiableList(DATE_FORMAT_PATTERNS);
+        return Collections.unmodifiableList(dateFormatPatterns);
     }
 
     /**
@@ -112,7 +112,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @return the list of date-time format patterns
      */
     public static List<DateTimeFormatter> getDateTimeFormats() {
-        return Collections.unmodifiableList(DATETIME_FORMAT_PATTERNS);
+        return Collections.unmodifiableList(dateTimeFormatPatterns);
     }
 
     /**
@@ -120,8 +120,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Removes any custom patterns previously added via {@link #addDateFormat(String)}.
      */
     public static void resetDateFormats() {
-        DATE_FORMAT_PATTERNS.clear();
-        DATE_FORMAT_PATTERNS.addAll(DEFAULT_DATE_FORMATS);
+        dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
     }
 
     /**
@@ -129,8 +128,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Removes any custom patterns previously added via {@link #addDateTimeFormat(String)}.
      */
     public static void resetDateTimeFormats() {
-        DATETIME_FORMAT_PATTERNS.clear();
-        DATETIME_FORMAT_PATTERNS.addAll(DEFAULT_DATETIME_FORMATS);
+        dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
     }
 
     public CellData {
@@ -269,7 +267,7 @@ public record CellData(int columnIndex, String formattedValue) {
             return null;
         }
 
-        for (var formatter : DATETIME_FORMAT_PATTERNS) {
+        for (var formatter : dateTimeFormatPatterns) {
             try {
                 return LocalDateTime.parse(formattedValue, formatter);
             } catch (Exception e) {
@@ -310,7 +308,7 @@ public record CellData(int columnIndex, String formattedValue) {
         if (formattedValue.isBlank()) {
             return null;
         }
-        for (var format : DATE_FORMAT_PATTERNS) {
+        for (var format : dateFormatPatterns) {
             try {
                 return LocalDate.parse(formattedValue, format);
             } catch (Exception e) {

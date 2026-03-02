@@ -26,8 +26,8 @@ import java.util.function.Supplier;
  * @since 2025-07-19
  */
 public class ExcelReader<T> {
-    private static final int DEFAULT_MAX_FILE_COUNT = 10_000_000;
-    private static final int DEFAULT_MAX_BYTE_ARRAY_SIZE = 2_000_000_000;
+    private static final int DEFAULT_MAX_FILE_COUNT = 1_000_000;
+    private static final int DEFAULT_MAX_BYTE_ARRAY_SIZE = 500_000_000;
 
     private final List<ExcelReadColumn<T>> columns = new ArrayList<>();
     private final Supplier<T> instanceSupplier;
@@ -40,8 +40,8 @@ public class ExcelReader<T> {
      * <p>
      * This adjusts:
      * <ul>
-     *     <li>{@code ZipSecureFile.setMaxFileCount(10_000_000)} — max internal zip entries</li>
-     *     <li>{@code IOUtils.setByteArrayMaxOverride(2_000_000_000)} — max in-memory byte array size</li>
+     *     <li>{@code ZipSecureFile.setMaxFileCount(1_000_000)} — max internal zip entries</li>
+     *     <li>{@code IOUtils.setByteArrayMaxOverride(500_000_000)} — max in-memory byte array size</li>
      * </ul>
      * <p>
      * <b>Note:</b> These are JVM-global settings and affect all POI operations in the same process.
@@ -54,8 +54,8 @@ public class ExcelReader<T> {
     /**
      * Configures Apache POI's internal limits with custom values.
      *
-     * @param maxFileCount       Maximum number of zip entries (default: 10,000,000)
-     * @param maxByteArraySize   Maximum byte array size in bytes (default: 2,000,000,000)
+     * @param maxFileCount       Maximum number of zip entries (default: 1,000,000)
+     * @param maxByteArraySize   Maximum byte array size in bytes (default: 500,000,000)
      * @see #configureLargeFileSupport()
      */
     public static void configureLargeFileSupport(int maxFileCount, int maxByteArraySize) {
