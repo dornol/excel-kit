@@ -21,8 +21,15 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Reads Excel (.xlsx) files using Apache POI's event-based streaming API.
@@ -107,6 +114,82 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      */
     @Override
     public void read(@NonNull Consumer<ReadResult<T>> consumer) {
+        try {
+            readInternal(consumer);
+        } catch (ExcelReadException e) {
+            throw e;
+        } catch (ReadAbortException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelReadException("Failed to read excel", e);
+        } finally {
+            close();
+        }
+    }
+
+    @Override
+    public Stream<ReadResult<T>> readAsStream() {
+        int bufferSize = 1024;
+        BlockingQueue<Object> queue = new ArrayBlockingQueue<>(bufferSize);
+        Object sentinel = new Object();
+        AtomicReference<Throwable> producerError = new AtomicReference<>();
+
+        Thread producer = new Thread(() -> {
+            try {
+                readInternal(result -> {
+                    try {
+                        queue.put(result);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new ExcelReadException("Producer thread interrupted", e);
+                    }
+                });
+            } catch (Throwable t) {
+                producerError.set(t);
+            } finally {
+                try {
+                    queue.put(sentinel);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+        producer.setDaemon(true);
+        producer.start();
+
+        Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
+                Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
+            @SuppressWarnings("unchecked")
+            @Override
+            public boolean tryAdvance(Consumer<? super ReadResult<T>> action) {
+                try {
+                    Object item = queue.take();
+                    if (item == sentinel) {
+                        Throwable error = producerError.get();
+                        if (error != null) {
+                            if (error instanceof ExcelReadException e) throw e;
+                            if (error instanceof ReadAbortException e) throw e;
+                            throw new ExcelReadException("Failed to read excel", error);
+                        }
+                        return false;
+                    }
+                    action.accept((ReadResult<T>) item);
+                    return true;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new ExcelReadException("Consumer thread interrupted", e);
+                }
+            }
+        };
+
+        return StreamSupport.stream(spliterator, false)
+                .onClose(() -> {
+                    producer.interrupt();
+                    close();
+                });
+    }
+
+    private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
         try (OPCPackage pkg = OPCPackage.open(getTempFile().toFile())) {
             XSSFReader reader = new XSSFReader(pkg);
 
@@ -132,15 +215,6 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             if (currentIndex < sheetIndex) {
                 throw new ExcelReadException("Sheet index " + sheetIndex + " not found. File has " + (currentIndex + 1) + " sheet(s).");
             }
-
-        } catch (ExcelReadException e) {
-            throw e;
-        } catch (ReadAbortException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ExcelReadException("Failed to read excel", e);
-        } finally {
-            close();
         }
     }
 

@@ -303,6 +303,14 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Finalizes the current column and registers a beforeHeader callback on the writer.
+         */
+        public ExcelWriter<T> beforeHeader(BeforeHeaderWriter beforeHeaderWriter) {
+            this.writer.addColumn(this.build());
+            return this.writer.beforeHeader(beforeHeaderWriter);
+        }
+
+        /**
          * Finalizes the current column and registers an afterData callback on the writer.
          */
         public ExcelWriter<T> afterData(AfterDataWriter afterDataWriter) {

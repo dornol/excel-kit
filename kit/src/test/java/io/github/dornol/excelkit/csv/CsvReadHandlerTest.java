@@ -202,6 +202,28 @@ class CsvReadHandlerTest {
     }
 
     @Test
+    void readAsStream_shouldBeLazy() {
+        String csv = "Name,Age\nAlice,30\nBob,25\nCharlie,35\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        CsvReadHandler<TestPerson> handler = new CsvReader<>(TestPerson::new, validator)
+                .column((p, cell) -> p.name = cell.asString())
+                .column((p, cell) -> p.age = cell.asInt())
+                .build(is);
+
+        try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
+            List<String> names = stream
+                    .filter(ReadResult::success)
+                    .limit(1)
+                    .map(r -> r.data().name)
+                    .toList();
+
+            assertEquals(1, names.size());
+            assertEquals("Alice", names.get(0));
+        }
+    }
+
+    @Test
     void skipColumn_shouldSkipMiddleColumn() {
         String csv = "Col1,Col2,Col3\nA1,B1,C1\nA2,B2,C2\n";
         InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));

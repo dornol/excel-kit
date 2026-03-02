@@ -19,8 +19,12 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Reads CSV files and maps rows to Java objects.
@@ -106,6 +110,78 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
             throw new CsvReadException("Failed to read CSV", e);
         } finally {
             close();
+        }
+    }
+
+    @Override
+    public Stream<ReadResult<T>> readAsStream() {
+        try {
+            CSVReader reader = buildCsvReader();
+            for (int i = 0; i < headerRowIndex; i++) {
+                if (reader.readNext() == null) {
+                    closeQuietly(reader);
+                    throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
+                }
+            }
+            String[] headerLine = reader.readNext();
+            if (headerLine == null) {
+                closeQuietly(reader);
+                throw new CsvReadException("CSV file is empty or missing header row");
+            }
+            prepareColumnHeaders(headerLine);
+
+            Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
+                    Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
+                @Override
+                public boolean tryAdvance(Consumer<? super ReadResult<T>> action) {
+                    try {
+                        String[] line = reader.readNext();
+                        if (line == null) {
+                            closeQuietly(reader);
+                            close();
+                            return false;
+                        }
+                        T currentInstance = instanceSupplier.get();
+                        boolean success = true;
+                        List<String> messages = new ArrayList<>();
+
+                        for (int i = 0; i < columns.size(); i++) {
+                            String columnValue = (i < line.length) ? line[i] : null;
+                            if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(i, columnValue),
+                                    i, headerNames, messages)) {
+                                success = false;
+                            }
+                        }
+
+                        boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
+                        action.accept(new ReadResult<>(currentInstance, validationSuccess, messages));
+                        return true;
+                    } catch (Exception e) {
+                        closeQuietly(reader);
+                        close();
+                        throw new CsvReadException("Failed to read CSV row", e);
+                    }
+                }
+            };
+
+            return StreamSupport.stream(spliterator, false)
+                    .onClose(() -> {
+                        closeQuietly(reader);
+                        close();
+                    });
+        } catch (CsvReadException e) {
+            close();
+            throw e;
+        } catch (Exception e) {
+            close();
+            throw new CsvReadException("Failed to initialize CSV reading", e);
+        }
+    }
+
+    private void closeQuietly(CSVReader reader) {
+        try {
+            reader.close();
+        } catch (Exception ignored) {
         }
     }
 

@@ -430,6 +430,42 @@ class ExcelWriterTest {
     }
 
     @Test
+    void beforeHeader_shouldBeChainableFromColumnBuilder() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a", "b");
+
+        // Act — call beforeHeader via builder chaining
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .column("B", (row, c) -> row.length())
+                .beforeHeader((sheet, wb, startRow) -> {
+                    sheet.createRow(startRow).createCell(0).setCellValue("Custom");
+                    return startRow + 1;
+                })
+                .column("C", (row, c) -> row.toUpperCase())
+                .write(data);
+
+        // Assert
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        // beforeHeader row at 0
+        assertEquals("Custom", sheet.getRow(0).getCell(0).getStringCellValue());
+        // Header at row 1
+        assertEquals("A", sheet.getRow(1).getCell(0).getStringCellValue());
+        assertEquals("B", sheet.getRow(1).getCell(1).getStringCellValue());
+        assertEquals("C", sheet.getRow(1).getCell(2).getStringCellValue());
+        // Data at row 2, 3
+        assertEquals("a", sheet.getRow(2).getCell(0).getStringCellValue());
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
     void freezePane_shouldThrowForNegativeValue() {
         ExcelWriter<String> writer = new ExcelWriter<>();
         assertThrows(IllegalArgumentException.class, () -> writer.freezePane(-1),

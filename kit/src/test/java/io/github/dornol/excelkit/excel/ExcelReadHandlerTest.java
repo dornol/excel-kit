@@ -286,6 +286,27 @@ class ExcelReadHandlerTest {
     }
 
     @Test
+    void readAsStream_shouldBeLazy() throws IOException {
+        try (InputStream is = Files.newInputStream(excelFile)) {
+            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is);
+
+            try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
+                List<String> names = stream
+                        .filter(ReadResult::success)
+                        .limit(1)
+                        .map(r -> r.data().getName())
+                        .toList();
+
+                assertEquals(1, names.size());
+                assertEquals("Alice", names.get(0));
+            }
+        }
+    }
+
+    @Test
     void skipColumn_shouldSkipMiddleColumn() throws IOException {
         Path file = tempDir.resolve("three-col.xlsx");
         createThreeColumnExcelFile(file);
