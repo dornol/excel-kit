@@ -34,6 +34,7 @@ public class CsvWriter<T> {
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
     private boolean bom = true;
+    private CsvAfterDataWriter afterDataWriter;
 
     /**
      * Sets the delimiter character used to separate fields.
@@ -68,6 +69,20 @@ public class CsvWriter<T> {
      */
     public CsvWriter<T> bom(boolean bom) {
         this.bom = bom;
+        return this;
+    }
+
+    /**
+     * Registers a callback that writes custom content after all data rows.
+     * <p>
+     * The callback receives the {@link java.io.PrintWriter} used to write the CSV,
+     * allowing additional lines to be appended after the data rows.
+     *
+     * @param afterDataWriter the callback to invoke after data rows
+     * @return This writer instance (for chaining)
+     */
+    public CsvWriter<T> afterData(CsvAfterDataWriter afterDataWriter) {
+        this.afterDataWriter = afterDataWriter;
         return this;
     }
 
@@ -213,6 +228,11 @@ public class CsvWriter<T> {
                         .collect(Collectors.joining(joining));
                 writer.println(line);
             });
+
+            // Write after-data content
+            if (this.afterDataWriter != null) {
+                this.afterDataWriter.write(writer);
+            }
         }
     }
 

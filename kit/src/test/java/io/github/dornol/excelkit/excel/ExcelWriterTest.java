@@ -607,6 +607,157 @@ class ExcelWriterTest {
     }
 
     @Test
+    void width_shouldFixColumnWidth() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("short", "a very long string that would normally expand the column");
+
+        // Act
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .width(5000)
+                .write(data);
+
+        // Assert: column width should be exactly 5000 regardless of content
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals(5000, sheet.getColumnWidth(0), "Fixed width should be applied exactly");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void minWidth_shouldEnforceMinimumColumnWidth() {
+        // Arrange: use a large minWidth so auto-fit can't go below it
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("x");
+
+        // Act
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .minWidth(10000)
+                .write(data);
+
+        // Assert: column width should be at least 10000
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertTrue(sheet.getColumnWidth(0) >= 10000,
+                "Column width should be at least the minWidth value");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void maxWidth_shouldCapColumnWidth() {
+        // Arrange: use a small maxWidth to cap auto-fit
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("This is a very long string value that would normally cause a very wide column");
+
+        // Act
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .maxWidth(3000)
+                .write(data);
+
+        // Assert: column width should not exceed 3000
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertTrue(sheet.getColumnWidth(0) <= 3000,
+                "Column width should not exceed maxWidth value");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void sheetName_shouldSetCustomSheetName() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a", "b");
+
+        // Act
+        ExcelHandler handler = writer
+                .sheetName("MySheet")
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        SXSSFWorkbook wb = writer.getWb();
+        assertEquals("MySheet", wb.getSheetName(0), "First sheet should have custom name");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void sheetName_shouldNameRolloverSheets() {
+        // Arrange: max 2 rows per sheet
+        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
+        Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
+
+        // Act
+        ExcelHandler handler = writer
+                .sheetName("Data")
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        SXSSFWorkbook wb = writer.getWb();
+        assertEquals(3, wb.getNumberOfSheets());
+        assertEquals("Data", wb.getSheetName(0));
+        assertEquals("Data (2)", wb.getSheetName(1));
+        assertEquals("Data (3)", wb.getSheetName(2));
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void sheetName_withFunction_shouldApplyCustomNaming() {
+        // Arrange: max 2 rows per sheet
+        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
+        Stream<Integer> data = Stream.of(1, 2, 3);
+
+        // Act
+        ExcelHandler handler = writer
+                .sheetName(index -> "Page-" + (index + 1))
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        SXSSFWorkbook wb = writer.getWb();
+        assertEquals(2, wb.getNumberOfSheets());
+        assertEquals("Page-1", wb.getSheetName(0));
+        assertEquals("Page-2", wb.getSheetName(1));
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
     void afterData_shouldBeCalledOnEverySheetDuringRollover() {
         // Arrange: max 2 rows per sheet → 3 sheets for 5 data rows
         ExcelWriter<Integer> writer = new ExcelWriter<>(2);

@@ -49,6 +49,8 @@ public class ExcelWriter<T> implements AutoCloseable {
     private BeforeHeaderWriter beforeHeaderWriter;
     private AfterDataWriter afterDataWriter;
     private AfterDataWriter afterAllWriter;
+    private Function<Integer, String> sheetNameFunction;
+    private int sheetCount = 0;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -270,6 +272,29 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Sets a function that generates sheet names based on the sheet index (0-based).
+     *
+     * @param sheetNameFunction a function that takes the sheet index and returns the sheet name
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> sheetName(Function<Integer, String> sheetNameFunction) {
+        this.sheetNameFunction = sheetNameFunction;
+        return this;
+    }
+
+    /**
+     * Sets a fixed sheet name. When sheets roll over, subsequent sheets are named
+     * "{name} (2)", "{name} (3)", etc.
+     *
+     * @param name the base sheet name
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> sheetName(String name) {
+        this.sheetNameFunction = index -> index == 0 ? name : name + " (" + (index + 1) + ")";
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -338,7 +363,7 @@ public class ExcelWriter<T> implements AutoCloseable {
             throw new ExcelWriteException("columns setting required");
         }
 
-        this.sheet = wb.createSheet();
+        this.sheet = createNamedSheet();
         int headerStartRow = initSheetPreamble();
         this.cursor = new Cursor(headerStartRow);
 
@@ -465,10 +490,23 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Creates a new sheet with a name determined by the sheet name function (if set).
+     *
+     * @return the newly created sheet
+     */
+    private SXSSFSheet createNamedSheet() {
+        int index = sheetCount++;
+        if (sheetNameFunction != null) {
+            return wb.createSheet(sheetNameFunction.apply(index));
+        }
+        return wb.createSheet();
+    }
+
+    /**
      * Creates a new sheet and resets the row index when the current sheet exceeds row limit.
      */
     private void turnOverSheet() {
-        this.sheet = wb.createSheet();
+        this.sheet = createNamedSheet();
         this.cursor.initRow();
     }
 

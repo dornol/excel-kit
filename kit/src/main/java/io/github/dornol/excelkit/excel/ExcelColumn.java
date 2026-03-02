@@ -32,14 +32,21 @@ public class ExcelColumn<T> {
     private final ExcelRowFunction<T, Object> function;
     private final CellStyle style;
     private final ExcelColumnSetter columnSetter;
+    private final int minWidth;
+    private final int maxWidth;
+    private final boolean fixedWidth;
     private int columnWidth = 1;
 
-    ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter) {
+    ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter,
+                int minWidth, int maxWidth, boolean fixedWidth) {
         this.name = name;
         this.function = function;
         this.style = style;
         this.columnSetter = columnSetter;
-        this.columnWidth = getLogicalLength(name);
+        this.minWidth = minWidth;
+        this.maxWidth = maxWidth;
+        this.fixedWidth = fixedWidth;
+        this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
     /**
@@ -69,11 +76,13 @@ public class ExcelColumn<T> {
      * Updates the column width based on the logical string length of a value.
      */
     void fitColumnWidthByValue(Object value) {
-        if (value == null) {
+        if (fixedWidth || value == null) {
             return;
         }
         int width = getLogicalLength(String.valueOf(value));
-        this.setColumnWidth(Math.max(this.columnWidth, width));
+        int candidate = Math.max(this.columnWidth, width);
+        if (maxWidth > 0) candidate = Math.min(candidate, maxWidth);
+        this.setColumnWidth(Math.max(candidate, minWidth));
     }
 
     /**
@@ -114,7 +123,9 @@ public class ExcelColumn<T> {
     }
 
     int getColumnWidth() {
-        return columnWidth;
+        int w = columnWidth;
+        if (maxWidth > 0) w = Math.min(w, maxWidth);
+        return Math.max(w, minWidth);
     }
 
     /**
@@ -134,6 +145,9 @@ public class ExcelColumn<T> {
         private int[] backgroundColor;
         private Boolean bold;
         private Integer fontSize;
+        private int minWidthValue;
+        private int maxWidthValue;
+        private boolean fixedWidthValue;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
             this.writer = writer;
@@ -216,6 +230,37 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets a fixed column width. The column will not auto-resize.
+         *
+         * @param fixedWidth Fixed width value (in Excel internal units)
+         */
+        public ExcelColumnBuilder<T> width(int fixedWidth) {
+            this.fixedWidthValue = true;
+            this.minWidthValue = fixedWidth;
+            return this;
+        }
+
+        /**
+         * Sets the minimum column width. Auto-resize will not shrink below this value.
+         *
+         * @param minWidth Minimum width value (in Excel internal units)
+         */
+        public ExcelColumnBuilder<T> minWidth(int minWidth) {
+            this.minWidthValue = minWidth;
+            return this;
+        }
+
+        /**
+         * Sets the maximum column width. Auto-resize will not grow beyond this value.
+         *
+         * @param maxWidth Maximum width value (in Excel internal units)
+         */
+        public ExcelColumnBuilder<T> maxWidth(int maxWidth) {
+            this.maxWidthValue = maxWidth;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -234,7 +279,8 @@ public class ExcelColumn<T> {
             if (this.columnSetter == null) {
                 this.columnSetter = this.dataType.getSetter();
             }
-            return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter);
+            return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
+                    this.minWidthValue, this.maxWidthValue, this.fixedWidthValue);
         }
 
         /**

@@ -245,6 +245,53 @@ class CsvWriterTest {
         assertEquals("\"Alice\tSmith\"", lines[1], "Value containing tab delimiter should be quoted");
     }
 
+    @Test
+    void afterData_shouldAppendContentAfterDataRows() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+        writer.column("Name", data -> data.name)
+              .column("Age", data -> data.age)
+              .afterData(w -> w.println(",,subtotal"));
+
+        List<TestData> dataList = Arrays.asList(
+                new TestData("Alice", 30),
+                new TestData("Bob", 25)
+        );
+
+        // Act
+        CsvHandler handler = writer.write(dataList.stream());
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.consumeOutputStream(outputStream);
+
+        // Assert
+        String csvContent = outputStream.toString();
+        String[] lines = csvContent.split("\\r?\\n");
+
+        assertEquals(4, lines.length, "CSV should have 4 lines (header + 2 data + 1 afterData)");
+        assertEquals("\uFEFFName,Age", lines[0]);
+        assertEquals("Alice,30", lines[1]);
+        assertEquals("Bob,25", lines[2]);
+        assertEquals(",,subtotal", lines[3], "afterData content should appear after data rows");
+    }
+
+    @Test
+    void afterData_shouldNotAffectOutputWhenNotSet() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+        writer.column("Name", data -> data.name);
+
+        // Act — no afterData set
+        CsvHandler handler = writer.write(Stream.of(new TestData("Alice", 30)));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.consumeOutputStream(outputStream);
+
+        // Assert
+        String csvContent = outputStream.toString();
+        String[] lines = csvContent.split("\\r?\\n");
+
+        assertEquals(2, lines.length, "CSV should have exactly 2 lines (header + 1 data)");
+    }
+
     /**
      * Test data class for CSV writer tests.
      */
