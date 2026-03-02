@@ -14,6 +14,9 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Automatic sheet splitting when row limit is reached
 - Customizable header color, row height, title, auto-filter, and freeze panes
 - Lifecycle callbacks: `beforeHeader`, `afterData`, `afterAll`
+- Dropdown data validation (select list) per column
+- Row-level conditional styling (background color)
+- Explicit multi-sheet workbook with different data types per sheet (`ExcelWorkbook`)
 - Password-encrypted Excel output
 - Consume-once output via `ExcelHandler`
 
@@ -198,6 +201,34 @@ writer
     .write(data);
 ```
 
+### Dropdown Validation
+
+Add a dropdown (data validation) to a column so users can only select from predefined options:
+
+```java
+writer
+    .column("Name", p -> p.name())
+    .column("Status", p -> p.status())
+        .dropdown("Active", "Inactive", "Pending")
+    .write(data);
+```
+
+The dropdown is applied to all data rows across all sheets (including rollover sheets).
+
+### Row-Level Styling
+
+Apply conditional background colors to entire rows based on data:
+
+```java
+writer
+    .rowColor(p -> p.isError() ? ExcelColor.LIGHT_RED : null)  // null = no override
+    .column("Name", p -> p.name())
+    .column("Status", p -> p.status())
+    .write(data);
+```
+
+When a row color is set, it overrides any column-level `backgroundColor`.
+
 ### Conditional Columns
 
 ```java
@@ -282,6 +313,36 @@ try (var os = Files.newOutputStream(Path.of("secret.xlsx"))) {
     handler.consumeOutputStreamWithPassword(os, "P@ssw0rd!");
 }
 ```
+
+### Explicit Multi-Sheet Workbook
+
+Use `ExcelWorkbook` to write different data types to separate sheets:
+
+```java
+try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+    workbook.<User>sheet("Users")
+        .column("Name", u -> u.getName())
+        .column("Status", u -> u.getStatus(), c -> c.dropdown("Active", "Inactive"))
+        .column("Age", u -> u.getAge(), c -> c.type(ExcelDataType.INTEGER))
+        .rowColor(u -> u.isError() ? ExcelColor.LIGHT_RED : null)
+        .write(userStream);
+
+    workbook.<Order>sheet("Orders")
+        .column("ID", o -> o.getId())
+        .column("Amount", o -> o.getAmount(), c -> c.type(ExcelDataType.DOUBLE))
+        .write(orderStream);
+
+    ExcelHandler handler = workbook.finish();
+    handler.consumeOutputStream(outputStream);
+}
+```
+
+Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`
+- `title()`, `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`
+
+> **Note:** Unlike `ExcelWriter`, `ExcelSheetWriter` does not auto-split sheets.
+> Each `sheet()` call creates exactly one sheet.
 
 ### Cursor Access
 
