@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +31,45 @@ import java.util.stream.Stream;
  */
 public class CsvWriter<T> {
     private final List<CsvColumn<T>> columns = new ArrayList<>();
+    private char delimiter = ',';
+    private Charset charset = StandardCharsets.UTF_8;
+    private boolean bom = true;
+
+    /**
+     * Sets the delimiter character used to separate fields.
+     * Defaults to comma ({@code ','}).
+     *
+     * @param delimiter The delimiter character
+     * @return This writer instance (for chaining)
+     */
+    public CsvWriter<T> delimiter(char delimiter) {
+        this.delimiter = delimiter;
+        return this;
+    }
+
+    /**
+     * Sets the character encoding for the output file.
+     * Defaults to {@link StandardCharsets#UTF_8}.
+     *
+     * @param charset The charset to use
+     * @return This writer instance (for chaining)
+     */
+    public CsvWriter<T> charset(Charset charset) {
+        this.charset = charset;
+        return this;
+    }
+
+    /**
+     * Sets whether to write a UTF-8 BOM at the start of the file.
+     * Defaults to {@code true}.
+     *
+     * @param bom Whether to write the BOM
+     * @return This writer instance (for chaining)
+     */
+    public CsvWriter<T> bom(boolean bom) {
+        this.bom = bom;
+        return this;
+    }
 
     /**
      * Adds a new column to the CSV output using a row+cursor-based function.
@@ -143,21 +183,24 @@ public class CsvWriter<T> {
      */
     private void writeTempFile(Stream<T> stream, OutputStream outputStream) {
         Stream<T> sequential = stream.sequential();
+        String joining = String.valueOf(this.delimiter);
         try (
                 sequential;
-                var writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))
+                var writer = new PrintWriter(new OutputStreamWriter(outputStream, this.charset))
         ) {
             Cursor cursor = new Cursor();
             cursor.initRow();
 
             // UTF-8 BOM for Excel compatibility
-            writer.write('\uFEFF');
+            if (this.bom) {
+                writer.write('\uFEFF');
+            }
 
             // Write header row
             writer.println(columns.stream()
                     .map(CsvColumn::getName)
-                    .map(CsvWriter::escapeCsv)
-                    .collect(Collectors.joining(",")));
+                    .map(this::escapeCsv)
+                    .collect(Collectors.joining(joining)));
             cursor.plusRow();
 
             // Write data rows
@@ -166,8 +209,8 @@ public class CsvWriter<T> {
                 cursor.plusRow();
                 String line = columns.stream()
                         .map(col -> col.applyFunction(row, cursor))
-                        .map(CsvWriter::escapeCsv)
-                        .collect(Collectors.joining(","));
+                        .map(this::escapeCsv)
+                        .collect(Collectors.joining(joining));
                 writer.println(line);
             });
         }
@@ -180,7 +223,7 @@ public class CsvWriter<T> {
      * @param input The input value (nullable)
      * @return A properly escaped CSV field
      */
-    private static String escapeCsv(Object input) {
+    private String escapeCsv(Object input) {
         if (input == null) {
             return "";
         }
@@ -189,7 +232,7 @@ public class CsvWriter<T> {
         if (!value.isEmpty() && isFormulaCharacter(value.charAt(0))) {
             value = "'" + value;
         }
-        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
+        if (value.contains(String.valueOf(this.delimiter)) || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;

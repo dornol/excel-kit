@@ -6,6 +6,8 @@ import jakarta.validation.Validator;
 import org.jspecify.annotations.NonNull;
 
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +30,8 @@ public class CsvReader<T> {
     private final Supplier<T> instanceSupplier;
     private final Validator validator;
     private int headerRowIndex = 0;
+    private char delimiter = ',';
+    private Charset charset = StandardCharsets.UTF_8;
 
     /**
      * Constructs a CsvReader with instance supplier and optional validator.
@@ -50,6 +54,30 @@ public class CsvReader<T> {
      */
     public CsvReader<T> headerRowIndex(int headerRowIndex) {
         this.headerRowIndex = headerRowIndex;
+        return this;
+    }
+
+    /**
+     * Sets the delimiter character used to separate fields.
+     * Defaults to comma ({@code ','}).
+     *
+     * @param delimiter The delimiter character
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> delimiter(char delimiter) {
+        this.delimiter = delimiter;
+        return this;
+    }
+
+    /**
+     * Sets the character encoding for reading the CSV file.
+     * Defaults to {@link StandardCharsets#UTF_8}.
+     *
+     * @param charset The charset to use
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> charset(Charset charset) {
+        this.charset = charset;
         return this;
     }
 
@@ -106,6 +134,6 @@ public class CsvReader<T> {
      * @return A handler to execute CSV parsing
      */
     public CsvReadHandler<T> build(@NonNull InputStream inputStream) {
-        return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator, headerRowIndex);
+        return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset);
     }
 }

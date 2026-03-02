@@ -131,6 +131,9 @@ public class ExcelColumn<T> {
         private HorizontalAlignment alignment = HorizontalAlignment.CENTER;
         private CellStyle style;
         private ExcelColumnSetter columnSetter;
+        private int[] backgroundColor;
+        private Boolean bold;
+        private Integer fontSize;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
             this.writer = writer;
@@ -171,6 +174,39 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets the background color for this column's cells.
+         *
+         * @param r Red component (0–255)
+         * @param g Green component (0–255)
+         * @param b Blue component (0–255)
+         */
+        public ExcelColumnBuilder<T> backgroundColor(int r, int g, int b) {
+            this.backgroundColor = new int[]{r, g, b};
+            return this;
+        }
+
+        /**
+         * Sets whether this column's font should be bold.
+         */
+        public ExcelColumnBuilder<T> bold(boolean bold) {
+            this.bold = bold;
+            return this;
+        }
+
+        /**
+         * Sets the font size for this column's cells.
+         *
+         * @param fontSize Font size in points (must be positive)
+         */
+        public ExcelColumnBuilder<T> fontSize(int fontSize) {
+            if (fontSize <= 0) {
+                throw new IllegalArgumentException("fontSize must be positive");
+            }
+            this.fontSize = fontSize;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         private ExcelColumn<T> build() {
@@ -181,7 +217,10 @@ public class ExcelColumn<T> {
                 this.dataFormat = this.dataType.getDefaultFormat(); // format 먼저
             }
             if (this.style == null) {
-                this.style = ExcelStyleSupporter.cellStyle(writer.getWb(), this.alignment, this.dataFormat, writer.getCellStyleCache());
+                this.style = ExcelStyleSupporter.cellStyle(
+                        writer.getWb(), this.alignment, this.dataFormat,
+                        this.backgroundColor, this.bold, this.fontSize,
+                        writer.getCellStyleCache());
             }
             if (this.columnSetter == null) {
                 this.columnSetter = this.dataType.getSetter();

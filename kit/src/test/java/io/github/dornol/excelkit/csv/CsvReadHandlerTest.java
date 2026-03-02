@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.shared.CellData;
+import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -284,6 +285,88 @@ class CsvReadHandlerTest {
         InputStream is = new ByteArrayInputStream("a\n".getBytes());
         assertThrows(IllegalArgumentException.class,
                 () -> new CsvReadHandler<>(is, List.of(new CsvReadColumn<>((p, c) -> {})), TestPerson::new, null, -1));
+    }
+
+    @Test
+    void read_shouldReadTabDelimitedCsv() {
+        String csv = "Name\tAge\nAlice\t30\nBob\t25\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        List<TestPerson> results = new ArrayList<>();
+
+        new CsvReader<>(TestPerson::new, null)
+                .delimiter('\t')
+                .column((p, cell) -> p.name = cell.asString())
+                .column((p, cell) -> p.age = cell.asInt())
+                .build(is)
+                .read(result -> {
+                    if (result.success()) {
+                        results.add(result.data());
+                    }
+                });
+
+        assertEquals(2, results.size());
+        assertEquals("Alice", results.get(0).name);
+        assertEquals(30, results.get(0).age);
+        assertEquals("Bob", results.get(1).name);
+        assertEquals(25, results.get(1).age);
+    }
+
+    @Test
+    void read_shouldReadWithCustomCharset() throws Exception {
+        // Create EUC-KR encoded CSV content
+        java.nio.charset.Charset eucKr = java.nio.charset.Charset.forName("EUC-KR");
+        String csv = "Name,Age\n\ud55c\uae00,30\n";
+        byte[] eucKrBytes = csv.getBytes(eucKr);
+        InputStream is = new ByteArrayInputStream(eucKrBytes);
+
+        List<TestPerson> results = new ArrayList<>();
+
+        new CsvReader<>(TestPerson::new, null)
+                .charset(eucKr)
+                .column((p, cell) -> p.name = cell.asString())
+                .column((p, cell) -> p.age = cell.asInt())
+                .build(is)
+                .read(result -> {
+                    if (result.success()) {
+                        results.add(result.data());
+                    }
+                });
+
+        assertEquals(1, results.size());
+        assertEquals("\ud55c\uae00", results.get(0).name);
+        assertEquals(30, results.get(0).age);
+    }
+
+    @Test
+    void readStrict_shouldSucceedForValidData() {
+        String csv = "Name,Age\nAlice,30\nBob,25\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        List<TestPerson> results = new ArrayList<>();
+
+        new CsvReader<>(TestPerson::new, validator)
+                .column((p, cell) -> p.name = cell.asString())
+                .column((p, cell) -> p.age = cell.asInt())
+                .build(is)
+                .readStrict(results::add);
+
+        assertEquals(2, results.size());
+        assertEquals("Alice", results.get(0).name);
+        assertEquals("Bob", results.get(1).name);
+    }
+
+    @Test
+    void readStrict_shouldThrowOnFirstError() {
+        String csv = "Name,Age\nValid,30\n,25\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        assertThrows(ReadAbortException.class, () ->
+                new CsvReader<>(TestPerson::new, validator)
+                        .column((p, cell) -> p.name = cell.asString())
+                        .column((p, cell) -> p.age = cell.asInt())
+                        .build(is)
+                        .readStrict(p -> {}));
     }
 
     private CsvReadHandler<TestPerson> buildHandler(String csv, Validator validator) {

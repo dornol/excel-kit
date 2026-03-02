@@ -77,6 +77,24 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     public abstract void read(Consumer<ReadResult<T>> consumer);
 
     /**
+     * Reads the file and invokes the given consumer only for successfully parsed rows.
+     * If any row fails validation or mapping, a {@link ReadAbortException} is thrown immediately.
+     *
+     * @param consumer Callback to receive successfully parsed row data
+     * @throws ReadAbortException if any row fails validation or mapping
+     */
+    public void readStrict(Consumer<T> consumer) {
+        read(result -> {
+            if (!result.success()) {
+                String detail = (result.messages() != null && !result.messages().isEmpty())
+                        ? String.join("; ", result.messages()) : "Unknown error";
+                throw new ReadAbortException("Row read failed: " + detail);
+            }
+            consumer.accept(result.data());
+        });
+    }
+
+    /**
      * Reads the file and returns a stream of row results.
      * <p>
      * This method collects all results into a list and returns a stream over them.

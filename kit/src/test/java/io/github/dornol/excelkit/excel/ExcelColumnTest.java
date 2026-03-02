@@ -289,6 +289,67 @@ class ExcelColumnTest {
         assertEquals(customStyle, column.getStyle(), "Column style should match custom style");
     }
 
+    @Test
+    void builder_shouldApplyBackgroundColor() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+
+        // Act
+        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
+                .backgroundColor(255, 200, 100);
+        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
+
+        // Assert
+        assertNotNull(column);
+        CellStyle style = column.getStyle();
+        assertNotNull(style, "Style should not be null");
+    }
+
+    @Test
+    void builder_shouldApplyBoldFont() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+
+        // Act
+        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
+                .bold(true);
+        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
+
+        // Assert
+        assertNotNull(column);
+        CellStyle style = column.getStyle();
+        assertNotNull(style, "Style should not be null");
+    }
+
+    @Test
+    void builder_shouldApplyFontSize() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+
+        // Act
+        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
+                .fontSize(14);
+        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
+
+        // Assert
+        assertNotNull(column);
+        CellStyle style = column.getStyle();
+        assertNotNull(style, "Style should not be null");
+    }
+
+    @Test
+    void fontSizeShouldThrowForNonPositive() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+
+        // Act & Assert
+        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r);
+        assertThrows(IllegalArgumentException.class, () -> builder.fontSize(0),
+                "fontSize(0) should throw IllegalArgumentException");
+        assertThrows(IllegalArgumentException.class, () -> builder.fontSize(-1),
+                "fontSize(-1) should throw IllegalArgumentException");
+    }
+
     /**
      * Helper method to call the private build() method via reflection.
      */

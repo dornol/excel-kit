@@ -1,14 +1,19 @@
 package io.github.dornol.excelkit.csv;
 
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import io.github.dornol.excelkit.shared.AbstractReadHandler;
 import io.github.dornol.excelkit.shared.CellData;
+import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.NonNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -30,12 +35,19 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final List<String> headerNames = new ArrayList<>();
     private final List<CsvReadColumn<T>> columns;
     private final int headerRowIndex;
+    private final char delimiter;
+    private final Charset charset;
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0);
+        this(inputStream, columns, instanceSupplier, validator, 0, ',', StandardCharsets.UTF_8);
     }
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int headerRowIndex) {
+        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, ',', StandardCharsets.UTF_8);
+    }
+
+    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                   Validator validator, int headerRowIndex, char delimiter, Charset charset) {
         super(inputStream, instanceSupplier, validator, ".csv");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
@@ -45,6 +57,8 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
         this.columns = columns;
         this.headerRowIndex = headerRowIndex;
+        this.delimiter = delimiter;
+        this.charset = charset;
     }
 
     /**
@@ -54,7 +68,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
      */
     @Override
     public void read(@NonNull Consumer<ReadResult<T>> consumer) {
-        try (CSVReader reader = new CSVReader(new InputStreamReader(Files.newInputStream(getTempFile()), StandardCharsets.UTF_8))) {
+        try (CSVReader reader = buildCsvReader()) {
             for (int i = 0; i < headerRowIndex; i++) {
                 if (reader.readNext() == null) {
                     throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
@@ -86,11 +100,19 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
             }
         } catch (CsvReadException e) {
             throw e;
+        } catch (ReadAbortException e) {
+            throw e;
         } catch (Exception e) {
             throw new CsvReadException("Failed to read CSV", e);
         } finally {
             close();
         }
+    }
+
+    private CSVReader buildCsvReader() throws Exception {
+        CSVParser csvParser = new CSVParserBuilder().withSeparator(this.delimiter).build();
+        return new CSVReaderBuilder(new InputStreamReader(Files.newInputStream(getTempFile()), this.charset))
+                .withCSVParser(csvParser).build();
     }
 
     private void prepareColumnHeaders(String[] line) {

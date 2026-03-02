@@ -92,17 +92,54 @@ class ExcelStyleSupporter {
      * @return Configured CellStyle for body cells
      */
     static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format, Map<String, CellStyle> cache) {
-        String key = alignment.name() + "|" + format;
-        return cache.computeIfAbsent(key, k -> createCellStyle(wb, alignment, format));
+        return cellStyle(wb, alignment, format, null, null, null, cache);
+    }
+
+    static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format,
+                               int[] backgroundColor, Boolean bold, Integer fontSize,
+                               Map<String, CellStyle> cache) {
+        StringBuilder keyBuilder = new StringBuilder();
+        keyBuilder.append(alignment.name()).append("|").append(format);
+        if (backgroundColor != null) {
+            keyBuilder.append("|bg=").append(backgroundColor[0]).append(",").append(backgroundColor[1]).append(",").append(backgroundColor[2]);
+        }
+        if (bold != null) {
+            keyBuilder.append("|bold=").append(bold);
+        }
+        if (fontSize != null) {
+            keyBuilder.append("|fs=").append(fontSize);
+        }
+        String key = keyBuilder.toString();
+        return cache.computeIfAbsent(key, k -> createCellStyle(wb, alignment, format, backgroundColor, bold, fontSize));
     }
 
     private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format) {
+        return createCellStyle(wb, alignment, format, null, null, null);
+    }
+
+    private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format,
+                                             int[] backgroundColor, Boolean bold, Integer fontSize) {
         CellStyle nowStyle = wb.createCellStyle();
 
         nowStyle.setAlignment(alignment);
         if (format != null) {
             DataFormat dataFormat = wb.createDataFormat();
             nowStyle.setDataFormat(dataFormat.getFormat(format));
+        }
+        if (backgroundColor != null) {
+            nowStyle.setFillForegroundColor(new XSSFColor(new byte[]{
+                    (byte) backgroundColor[0], (byte) backgroundColor[1], (byte) backgroundColor[2]}));
+            nowStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        }
+        if (bold != null || fontSize != null) {
+            Font font = wb.createFont();
+            if (bold != null) {
+                font.setBold(bold);
+            }
+            if (fontSize != null) {
+                font.setFontHeightInPoints(fontSize.shortValue());
+            }
+            nowStyle.setFont(font);
         }
         nowStyle.setBorderTop(BorderStyle.THIN);
         nowStyle.setBorderBottom(BorderStyle.THIN);

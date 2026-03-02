@@ -189,6 +189,62 @@ class CsvWriterTest {
         assertEquals("\uFEFFName,End", lines[0], "Conditional column with false should be excluded");
     }
 
+    @Test
+    void write_shouldUseTabDelimiter() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+        writer.delimiter('\t')
+              .column("Name", data -> data.name)
+              .column("Age", data -> data.age);
+
+        // Act
+        CsvHandler handler = writer.write(Stream.of(new TestData("Alice", 30)));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.consumeOutputStream(outputStream);
+
+        // Assert
+        String csvContent = outputStream.toString();
+        String[] lines = csvContent.split("\\r?\\n");
+        assertEquals("\uFEFFName\tAge", lines[0], "Header should use tab delimiter");
+        assertEquals("Alice\t30", lines[1], "Data row should use tab delimiter");
+    }
+
+    @Test
+    void write_shouldRespectBomFalse() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+        writer.bom(false)
+              .column("Name", data -> data.name);
+
+        // Act
+        CsvHandler handler = writer.write(Stream.of(new TestData("Alice", 30)));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.consumeOutputStream(outputStream);
+
+        // Assert
+        String csvContent = outputStream.toString();
+        assertFalse(csvContent.startsWith("\uFEFF"), "BOM should not be present when bom=false");
+        assertTrue(csvContent.startsWith("Name"), "Content should start directly with header");
+    }
+
+    @Test
+    void write_shouldEscapeCustomDelimiterInValues() {
+        // Arrange
+        CsvWriter<TestData> writer = new CsvWriter<>();
+        writer.delimiter('\t')
+              .column("Name", data -> data.name);
+
+        // Act — name contains a tab character
+        CsvHandler handler = writer.write(Stream.of(new TestData("Alice\tSmith", 30)));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.consumeOutputStream(outputStream);
+
+        // Assert
+        String csvContent = outputStream.toString();
+        String[] lines = csvContent.split("\\r?\\n");
+        assertEquals("\"Alice\tSmith\"", lines[1], "Value containing tab delimiter should be quoted");
+    }
+
     /**
      * Test data class for CSV writer tests.
      */

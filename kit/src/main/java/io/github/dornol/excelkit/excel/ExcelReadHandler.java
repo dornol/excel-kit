@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.AbstractReadHandler;
 import io.github.dornol.excelkit.shared.CellData;
+import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -133,6 +134,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
 
         } catch (ExcelReadException e) {
+            throw e;
+        } catch (ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException("Failed to read excel", e);

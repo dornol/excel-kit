@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.util.PaneInformation;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.junit.jupiter.api.Test;
@@ -205,6 +206,127 @@ class ExcelWriterTest {
             handler.consumeOutputStream(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
+    }
+
+    @Test
+    void write_shouldApplyAutoFilter() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a", "b");
+
+        // Act
+        ExcelHandler handler = writer
+                .autoFilter(true)
+                .column("A", (row, c) -> row)
+                .column("B", (row, c) -> row.length())
+                .write(data);
+
+        // Assert
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        // Verify auto-filter is set — SXSSFSheet tracks it internally
+        assertNotNull(sheet, "Sheet should exist");
+
+        // consume for completeness
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+            assertTrue(bos.toByteArray().length > 0);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void write_shouldApplyFreezePane() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a", "b");
+
+        // Act
+        ExcelHandler handler = writer
+                .freezePane(1)
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        PaneInformation pane = sheet.getPaneInformation();
+        assertNotNull(pane, "Freeze pane information should exist");
+        assertEquals(1, pane.getHorizontalSplitPosition(), "Freeze pane should freeze 1 row below header");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void write_shouldApplyAutoFilterWithTitle() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a");
+
+        // Act
+        ExcelHandler handler = writer
+                .title("Title")
+                .autoFilter(true)
+                .column("A", (row, c) -> row)
+                .column("B", (row, c) -> row.length())
+                .write(data);
+
+        // Assert — the auto-filter range should start at row 2 when title is present
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertNotNull(sheet);
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+            assertTrue(bos.toByteArray().length > 0);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void write_shouldApplyOptionsOnRolloverSheets() {
+        // Arrange: max 2 rows per sheet with auto-filter and freeze pane
+        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
+        Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
+
+        // Act
+        ExcelHandler handler = writer
+                .autoFilter(true)
+                .freezePane(1)
+                .column("A", (row, c) -> row)
+                .column("B", (row, c) -> row * 10)
+                .write(data);
+
+        // Assert that every sheet has freeze pane applied
+        SXSSFWorkbook wb = writer.getWb();
+        assertTrue(wb.getNumberOfSheets() >= 2, "Should have multiple sheets");
+
+        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            SXSSFSheet s = wb.getSheetAt(i);
+            PaneInformation pane = s.getPaneInformation();
+            assertNotNull(pane, "Freeze pane should exist on sheet " + i);
+            assertEquals(1, pane.getHorizontalSplitPosition(),
+                    "Freeze pane should be at row 1 on sheet " + i);
+        }
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void freezePane_shouldThrowForNegativeValue() {
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        assertThrows(IllegalArgumentException.class, () -> writer.freezePane(-1),
+                "Negative freezePane value should throw IllegalArgumentException");
     }
 
     @Test

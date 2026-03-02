@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.CellData;
+import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -345,6 +346,38 @@ class ExcelReadHandlerTest {
         assertEquals(2, results.size());
         assertEquals("A1", results.get(0).first);
         assertEquals("C1", results.get(0).third);
+    }
+
+    @Test
+    void readStrict_shouldSucceedForValidData() throws IOException {
+        List<TestPerson> results = new ArrayList<>();
+        try (InputStream is = Files.newInputStream(excelFile)) {
+            new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is)
+                    .readStrict(results::add);
+        }
+
+        assertEquals(3, results.size());
+        assertEquals("Alice", results.get(0).getName());
+        assertEquals("Bob", results.get(1).getName());
+        assertEquals("Charlie", results.get(2).getName());
+    }
+
+    @Test
+    void readStrict_shouldThrowOnFirstError() throws IOException {
+        Path invalidExcelFile = tempDir.resolve("invalid-strict.xlsx");
+        createInvalidTestExcelFile(invalidExcelFile);
+
+        try (InputStream is = Files.newInputStream(invalidExcelFile)) {
+            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is);
+
+            assertThrows(ReadAbortException.class, () -> handler.readStrict(p -> {}));
+        }
     }
 
     @Test

@@ -44,6 +44,8 @@ public class ExcelWriter<T> implements AutoCloseable {
     private String title;
     private CellStyle titleStyle;
     private float rowHeightInPoints = 20;
+    private boolean autoFilter = false;
+    private int freezePaneRows = 0;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -163,6 +165,32 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Enables or disables auto-filter on the header row.
+     *
+     * @param autoFilter Whether to apply auto-filter
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> autoFilter(boolean autoFilter) {
+        this.autoFilter = autoFilter;
+        return this;
+    }
+
+    /**
+     * Sets the number of rows to freeze below the header row.
+     * The freeze pane is created starting from the header row position.
+     *
+     * @param rows Number of rows to freeze (must be non-negative)
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> freezePane(int rows) {
+        if (rows < 0) {
+            throw new IllegalArgumentException("freezePaneRows must be non-negative");
+        }
+        this.freezePaneRows = rows;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -224,6 +252,7 @@ public class ExcelWriter<T> implements AutoCloseable {
         }
 
         setColumnHeaders();
+        applySheetOptions();
 
         try (stream) {
             stream.forEach(rowData -> {
@@ -274,6 +303,20 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Applies optional sheet-level settings such as auto-filter and freeze panes.
+     */
+    private void applySheetOptions() {
+        if (this.autoFilter) {
+            int headerRowIdx = this.title != null ? 2 : 0;
+            sheet.setAutoFilter(new CellRangeAddress(headerRowIdx, headerRowIdx, 0, columns.size() - 1));
+        }
+        if (this.freezePaneRows > 0) {
+            int baseRow = this.title != null ? 2 : 0;
+            sheet.createFreezePane(0, baseRow + this.freezePaneRows);
+        }
+    }
+
+    /**
      * Handles the logic of writing a single row to the sheet, including value mapping and style.
      *
      * @param rowData A row of data
@@ -286,6 +329,7 @@ public class ExcelWriter<T> implements AutoCloseable {
                 setSheetTitle();
             }
             setColumnHeaders();
+            applySheetOptions();
         }
         SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
         row.setHeightInPoints(rowHeightInPoints);
