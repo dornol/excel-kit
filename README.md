@@ -12,8 +12,8 @@ password-encrypted Excel export, and optional Bean Validation support.
 **Excel Writing** (SXSSFWorkbook streaming)
 - Fluent column DSL with type, format, alignment, and style options
 - Automatic sheet splitting when row limit is reached
-- Customizable header color, row height, title, auto-filter, and freeze panes
-- Lifecycle callbacks: `beforeHeader`, `afterData`, `afterAll`
+- Customizable header color, row height, auto-filter, and freeze panes
+- Lifecycle callbacks with `SheetContext`: `beforeHeader`, `afterData`, `afterAll`
 - Dropdown data validation (select list) per column
 - Row-level conditional styling (background color)
 - Explicit multi-sheet workbook with different data types per sheet (`ExcelWorkbook`)
@@ -163,12 +163,10 @@ crh.read(result -> {
 
 ## Advanced Usage
 
-### Title and Row Height
+### Row Height
 
 ```java
 new ExcelWriter<Person>()
-        .title("Employee Report")          // merged title row at the top
-        .title("Report", 14)               // with font size
         .rowHeight(25)                      // data row height (default: 20pt)
         .column("Name", p -> p.name())
         .write(data);
@@ -266,29 +264,32 @@ Callbacks allow inserting custom rows at specific points during Excel generation
 
 **Invocation order per sheet:**
 ```
-title → beforeHeader → header → data rows → afterData
-                                              ↓ (last sheet only)
-                                            afterAll
+beforeHeader → header → data rows → afterData
+                                      ↓ (last sheet only)
+                                    afterAll
 ```
 
-On sheet rollover: current sheet gets `afterData` → new sheet is created → title + `beforeHeader` + header.
+On sheet rollover: current sheet gets `afterData` → new sheet is created → `beforeHeader` + header.
+
+All callbacks receive a `SheetContext` parameter that provides `getColumnCount()` and `getColumnNames()` for the current sheet.
 
 ```java
 writer
     .column("Name", p -> p.name())
     .column("Amount", p -> p.amount())
-    .beforeHeader((sheet, wb, startRow) -> {
+    .beforeHeader((sheet, wb, startRow, context) -> {
         // called on every sheet, before the header row
+        // context.getColumnCount(), context.getColumnNames() available
         sheet.createRow(startRow).createCell(0).setCellValue("Generated: 2025-07-19");
         return startRow + 1;  // return the next available row index
     })
-    .afterData((sheet, wb, nextRow) -> {
+    .afterData((sheet, wb, nextRow, context) -> {
         // called on every sheet after its data rows (e.g. subtotals)
         SXSSFRow row = sheet.createRow(nextRow);
         row.createCell(0).setCellValue("Subtotal");
         return nextRow + 1;
     })
-    .afterAll((sheet, wb, nextRow) -> {
+    .afterAll((sheet, wb, nextRow, context) -> {
         // called once on the last sheet, after afterData (e.g. grand total)
         SXSSFRow row = sheet.createRow(nextRow);
         row.createCell(0).setCellValue("Grand Total");
@@ -299,7 +300,7 @@ writer
 
 ### Sheet Auto-Splitting
 
-When the configured maximum rows per sheet is reached, a new sheet is automatically created with title, `beforeHeader`, and header replicated.
+When the configured maximum rows per sheet is reached, a new sheet is automatically created with `beforeHeader` and header replicated.
 
 ```java
 // split every 100,000 rows
@@ -339,7 +340,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
 - Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`
-- `title()`, `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`
 
 > **Note:** Unlike `ExcelWriter`, `ExcelSheetWriter` does not auto-split sheets.
 > Each `sheet()` call creates exactly one sheet.
