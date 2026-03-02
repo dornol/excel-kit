@@ -303,6 +303,22 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Finalizes the current column and registers an afterData callback on the writer.
+         */
+        public ExcelWriter<T> afterData(AfterDataWriter afterDataWriter) {
+            this.writer.addColumn(this.build());
+            return this.writer.afterData(afterDataWriter);
+        }
+
+        /**
+         * Finalizes the current column and registers an afterAll callback on the writer.
+         */
+        public ExcelWriter<T> afterAll(AfterDataWriter afterAllWriter) {
+            this.writer.addColumn(this.build());
+            return this.writer.afterAll(afterAllWriter);
+        }
+
+        /**
          * Finalizes the column definition and writes the Excel stream with row-level post-processing.
          */
         public ExcelHandler write(Stream<T> stream, ExcelConsumer<T> consumer) {

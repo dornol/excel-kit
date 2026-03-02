@@ -46,6 +46,9 @@ public class ExcelWriter<T> implements AutoCloseable {
     private float rowHeightInPoints = 20;
     private boolean autoFilter = false;
     private int freezePaneRows = 0;
+    private BeforeHeaderWriter beforeHeaderWriter;
+    private AfterDataWriter afterDataWriter;
+    private AfterDataWriter afterAllWriter;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -221,6 +224,52 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Registers a callback that writes custom content before the column header row.
+     * <p>
+     * The callback receives the current sheet, the workbook, and the first available row index,
+     * and must return the next available row index (where the header will start).
+     * When a title is set, {@code startRow} will be 2 (after the title rows); otherwise 0.
+     * <p>
+     * The callback is invoked on every sheet, including rollover sheets,
+     * so it must always produce the same number of rows.
+     *
+     * @param beforeHeaderWriter the callback to invoke before writing column headers
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> beforeHeader(BeforeHeaderWriter beforeHeaderWriter) {
+        this.beforeHeaderWriter = beforeHeaderWriter;
+        return this;
+    }
+
+    /**
+     * Registers a callback that writes custom content after all data rows on each sheet.
+     * <p>
+     * Called on every sheet (including rollover sheets) after its data rows are written.
+     * On the last sheet, this is called before {@code afterAll}.
+     *
+     * @param afterDataWriter the callback to invoke after data rows
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> afterData(AfterDataWriter afterDataWriter) {
+        this.afterDataWriter = afterDataWriter;
+        return this;
+    }
+
+    /**
+     * Registers a callback that writes custom content once on the last sheet after all data.
+     * <p>
+     * Called only once, on the last sheet, after {@code afterData} (if set).
+     * Useful for writing grand totals or summary rows.
+     *
+     * @param afterAllWriter the callback to invoke after all data is written
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> afterAll(AfterDataWriter afterAllWriter) {
+        this.afterAllWriter = afterAllWriter;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -290,11 +339,8 @@ public class ExcelWriter<T> implements AutoCloseable {
         }
 
         this.sheet = wb.createSheet();
-        this.cursor = new Cursor(this.title != null ? 2 : 0);
-
-        if (this.title != null) {
-            setSheetTitle();
-        }
+        int headerStartRow = initSheetPreamble();
+        this.cursor = new Cursor(headerStartRow);
 
         setColumnHeaders();
         applySheetOptions();
@@ -305,6 +351,15 @@ public class ExcelWriter<T> implements AutoCloseable {
                 consumer.accept(rowData, cursor);
             });
         }
+
+        int nextRow = cursor.getRowOfSheet();
+        if (this.afterDataWriter != null) {
+            nextRow = this.afterDataWriter.write(this.sheet, this.wb, nextRow);
+        }
+        if (this.afterAllWriter != null) {
+            this.afterAllWriter.write(this.sheet, this.wb, nextRow);
+        }
+
         applyColumnWidthAllSheets();
         return new ExcelHandler(this.wb);
     }
@@ -334,6 +389,23 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Writes the title (if set) and invokes the beforeHeader callback (if set).
+     *
+     * @return the row index where the column header should be written
+     */
+    private int initSheetPreamble() {
+        int currentRow = 0;
+        if (this.title != null) {
+            setSheetTitle();
+            currentRow = 2;
+        }
+        if (this.beforeHeaderWriter != null) {
+            currentRow = this.beforeHeaderWriter.write(this.sheet, this.wb, currentRow);
+        }
+        return currentRow;
+    }
+
+    /**
      * Writes column headers to the current sheet using the predefined header style.
      */
     private void setColumnHeaders() {
@@ -351,13 +423,12 @@ public class ExcelWriter<T> implements AutoCloseable {
      * Applies optional sheet-level settings such as auto-filter and freeze panes.
      */
     private void applySheetOptions() {
+        int headerRowIdx = cursor.getRowOfSheet() - 1;
         if (this.autoFilter) {
-            int headerRowIdx = this.title != null ? 2 : 0;
             sheet.setAutoFilter(new CellRangeAddress(headerRowIdx, headerRowIdx, 0, columns.size() - 1));
         }
         if (this.freezePaneRows > 0) {
-            int baseRow = this.title != null ? 2 : 0;
-            sheet.createFreezePane(0, baseRow + this.freezePaneRows);
+            sheet.createFreezePane(0, headerRowIdx + this.freezePaneRows);
         }
     }
 
@@ -369,10 +440,11 @@ public class ExcelWriter<T> implements AutoCloseable {
     void handleRowData(T rowData) {
         cursor.plusTotal();
         if (isOverMaxRows()) {
-            turnOverSheet();
-            if (this.title != null) {
-                setSheetTitle();
+            if (this.afterDataWriter != null) {
+                this.afterDataWriter.write(this.sheet, this.wb, cursor.getRowOfSheet());
             }
+            turnOverSheet();
+            initSheetPreamble();
             setColumnHeaders();
             applySheetOptions();
         }
