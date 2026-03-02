@@ -1,9 +1,11 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.util.PaneInformation;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -788,6 +790,130 @@ class ExcelWriterTest {
         // Sheet 2: header(0), data(1), subtotal(2)
         assertEquals("subtotal", wb.getSheetAt(2).getRow(2).getCell(0).getStringCellValue(),
                 "Subtotal must exist on sheet 2");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void dropdown_shouldApplyDataValidation() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("Active", "Inactive");
+
+        // Act
+        ExcelHandler handler = writer
+                .column("Status", (row, c) -> row)
+                .dropdown("Active", "Inactive", "Pending")
+                .write(data);
+
+        // Assert
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        List<? extends DataValidation> validations = sheet.getDataValidations();
+        assertEquals(1, validations.size(), "Should have one data validation");
+        DataValidation validation = validations.get(0);
+        assertFalse(validation.getSuppressDropDownArrow(), "Dropdown arrow should not be suppressed");
+        assertTrue(validation.getShowErrorBox(), "Error box should be shown");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void dropdown_shouldApplyToCorrectColumnOnly() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("test");
+
+        // Act
+        ExcelHandler handler = writer
+                .column("Name", (row, c) -> row)
+                .column("Status", (row, c) -> row)
+                .dropdown("Active", "Inactive")
+                .write(data);
+
+        // Assert: only the Status column (index 1) should have validation
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        List<? extends DataValidation> validations = sheet.getDataValidations();
+        assertEquals(1, validations.size(), "Should have exactly one data validation");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void rowColor_shouldApplyBackgroundColor() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("error", "ok");
+
+        // Act
+        ExcelHandler handler = writer
+                .rowColor(row -> "error".equals(row) ? ExcelColor.LIGHT_RED : null)
+                .column("Status", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        // Row 1 is "error" → should have LIGHT_RED background
+        SXSSFRow errorRow = sheet.getRow(1);
+        assertNotNull(errorRow);
+        var errorStyle = errorRow.getCell(0).getCellStyle();
+        assertNotNull(errorStyle);
+        XSSFColor errorFg = (XSSFColor) errorStyle.getFillForegroundColorColor();
+        assertNotNull(errorFg, "Error row should have a fill color");
+        byte[] rgb = errorFg.getRGB();
+        assertEquals((byte) 255, rgb[0], "Red component");
+        assertEquals((byte) 199, rgb[1], "Green component");
+        assertEquals((byte) 206, rgb[2], "Blue component");
+
+        // Row 2 is "ok" → should NOT have LIGHT_RED background
+        SXSSFRow okRow = sheet.getRow(2);
+        assertNotNull(okRow);
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void rowColor_shouldOverrideColumnBackgroundColor() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("highlight");
+
+        // Act
+        ExcelHandler handler = writer
+                .rowColor(row -> ExcelColor.LIGHT_YELLOW)
+                .column("Col", (row, c) -> row)
+                .backgroundColor(ExcelColor.LIGHT_BLUE) // column bg
+                .write(data);
+
+        // Assert: row color should override column bg
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        SXSSFRow dataRow = sheet.getRow(1);
+        XSSFColor fg = (XSSFColor) dataRow.getCell(0).getCellStyle().getFillForegroundColorColor();
+        assertNotNull(fg);
+        byte[] rgb = fg.getRGB();
+        // Should be LIGHT_YELLOW, not LIGHT_BLUE
+        assertEquals((byte) 255, rgb[0]);
+        assertEquals((byte) 235, rgb[1]);
+        assertEquals((byte) 156, rgb[2]);
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {

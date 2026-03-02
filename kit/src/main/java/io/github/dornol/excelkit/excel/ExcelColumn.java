@@ -35,10 +35,11 @@ public class ExcelColumn<T> {
     private final int minWidth;
     private final int maxWidth;
     private final boolean fixedWidth;
+    private final String[] dropdownOptions;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter,
-                int minWidth, int maxWidth, boolean fixedWidth) {
+                int minWidth, int maxWidth, boolean fixedWidth, String[] dropdownOptions) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -46,6 +47,7 @@ public class ExcelColumn<T> {
         this.minWidth = minWidth;
         this.maxWidth = maxWidth;
         this.fixedWidth = fixedWidth;
+        this.dropdownOptions = dropdownOptions;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -128,6 +130,10 @@ public class ExcelColumn<T> {
         return Math.max(w, minWidth);
     }
 
+    String[] getDropdownOptions() {
+        return dropdownOptions;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -148,6 +154,7 @@ public class ExcelColumn<T> {
         private int minWidthValue;
         private int maxWidthValue;
         private boolean fixedWidthValue;
+        private String[] dropdownOptions;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
             this.writer = writer;
@@ -261,6 +268,16 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets dropdown validation options for this column's cells.
+         *
+         * @param options The list of allowed values for the dropdown
+         */
+        public ExcelColumnBuilder<T> dropdown(String... options) {
+            this.dropdownOptions = options;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -280,7 +297,7 @@ public class ExcelColumn<T> {
                 this.columnSetter = this.dataType.getSetter();
             }
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
-                    this.minWidthValue, this.maxWidthValue, this.fixedWidthValue);
+                    this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions);
         }
 
         /**

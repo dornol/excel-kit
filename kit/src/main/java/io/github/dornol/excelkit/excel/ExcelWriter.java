@@ -2,10 +2,15 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataValidation;
+import org.apache.poi.ss.usermodel.DataValidationConstraint;
+import org.apache.poi.ss.usermodel.DataValidationHelper;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.jspecify.annotations.NonNull;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -35,6 +40,7 @@ public class ExcelWriter<T> implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
     private static final int AUTO_WIDTH_SAMPLE_ROWS = 100;
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
+    private static final int EXCEL_MAX_ROWS = 1_048_575;
 
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
@@ -51,6 +57,9 @@ public class ExcelWriter<T> implements AutoCloseable {
     private AfterDataWriter afterAllWriter;
     private Function<Integer, String> sheetNameFunction;
     private int sheetCount = 0;
+    private Function<T, ExcelColor> rowColorFunction;
+    private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
+    private int headerRowIndex;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -295,6 +304,21 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Sets a function that determines the background color for each row.
+     * <p>
+     * When set, the function is called for each row of data. If it returns a non-null
+     * {@link ExcelColor}, that color is applied as the background to all cells in the row,
+     * overriding any column-level background color.
+     *
+     * @param rowColorFunction function that takes row data and returns an ExcelColor (or null for no override)
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> rowColor(Function<T, ExcelColor> rowColorFunction) {
+        this.rowColorFunction = rowColorFunction;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -366,6 +390,7 @@ public class ExcelWriter<T> implements AutoCloseable {
         this.sheet = createNamedSheet();
         int headerStartRow = initSheetPreamble();
         this.cursor = new Cursor(headerStartRow);
+        this.headerRowIndex = headerStartRow;
 
         setColumnHeaders();
         applySheetOptions();
@@ -385,6 +410,7 @@ public class ExcelWriter<T> implements AutoCloseable {
             this.afterAllWriter.write(this.sheet, this.wb, nextRow);
         }
 
+        applyDataValidations();
         applyColumnWidthAllSheets();
         return new ExcelHandler(this.wb);
     }
@@ -477,12 +503,18 @@ public class ExcelWriter<T> implements AutoCloseable {
         row.setHeightInPoints(rowHeightInPoints);
         cursor.plusRow();
 
+        ExcelColor rowColor = (rowColorFunction != null) ? rowColorFunction.apply(rowData) : null;
+
         for (int j = 0; j < this.columns.size(); j++) {
             SXSSFCell cell = row.createCell(j);
             ExcelColumn<T> column = columns.get(j);
             Object columnData = column.applyFunction(rowData, cursor);
             column.setColumnData(cell, columnData);
-            cell.setCellStyle(column.getStyle());
+            if (rowColor != null) {
+                cell.setCellStyle(getRowColorStyle(column.getStyle(), rowColor));
+            } else {
+                cell.setCellStyle(column.getStyle());
+            }
             if (cursor.getRowOfSheet() < AUTO_WIDTH_SAMPLE_ROWS) {
                 column.fitColumnWidthByValue(columnData);
             }
@@ -530,6 +562,44 @@ public class ExcelWriter<T> implements AutoCloseable {
                 s.setColumnWidth(j, columns.get(j).getColumnWidth());
             }
         }
+    }
+
+    /**
+     * Applies dropdown data validations to all sheets for columns that have dropdownOptions.
+     */
+    private void applyDataValidations() {
+        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            SXSSFSheet s = wb.getSheetAt(i);
+            DataValidationHelper helper = s.getDataValidationHelper();
+            for (int j = 0; j < columns.size(); j++) {
+                String[] options = columns.get(j).getDropdownOptions();
+                if (options != null) {
+                    DataValidationConstraint constraint = helper.createExplicitListConstraint(options);
+                    CellRangeAddressList range = new CellRangeAddressList(
+                            headerRowIndex + 1, EXCEL_MAX_ROWS, j, j);
+                    DataValidation validation = helper.createValidation(constraint, range);
+                    validation.setSuppressDropDownArrow(false);
+                    validation.setShowErrorBox(true);
+                    s.addValidationData(validation);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a CellStyle that clones the base style but overrides the background color.
+     * Results are cached by base style index + RGB to avoid creating excessive styles.
+     */
+    private CellStyle getRowColorStyle(CellStyle baseStyle, ExcelColor color) {
+        String key = baseStyle.getIndex() + "_" + color.getR() + "_" + color.getG() + "_" + color.getB();
+        return rowStyleCache.computeIfAbsent(key, k -> {
+            CellStyle style = wb.createCellStyle();
+            style.cloneStyleFrom(baseStyle);
+            style.setFillForegroundColor(new XSSFColor(new byte[]{
+                    (byte) color.getR(), (byte) color.getG(), (byte) color.getB()}));
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            return style;
+        });
     }
 
     /**
