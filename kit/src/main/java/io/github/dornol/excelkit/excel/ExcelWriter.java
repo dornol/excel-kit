@@ -337,10 +337,8 @@ public class ExcelWriter<T> implements AutoCloseable {
             throw new ExcelWriteException("columns setting required");
         }
 
-        SheetContext context = new SheetContext(this.columns);
-
         this.sheet = createNamedSheet();
-        int headerStartRow = initSheetPreamble(context);
+        int headerStartRow = initSheetPreamble();
         this.cursor = new Cursor(headerStartRow);
         this.headerRowIndex = headerStartRow;
 
@@ -349,17 +347,17 @@ public class ExcelWriter<T> implements AutoCloseable {
 
         try (stream) {
             stream.forEach(rowData -> {
-                this.handleRowData(rowData, context);
+                this.handleRowData(rowData);
                 consumer.accept(rowData, cursor);
             });
         }
 
         int nextRow = cursor.getRowOfSheet();
         if (this.afterDataWriter != null) {
-            nextRow = this.afterDataWriter.write(this.sheet, this.wb, nextRow, context);
+            nextRow = this.afterDataWriter.write(createContext(nextRow));
         }
         if (this.afterAllWriter != null) {
-            this.afterAllWriter.write(this.sheet, this.wb, nextRow, context);
+            this.afterAllWriter.write(createContext(nextRow));
         }
 
         applyDataValidations();
@@ -380,15 +378,18 @@ public class ExcelWriter<T> implements AutoCloseable {
     /**
      * Invokes the beforeHeader callback (if set).
      *
-     * @param context column metadata for the current sheet
      * @return the row index where the column header should be written
      */
-    private int initSheetPreamble(SheetContext context) {
+    private int initSheetPreamble() {
         int currentRow = 0;
         if (this.beforeHeaderWriter != null) {
-            currentRow = this.beforeHeaderWriter.write(this.sheet, this.wb, currentRow, context);
+            currentRow = this.beforeHeaderWriter.write(createContext(currentRow));
         }
         return currentRow;
+    }
+
+    private SheetContext createContext(int currentRow) {
+        return new SheetContext(this.sheet, this.wb, currentRow, this.columns);
     }
 
     /**
@@ -422,16 +423,15 @@ public class ExcelWriter<T> implements AutoCloseable {
      * Handles the logic of writing a single row to the sheet, including value mapping and style.
      *
      * @param rowData A row of data
-     * @param context column metadata for the current sheet
      */
-    void handleRowData(T rowData, SheetContext context) {
+    void handleRowData(T rowData) {
         cursor.plusTotal();
         if (isOverMaxRows()) {
             if (this.afterDataWriter != null) {
-                this.afterDataWriter.write(this.sheet, this.wb, cursor.getRowOfSheet(), context);
+                this.afterDataWriter.write(createContext(cursor.getRowOfSheet()));
             }
             turnOverSheet();
-            initSheetPreamble(context);
+            initSheetPreamble();
             setColumnHeaders();
             applySheetOptions();
         }

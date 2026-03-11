@@ -205,9 +205,7 @@ public class ExcelSheetWriter<T> {
             throw new ExcelWriteException("columns setting required");
         }
 
-        SheetContext context = new SheetContext(this.columns);
-
-        int currentRow = initSheetPreamble(context);
+        int currentRow = initSheetPreamble();
         Cursor cursor = new Cursor(currentRow);
         int headerRowIndex = currentRow;
 
@@ -220,19 +218,23 @@ public class ExcelSheetWriter<T> {
 
         int nextRow = cursor.getRowOfSheet();
         if (this.afterDataWriter != null) {
-            this.afterDataWriter.write(this.sheet, this.wb, nextRow, context);
+            this.afterDataWriter.write(createContext(nextRow));
         }
 
         applyColumnWidths();
         applyDataValidations(headerRowIndex);
     }
 
-    private int initSheetPreamble(SheetContext context) {
+    private int initSheetPreamble() {
         int currentRow = 0;
         if (this.beforeHeaderWriter != null) {
-            currentRow = this.beforeHeaderWriter.write(this.sheet, this.wb, currentRow, context);
+            currentRow = this.beforeHeaderWriter.write(createContext(currentRow));
         }
         return currentRow;
+    }
+
+    private SheetContext createContext(int currentRow) {
+        return new SheetContext(this.sheet, this.wb, currentRow, this.columns);
     }
 
     private void setColumnHeaders(Cursor cursor) {

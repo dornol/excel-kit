@@ -1,8 +1,5 @@
 package io.github.dornol.excelkit.excel;
 
-import org.apache.poi.xssf.streaming.SXSSFSheet;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-
 /**
  * A functional interface for writing custom content before the column header row.
  * <p>
@@ -18,12 +15,9 @@ public interface BeforeHeaderWriter {
     /**
      * Writes custom content to the sheet before the column headers.
      *
-     * @param sheet    the current sheet
-     * @param workbook the workbook (useful for creating CellStyles, etc.)
-     * @param startRow the first row index available for writing
-     *                 (after the title rows if a title is set, otherwise 0)
-     * @param context  column metadata (count, names) for the current sheet
+     * @param context provides the current sheet, workbook, starting row index,
+     *                and column metadata
      * @return the next available row index where the column header should start
      */
-    int write(SXSSFSheet sheet, SXSSFWorkbook workbook, int startRow, SheetContext context);
+    int write(SheetContext context);
 }

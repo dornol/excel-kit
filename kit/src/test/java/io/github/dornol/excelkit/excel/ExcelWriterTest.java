@@ -267,10 +267,10 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .beforeHeader((sheet, wb, startRow, context) -> {
-                    sheet.createRow(startRow).createCell(0).setCellValue("Meta1");
-                    sheet.createRow(startRow + 1).createCell(0).setCellValue("Meta2");
-                    return startRow + 2;
+                .beforeHeader(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("Meta1");
+                    ctx.getSheet().createRow(ctx.getCurrentRow() + 1).createCell(0).setCellValue("Meta2");
+                    return ctx.getCurrentRow() + 2;
                 })
                 .column("A", (row, c) -> row)
                 .write(data);
@@ -302,9 +302,9 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .beforeHeader((sheet, wb, startRow, context) -> {
-                    sheet.createRow(startRow).createCell(0).setCellValue("PREAMBLE");
-                    return startRow + 1;
+                .beforeHeader(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("PREAMBLE");
+                    return ctx.getCurrentRow() + 1;
                 })
                 .column("A", (row, c) -> row)
                 .write(data);
@@ -339,9 +339,9 @@ class ExcelWriterTest {
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .column("B", (row, c) -> row.length())
-                .beforeHeader((sheet, wb, startRow, context) -> {
-                    sheet.createRow(startRow).createCell(0).setCellValue("Custom");
-                    return startRow + 1;
+                .beforeHeader(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("Custom");
+                    return ctx.getCurrentRow() + 1;
                 })
                 .column("C", (row, c) -> row.toUpperCase())
                 .write(data);
@@ -412,10 +412,10 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterData((sheet, wb, nextRow, context) -> {
-                    SXSSFRow row = sheet.createRow(nextRow);
+                .afterData(ctx -> {
+                    SXSSFRow row = ctx.getSheet().createRow(ctx.getCurrentRow());
                     row.createCell(0).setCellValue("subtotal");
-                    return nextRow + 1;
+                    return ctx.getCurrentRow() + 1;
                 })
                 .write(data);
 
@@ -443,10 +443,10 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterAll((sheet, wb, nextRow, context) -> {
-                    SXSSFRow row = sheet.createRow(nextRow);
+                .afterAll(ctx -> {
+                    SXSSFRow row = ctx.getSheet().createRow(ctx.getCurrentRow());
                     row.createCell(0).setCellValue("grand total");
-                    return nextRow + 1;
+                    return ctx.getCurrentRow() + 1;
                 })
                 .write(data);
 
@@ -479,15 +479,15 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterData((sheet, wb, nextRow, context) -> {
-                    SXSSFRow row = sheet.createRow(nextRow);
+                .afterData(ctx -> {
+                    SXSSFRow row = ctx.getSheet().createRow(ctx.getCurrentRow());
                     row.createCell(0).setCellValue("subtotal");
-                    return nextRow + 1;
+                    return ctx.getCurrentRow() + 1;
                 })
-                .afterAll((sheet, wb, nextRow, context) -> {
-                    SXSSFRow row = sheet.createRow(nextRow);
+                .afterAll(ctx -> {
+                    SXSSFRow row = ctx.getSheet().createRow(ctx.getCurrentRow());
                     row.createCell(0).setCellValue("grand total");
-                    return nextRow + 1;
+                    return ctx.getCurrentRow() + 1;
                 })
                 .write(data);
 
@@ -666,10 +666,10 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .afterData((sheet, wb, nextRow, context) -> {
-                    SXSSFRow row = sheet.createRow(nextRow);
+                .afterData(ctx -> {
+                    SXSSFRow row = ctx.getSheet().createRow(ctx.getCurrentRow());
                     row.createCell(0).setCellValue("subtotal");
-                    return nextRow + 1;
+                    return ctx.getCurrentRow() + 1;
                 })
                 .write(data);
 
@@ -830,9 +830,9 @@ class ExcelWriterTest {
 
         // Act — capture context from beforeHeader callback
         ExcelHandler handler = writer
-                .beforeHeader((sheet, wb, startRow, context) -> {
-                    captured[0] = context;
-                    return startRow;
+                .beforeHeader(ctx -> {
+                    captured[0] = ctx;
+                    return ctx.getCurrentRow();
                 })
                 .column("Name", (row, c) -> row)
                 .column("Age", (row, c) -> row.length())

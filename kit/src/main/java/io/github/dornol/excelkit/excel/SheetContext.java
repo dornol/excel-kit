@@ -1,30 +1,69 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Provides contextual information about the columns configured for a sheet.
- * <p>
- * Passed to {@link BeforeHeaderWriter} and {@link AfterDataWriter} callbacks
- * so that implementations can access column metadata (count, names) without hard-coding.
+ * Provides contextual information passed to {@link BeforeHeaderWriter} and
+ * {@link AfterDataWriter} callbacks, including the current sheet, workbook,
+ * row position, and column metadata.
+ *
+ * <p>A new instance is created for each callback invocation so that the
+ * sheet reference is always up-to-date (e.g. after sheet rollover).
  *
  * @author dhkim
- * @since 0.4.0
+ * @since 0.3.0
  */
 public class SheetContext {
 
+    private final SXSSFSheet sheet;
+    private final SXSSFWorkbook workbook;
+    private final int currentRow;
     private final int columnCount;
     private final List<String> columnNames;
 
-    SheetContext(List<? extends ExcelColumn<?>> columns) {
+    SheetContext(SXSSFSheet sheet, SXSSFWorkbook workbook, int currentRow,
+                 List<? extends ExcelColumn<?>> columns) {
+        this.sheet = sheet;
+        this.workbook = workbook;
+        this.currentRow = currentRow;
         this.columnCount = columns.size();
         this.columnNames = Collections.unmodifiableList(
                 columns.stream()
                         .map(ExcelColumn::getName)
                         .collect(Collectors.toList())
         );
+    }
+
+    /**
+     * Returns the current sheet being written to.
+     *
+     * @return the current sheet
+     */
+    public SXSSFSheet getSheet() {
+        return sheet;
+    }
+
+    /**
+     * Returns the workbook (useful for creating CellStyles, etc.).
+     *
+     * @return the workbook
+     */
+    public SXSSFWorkbook getWorkbook() {
+        return workbook;
+    }
+
+    /**
+     * Returns the current row index available for writing.
+     *
+     * @return the current row index
+     */
+    public int getCurrentRow() {
+        return currentRow;
     }
 
     /**

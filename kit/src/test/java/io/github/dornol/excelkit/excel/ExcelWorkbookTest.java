@@ -138,14 +138,14 @@ class ExcelWorkbookTest {
         ExcelWorkbook workbook = new ExcelWorkbook();
 
         workbook.<String>sheet("Data")
-                .beforeHeader((sheet, wb, startRow, context) -> {
-                    sheet.createRow(startRow).createCell(0).setCellValue("Generated Report");
-                    return startRow + 1;
+                .beforeHeader(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("Generated Report");
+                    return ctx.getCurrentRow() + 1;
                 })
                 .column("Name", s -> s)
-                .afterData((sheet, wb, nextRow, context) -> {
-                    sheet.createRow(nextRow).createCell(0).setCellValue("Total: 2");
-                    return nextRow + 1;
+                .afterData(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("Total: 2");
+                    return ctx.getCurrentRow() + 1;
                 })
                 .write(Stream.of("Alice", "Bob"));
 
