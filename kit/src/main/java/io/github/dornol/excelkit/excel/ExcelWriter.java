@@ -2,15 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataValidation;
-import org.apache.poi.ss.usermodel.DataValidationConstraint;
-import org.apache.poi.ss.usermodel.DataValidationHelper;
-import org.apache.poi.ss.usermodel.FillPatternType;
 import org.jspecify.annotations.NonNull;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.CellRangeAddressList;
-import org.apache.poi.xssf.streaming.SXSSFCell;
-import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
@@ -34,9 +26,7 @@ import java.util.stream.Stream;
  */
 public class ExcelWriter<T> implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
-    private static final int AUTO_WIDTH_SAMPLE_ROWS = 100;
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
-    private static final int EXCEL_MAX_ROWS = 1_048_575;
 
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
@@ -187,10 +177,6 @@ public class ExcelWriter<T> implements AutoCloseable {
     /**
      * Registers a callback that writes custom content before the column header row.
      * <p>
-     * The callback receives the current sheet, the workbook, and the first available row index,
-     * and must return the next available row index (where the header will start).
-     * When a title is set, {@code startRow} will be 2 (after the title rows); otherwise 0.
-     * <p>
      * The callback is invoked on every sheet, including rollover sheets,
      * so it must always produce the same number of rows.
      *
@@ -338,11 +324,11 @@ public class ExcelWriter<T> implements AutoCloseable {
         }
 
         this.sheet = createNamedSheet();
-        int headerStartRow = initSheetPreamble();
+        int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);
         this.cursor = new Cursor(headerStartRow);
         this.headerRowIndex = headerStartRow;
 
-        setColumnHeaders();
+        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
         applySheetOptions();
 
         try (stream) {
@@ -354,13 +340,13 @@ public class ExcelWriter<T> implements AutoCloseable {
 
         int nextRow = cursor.getRowOfSheet();
         if (this.afterDataWriter != null) {
-            nextRow = this.afterDataWriter.write(createContext(nextRow));
+            nextRow = this.afterDataWriter.write(new SheetContext(sheet, wb, nextRow, columns));
         }
         if (this.afterAllWriter != null) {
-            this.afterAllWriter.write(createContext(nextRow));
+            this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns));
         }
 
-        applyDataValidations();
+        applyDataValidationsAllSheets();
         applyColumnWidthAllSheets();
         return new ExcelHandler(this.wb);
     }
@@ -376,47 +362,11 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
-     * Invokes the beforeHeader callback (if set).
-     *
-     * @return the row index where the column header should be written
-     */
-    private int initSheetPreamble() {
-        int currentRow = 0;
-        if (this.beforeHeaderWriter != null) {
-            currentRow = this.beforeHeaderWriter.write(createContext(currentRow));
-        }
-        return currentRow;
-    }
-
-    private SheetContext createContext(int currentRow) {
-        return new SheetContext(this.sheet, this.wb, currentRow, this.columns);
-    }
-
-    /**
-     * Writes column headers to the current sheet using the predefined header style.
-     */
-    private void setColumnHeaders() {
-        SXSSFRow headRow = sheet.createRow(cursor.getRowOfSheet());
-        cursor.plusRow();
-        for (int j = 0; j < this.columns.size(); j++) {
-            SXSSFCell cell = headRow.createCell(j);
-            ExcelColumn<T> column = columns.get(j);
-            cell.setCellValue(column.getName());
-            cell.setCellStyle(headerStyle);
-        }
-    }
-
-    /**
      * Applies optional sheet-level settings such as auto-filter and freeze panes.
      */
     private void applySheetOptions() {
         int headerRowIdx = cursor.getRowOfSheet() - 1;
-        if (this.autoFilter) {
-            sheet.setAutoFilter(new CellRangeAddress(headerRowIdx, headerRowIdx, 0, columns.size() - 1));
-        }
-        if (this.freezePaneRows > 0) {
-            sheet.createFreezePane(0, headerRowIdx + this.freezePaneRows);
-        }
+        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, autoFilter, freezePaneRows, columns.size());
     }
 
     /**
@@ -428,33 +378,15 @@ public class ExcelWriter<T> implements AutoCloseable {
         cursor.plusTotal();
         if (isOverMaxRows()) {
             if (this.afterDataWriter != null) {
-                this.afterDataWriter.write(createContext(cursor.getRowOfSheet()));
+                this.afterDataWriter.write(new SheetContext(sheet, wb, cursor.getRowOfSheet(), columns));
             }
             turnOverSheet();
-            initSheetPreamble();
-            setColumnHeaders();
+            ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);
+            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
             applySheetOptions();
         }
-        SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
-        row.setHeightInPoints(rowHeightInPoints);
-        cursor.plusRow();
-
-        ExcelColor rowColor = (rowColorFunction != null) ? rowColorFunction.apply(rowData) : null;
-
-        for (int j = 0; j < this.columns.size(); j++) {
-            SXSSFCell cell = row.createCell(j);
-            ExcelColumn<T> column = columns.get(j);
-            Object columnData = column.applyFunction(rowData, cursor);
-            column.setColumnData(cell, columnData);
-            if (rowColor != null) {
-                cell.setCellStyle(getRowColorStyle(column.getStyle(), rowColor));
-            } else {
-                cell.setCellStyle(column.getStyle());
-            }
-            if (cursor.getRowOfSheet() < AUTO_WIDTH_SAMPLE_ROWS) {
-                column.fitColumnWidthByValue(columnData);
-            }
-        }
+        ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, rowHeightInPoints,
+                rowColorFunction, rowStyleCache, wb);
     }
 
     /**
@@ -491,51 +423,18 @@ public class ExcelWriter<T> implements AutoCloseable {
      * Applies the calculated column widths to all sheets after writing is complete.
      */
     private void applyColumnWidthAllSheets() {
-        int numberOfSheets = wb.getNumberOfSheets();
-        for (int i = 0; i < numberOfSheets; i++) {
-            SXSSFSheet s = wb.getSheetAt(i);
-            for (int j = 0; j < columns.size(); j++) {
-                s.setColumnWidth(j, columns.get(j).getColumnWidth());
-            }
+        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            ExcelWriteSupport.applyColumnWidths(wb.getSheetAt(i), columns);
         }
     }
 
     /**
      * Applies dropdown data validations to all sheets for columns that have dropdownOptions.
      */
-    private void applyDataValidations() {
+    private void applyDataValidationsAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-            SXSSFSheet s = wb.getSheetAt(i);
-            DataValidationHelper helper = s.getDataValidationHelper();
-            for (int j = 0; j < columns.size(); j++) {
-                String[] options = columns.get(j).getDropdownOptions();
-                if (options != null) {
-                    DataValidationConstraint constraint = helper.createExplicitListConstraint(options);
-                    CellRangeAddressList range = new CellRangeAddressList(
-                            headerRowIndex + 1, EXCEL_MAX_ROWS, j, j);
-                    DataValidation validation = helper.createValidation(constraint, range);
-                    validation.setSuppressDropDownArrow(false);
-                    validation.setShowErrorBox(true);
-                    s.addValidationData(validation);
-                }
-            }
+            ExcelWriteSupport.applyDataValidations(wb.getSheetAt(i), columns, headerRowIndex);
         }
-    }
-
-    /**
-     * Returns a CellStyle that clones the base style but overrides the background color.
-     * Results are cached by base style index + RGB to avoid creating excessive styles.
-     */
-    private CellStyle getRowColorStyle(CellStyle baseStyle, ExcelColor color) {
-        String key = baseStyle.getIndex() + "_" + color.getR() + "_" + color.getG() + "_" + color.getB();
-        return rowStyleCache.computeIfAbsent(key, k -> {
-            CellStyle style = wb.createCellStyle();
-            style.cloneStyleFrom(baseStyle);
-            style.setFillForegroundColor(new XSSFColor(new byte[]{
-                    (byte) color.getR(), (byte) color.getG(), (byte) color.getB()}));
-            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            return style;
-        });
     }
 
     /**

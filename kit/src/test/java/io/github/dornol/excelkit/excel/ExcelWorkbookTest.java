@@ -225,4 +225,83 @@ class ExcelWorkbookTest {
         }
         workbook.close();
     }
+
+    @Test
+    void sheetContext_shouldProvideCorrectSheetInCallbacks() throws IOException {
+        ExcelWorkbook workbook = new ExcelWorkbook();
+        SheetContext[] beforeCtx = new SheetContext[1];
+        SheetContext[] afterCtx = new SheetContext[1];
+
+        workbook.<String>sheet("Data")
+                .beforeHeader(ctx -> {
+                    beforeCtx[0] = ctx;
+                    return ctx.getCurrentRow();
+                })
+                .column("Name", s -> s)
+                .afterData(ctx -> {
+                    afterCtx[0] = ctx;
+                    return ctx.getCurrentRow();
+                })
+                .write(Stream.of("Alice"));
+
+        ExcelHandler handler = workbook.finish();
+
+        // Assert
+        assertNotNull(beforeCtx[0].getSheet());
+        assertNotNull(beforeCtx[0].getWorkbook());
+        assertEquals(0, beforeCtx[0].getCurrentRow(), "beforeHeader should start at row 0");
+        assertEquals(1, beforeCtx[0].getColumnCount());
+        assertEquals(List.of("Name"), beforeCtx[0].getColumnNames());
+
+        assertNotNull(afterCtx[0].getSheet());
+        assertSame(beforeCtx[0].getSheet(), afterCtx[0].getSheet(),
+                "Both callbacks should reference the same sheet");
+        assertEquals(2, afterCtx[0].getCurrentRow(),
+                "afterData should start at row 2 (header + 1 data)");
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        }
+        workbook.close();
+    }
+
+    @Test
+    void multiSheet_shouldProvideCorrectSheetContextPerSheet() throws IOException {
+        ExcelWorkbook workbook = new ExcelWorkbook();
+        SheetContext[] ctx1 = new SheetContext[1];
+        SheetContext[] ctx2 = new SheetContext[1];
+
+        workbook.<String>sheet("Sheet1")
+                .beforeHeader(ctx -> {
+                    ctx1[0] = ctx;
+                    return ctx.getCurrentRow();
+                })
+                .column("A", s -> s)
+                .write(Stream.of("x"));
+
+        workbook.<Integer>sheet("Sheet2")
+                .beforeHeader(ctx -> {
+                    ctx2[0] = ctx;
+                    return ctx.getCurrentRow();
+                })
+                .column("B", i -> i)
+                .column("C", i -> i * 2)
+                .write(Stream.of(1));
+
+        ExcelHandler handler = workbook.finish();
+
+        // Assert: each callback got different sheets and correct column metadata
+        assertNotSame(ctx1[0].getSheet(), ctx2[0].getSheet());
+        assertSame(ctx1[0].getWorkbook(), ctx2[0].getWorkbook(),
+                "Both sheets share the same workbook");
+        assertEquals(1, ctx1[0].getColumnCount());
+        assertEquals(List.of("A"), ctx1[0].getColumnNames());
+        assertEquals(2, ctx2[0].getColumnCount());
+        assertEquals(List.of("B", "C"), ctx2[0].getColumnNames());
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        }
+        workbook.close();
+    }
 }

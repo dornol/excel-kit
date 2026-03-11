@@ -852,4 +852,251 @@ class ExcelWriterTest {
             fail(e);
         }
     }
+
+    @Test
+    void sheetContext_shouldProvideSheetAndWorkbook() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a");
+        SheetContext[] captured = new SheetContext[1];
+
+        // Act
+        ExcelHandler handler = writer
+                .beforeHeader(ctx -> {
+                    captured[0] = ctx;
+                    return ctx.getCurrentRow();
+                })
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        SheetContext ctx = captured[0];
+        assertNotNull(ctx.getSheet(), "SheetContext should provide SXSSFSheet");
+        assertNotNull(ctx.getWorkbook(), "SheetContext should provide SXSSFWorkbook");
+        assertSame(writer.getWb(), ctx.getWorkbook(), "Workbook should be the same instance");
+        assertSame(writer.getWb().getSheetAt(0), ctx.getSheet(), "Sheet should be the first sheet");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void sheetContext_shouldProvideCorrectCurrentRow() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a");
+        int[] capturedRows = new int[2];
+
+        // Act — beforeHeader starts at row 0, afterData starts after data
+        ExcelHandler handler = writer
+                .beforeHeader(ctx -> {
+                    capturedRows[0] = ctx.getCurrentRow();
+                    return ctx.getCurrentRow(); // don't add rows
+                })
+                .column("A", (row, c) -> row)
+                .afterData(ctx -> {
+                    capturedRows[1] = ctx.getCurrentRow();
+                    return ctx.getCurrentRow();
+                })
+                .write(data);
+
+        // Assert
+        assertEquals(0, capturedRows[0], "beforeHeader should start at row 0");
+        assertEquals(2, capturedRows[1], "afterData should start at row 2 (header + 1 data row)");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void sheetContext_shouldUpdateSheetOnRollover() {
+        // Arrange: max 2 rows per sheet → 2 sheets for 3 data rows
+        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
+        Stream<Integer> data = Stream.of(1, 2, 3);
+        SXSSFSheet[] capturedSheets = new SXSSFSheet[2];
+        int[] callIndex = {0};
+
+        // Act — capture sheet from beforeHeader on each sheet
+        ExcelHandler handler = writer
+                .beforeHeader(ctx -> {
+                    if (callIndex[0] < 2) {
+                        capturedSheets[callIndex[0]] = ctx.getSheet();
+                    }
+                    callIndex[0]++;
+                    return ctx.getCurrentRow();
+                })
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        assertEquals(2, callIndex[0], "beforeHeader should be called twice (2 sheets)");
+        assertNotNull(capturedSheets[0], "First sheet should be captured");
+        assertNotNull(capturedSheets[1], "Second sheet should be captured");
+        assertNotSame(capturedSheets[0], capturedSheets[1],
+                "Sheets should be different instances after rollover");
+        assertSame(writer.getWb().getSheetAt(0), capturedSheets[0]);
+        assertSame(writer.getWb().getSheetAt(1), capturedSheets[1]);
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void beforeHeader_and_afterData_shouldWorkTogetherOnRollover() {
+        // Arrange: max 2 rows per sheet → 3 sheets for 5 data rows
+        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
+        Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
+
+        // Act — use both callbacks together
+        ExcelHandler handler = writer
+                .beforeHeader(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("HEADER_PREFIX");
+                    return ctx.getCurrentRow() + 1;
+                })
+                .column("A", (row, c) -> row)
+                .afterData(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("FOOTER");
+                    return ctx.getCurrentRow() + 1;
+                })
+                .write(data);
+
+        // Assert: 3 sheets, each with PREFIX at 0, header at 1, data, FOOTER at end
+        SXSSFWorkbook wb = writer.getWb();
+        assertEquals(3, wb.getNumberOfSheets());
+
+        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            SXSSFSheet s = wb.getSheetAt(i);
+            assertEquals("HEADER_PREFIX", s.getRow(0).getCell(0).getStringCellValue(),
+                    "Prefix must exist on sheet " + i);
+            assertEquals("A", s.getRow(1).getCell(0).getStringCellValue(),
+                    "Header must exist on sheet " + i);
+        }
+        // Sheet 0: prefix(0), header(1), data(2,3), footer(4)
+        assertEquals("FOOTER", wb.getSheetAt(0).getRow(4).getCell(0).getStringCellValue());
+        // Sheet 1: prefix(0), header(1), data(2,3), footer(4)
+        assertEquals("FOOTER", wb.getSheetAt(1).getRow(4).getCell(0).getStringCellValue());
+        // Sheet 2: prefix(0), header(1), data(2), footer(3)
+        assertEquals("FOOTER", wb.getSheetAt(2).getRow(3).getCell(0).getStringCellValue());
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void beforeHeader_afterData_afterAll_shouldAllWorkOnRollover() {
+        // Arrange: max 2 rows per sheet → 2 sheets for 3 data rows
+        ExcelWriter<Integer> writer = new ExcelWriter<>(2);
+        Stream<Integer> data = Stream.of(1, 2, 3);
+
+        // Act
+        ExcelHandler handler = writer
+                .beforeHeader(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("PRE");
+                    return ctx.getCurrentRow() + 1;
+                })
+                .column("A", (row, c) -> row)
+                .afterData(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("SUB");
+                    return ctx.getCurrentRow() + 1;
+                })
+                .afterAll(ctx -> {
+                    ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("GRAND");
+                    return ctx.getCurrentRow() + 1;
+                })
+                .write(data);
+
+        // Assert
+        SXSSFWorkbook wb = writer.getWb();
+        assertEquals(2, wb.getNumberOfSheets());
+
+        // Sheet 0: PRE(0), header(1), data(2,3), SUB(4) — no GRAND
+        SXSSFSheet s0 = wb.getSheetAt(0);
+        assertEquals("PRE", s0.getRow(0).getCell(0).getStringCellValue());
+        assertEquals("SUB", s0.getRow(4).getCell(0).getStringCellValue());
+        assertNull(s0.getRow(5), "First sheet should not have GRAND");
+
+        // Sheet 1: PRE(0), header(1), data(2), SUB(3), GRAND(4)
+        SXSSFSheet s1 = wb.getSheetAt(1);
+        assertEquals("PRE", s1.getRow(0).getCell(0).getStringCellValue());
+        assertEquals("SUB", s1.getRow(3).getCell(0).getStringCellValue());
+        assertEquals("GRAND", s1.getRow(4).getCell(0).getStringCellValue());
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void write_withEmptyStream_shouldProduceHeaderOnly() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.empty();
+
+        // Act
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .column("B", (row, c) -> row.length())
+                .write(data);
+
+        // Assert: header row only, no data rows
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals("A", sheet.getRow(0).getCell(0).getStringCellValue());
+        assertEquals("B", sheet.getRow(0).getCell(1).getStringCellValue());
+        assertNull(sheet.getRow(1), "Empty stream should produce no data rows");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void sheetContext_columnNamesShouldBeUnmodifiable() {
+        // Arrange
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        Stream<String> data = Stream.of("a");
+        SheetContext[] captured = new SheetContext[1];
+
+        // Act
+        ExcelHandler handler = writer
+                .beforeHeader(ctx -> {
+                    captured[0] = ctx;
+                    return ctx.getCurrentRow();
+                })
+                .column("A", (row, c) -> row)
+                .write(data);
+
+        // Assert
+        assertThrows(UnsupportedOperationException.class,
+                () -> captured[0].getColumnNames().add("X"),
+                "Column names list should be unmodifiable");
+
+        // consume
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
 }

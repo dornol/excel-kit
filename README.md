@@ -271,29 +271,36 @@ beforeHeader → header → data rows → afterData
 
 On sheet rollover: current sheet gets `afterData` → new sheet is created → `beforeHeader` + header.
 
-All callbacks receive a `SheetContext` parameter that provides `getColumnCount()` and `getColumnNames()` for the current sheet.
+All callbacks receive a `SheetContext` parameter that provides:
+- `getSheet()` — the current `SXSSFSheet`
+- `getWorkbook()` — the `SXSSFWorkbook` (useful for creating CellStyles, etc.)
+- `getCurrentRow()` — the first available row index for writing
+- `getColumnCount()` — the number of configured columns
+- `getColumnNames()` — unmodifiable list of column header names
+
+A new `SheetContext` is created for each callback invocation, so the sheet reference is always current (even after rollover).
 
 ```java
 writer
     .column("Name", p -> p.name())
     .column("Amount", p -> p.amount())
-    .beforeHeader((sheet, wb, startRow, context) -> {
+    .beforeHeader(ctx -> {
         // called on every sheet, before the header row
-        // context.getColumnCount(), context.getColumnNames() available
-        sheet.createRow(startRow).createCell(0).setCellValue("Generated: 2025-07-19");
-        return startRow + 1;  // return the next available row index
+        ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0)
+                .setCellValue("Generated: 2025-07-19");
+        return ctx.getCurrentRow() + 1;  // return the next available row index
     })
-    .afterData((sheet, wb, nextRow, context) -> {
+    .afterData(ctx -> {
         // called on every sheet after its data rows (e.g. subtotals)
-        SXSSFRow row = sheet.createRow(nextRow);
+        SXSSFRow row = ctx.getSheet().createRow(ctx.getCurrentRow());
         row.createCell(0).setCellValue("Subtotal");
-        return nextRow + 1;
+        return ctx.getCurrentRow() + 1;
     })
-    .afterAll((sheet, wb, nextRow, context) -> {
+    .afterAll(ctx -> {
         // called once on the last sheet, after afterData (e.g. grand total)
-        SXSSFRow row = sheet.createRow(nextRow);
+        SXSSFRow row = ctx.getSheet().createRow(ctx.getCurrentRow());
         row.createCell(0).setCellValue("Grand Total");
-        return nextRow + 1;
+        return ctx.getCurrentRow() + 1;
     })
     .write(data);
 ```
