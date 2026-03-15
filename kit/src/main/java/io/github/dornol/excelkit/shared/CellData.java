@@ -1,9 +1,8 @@
 package io.github.dornol.excelkit.shared;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.jspecify.annotations.NonNull;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -31,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author dhkim
  * @since 2025-07-19
  */
-public record CellData(int columnIndex, String formattedValue) {
+public record CellData(int columnIndex, @Nullable String formattedValue) {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
     private static volatile Locale defaultLocale = Locale.KOREA;
 
@@ -53,7 +52,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @param locale The locale to use as default (must not be null)
      */
-    public static void setDefaultLocale(@NonNull Locale locale) {
+    public static void setDefaultLocale(Locale locale) {
         if (locale == null) {
             throw new IllegalArgumentException("locale must not be null");
         }
@@ -83,7 +82,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @param pattern the date pattern (e.g., "dd.MM.yyyy")
      */
-    public static void addDateFormat(@NonNull String pattern) {
+    public static void addDateFormat(String pattern) {
         dateFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
     }
 
@@ -93,7 +92,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
      */
-    public static void addDateTimeFormat(@NonNull String pattern) {
+    public static void addDateTimeFormat(String pattern) {
         dateTimeFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
     }
 
@@ -149,7 +148,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @return parsed number, or {@code null} if empty or blank
      * @throws IllegalArgumentException if parsing fails
      */
-    public Number asNumber(@NonNull Locale locale) {
+    public @Nullable Number asNumber(Locale locale) {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -175,7 +174,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @see #setDefaultLocale(Locale)
      */
-    public Number asNumber() {
+    public @Nullable Number asNumber() {
         return asNumber(defaultLocale);
     }
 
@@ -183,7 +182,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Converts the value to {@link Long}.
      * Returns {@code null} if the value is empty or blank.
      */
-    public Long asLong() {
+    public @Nullable Long asLong() {
         Number number = asNumber();
         return number != null ? number.longValue() : null;
     }
@@ -193,7 +192,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Returns {@code null} if the value is empty or blank.
      * Throws if the long value is out of int range.
      */
-    public Integer asInt() {
+    public @Nullable Integer asInt() {
         Long longValue = asLong();
         if (longValue == null) {
             return null;
@@ -236,7 +235,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @return {@code Boolean.TRUE}, {@code Boolean.FALSE}, or {@code null} if blank
      */
-    public Boolean asBooleanOrNull() {
+    public @Nullable Boolean asBooleanOrNull() {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -262,7 +261,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * The patterns support optional sections for time (hours, minutes, seconds).
      * If all patterns fail, a {@link DateTimeParseException} will be thrown.
      */
-    public LocalDateTime asLocalDateTime() {
+    public @Nullable LocalDateTime asLocalDateTime() {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -284,7 +283,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @param format the date-time pattern (e.g., "yyyy-MM-dd HH:mm:ss")
      */
-    public LocalDateTime asLocalDateTime(String format) {
+    public @Nullable LocalDateTime asLocalDateTime(String format) {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -304,7 +303,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * If all patterns fail, a {@link DateTimeParseException} will be thrown.
      */
-    public LocalDate asLocalDate() {
+    public @Nullable LocalDate asLocalDate() {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -324,7 +323,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @param format the date pattern (e.g., "yyyy/MM/dd")
      */
-    public LocalDate asLocalDate(String format) {
+    public @Nullable LocalDate asLocalDate(String format) {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -335,7 +334,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Converts the value to {@link LocalTime} using ISO format (HH:mm:ss).
      * Returns {@code null} if the value is empty or blank.
      */
-    public LocalTime asLocalTime() {
+    public @Nullable LocalTime asLocalTime() {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -348,7 +347,7 @@ public record CellData(int columnIndex, String formattedValue) {
      *
      * @param format the time pattern (e.g., "HH:mm")
      */
-    public LocalTime asLocalTime(String format) {
+    public @Nullable LocalTime asLocalTime(String format) {
         if (formattedValue.isBlank()) {
             return null;
         }
@@ -359,7 +358,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Converts the value to {@link Double}.
      * Returns {@code null} if the value is empty or blank.
      */
-    public Double asDouble() {
+    public @Nullable Double asDouble() {
         Number number = asNumber();
         return number != null ? number.doubleValue() : null;
     }
@@ -368,7 +367,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Converts the value to {@link Float}.
      * Returns {@code null} if the value is empty or blank.
      */
-    public Float asFloat() {
+    public @Nullable Float asFloat() {
         Number number = asNumber();
         return number != null ? number.floatValue() : null;
     }
@@ -378,7 +377,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * Uses the string representation of the parsed number to avoid precision loss.
      * Returns {@code null} if the value is empty or blank.
      */
-    public BigDecimal asBigDecimal() {
+    public @Nullable BigDecimal asBigDecimal() {
         Number number = asNumber();
         return number != null ? new BigDecimal(number.toString()) : null;
     }
@@ -401,7 +400,7 @@ public record CellData(int columnIndex, String formattedValue) {
      * @return the matching enum constant, or {@code null} if blank
      * @throws IllegalArgumentException if no matching constant is found
      */
-    public <E extends Enum<E>> E asEnum(Class<E> enumType) {
+    public <E extends Enum<E>> @Nullable E asEnum(Class<E> enumType) {
         if (formattedValue.isBlank()) {
             return null;
         }

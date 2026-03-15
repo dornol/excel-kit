@@ -7,6 +7,8 @@ import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import jakarta.validation.Validator;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -99,7 +101,7 @@ public class ExcelKitSchema<T> {
      * @param validator Optional Bean Validation validator (nullable)
      * @return A configured ExcelReader instance
      */
-    public ExcelReader<T> excelReader(Supplier<T> supplier, Validator validator) {
+    public ExcelReader<T> excelReader(Supplier<T> supplier, @Nullable Validator validator) {
         ExcelReader<T> reader = new ExcelReader<>(supplier, validator);
         for (SchemaColumn<T> col : columns) {
             reader.addColumn(col.name(), col.readSetter());
@@ -118,7 +120,7 @@ public class ExcelKitSchema<T> {
      * @param validator Optional Bean Validation validator (nullable)
      * @return A configured CsvReader instance
      */
-    public CsvReader<T> csvReader(Supplier<T> supplier, Validator validator) {
+    public CsvReader<T> csvReader(Supplier<T> supplier, @Nullable Validator validator) {
         CsvReader<T> reader = new CsvReader<>(supplier, validator);
         for (SchemaColumn<T> col : columns) {
             reader.addColumn(col.name(), col.readSetter());
@@ -148,7 +150,7 @@ public class ExcelKitSchema<T> {
             String name,
             Function<T, Object> writeFunction,
             BiConsumer<T, CellData> readSetter,
-            Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer
+            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer
     ) {
         /**
          * Creates a schema column without write configuration.

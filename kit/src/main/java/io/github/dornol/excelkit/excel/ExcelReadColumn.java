@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.CellData;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.util.function.BiConsumer;
@@ -23,7 +24,7 @@ import java.util.function.BiConsumer;
  * @author dhkim
  * @since 2025-07-19
  */
-public record ExcelReadColumn<T>(String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
+public record ExcelReadColumn<T>(@Nullable String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
 
     /**
      * Creates a positional column binding (matched by column index order).

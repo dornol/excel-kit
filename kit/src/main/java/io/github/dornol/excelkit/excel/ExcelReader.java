@@ -13,7 +13,7 @@ import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
 import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
@@ -47,10 +47,10 @@ public class ExcelReader<T> {
 
     private final List<ExcelReadColumn<T>> columns = new ArrayList<>();
     private final Supplier<T> instanceSupplier;
-    private final Validator validator;
+    private final @Nullable Validator validator;
     private int sheetIndex = 0;
     private int headerRowIndex = 0;
-    private ProgressCallback progressCallback;
+    private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
 
     /**
@@ -87,7 +87,7 @@ public class ExcelReader<T> {
      * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      * @param validator        Optional Bean Validation validator (nullable)
      */
-    public ExcelReader(@NonNull Supplier<T> instanceSupplier, Validator validator) {
+    public ExcelReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.validator = validator;
     }
@@ -246,7 +246,7 @@ public class ExcelReader<T> {
      * @param inputStream The input stream of the Excel file
      * @return A handler to execute Excel parsing
      */
-    public ExcelReadHandler<T> build(@NonNull InputStream inputStream) {
+    public ExcelReadHandler<T> build(InputStream inputStream) {
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 sheetIndex, headerRowIndex, progressInterval, progressCallback);
     }
@@ -257,7 +257,7 @@ public class ExcelReader<T> {
      * @param inputStream The input stream of the Excel file (will be consumed)
      * @return A list of {@link ExcelSheetInfo} records containing sheet names and indices
      */
-    public static List<ExcelSheetInfo> getSheetNames(@NonNull InputStream inputStream) {
+    public static List<ExcelSheetInfo> getSheetNames(InputStream inputStream) {
         Path tempDir = null;
         Path tempFile = null;
         try {
@@ -295,7 +295,7 @@ public class ExcelReader<T> {
      * @param headerRowIndex The 0-based header row index
      * @return A list of header names
      */
-    public static List<String> getSheetHeaders(@NonNull InputStream inputStream, int sheetIndex, int headerRowIndex) {
+    public static List<String> getSheetHeaders(InputStream inputStream, int sheetIndex, int headerRowIndex) {
         Path tempDir = null;
         Path tempFile = null;
         try {

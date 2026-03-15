@@ -6,8 +6,6 @@ import org.apache.poi.poifs.crypt.EncryptionMode;
 import org.apache.poi.poifs.crypt.Encryptor;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.jspecify.annotations.NonNull;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +51,7 @@ public class ExcelHandler {
      * @throws IOException If an I/O error occurs during writing
      * @throws IllegalStateException If this method has already been called
      */
-    public void consumeOutputStream(@NonNull OutputStream outputStream) throws IOException {
+    public void consumeOutputStream(OutputStream outputStream) throws IOException {
         if (!consumed.compareAndSet(false, true)) {
             throw new ExcelWriteException("Already consumed");
         }
@@ -74,7 +72,7 @@ public class ExcelHandler {
      * @throws IOException If an I/O or encryption error occurs during writing
      * @throws IllegalStateException If this method has already been called
      */
-    public void consumeOutputStreamWithPassword(@NonNull OutputStream outputStream, @NonNull String password) throws IOException {
+    public void consumeOutputStreamWithPassword(OutputStream outputStream, String password) throws IOException {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
@@ -92,7 +90,7 @@ public class ExcelHandler {
      * @throws IOException If an I/O or encryption error occurs during writing
      * @throws IllegalStateException If this method has already been called
      */
-    public void consumeOutputStreamWithPassword(@NonNull OutputStream outputStream, @NonNull char[] password) throws IOException {
+    public void consumeOutputStreamWithPassword(OutputStream outputStream, char[] password) throws IOException {
         if (password == null || password.length == 0) {
             throw new IllegalArgumentException("Password cannot be null or empty");
         }

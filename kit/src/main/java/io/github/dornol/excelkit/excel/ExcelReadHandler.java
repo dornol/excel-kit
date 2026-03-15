@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.shared.AbstractReadHandler;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import io.github.dornol.excelkit.shared.ReadResult;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -12,8 +13,8 @@ import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
 import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
+import org.jspecify.annotations.Nullable;
 import org.xml.sax.InputSource;
-import org.jspecify.annotations.NonNull;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -53,7 +54,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final int sheetIndex;
     private final int headerRowIndex;
     private final int progressInterval;
-    private final io.github.dornol.excelkit.shared.ProgressCallback progressCallback;
+    private final @Nullable ProgressCallback progressCallback;
 
     /**
      * Constructs a handler for reading the first sheet of an Excel file.
@@ -63,7 +64,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param instanceSupplier A supplier to instantiate new row objects
      * @param validator        Optional bean validator for validating mapped instances
      */
-    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
+    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this(inputStream, columns, instanceSupplier, validator, 0, 0, 0, null);
     }
 
@@ -96,7 +97,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier,
                      Validator validator, int sheetIndex, int headerRowIndex,
-                     int progressInterval, io.github.dornol.excelkit.shared.ProgressCallback progressCallback) {
+                     int progressInterval, @Nullable ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".xlsx");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
@@ -123,7 +124,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param consumer Callback to receive parsed and validated row results
      */
     @Override
-    public void read(@NonNull Consumer<ReadResult<T>> consumer) {
+    public void read(Consumer<ReadResult<T>> consumer) {
         try {
             readInternal(consumer);
         } catch (ExcelReadException e) {

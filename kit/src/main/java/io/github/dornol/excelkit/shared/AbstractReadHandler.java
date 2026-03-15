@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.shared;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     private static final Logger log = LoggerFactory.getLogger(AbstractReadHandler.class);
 
     protected final Supplier<T> instanceSupplier;
-    protected final Validator validator;
+    protected final @Nullable Validator validator;
 
     /**
      * Constructs a read handler by validating inputs and initializing a temporary file.
@@ -45,7 +46,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @param validator        Optional bean validator for validating mapped instances
      * @param extension        File extension for the temporary file (e.g., ".xlsx", ".csv")
      */
-    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, Validator validator, String extension) {
+    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator, String extension) {
         if (inputStream == null) {
             throw new IllegalArgumentException("InputStream cannot be null");
         }

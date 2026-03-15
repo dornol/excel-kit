@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.shared;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
 /**
@@ -14,8 +16,8 @@ import java.util.List;
  * @since 2025-07-19
  */
 public record ReadResult<T>(
-        T data,
+        @Nullable T data,
         boolean success,
-        List<String> messages
+        @Nullable List<String> messages
 ) {
 }

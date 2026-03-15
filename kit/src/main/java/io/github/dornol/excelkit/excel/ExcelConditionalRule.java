@@ -8,6 +8,8 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,7 @@ import java.util.List;
 public class ExcelConditionalRule {
 
     private final List<RuleEntry> rules = new ArrayList<>();
-    private int[] columnIndices;
+    private int @Nullable [] columnIndices;
     private int startRow = -1;
 
     /**

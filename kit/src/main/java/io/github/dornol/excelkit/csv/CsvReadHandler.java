@@ -9,7 +9,7 @@ import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
 import jakarta.validation.Validator;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,24 +40,24 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final char delimiter;
     private final Charset charset;
     private final int progressInterval;
-    private final io.github.dornol.excelkit.shared.ProgressCallback progressCallback;
+    private final io.github.dornol.excelkit.shared.@Nullable ProgressCallback progressCallback;
 
-    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
+    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this(inputStream, columns, instanceSupplier, validator, 0, ',', StandardCharsets.UTF_8, 0, null);
     }
 
-    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int headerRowIndex) {
+    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator, int headerRowIndex) {
         this(inputStream, columns, instanceSupplier, validator, headerRowIndex, ',', StandardCharsets.UTF_8, 0, null);
     }
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   Validator validator, int headerRowIndex, char delimiter, Charset charset) {
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset) {
         this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset, 0, null);
     }
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.shared.ProgressCallback progressCallback) {
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.shared.@Nullable ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".csv");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
@@ -74,7 +74,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     @Override
-    public void read(@NonNull Consumer<ReadResult<T>> consumer) {
+    public void read(Consumer<ReadResult<T>> consumer) {
         try (CSVReader reader = buildCsvReader()) {
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);

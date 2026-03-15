@@ -8,6 +8,8 @@ import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.function.Consumer;
@@ -37,19 +39,19 @@ public class ExcelColumn<T> {
     private final int minWidth;
     private final int maxWidth;
     private final boolean fixedWidth;
-    private final String[] dropdownOptions;
-    private final CellColorFunction<T> cellColorFunction;
-    private final String groupName;
+    private final String @Nullable [] dropdownOptions;
+    private final @Nullable CellColorFunction<T> cellColorFunction;
+    private final @Nullable String groupName;
     private final int outlineLevel;
-    private final Function<T, String> commentFunction;
-    private final ExcelBorderStyle borderStyle;
-    private final Boolean locked;
+    private final @Nullable Function<T, String> commentFunction;
+    private final @Nullable ExcelBorderStyle borderStyle;
+    private final @Nullable Boolean locked;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter,
-                int minWidth, int maxWidth, boolean fixedWidth, String[] dropdownOptions,
-                CellColorFunction<T> cellColorFunction, String groupName, int outlineLevel,
-                Function<T, String> commentFunction, ExcelBorderStyle borderStyle, Boolean locked) {
+                int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
+                @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
+                @Nullable Function<T, String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -146,15 +148,15 @@ public class ExcelColumn<T> {
         return Math.max(w, minWidth);
     }
 
-    String[] getDropdownOptions() {
+    String @Nullable [] getDropdownOptions() {
         return dropdownOptions;
     }
 
-    CellColorFunction<T> getCellColorFunction() {
+    @Nullable CellColorFunction<T> getCellColorFunction() {
         return cellColorFunction;
     }
 
-    String getGroupName() {
+    @Nullable String getGroupName() {
         return groupName;
     }
 
@@ -162,15 +164,15 @@ public class ExcelColumn<T> {
         return outlineLevel;
     }
 
-    Function<T, String> getCommentFunction() {
+    @Nullable Function<T, String> getCommentFunction() {
         return commentFunction;
     }
 
-    ExcelBorderStyle getBorderStyle() {
+    @Nullable ExcelBorderStyle getBorderStyle() {
         return borderStyle;
     }
 
-    Boolean getLocked() {
+    @Nullable Boolean getLocked() {
         return locked;
     }
 
@@ -183,24 +185,24 @@ public class ExcelColumn<T> {
         private final ExcelWriter<T> writer;
         private final String name;
         private final ExcelRowFunction<T, Object> function;
-        private ExcelDataType dataType;
-        private String dataFormat;
+        private @Nullable ExcelDataType dataType;
+        private @Nullable String dataFormat;
         private HorizontalAlignment alignment = HorizontalAlignment.CENTER;
-        private CellStyle style;
-        private ExcelColumnSetter columnSetter;
-        private int[] backgroundColor;
-        private Boolean bold;
-        private Integer fontSize;
+        private @Nullable CellStyle style;
+        private @Nullable ExcelColumnSetter columnSetter;
+        private int @Nullable [] backgroundColor;
+        private @Nullable Boolean bold;
+        private @Nullable Integer fontSize;
         private int minWidthValue;
         private int maxWidthValue;
         private boolean fixedWidthValue;
-        private String[] dropdownOptions;
-        private CellColorFunction<T> cellColorFunction;
-        private String groupName;
+        private String @Nullable [] dropdownOptions;
+        private @Nullable CellColorFunction<T> cellColorFunction;
+        private @Nullable String groupName;
         private int outlineLevel;
-        private Function<T, String> commentFunction;
-        private ExcelBorderStyle borderStyle;
-        private Boolean locked;
+        private @Nullable Function<T, String> commentFunction;
+        private @Nullable ExcelBorderStyle borderStyle;
+        private @Nullable Boolean locked;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
             this.writer = writer;

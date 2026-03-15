@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.shared;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +19,13 @@ import java.nio.file.Path;
  */
 public class TempResourceContainer implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(TempResourceContainer.class);
-    private Path tempDir;
-    private Path tempFile;
+    private @Nullable Path tempDir;
+    private @Nullable Path tempFile;
 
     /**
      * Returns the path to the temporary directory (if set).
      */
-    protected Path getTempDir() {
+    protected @Nullable Path getTempDir() {
         return tempDir;
     }
 
@@ -33,14 +34,14 @@ public class TempResourceContainer implements AutoCloseable {
      *
      * @param tempDir The directory to store the temporary file
      */
-    protected void setTempDir(Path tempDir) {
+    protected void setTempDir(@Nullable Path tempDir) {
         this.tempDir = tempDir;
     }
 
     /**
      * Returns the path to the temporary file (if set).
      */
-    protected Path getTempFile() {
+    protected @Nullable Path getTempFile() {
         return tempFile;
     }
 
@@ -49,7 +50,7 @@ public class TempResourceContainer implements AutoCloseable {
      *
      * @param tempFile The file that will be eventually streamed
      */
-    protected void setTempFile(Path tempFile) {
+    protected void setTempFile(@Nullable Path tempFile) {
         this.tempFile = tempFile;
     }
 

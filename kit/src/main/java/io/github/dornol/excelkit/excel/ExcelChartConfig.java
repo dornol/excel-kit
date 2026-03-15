@@ -7,6 +7,8 @@ import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,16 +92,16 @@ public class ExcelChartConfig {
     }
 
     private ChartType chartType = ChartType.BAR;
-    private String title;
+    private @Nullable String title;
     private int categoryColumnIndex = 0;
     private final List<ValueSeries> valueSeries = new ArrayList<>();
     private int anchorCol1 = 0;
     private int anchorRow1 = -1;
     private int anchorCol2 = 8;
     private int anchorRow2 = -1;
-    private String categoryAxisTitle;
-    private String valueAxisTitle;
-    private LegendPosition legendPosition;
+    private @Nullable String categoryAxisTitle;
+    private @Nullable String valueAxisTitle;
+    private @Nullable LegendPosition legendPosition;
     private boolean showDataLabels = false;
     private BarGrouping barGrouping = BarGrouping.STANDARD;
     private BarDirection barDirection = BarDirection.VERTICAL;

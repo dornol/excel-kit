@@ -7,6 +7,8 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,18 +43,18 @@ public class ExcelSheetWriter<T> {
     private float rowHeightInPoints = 20;
     private boolean autoFilter = false;
     private int freezePaneRows = 0;
-    private BeforeHeaderWriter beforeHeaderWriter;
-    private AfterDataWriter afterDataWriter;
-    private Function<T, ExcelColor> rowColorFunction;
+    private @Nullable BeforeHeaderWriter beforeHeaderWriter;
+    private @Nullable AfterDataWriter afterDataWriter;
+    private @Nullable Function<T, ExcelColor> rowColorFunction;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
-    private ProgressCallback progressCallback;
+    private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private int maxRows = Integer.MAX_VALUE;
-    private Function<Integer, String> sheetNameFunction;
+    private @Nullable Function<Integer, String> sheetNameFunction;
     private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
-    private String sheetPassword;
-    private java.util.List<ExcelConditionalRule> conditionalRules;
-    private ExcelChartConfig chartConfig;
+    private @Nullable String sheetPassword;
+    private @Nullable List<ExcelConditionalRule> conditionalRules;
+    private @Nullable ExcelChartConfig chartConfig;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,

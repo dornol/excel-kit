@@ -4,7 +4,7 @@ package io.github.dornol.excelkit.csv;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ProgressCallback;
 import jakarta.validation.Validator;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -29,11 +29,11 @@ import java.util.function.Supplier;
 public class CsvReader<T> {
     private final List<CsvReadColumn<T>> columns = new ArrayList<>();
     private final Supplier<T> instanceSupplier;
-    private final Validator validator;
+    private final @Nullable Validator validator;
     private int headerRowIndex = 0;
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
-    private ProgressCallback progressCallback;
+    private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
 
     /**
@@ -42,7 +42,7 @@ public class CsvReader<T> {
      * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      * @param validator        Optional Bean Validation validator (nullable)
      */
-    public CsvReader(@NonNull Supplier<T> instanceSupplier, Validator validator) {
+    public CsvReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.validator = validator;
     }
@@ -202,7 +202,7 @@ public class CsvReader<T> {
      * @param inputStream The input stream of the CSV file
      * @return A handler to execute CSV parsing
      */
-    public CsvReadHandler<T> build(@NonNull InputStream inputStream) {
+    public CsvReadHandler<T> build(InputStream inputStream) {
         return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 headerRowIndex, delimiter, charset, progressInterval, progressCallback);
     }

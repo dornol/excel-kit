@@ -1,7 +1,5 @@
 package io.github.dornol.excelkit.shared;
 
-import org.jspecify.annotations.NonNull;
-
 /**
  * Exception thrown when a temporary resource (file or directory) cannot be created.
  *
@@ -15,7 +13,7 @@ public class TempResourceCreateException extends ExcelKitException {
      *
      * @param cause The cause of the failure
      */
-    public TempResourceCreateException(@NonNull Throwable cause) {
+    public TempResourceCreateException(Throwable cause) {
         super(cause);
     }
 

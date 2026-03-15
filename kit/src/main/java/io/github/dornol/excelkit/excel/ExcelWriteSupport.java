@@ -11,6 +11,8 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -115,7 +117,7 @@ class ExcelWriteSupport {
 
     static <T> void writeRowCells(SXSSFSheet sheet, Cursor cursor, T rowData,
                                    List<ExcelColumn<T>> columns, float rowHeightInPoints,
-                                   Function<T, ExcelColor> rowColorFunction,
+                                   @Nullable Function<T, ExcelColor> rowColorFunction,
                                    Map<String, CellStyle> rowStyleCache, SXSSFWorkbook wb,
                                    int autoWidthSampleRows) {
         SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
@@ -174,13 +176,13 @@ class ExcelWriteSupport {
         cell.setCellComment(comment);
     }
 
-    static void applySheetProtection(SXSSFSheet sheet, String password) {
+    static void applySheetProtection(SXSSFSheet sheet, @Nullable String password) {
         if (password != null) {
             sheet.protectSheet(password);
         }
     }
 
-    static <T> void applyConditionalFormatting(SXSSFSheet sheet, List<ExcelConditionalRule> rules,
+    static <T> void applyConditionalFormatting(SXSSFSheet sheet, @Nullable List<ExcelConditionalRule> rules,
                                                 int headerRowIndex, int columnCount) {
         if (rules == null) return;
         for (ExcelConditionalRule rule : rules) {
@@ -188,7 +190,7 @@ class ExcelWriteSupport {
         }
     }
 
-    static void applyChart(SXSSFSheet sheet, ExcelChartConfig chartConfig,
+    static void applyChart(SXSSFSheet sheet, @Nullable ExcelChartConfig chartConfig,
                             int headerRow, int dataEndRow) {
         if (chartConfig != null) {
             chartConfig.apply(sheet, headerRow, dataEndRow);
@@ -233,7 +235,7 @@ class ExcelWriteSupport {
 
     static <T> int initSheetPreamble(SXSSFSheet sheet, SXSSFWorkbook wb,
                                       List<ExcelColumn<T>> columns,
-                                      BeforeHeaderWriter writer) {
+                                      @Nullable BeforeHeaderWriter writer) {
         int currentRow = 0;
         if (writer != null) {
             currentRow = writer.write(new SheetContext(sheet, wb, currentRow, columns));
@@ -266,7 +268,7 @@ class ExcelWriteSupport {
         }
     }
 
-    static void checkProgress(Cursor cursor, int interval, ProgressCallback callback) {
+    static void checkProgress(Cursor cursor, int interval, @Nullable ProgressCallback callback) {
         if (callback != null && interval > 0 && cursor.getCurrentTotal() % interval == 0) {
             callback.onProgress(cursor.getCurrentTotal(), cursor);
         }

@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Function that determines the background color for an individual cell based on its value and row data.
  * <p>
@@ -20,5 +22,5 @@ public interface CellColorFunction<T> {
      * @param rowData   the full row data object
      * @return an {@link ExcelColor} to apply, or {@code null} for no override
      */
-    ExcelColor apply(Object cellValue, T rowData);
+    @Nullable ExcelColor apply(@Nullable Object cellValue, T rowData);
 }

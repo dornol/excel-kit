@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Represents a cell comment (note) to be added to an Excel cell.
  *
@@ -8,7 +10,7 @@ package io.github.dornol.excelkit.excel;
  * @author dhkim
  * @since 0.6.0
  */
-public record ExcelCellComment(String text, String author) {
+public record ExcelCellComment(String text, @Nullable String author) {
 
     /**
      * Creates a comment with the given text and no author.

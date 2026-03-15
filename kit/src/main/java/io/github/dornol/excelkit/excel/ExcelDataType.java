@@ -4,6 +4,8 @@ import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Hyperlink;
 
+import org.jspecify.annotations.Nullable;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -142,7 +144,7 @@ public enum ExcelDataType {
     ;
 
     private final ExcelColumnSetter setter;
-    private final String defaultFormat;
+    private final @Nullable String defaultFormat;
 
     ExcelDataType(ExcelColumnSetter setter, String defaultFormat) {
         this.setter = setter;
@@ -159,7 +161,7 @@ public enum ExcelDataType {
     /**
      * Returns the default Excel format string for this type, or null if none.
      */
-    String getDefaultFormat() {
+    @Nullable String getDefaultFormat() {
         return defaultFormat;
     }
 }

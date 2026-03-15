@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.shared.CellData;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.util.function.BiConsumer;
@@ -22,7 +23,7 @@ import java.util.function.BiConsumer;
  * @author dhkim
  * @since 2025-07-19
  */
-public record CsvReadColumn<T>(String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
+public record CsvReadColumn<T>(@Nullable String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
 
     public CsvReadColumn(BiConsumer<T, CellData> setter) {
         this(null, -1, setter);
@@ -34,7 +35,7 @@ public record CsvReadColumn<T>(String headerName, int columnIndex, BiConsumer<T,
 
     public static class CsvReadColumnBuilder<T> {
         private final CsvReader<T> reader;
-        private final String headerName;
+        private final @Nullable String headerName;
         private final int columnIndex;
         private final BiConsumer<T, CellData> setter;
 

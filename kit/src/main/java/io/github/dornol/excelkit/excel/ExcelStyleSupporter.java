@@ -5,6 +5,8 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Map;
 
 /**
@@ -91,13 +93,13 @@ class ExcelStyleSupporter {
      * @param cache     Style cache keyed by alignment+format combination
      * @return Configured CellStyle for body cells
      */
-    static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format, Map<String, CellStyle> cache) {
+    static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, @Nullable String format, Map<String, CellStyle> cache) {
         return cellStyle(wb, alignment, format, null, null, null, null, null, cache);
     }
 
-    static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format,
-                               int[] backgroundColor, Boolean bold, Integer fontSize,
-                               ExcelBorderStyle borderStyle, Boolean locked,
+    static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, @Nullable String format,
+                               int @Nullable [] backgroundColor, @Nullable Boolean bold, @Nullable Integer fontSize,
+                               @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
                                Map<String, CellStyle> cache) {
         StringBuilder keyBuilder = new StringBuilder();
         keyBuilder.append(alignment.name()).append("|").append(format);
@@ -120,9 +122,9 @@ class ExcelStyleSupporter {
         return cache.computeIfAbsent(key, k -> createCellStyle(wb, alignment, format, backgroundColor, bold, fontSize, borderStyle, locked));
     }
 
-    private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format,
-                                             int[] backgroundColor, Boolean bold, Integer fontSize,
-                                             ExcelBorderStyle borderStyle, Boolean locked) {
+    private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, @Nullable String format,
+                                             int @Nullable [] backgroundColor, @Nullable Boolean bold, @Nullable Integer fontSize,
+                                             @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked) {
         CellStyle nowStyle = wb.createCellStyle();
 
         nowStyle.setAlignment(alignment);

@@ -2,7 +2,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.shared.Cursor;
 import io.github.dornol.excelkit.shared.TempResourceCreator;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +39,8 @@ public class CsvWriter<T> {
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
     private boolean bom = true;
-    private CsvAfterDataWriter afterDataWriter;
-    private ProgressCallback progressCallback;
+    private @Nullable CsvAfterDataWriter afterDataWriter;
+    private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
 
     /**
@@ -100,7 +100,7 @@ public class CsvWriter<T> {
      * @param function A function to compute the value for each row
      * @return This writer instance (for chaining)
      */
-    public CsvWriter<T> column(@NonNull String name, @NonNull CsvRowFunction<T, Object> function) {
+    public CsvWriter<T> column(String name, CsvRowFunction<T, Object> function) {
         var column = new CsvColumn<>(name, function);
         this.columns.add(column);
         return this;
@@ -113,7 +113,7 @@ public class CsvWriter<T> {
      * @param function A function to compute the value from the row
      * @return This writer instance
      */
-    public CsvWriter<T> column(@NonNull String name, @NonNull Function<T, Object> function) {
+    public CsvWriter<T> column(String name, Function<T, Object> function) {
         return column(name, (r, c) -> function.apply(r));
     }
 
@@ -184,7 +184,7 @@ public class CsvWriter<T> {
      * @param stream The row data stream
      * @return A handler for streaming the resulting CSV
      */
-    public CsvHandler write(@NonNull Stream<T> stream) {
+    public CsvHandler write(Stream<T> stream) {
         if (this.columns.isEmpty()) {
             throw new CsvWriteException("columns setting required");
         }

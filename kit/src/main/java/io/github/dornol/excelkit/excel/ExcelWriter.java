@@ -3,12 +3,13 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.shared.Cursor;
 import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.jspecify.annotations.NonNull;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,23 +39,23 @@ public class ExcelWriter<T> {
     private float rowHeightInPoints = 20;
     private boolean autoFilter = false;
     private int freezePaneRows = 0;
-    private BeforeHeaderWriter beforeHeaderWriter;
-    private AfterDataWriter afterDataWriter;
-    private AfterDataWriter afterAllWriter;
-    private Function<Integer, String> sheetNameFunction;
+    private @Nullable BeforeHeaderWriter beforeHeaderWriter;
+    private @Nullable AfterDataWriter afterDataWriter;
+    private @Nullable AfterDataWriter afterAllWriter;
+    private @Nullable Function<Integer, String> sheetNameFunction;
     private int sheetCount = 0;
-    private Function<T, ExcelColor> rowColorFunction;
+    private @Nullable Function<T, ExcelColor> rowColorFunction;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private int headerRowIndex;
-    private ProgressCallback progressCallback;
+    private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
-    private String sheetPassword;
-    private List<ExcelConditionalRule> conditionalRules;
-    private ExcelChartConfig chartConfig;
+    private @Nullable String sheetPassword;
+    private @Nullable List<ExcelConditionalRule> conditionalRules;
+    private @Nullable ExcelChartConfig chartConfig;
 
-    private SXSSFSheet sheet;
-    private Cursor cursor;
+    private @Nullable SXSSFSheet sheet;
+    private @Nullable Cursor cursor;
 
 
     /**
@@ -355,7 +356,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row with cursor
      * @return Column builder
      */
-    public ExcelColumn.ExcelColumnBuilder<T> column(@NonNull String name, @NonNull ExcelRowFunction<T, Object> function) {
+    public ExcelColumn.ExcelColumnBuilder<T> column(String name, ExcelRowFunction<T, Object> function) {
         return new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
     }
 
@@ -366,7 +367,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row
      * @return Column builder
      */
-    public ExcelColumn.ExcelColumnBuilder<T> column(@NonNull String name, @NonNull Function<T, Object> function) {
+    public ExcelColumn.ExcelColumnBuilder<T> column(String name, Function<T, Object> function) {
         return new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
     }
 
