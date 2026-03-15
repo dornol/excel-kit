@@ -34,6 +34,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Configurable header row index and sheet index
 - Optional Bean Validation integration with per-row results
 - Stream-based reading via `readAsStream()`
+- Read progress callback via `onProgress()`
 - Large file support configuration
 
 **CSV Writing**
@@ -303,6 +304,22 @@ writer
     .column("Link", p -> new ExcelHyperlink(p.url(), "View Details"))
         .type(ExcelDataType.HYPERLINK)
     .write(data);
+```
+
+### Auto Width Sample Rows
+
+Column widths are auto-calculated from the first N data rows. Configurable via `autoWidthSampleRows()`:
+
+```java
+new ExcelWriter<Person>()
+        .autoWidthSampleRows(200)           // sample 200 rows (default: 100)
+        .column("Name", p -> p.name())
+        .write(data);
+
+new ExcelWriter<Person>()
+        .autoWidthSampleRows(0)             // disable auto-width
+        .column("Name", p -> p.name())
+        .write(data);
 ```
 
 ### Row Height
@@ -661,6 +678,16 @@ try (Stream<ReadResult<User>> stream = rh.readAsStream()) {
 ExcelReader.configureLargeFileSupport();
 ```
 
+**Read progress callback:**
+```java
+new ExcelReader<>(User::new, null)
+        .column((u, cell) -> u.name = cell.asString())
+        .onProgress(10_000, (count, cursor) ->
+            log.info("Read {} rows", count))
+        .build(inputStream)
+        .read(consumer);
+```
+
 **Bean Validation:**
 ```java
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
@@ -684,6 +711,7 @@ When reading Excel/CSV, `CellData` provides type-safe conversions:
 | `asLocalDate()` | `LocalDate` |
 | `asLocalDateTime()` | `LocalDateTime` |
 | `asLocalTime()` | `LocalTime` |
+| `asEnum(Class<E>)` | `E` (case-insensitive name match) |
 | `isEmpty()` | `boolean` |
 
 Custom date formats:

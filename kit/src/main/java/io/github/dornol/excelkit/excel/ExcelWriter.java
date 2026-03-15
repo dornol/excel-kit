@@ -48,6 +48,7 @@ public class ExcelWriter<T> {
     private int headerRowIndex;
     private ProgressCallback progressCallback;
     private int progressInterval;
+    private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -275,6 +276,24 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Sets the number of rows sampled for auto column width calculation.
+     * <p>
+     * Only the first N data rows are measured to determine column widths.
+     * Set to 0 to disable auto-width (all columns use minimum width).
+     * Defaults to 100.
+     *
+     * @param rows number of rows to sample (0 to disable)
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> autoWidthSampleRows(int rows) {
+        if (rows < 0) {
+            throw new IllegalArgumentException("autoWidthSampleRows must be non-negative");
+        }
+        this.autoWidthSampleRows = rows;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -433,7 +452,7 @@ public class ExcelWriter<T> {
             applySheetOptions();
         }
         ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, rowHeightInPoints,
-                rowColorFunction, rowStyleCache, wb);
+                rowColorFunction, rowStyleCache, wb, autoWidthSampleRows);
         ExcelWriteSupport.checkProgress(cursor, progressInterval, progressCallback);
     }
 

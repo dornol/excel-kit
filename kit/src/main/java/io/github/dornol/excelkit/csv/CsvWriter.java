@@ -185,6 +185,7 @@ public class CsvWriter<T> {
         if (this.columns.isEmpty()) {
             throw new CsvWriteException("columns setting required");
         }
+        validateUniqueColumnNames();
         Path tempDir = TempResourceCreator.createTempDirectory();
         Path tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".csv");
 
@@ -280,6 +281,15 @@ public class CsvWriter<T> {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    private void validateUniqueColumnNames() {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (CsvColumn<T> col : columns) {
+            if (!seen.add(col.getName())) {
+                throw new CsvWriteException("Duplicate column name: '" + col.getName() + "'");
+            }
+        }
     }
 
     private static boolean isFormulaCharacter(char c) {

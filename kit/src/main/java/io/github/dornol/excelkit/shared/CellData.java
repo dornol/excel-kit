@@ -392,4 +392,26 @@ public record CellData(int columnIndex, String formattedValue) {
         return formattedValue.isBlank();
     }
 
+    /**
+     * Converts the value to an enum constant by name (case-insensitive).
+     * Returns {@code null} if the value is empty or blank.
+     *
+     * @param enumType the enum class
+     * @param <E>      the enum type
+     * @return the matching enum constant, or {@code null} if blank
+     * @throws IllegalArgumentException if no matching constant is found
+     */
+    public <E extends Enum<E>> E asEnum(Class<E> enumType) {
+        if (formattedValue.isBlank()) {
+            return null;
+        }
+        String trimmed = formattedValue.trim();
+        for (E constant : enumType.getEnumConstants()) {
+            if (constant.name().equalsIgnoreCase(trimmed)) {
+                return constant;
+            }
+        }
+        throw new IllegalArgumentException("No enum constant " + enumType.getSimpleName() + " for value: '" + trimmed + "'");
+    }
+
 }

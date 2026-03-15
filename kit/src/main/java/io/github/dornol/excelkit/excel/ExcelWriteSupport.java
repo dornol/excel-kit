@@ -119,7 +119,8 @@ class ExcelWriteSupport {
     static <T> void writeRowCells(SXSSFSheet sheet, Cursor cursor, T rowData,
                                    List<ExcelColumn<T>> columns, float rowHeightInPoints,
                                    Function<T, ExcelColor> rowColorFunction,
-                                   Map<String, CellStyle> rowStyleCache, SXSSFWorkbook wb) {
+                                   Map<String, CellStyle> rowStyleCache, SXSSFWorkbook wb,
+                                   int autoWidthSampleRows) {
         SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
         row.setHeightInPoints(rowHeightInPoints);
         cursor.plusRow();
@@ -148,7 +149,7 @@ class ExcelWriteSupport {
                 cell.setCellStyle(column.getStyle());
             }
 
-            if (cursor.getRowOfSheet() < AUTO_WIDTH_SAMPLE_ROWS) {
+            if (autoWidthSampleRows > 0 && cursor.getRowOfSheet() < autoWidthSampleRows) {
                 column.fitColumnWidthByValue(columnData);
             }
         }
