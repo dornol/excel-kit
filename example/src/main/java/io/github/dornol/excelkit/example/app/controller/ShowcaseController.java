@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.example.app.controller;
 
-import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.example.app.util.DownloadFileType;
@@ -34,12 +33,23 @@ public class ShowcaseController {
 
     private static final Logger log = LoggerFactory.getLogger(ShowcaseController.class);
 
+    private static final ExcelKitSchema<ProductReadDto> PRODUCT_SCHEMA = ExcelKitSchema.<ProductReadDto>builder()
+            .column("Name", ProductReadDto::getName, (p, cell) -> p.setName(cell.asString()))
+            .column("Category", ProductReadDto::getCategory, (p, cell) -> p.setCategory(cell.asString()))
+            .column("Price", ProductReadDto::getPrice, (p, cell) -> p.setPrice(cell.asInt()),
+                    c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+            .column("Quantity", ProductReadDto::getQuantity, (p, cell) -> p.setQuantity(cell.asInt()),
+                    c -> c.type(ExcelDataType.INTEGER))
+            .column("Discount", ProductReadDto::getDiscount, (p, cell) -> p.setDiscount(cell.asDouble()),
+                    c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+            .build();
+
     private static List<ProductDto> sampleProducts() {
         return Stream.generate(ProductDto::random).limit(20).toList();
     }
 
     // ========================================================================
-    // 1. Formula - SUM/AVERAGE in afterData callback
+    // 1. Formula - FORMULA type column + SUM/AVERAGE in afterData
     // ========================================================================
     @GetMapping("/formula")
     public ResponseEntity<StreamingResponseBody> downloadFormula() {
@@ -47,13 +57,15 @@ public class ShowcaseController {
                 .sheetName("Formula Demo")
                 .autoFilter(true)
                 .freezePane(1)
-                .column("No.", (ProductDto row, io.github.dornol.excelkit.shared.Cursor cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
+                .column("No.", (row, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
                 .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat())
                 .column("Quantity", ProductDto::quantity).type(ExcelDataType.INTEGER)
-                .column("Subtotal", (ProductDto row, io.github.dornol.excelkit.shared.Cursor cursor) ->
-                        "D" + (cursor.getRowOfSheet() + 1) + "*E" + (cursor.getRowOfSheet() + 1))
+                .column("Subtotal", (row, cursor) ->
+                        "%s%d*%s%d".formatted(
+                                SheetContext.columnLetter(3), cursor.getRowOfSheet() + 1,
+                                SheetContext.columnLetter(4), cursor.getRowOfSheet() + 1))
                     .type(ExcelDataType.FORMULA)
                     .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
                 .afterData(ctx -> {
@@ -84,7 +96,7 @@ public class ShowcaseController {
     }
 
     // ========================================================================
-    // 2. Hyperlink - clickable URL columns
+    // 2. Hyperlink - plain URL + ExcelHyperlink with custom label
     // ========================================================================
     @GetMapping("/hyperlink")
     public ResponseEntity<StreamingResponseBody> downloadHyperlink() {
@@ -93,9 +105,7 @@ public class ShowcaseController {
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
                 .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat())
-                // Plain URL hyperlink
                 .column("URL", ProductDto::url).type(ExcelDataType.HYPERLINK)
-                // Hyperlink with custom label
                 .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "상세보기"))
                     .type(ExcelDataType.HYPERLINK)
                 .write(sampleProducts().stream());
@@ -105,38 +115,15 @@ public class ShowcaseController {
     }
 
     // ========================================================================
-    // 3. Schema - unified read/write with column config
+    // 3. Schema - unified read/write with column config (name-based read)
     // ========================================================================
-    private static final ExcelKitSchema<ProductDto> PRODUCT_SCHEMA = ExcelKitSchema.<ProductDto>builder()
-            .column("Name", ProductDto::name, (p, cell) -> {})
-            .column("Category", ProductDto::category, (p, cell) -> {})
-            .column("Price", ProductDto::price, (p, cell) -> {},
-                    c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
-            .column("Quantity", ProductDto::quantity, (p, cell) -> {},
-                    c -> c.type(ExcelDataType.INTEGER))
-            .column("Discount", ProductDto::discount, (p, cell) -> {},
-                    c -> c.type(ExcelDataType.DOUBLE_PERCENT))
-            .build();
-
-    private static final ExcelKitSchema<ProductReadDto> PRODUCT_READ_SCHEMA = ExcelKitSchema.<ProductReadDto>builder()
-            .column("Name", ProductReadDto::getName, (p, cell) -> p.setName(cell.asString()))
-            .column("Category", ProductReadDto::getCategory, (p, cell) -> p.setCategory(cell.asString()))
-            .column("Price", ProductReadDto::getPrice, (p, cell) -> p.setPrice(cell.asInt()),
-                    c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
-            .column("Quantity", ProductReadDto::getQuantity, (p, cell) -> p.setQuantity(cell.asInt()),
-                    c -> c.type(ExcelDataType.INTEGER))
-            .column("Discount", ProductReadDto::getDiscount, (p, cell) -> p.setDiscount(cell.asDouble()),
-                    c -> c.type(ExcelDataType.DOUBLE_PERCENT))
-            .build();
-
     @GetMapping("/schema-excel")
     public ResponseEntity<StreamingResponseBody> downloadSchemaExcel() {
-        var handler = PRODUCT_READ_SCHEMA.excelWriter()
+        var handler = PRODUCT_SCHEMA.excelWriter()
                 .sheetName("Schema Demo")
                 .autoFilter(true)
                 .freezePane(1)
-                .write(sampleProducts().stream().map(p ->
-                        toReadDto(p)));
+                .write(sampleProducts().stream().map(ShowcaseController::toReadDto));
 
         return DownloadUtil.builder("schema-excel-demo", DownloadFileType.EXCEL)
                 .body(handler::consumeOutputStream);
@@ -144,8 +131,8 @@ public class ShowcaseController {
 
     @GetMapping("/schema-csv")
     public ResponseEntity<StreamingResponseBody> downloadSchemaCsv() {
-        var handler = PRODUCT_READ_SCHEMA.csvWriter()
-                .write(sampleProducts().stream().map(p -> toReadDto(p)));
+        var handler = PRODUCT_SCHEMA.csvWriter()
+                .write(sampleProducts().stream().map(ShowcaseController::toReadDto));
 
         return DownloadUtil.builder("schema-csv-demo", DownloadFileType.CSV)
                 .body(handler::consumeOutputStream);
@@ -157,58 +144,43 @@ public class ShowcaseController {
     @PostMapping("/read-by-name-excel")
     @ResponseBody
     public String readByNameExcel(MultipartFile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            return readAndFormat("Excel",
+                    PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
+        }
+    }
+
+    @PostMapping("/read-by-name-csv")
+    @ResponseBody
+    public String readByNameCsv(MultipartFile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            return readAndFormat("CSV",
+                    PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
+        }
+    }
+
+    private String readAndFormat(String type, io.github.dornol.excelkit.shared.AbstractReadHandler<ProductReadDto> handler) {
         List<ProductReadDto> results = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
-        try (InputStream is = file.getInputStream()) {
-            PRODUCT_READ_SCHEMA.excelReader(ProductReadDto::new, null)
-                    .build(is)
-                    .read(result -> {
-                        if (result.success()) {
-                            results.add(result.data());
-                        } else {
-                            errors.add(result.messages().toString());
-                        }
-                    });
-        }
+        handler.read(result -> {
+            if (result.success()) {
+                results.add(result.data());
+            } else {
+                errors.add(result.messages().toString());
+            }
+        });
+
+        log.info("Read by name ({}): {} success, {} errors", type, results.size(), errors.size());
 
         StringBuilder sb = new StringBuilder();
-        sb.append("=== Name-Based Excel Read Result ===\n");
+        sb.append("=== Name-Based %s Read Result ===\n".formatted(type));
         sb.append("Success: %d rows, Errors: %d rows\n\n".formatted(results.size(), errors.size()));
         results.forEach(p -> sb.append(p).append("\n"));
         if (!errors.isEmpty()) {
             sb.append("\n--- Errors ---\n");
             errors.forEach(e -> sb.append(e).append("\n"));
         }
-
-        log.info("Read by name (Excel): {} success, {} errors", results.size(), errors.size());
-        return sb.toString();
-    }
-
-    @PostMapping("/read-by-name-csv")
-    @ResponseBody
-    public String readByNameCsv(MultipartFile file) throws IOException {
-        List<ProductReadDto> results = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
-
-        try (InputStream is = file.getInputStream()) {
-            PRODUCT_READ_SCHEMA.csvReader(ProductReadDto::new, null)
-                    .build(is)
-                    .read(result -> {
-                        if (result.success()) {
-                            results.add(result.data());
-                        } else {
-                            errors.add(result.messages().toString());
-                        }
-                    });
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== Name-Based CSV Read Result ===\n");
-        sb.append("Success: %d rows, Errors: %d rows\n\n".formatted(results.size(), errors.size()));
-        results.forEach(p -> sb.append(p).append("\n"));
-
-        log.info("Read by name (CSV): {} success, {} errors", results.size(), errors.size());
         return sb.toString();
     }
 
@@ -220,7 +192,6 @@ public class ShowcaseController {
         var products = sampleProducts();
 
         try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.CORAL)) {
-            // Sheet 1: Electronics
             wb.<ProductDto>sheet("Electronics")
                     .autoFilter()
                     .freezePane(1)
@@ -232,7 +203,6 @@ public class ShowcaseController {
                     .rowColor(p -> p.quantity() <= 10 ? ExcelColor.LIGHT_RED : null)
                     .write(products.stream().filter(p -> "Electronics".equals(p.category()) || "Peripherals".equals(p.category())));
 
-            // Sheet 2: Office & Accessories
             wb.<ProductDto>sheet("Office & Accessories")
                     .autoFilter()
                     .column("Name", ProductDto::name)
@@ -243,7 +213,6 @@ public class ShowcaseController {
                     .rowColor(p -> p.discount() >= 0.2 ? ExcelColor.LIGHT_GREEN : null)
                     .write(products.stream().filter(p -> "Office".equals(p.category()) || "Accessories".equals(p.category())));
 
-            // Sheet 3: Summary (different data type - String pairs)
             wb.<String[]>sheet("Summary")
                     .column("Metric", row -> row[0])
                     .column("Value", row -> row[1])
@@ -265,27 +234,26 @@ public class ShowcaseController {
     // ========================================================================
     @GetMapping("/full")
     public ResponseEntity<StreamingResponseBody> downloadFullShowcase() {
-        var products = sampleProducts();
+        String priceCol = SheetContext.columnLetter(3);      // D
+        String qtyCol = SheetContext.columnLetter(4);        // E
+        String discountCol = SheetContext.columnLetter(5);   // F
+        String subtotalCol = SheetContext.columnLetter(6);   // G
+        String afterDiscCol = SheetContext.columnLetter(7);  // H
 
         var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
                 .sheetName("Full Showcase")
                 .autoFilter(true)
                 .freezePane(1)
                 .rowHeight(22)
-                // Row coloring (set before column chain)
                 .rowColor(p -> {
                     if (p.quantity() <= 10) return ExcelColor.LIGHT_RED;
                     if (p.discount() >= 0.2) return ExcelColor.LIGHT_GREEN;
                     return null;
                 })
-                // No. column
-                .column("No.", (ProductDto row, io.github.dornol.excelkit.shared.Cursor cursor) ->
-                        cursor.getCurrentTotal()).type(ExcelDataType.LONG)
-                // Basic columns
+                .column("No.", (row, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
                 .column("Name", ProductDto::name).bold(true)
                 .column("Category", ProductDto::category)
                     .dropdown("Electronics", "Accessories", "Office", "Peripherals")
-                // Styled number columns
                 .column("Price", ProductDto::price)
                     .type(ExcelDataType.INTEGER)
                     .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
@@ -294,23 +262,22 @@ public class ShowcaseController {
                     .backgroundColor(ExcelColor.LIGHT_YELLOW)
                 .column("Discount", ProductDto::discount)
                     .type(ExcelDataType.DOUBLE_PERCENT)
-                // Formula column - subtotal
-                .column("Subtotal", (ProductDto row, io.github.dornol.excelkit.shared.Cursor cursor) ->
-                        "D" + (cursor.getRowOfSheet() + 1) + "*E" + (cursor.getRowOfSheet() + 1))
+                .column("Subtotal", (row, cursor) -> {
+                    int r = cursor.getRowOfSheet() + 1;
+                    return "%s%d*%s%d".formatted(priceCol, r, qtyCol, r);
+                })
                     .type(ExcelDataType.FORMULA)
                     .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
-                // Formula column - discounted price
-                .column("After Discount", (ProductDto row, io.github.dornol.excelkit.shared.Cursor cursor) ->
-                        "G" + (cursor.getRowOfSheet() + 1) + "*(1-F" + (cursor.getRowOfSheet() + 1) + ")")
+                .column("After Discount", (row, cursor) -> {
+                    int r = cursor.getRowOfSheet() + 1;
+                    return "%s%d*(1-%s%d)".formatted(subtotalCol, r, discountCol, r);
+                })
                     .type(ExcelDataType.FORMULA)
                     .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
-                // Hyperlink column
                 .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "View"))
                     .type(ExcelDataType.HYPERLINK)
-                // beforeHeader - title row
                 .beforeHeader(ctx -> {
-                    var sheet = ctx.getSheet();
-                    var titleRow = sheet.createRow(0);
+                    var titleRow = ctx.getSheet().createRow(0);
                     var cell = titleRow.createCell(0);
                     cell.setCellValue("Product Report - excel-kit Showcase");
                     var font = ctx.getWorkbook().createFont();
@@ -319,35 +286,34 @@ public class ShowcaseController {
                     var style = ctx.getWorkbook().createCellStyle();
                     style.setFont(font);
                     cell.setCellStyle(style);
-                    return 2; // skip 1 blank row after title
+                    return 2;
                 })
-                // afterData - summary formulas
                 .afterData(ctx -> {
                     var sheet = ctx.getSheet();
                     int row = ctx.getCurrentRow();
-                    int headerRow = 3; // title(0) + blank(1) + header(2), data starts at 3
+                    int dataStart = 4; // title(0) + blank(1) + header(2) + data starts at row 3 → Excel row 4
 
-                    var blankRow = sheet.createRow(row);
+                    sheet.createRow(row);
                     row++;
 
                     var sumRow = sheet.createRow(row);
                     sumRow.createCell(2).setCellValue("합계");
-                    sumRow.createCell(3).setCellFormula("SUM(D%d:D%d)".formatted(headerRow + 1, row - 1));
-                    sumRow.createCell(4).setCellFormula("SUM(E%d:E%d)".formatted(headerRow + 1, row - 1));
-                    sumRow.createCell(6).setCellFormula("SUM(G%d:G%d)".formatted(headerRow + 1, row - 1));
-                    sumRow.createCell(7).setCellFormula("SUM(H%d:H%d)".formatted(headerRow + 1, row - 1));
+                    sumRow.createCell(3).setCellFormula("SUM(%s%d:%s%d)".formatted(priceCol, dataStart, priceCol, row - 1));
+                    sumRow.createCell(4).setCellFormula("SUM(%s%d:%s%d)".formatted(qtyCol, dataStart, qtyCol, row - 1));
+                    sumRow.createCell(6).setCellFormula("SUM(%s%d:%s%d)".formatted(subtotalCol, dataStart, subtotalCol, row - 1));
+                    sumRow.createCell(7).setCellFormula("SUM(%s%d:%s%d)".formatted(afterDiscCol, dataStart, afterDiscCol, row - 1));
                     row++;
 
                     var avgRow = sheet.createRow(row);
                     avgRow.createCell(2).setCellValue("평균");
-                    avgRow.createCell(3).setCellFormula("AVERAGE(D%d:D%d)".formatted(headerRow + 1, row - 2));
-                    avgRow.createCell(4).setCellFormula("AVERAGE(E%d:E%d)".formatted(headerRow + 1, row - 2));
-                    avgRow.createCell(5).setCellFormula("AVERAGE(F%d:F%d)".formatted(headerRow + 1, row - 2));
+                    avgRow.createCell(3).setCellFormula("AVERAGE(%s%d:%s%d)".formatted(priceCol, dataStart, priceCol, row - 2));
+                    avgRow.createCell(4).setCellFormula("AVERAGE(%s%d:%s%d)".formatted(qtyCol, dataStart, qtyCol, row - 2));
+                    avgRow.createCell(5).setCellFormula("AVERAGE(%s%d:%s%d)".formatted(discountCol, dataStart, discountCol, row - 2));
                     row++;
 
                     return row;
                 })
-                .write(products.stream());
+                .write(sampleProducts().stream());
 
         return DownloadUtil.builder("full-showcase", DownloadFileType.EXCEL)
                 .body(handler::consumeOutputStream);
