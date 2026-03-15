@@ -92,11 +92,12 @@ class ExcelStyleSupporter {
      * @return Configured CellStyle for body cells
      */
     static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format, Map<String, CellStyle> cache) {
-        return cellStyle(wb, alignment, format, null, null, null, cache);
+        return cellStyle(wb, alignment, format, null, null, null, null, null, cache);
     }
 
     static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format,
                                int[] backgroundColor, Boolean bold, Integer fontSize,
+                               ExcelBorderStyle borderStyle, Boolean locked,
                                Map<String, CellStyle> cache) {
         StringBuilder keyBuilder = new StringBuilder();
         keyBuilder.append(alignment.name()).append("|").append(format);
@@ -109,16 +110,19 @@ class ExcelStyleSupporter {
         if (fontSize != null) {
             keyBuilder.append("|fs=").append(fontSize);
         }
+        if (borderStyle != null) {
+            keyBuilder.append("|border=").append(borderStyle.name());
+        }
+        if (locked != null) {
+            keyBuilder.append("|locked=").append(locked);
+        }
         String key = keyBuilder.toString();
-        return cache.computeIfAbsent(key, k -> createCellStyle(wb, alignment, format, backgroundColor, bold, fontSize));
-    }
-
-    private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format) {
-        return createCellStyle(wb, alignment, format, null, null, null);
+        return cache.computeIfAbsent(key, k -> createCellStyle(wb, alignment, format, backgroundColor, bold, fontSize, borderStyle, locked));
     }
 
     private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, String format,
-                                             int[] backgroundColor, Boolean bold, Integer fontSize) {
+                                             int[] backgroundColor, Boolean bold, Integer fontSize,
+                                             ExcelBorderStyle borderStyle, Boolean locked) {
         CellStyle nowStyle = wb.createCellStyle();
 
         nowStyle.setAlignment(alignment);
@@ -141,10 +145,14 @@ class ExcelStyleSupporter {
             }
             nowStyle.setFont(font);
         }
-        nowStyle.setBorderTop(BorderStyle.THIN);
-        nowStyle.setBorderBottom(BorderStyle.THIN);
-        nowStyle.setBorderLeft(BorderStyle.THIN);
-        nowStyle.setBorderRight(BorderStyle.THIN);
+        BorderStyle border = (borderStyle != null) ? borderStyle.toPoiBorderStyle() : BorderStyle.THIN;
+        nowStyle.setBorderTop(border);
+        nowStyle.setBorderBottom(border);
+        nowStyle.setBorderLeft(border);
+        nowStyle.setBorderRight(border);
+        if (locked != null) {
+            nowStyle.setLocked(locked);
+        }
         nowStyle.setWrapText(true);
         return nowStyle;
     }

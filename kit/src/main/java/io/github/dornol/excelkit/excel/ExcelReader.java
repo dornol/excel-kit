@@ -1,17 +1,31 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.CellData;
+import io.github.dornol.excelkit.shared.ExcelKitException;
+import io.github.dornol.excelkit.shared.TempResourceCreator;
 import jakarta.validation.Validator;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.util.IOUtils;
+import org.apache.poi.util.XMLHelper;
+import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
+import org.apache.poi.xssf.model.SharedStrings;
+import org.apache.poi.xssf.model.StylesTable;
+import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.jspecify.annotations.NonNull;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
 import io.github.dornol.excelkit.shared.ProgressCallback;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -235,5 +249,141 @@ public class ExcelReader<T> {
     public ExcelReadHandler<T> build(@NonNull InputStream inputStream) {
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 sheetIndex, headerRowIndex, progressInterval, progressCallback);
+    }
+
+    /**
+     * Returns the list of sheet names and indices from an Excel file.
+     *
+     * @param inputStream The input stream of the Excel file (will be consumed)
+     * @return A list of {@link ExcelSheetInfo} records containing sheet names and indices
+     */
+    public static List<ExcelSheetInfo> getSheetNames(@NonNull InputStream inputStream) {
+        Path tempDir = null;
+        Path tempFile = null;
+        try {
+            tempDir = TempResourceCreator.createTempDirectory();
+            tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
+            try (InputStream is = inputStream) {
+                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            try (OPCPackage pkg = OPCPackage.open(tempFile.toFile())) {
+                XSSFReader reader = new XSSFReader(pkg);
+                XSSFReader.SheetIterator sheetsData = (XSSFReader.SheetIterator) reader.getSheetsData();
+                List<ExcelSheetInfo> result = new ArrayList<>();
+                int index = 0;
+                while (sheetsData.hasNext()) {
+                    try (InputStream ignored = sheetsData.next()) {
+                        result.add(new ExcelSheetInfo(index, sheetsData.getSheetName()));
+                    }
+                    index++;
+                }
+                return result;
+            }
+        } catch (Exception e) {
+            throw new ExcelReadException("Failed to read sheet names", e);
+        } finally {
+            cleanupTemp(tempDir, tempFile);
+        }
+    }
+
+    /**
+     * Returns the header names from a specific sheet.
+     *
+     * @param inputStream    The input stream of the Excel file (will be consumed)
+     * @param sheetIndex     The 0-based sheet index
+     * @param headerRowIndex The 0-based header row index
+     * @return A list of header names
+     */
+    public static List<String> getSheetHeaders(@NonNull InputStream inputStream, int sheetIndex, int headerRowIndex) {
+        Path tempDir = null;
+        Path tempFile = null;
+        try {
+            tempDir = TempResourceCreator.createTempDirectory();
+            tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
+            try (InputStream is = inputStream) {
+                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            try (OPCPackage pkg = OPCPackage.open(tempFile.toFile())) {
+                XSSFReader reader = new XSSFReader(pkg);
+                SharedStrings ss = reader.getSharedStringsTable();
+                StylesTable styles = reader.getStylesTable();
+
+                XMLReader parser = XMLHelper.newXMLReader();
+                HeaderExtractor extractor = new HeaderExtractor(headerRowIndex);
+                XSSFSheetXMLHandler sheetParser = new XSSFSheetXMLHandler(styles, ss, extractor, false);
+                parser.setContentHandler(sheetParser);
+
+                Iterator<InputStream> sheetsData = reader.getSheetsData();
+                int currentIndex = 0;
+                while (sheetsData.hasNext()) {
+                    try (InputStream sheet = sheetsData.next()) {
+                        if (currentIndex == sheetIndex) {
+                            parser.parse(new InputSource(sheet));
+                            break;
+                        }
+                    }
+                    currentIndex++;
+                }
+                return extractor.getHeaders();
+            }
+        } catch (Exception e) {
+            throw new ExcelReadException("Failed to read sheet headers", e);
+        } finally {
+            cleanupTemp(tempDir, tempFile);
+        }
+    }
+
+    private static void cleanupTemp(Path tempDir, Path tempFile) {
+        try { if (tempFile != null) Files.deleteIfExists(tempFile); } catch (IOException ignored) {}
+        try { if (tempDir != null) Files.deleteIfExists(tempDir); } catch (IOException ignored) {}
+    }
+
+    /**
+     * Internal handler for extracting header names only.
+     */
+    private static class HeaderExtractor extends DefaultHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
+        private final int headerRowIndex;
+        private final List<String> headers = new ArrayList<>();
+        private final List<String> currentRow = new ArrayList<>();
+        private boolean done = false;
+
+        HeaderExtractor(int headerRowIndex) {
+            this.headerRowIndex = headerRowIndex;
+        }
+
+        @Override
+        public void startRow(int rowNum) {
+            currentRow.clear();
+        }
+
+        @Override
+        public void endRow(int rowNum) {
+            if (rowNum == headerRowIndex) {
+                headers.addAll(currentRow);
+                done = true;
+            }
+        }
+
+        @Override
+        public void cell(String cellReference, String formattedValue, XSSFComment comment) {
+            if (!done) {
+                int colIndex = 0;
+                for (char c : cellReference.toCharArray()) {
+                    if (!Character.isLetter(c)) break;
+                    colIndex = colIndex * 26 + (Character.toUpperCase(c) - 'A' + 1);
+                }
+                colIndex--;
+                while (currentRow.size() < colIndex) {
+                    currentRow.add("");
+                }
+                currentRow.add(formattedValue != null ? formattedValue : "");
+            }
+        }
+
+        List<String> getHeaders() {
+            return headers;
+        }
     }
 }

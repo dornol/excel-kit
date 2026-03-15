@@ -49,6 +49,9 @@ public class ExcelWriter<T> {
     private ProgressCallback progressCallback;
     private int progressInterval;
     private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
+    private String sheetPassword;
+    private List<ExcelConditionalRule> conditionalRules;
+    private ExcelChartConfig chartConfig;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -294,6 +297,49 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Protects all sheets with the given password.
+     * <p>
+     * When sheet protection is enabled, cells are locked by default.
+     * Use {@link ExcelColumn.ExcelColumnBuilder#locked(boolean)} to allow editing specific columns.
+     *
+     * @param password the protection password
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> protectSheet(String password) {
+        this.sheetPassword = password;
+        return this;
+    }
+
+    /**
+     * Adds a conditional formatting rule.
+     *
+     * @param configurer consumer to configure the rule
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> conditionalFormatting(Consumer<ExcelConditionalRule> configurer) {
+        if (conditionalRules == null) {
+            conditionalRules = new ArrayList<>();
+        }
+        ExcelConditionalRule rule = new ExcelConditionalRule();
+        configurer.accept(rule);
+        conditionalRules.add(rule);
+        return this;
+    }
+
+    /**
+     * Configures a chart to be added after all data is written.
+     *
+     * @param configurer consumer to configure the chart
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> chart(Consumer<ExcelChartConfig> configurer) {
+        ExcelChartConfig config = new ExcelChartConfig();
+        configurer.accept(config);
+        this.chartConfig = config;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -448,6 +494,14 @@ public class ExcelWriter<T> {
 
         applyDataValidationsAllSheets();
         applyColumnWidthAllSheets();
+        applyProtectionAllSheets();
+        applyConditionalFormattingAllSheets();
+
+        // Apply chart on last sheet
+        if (chartConfig != null) {
+            ExcelWriteSupport.applyChart(sheet, chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
+        }
+
         return new ExcelHandler(this.wb);
     }
 
@@ -536,6 +590,29 @@ public class ExcelWriter<T> {
     private void applyDataValidationsAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
             ExcelWriteSupport.applyDataValidations(wb.getSheetAt(i), columns, headerRowIndex);
+        }
+    }
+
+    /**
+     * Applies sheet protection to all sheets.
+     */
+    private void applyProtectionAllSheets() {
+        if (sheetPassword != null) {
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+                ExcelWriteSupport.applySheetProtection(wb.getSheetAt(i), sheetPassword);
+            }
+        }
+    }
+
+    /**
+     * Applies conditional formatting rules to all sheets.
+     */
+    private void applyConditionalFormattingAllSheets() {
+        if (conditionalRules != null) {
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+                ExcelWriteSupport.applyConditionalFormatting(
+                        wb.getSheetAt(i), conditionalRules, headerRowIndex, columns.size());
+            }
         }
     }
 

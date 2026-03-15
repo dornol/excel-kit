@@ -50,6 +50,9 @@ public class ExcelSheetWriter<T> {
     private int maxRows = Integer.MAX_VALUE;
     private Function<Integer, String> sheetNameFunction;
     private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
+    private String sheetPassword;
+    private java.util.List<ExcelConditionalRule> conditionalRules;
+    private ExcelChartConfig chartConfig;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -242,6 +245,46 @@ public class ExcelSheetWriter<T> {
     }
 
     /**
+     * Protects the sheet(s) with the given password.
+     *
+     * @param password the protection password
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> protectSheet(String password) {
+        this.sheetPassword = password;
+        return this;
+    }
+
+    /**
+     * Adds a conditional formatting rule to the sheet(s).
+     *
+     * @param configurer consumer to configure the rule
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> conditionalFormatting(java.util.function.Consumer<ExcelConditionalRule> configurer) {
+        if (conditionalRules == null) {
+            conditionalRules = new ArrayList<>();
+        }
+        ExcelConditionalRule rule = new ExcelConditionalRule();
+        configurer.accept(rule);
+        conditionalRules.add(rule);
+        return this;
+    }
+
+    /**
+     * Configures a chart to be added after data is written.
+     *
+     * @param configurer consumer to configure the chart
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> chart(java.util.function.Consumer<ExcelChartConfig> configurer) {
+        ExcelChartConfig config = new ExcelChartConfig();
+        configurer.accept(config);
+        this.chartConfig = config;
+        return this;
+    }
+
+    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      */
     public void write(Stream<T> stream) {
@@ -297,6 +340,14 @@ public class ExcelSheetWriter<T> {
             ExcelWriteSupport.applyColumnWidths(s, columns);
             ExcelWriteSupport.applyDataValidations(s, columns, headerRowIndex);
             ExcelWriteSupport.applyColumnOutline(s, columns);
+            ExcelWriteSupport.applySheetProtection(s, sheetPassword);
+            ExcelWriteSupport.applyConditionalFormatting(s, conditionalRules, headerRowIndex, columns.size());
+        }
+
+        // Apply chart on last sheet
+        if (chartConfig != null) {
+            SXSSFSheet lastSheet = allSheets.get(allSheets.size() - 1);
+            ExcelWriteSupport.applyChart(lastSheet, chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
         }
     }
 
@@ -327,6 +378,9 @@ public class ExcelSheetWriter<T> {
         CellColorFunction<T> cellColorFunction = null;
         String groupName = null;
         int outlineLevel = 0;
+        Function<T, String> commentFunction = null;
+        ExcelBorderStyle borderStyle = null;
+        Boolean locked = null;
 
         if (config != null) {
             if (config.dataType != null) dataType = config.dataType;
@@ -342,6 +396,9 @@ public class ExcelSheetWriter<T> {
             cellColorFunction = config.cellColorFunction;
             groupName = config.groupName;
             outlineLevel = config.outlineLevel;
+            commentFunction = config.commentFunction;
+            borderStyle = config.borderStyle;
+            locked = config.locked;
         }
 
         if (dataFormat == null) {
@@ -349,11 +406,12 @@ public class ExcelSheetWriter<T> {
         }
 
         CellStyle style = ExcelStyleSupporter.cellStyle(wb, alignment, dataFormat,
-                backgroundColor, bold, fontSize, cellStyleCache);
+                backgroundColor, bold, fontSize, borderStyle, locked, cellStyleCache);
         ExcelColumnSetter setter = dataType.getSetter();
 
         return new ExcelColumn<>(name, function, style, setter, minWidth, maxWidth, fixedWidth,
-                dropdownOptions, cellColorFunction, groupName, outlineLevel);
+                dropdownOptions, cellColorFunction, groupName, outlineLevel,
+                commentFunction, borderStyle, locked);
     }
 
     /**
@@ -375,6 +433,9 @@ public class ExcelSheetWriter<T> {
         private CellColorFunction<T> cellColorFunction;
         private String groupName;
         private int outlineLevel;
+        private Function<T, String> commentFunction;
+        private ExcelBorderStyle borderStyle;
+        private Boolean locked;
 
         public ColumnConfig<T> type(ExcelDataType dataType) {
             this.dataType = dataType;
@@ -461,6 +522,30 @@ public class ExcelSheetWriter<T> {
                 throw new IllegalArgumentException("outline level must be between 0 and 7");
             }
             this.outlineLevel = level;
+            return this;
+        }
+
+        /**
+         * Sets a comment function for this column.
+         */
+        public ColumnConfig<T> comment(Function<T, String> commentFunction) {
+            this.commentFunction = commentFunction;
+            return this;
+        }
+
+        /**
+         * Sets the border style for this column.
+         */
+        public ColumnConfig<T> border(ExcelBorderStyle borderStyle) {
+            this.borderStyle = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets whether cells in this column should be locked.
+         */
+        public ColumnConfig<T> locked(boolean locked) {
+            this.locked = locked;
             return this;
         }
     }

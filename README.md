@@ -26,6 +26,13 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Progress callback via `onProgress()` for large dataset monitoring
 - Password-encrypted Excel output
 - Consume-once output via `ExcelHandler`
+- Cell border styles via `border()` — THIN, MEDIUM, THICK, DASHED, DOTTED, DOUBLE, etc.
+- Cell comments (notes) via `comment()` — conditional per-cell comments
+- Conditional formatting rules via `conditionalFormatting()` — greaterThan, lessThan, between, etc.
+- Sheet protection via `protectSheet()` with per-column `locked()` control
+- Image embedding via `ExcelDataType.IMAGE` with `ExcelImage.png()` / `ExcelImage.jpeg()`
+- Chart generation via `chart()` — BAR, LINE, PIE charts with XDDF API
+- Map-based writing via `ExcelMapWriter` — write `Map<String, Object>` without typed POJOs
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -36,6 +43,8 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Stream-based reading via `readAsStream()`
 - Read progress callback via `onProgress()`
 - Large file support configuration
+- Multi-sheet discovery via `getSheetNames()` and `getSheetHeaders()`
+- Map-based reading via `ExcelMapReader` — read into `Map<String, String>` without typed POJOs
 
 **CSV Writing**
 - Streaming write to temp file, then flush to `OutputStream`
@@ -50,6 +59,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Header auto-detection with BOM removal
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
+- Map-based writing via `CsvMapWriter`
 
 **Unified Schema**
 - `ExcelKitSchema` — define columns once for both reading and writing
@@ -469,6 +479,177 @@ workbook.<Item>sheet("Report")
     .write(stream);
 ```
 
+### Cell Border Style
+
+Customize cell border styles per column (default: `THIN`):
+
+```java
+writer
+    .column("Amount", p -> p.amount())
+        .type(ExcelDataType.DOUBLE)
+        .border(ExcelBorderStyle.MEDIUM)
+    .column("Notes", p -> p.notes())
+        .border(ExcelBorderStyle.DASHED)
+    .column("Raw", p -> p.raw())
+        .border(ExcelBorderStyle.NONE)        // no borders
+    .write(data);
+```
+
+Available styles: `NONE`, `THIN`, `MEDIUM`, `THICK`, `DASHED`, `DOTTED`, `DOUBLE`, `HAIR`, `MEDIUM_DASHED`, `DASH_DOT`
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Report")
+    .column("Amount", Item::getAmount, c -> c.border(ExcelBorderStyle.THICK))
+    .write(stream);
+```
+
+### Cell Comments (Notes)
+
+Add conditional cell comments (notes) to specific columns:
+
+```java
+writer
+    .column("Score", p -> p.score())
+        .type(ExcelDataType.INTEGER)
+        .comment(p -> p.score() < 50 ? "Low score - needs review" : null)
+    .write(data);
+```
+
+The comment function receives the row data and returns a comment string, or `null` to skip. Comments appear as yellow note icons in Excel.
+
+### Conditional Formatting
+
+Apply Excel conditional formatting rules:
+
+```java
+new ExcelWriter<Product>()
+    .addColumn("Name", Product::name)
+    .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
+    .conditionalFormatting(cf -> cf
+        .columns(1)                                    // apply to column 1 only
+        .greaterThan("10000", ExcelColor.LIGHT_RED)    // highlight expensive
+        .lessThan("1000", ExcelColor.LIGHT_GREEN)      // highlight cheap
+        .between("5000", "10000", ExcelColor.LIGHT_YELLOW))
+    .write(data);
+```
+
+Available operators: `greaterThan`, `greaterThanOrEqual`, `lessThan`, `lessThanOrEqual`, `equalTo`, `notEqualTo`, `between`, `notBetween`
+
+If `columns()` is not set, rules apply to all columns.
+
+### Sheet Protection
+
+Protect sheets with a password and selectively unlock columns:
+
+```java
+new ExcelWriter<Product>()
+    .addColumn("Name", Product::name, c -> c.locked(false))   // editable
+    .addColumn("Price", p -> p.price(), c -> c.locked(true))  // read-only
+    .protectSheet("password123")
+    .write(data);
+```
+
+When sheet protection is enabled, all cells are locked by default. Use `.locked(false)` on specific columns to allow editing.
+
+### Image Embedding
+
+Embed images in Excel cells using `ExcelDataType.IMAGE`:
+
+```java
+// From byte array
+byte[] imageBytes = Files.readAllBytes(Path.of("logo.png"));
+
+new ExcelWriter<Product>()
+    .addColumn("Name", Product::name)
+    .addColumn("Photo", p -> ExcelImage.png(imageBytes))
+        .type(ExcelDataType.IMAGE)
+    .write(data);
+```
+
+Factory methods: `ExcelImage.png(byte[])`, `ExcelImage.jpeg(byte[])`, or `new ExcelImage(byte[], pictureType)` for other types.
+
+### Chart Generation
+
+Add charts after data is written:
+
+```java
+new ExcelWriter<Product>()
+    .addColumn("Name", Product::name)
+    .addColumn("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
+    .addColumn("Profit", p -> p.profit(), c -> c.type(ExcelDataType.INTEGER))
+    .chart(chart -> chart
+        .type(ExcelChartConfig.ChartType.BAR)       // BAR, LINE, or PIE
+        .title("Sales vs Profit")
+        .categoryColumn(0)                           // X-axis: Name column
+        .valueColumn(1, "Sales")                     // Y-axis series 1
+        .valueColumn(2, "Profit")                    // Y-axis series 2
+        .position(3, 0, 12, 20))                     // chart position (col1, row1, col2, row2)
+    .write(data);
+```
+
+Charts are created using Apache POI's XDDF chart API and reference data cell ranges.
+
+### Map-Based Writing
+
+Write `Map<String, Object>` data without defining typed POJOs:
+
+```java
+ExcelMapWriter writer = new ExcelMapWriter("Name", "Age", "City");
+writer.write(Stream.of(
+    Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
+    Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")
+)).consumeOutputStream(outputStream);
+```
+
+CSV equivalent:
+```java
+CsvMapWriter csvWriter = new CsvMapWriter("Name", "Age");
+csvWriter.write(stream).consumeOutputStream(outputStream);
+```
+
+### Map-Based Reading
+
+Read Excel files into `Map<String, String>` without defining typed POJOs:
+
+```java
+new ExcelMapReader()
+    .sheetIndex(0)         // optional, defaults to 0
+    .headerRowIndex(0)     // optional, defaults to 0
+    .build(inputStream)
+    .read(result -> {
+        Map<String, String> row = result.data();
+        String name = row.get("Name");
+        String age = row.get("Age");
+    });
+```
+
+All columns from the header row are automatically mapped.
+
+### Multi-Sheet Discovery
+
+Discover sheet names and read specific sheets:
+
+```java
+// Get all sheet names and indices
+List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(inputStream);
+sheets.forEach(s -> System.out.println(s.index() + ": " + s.name()));
+
+// Get header names from a specific sheet
+List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
+```
+
+Combined with `sheetIndex()` to iterate over all sheets:
+```java
+for (ExcelSheetInfo sheet : ExcelReader.getSheetNames(new FileInputStream(file))) {
+    new ExcelReader<>(Row::new, null)
+        .sheetIndex(sheet.index())
+        .column("Name", (r, cell) -> r.name = cell.asString())
+        .build(new FileInputStream(file))
+        .read(consumer);
+}
+```
+
 ### Progress Callback
 
 Monitor progress during large dataset writes:
@@ -603,8 +784,8 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `locked`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
 
@@ -746,6 +927,7 @@ CellData.setDefaultLocale(Locale.US);
 | `BIG_DECIMAL_TO_LONG` | BigDecimal | `#,##0` |
 | `FORMULA` | String (formula) | — |
 | `HYPERLINK` | String or `ExcelHyperlink` | — |
+| `IMAGE` | `ExcelImage` | — |
 
 ### ExcelDataFormat Presets
 

@@ -2,11 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
 import io.github.dornol.excelkit.shared.ProgressCallback;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataValidation;
-import org.apache.poi.ss.usermodel.DataValidationConstraint;
-import org.apache.poi.ss.usermodel.DataValidationHelper;
-import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.streaming.SXSSFCell;
@@ -18,6 +14,7 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -152,6 +149,49 @@ class ExcelWriteSupport {
             if (autoWidthSampleRows > 0 && cursor.getRowOfSheet() < autoWidthSampleRows) {
                 column.fitColumnWidthByValue(columnData);
             }
+
+            // Cell comment
+            Function<T, String> commentFn = column.getCommentFunction();
+            if (commentFn != null) {
+                String commentText = commentFn.apply(rowData);
+                if (commentText != null) {
+                    addCellComment(cell, commentText, wb);
+                }
+            }
+        }
+    }
+
+    static void addCellComment(SXSSFCell cell, String text, SXSSFWorkbook wb) {
+        Drawing<?> drawing = cell.getSheet().createDrawingPatriarch();
+        CreationHelper factory = wb.getCreationHelper();
+        ClientAnchor anchor = factory.createClientAnchor();
+        anchor.setCol1(cell.getColumnIndex());
+        anchor.setCol2(cell.getColumnIndex() + 2);
+        anchor.setRow1(cell.getRowIndex());
+        anchor.setRow2(cell.getRowIndex() + 3);
+        Comment comment = drawing.createCellComment(anchor);
+        comment.setString(factory.createRichTextString(text));
+        cell.setCellComment(comment);
+    }
+
+    static void applySheetProtection(SXSSFSheet sheet, String password) {
+        if (password != null) {
+            sheet.protectSheet(password);
+        }
+    }
+
+    static <T> void applyConditionalFormatting(SXSSFSheet sheet, List<ExcelConditionalRule> rules,
+                                                int headerRowIndex, int columnCount) {
+        if (rules == null) return;
+        for (ExcelConditionalRule rule : rules) {
+            rule.apply(sheet, headerRowIndex, columnCount);
+        }
+    }
+
+    static void applyChart(SXSSFSheet sheet, ExcelChartConfig chartConfig,
+                            int headerRow, int dataEndRow) {
+        if (chartConfig != null) {
+            chartConfig.apply(sheet, headerRow, dataEndRow);
         }
     }
 

@@ -73,6 +73,58 @@
     <a href="/showcase/full" target="_blank"><button class="showcase">Download Full Showcase</button></a>
 </div>
 
+<hr>
+<h2>New in v0.6</h2>
+
+<div class="section">
+    <p><strong>Border Style</strong> - Per-column border styles (MEDIUM, THICK, DASHED, DOTTED, NONE)</p>
+    <a href="/showcase/border-style" target="_blank"><button class="showcase">Download Border Style Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Cell Comment</strong> - Per-cell notes/comments with conditional logic</p>
+    <a href="/showcase/cell-comment" target="_blank"><button class="showcase">Download Cell Comment Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Conditional Formatting</strong> - Excel native conditional formatting rules (greaterThan, lessThan, between)</p>
+    <a href="/showcase/conditional-format" target="_blank"><button class="showcase">Download Conditional Formatting Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Sheet Protection</strong> - Password-protected sheet with locked/unlocked columns (password: 1234)</p>
+    <a href="/showcase/sheet-protection" target="_blank"><button class="showcase">Download Sheet Protection Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Chart</strong> - Bar chart with multiple data series (Price vs Quantity)</p>
+    <a href="/showcase/chart" target="_blank"><button class="showcase">Download Chart Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Map Writer</strong> - Write Map&lt;String, Object&gt; data without typed POJOs</p>
+    <a href="/showcase/map-writer" target="_blank"><button class="showcase">Download Map Writer Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Map Reader</strong> - Read Excel into Map&lt;String, String&gt; without typed POJOs</p>
+    <form action="/showcase/map-reader" method="POST" enctype="multipart/form-data" target="_blank">
+        <input type="file" name="file" accept=".xlsx" required>
+        <button type="submit" class="upload">Upload Excel (Map Reader)</button>
+    </form>
+</div>
+
+<div class="section">
+    <p><strong>Sheet Info</strong> - Discover sheet names and headers from uploaded Excel</p>
+    <form action="/showcase/sheet-info" method="POST" enctype="multipart/form-data" target="_blank">
+        <input type="file" name="file" accept=".xlsx" required>
+        <button type="submit" class="upload">Upload Excel (Sheet Info)</button>
+    </form>
+</div>
+
+<hr>
+<h2>Showcase (Existing Features)</h2>
+
 <div class="section">
     <p><strong>Name-Based Read</strong> - Upload Excel/CSV from above, columns matched by header name (order doesn't matter)</p>
     <form action="/showcase/read-by-name-excel" method="POST" enctype="multipart/form-data" target="_blank">

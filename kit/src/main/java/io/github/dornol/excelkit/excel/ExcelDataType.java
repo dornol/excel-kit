@@ -116,6 +116,28 @@ public enum ExcelDataType {
         Hyperlink hyperlink = createHelper.createHyperlink(HyperlinkType.URL);
         hyperlink.setAddress(url);
         cell.setHyperlink(hyperlink);
+    }, null),
+
+    /**
+     * Image type. Embeds an image in the cell.
+     * <p>
+     * Accepts an {@link ExcelImage} instance containing the image bytes and type.
+     * The image is anchored to the cell and auto-sized.
+     */
+    IMAGE((cell, value) -> {
+        if (!(value instanceof ExcelImage img)) {
+            cell.setCellValue(String.valueOf(value));
+            return;
+        }
+        var wb = cell.getSheet().getWorkbook();
+        int pictureIdx = wb.addPicture(img.data(), img.imageType());
+        var drawing = cell.getSheet().createDrawingPatriarch();
+        var anchor = wb.getCreationHelper().createClientAnchor();
+        anchor.setCol1(cell.getColumnIndex());
+        anchor.setRow1(cell.getRowIndex());
+        anchor.setCol2(cell.getColumnIndex() + 1);
+        anchor.setRow2(cell.getRowIndex() + 1);
+        drawing.createPicture(anchor, pictureIdx);
     }, null)
     ;
 

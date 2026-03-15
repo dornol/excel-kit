@@ -51,7 +51,7 @@ class ExcelColumnTest {
         String name = "Column";
 
         // Act
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Assert
         assertNotNull(column, "Column should be created with valid parameters");
@@ -67,7 +67,7 @@ class ExcelColumnTest {
         String testData = "Test Data";
         Cursor cursor = new Cursor();
         ExcelRowFunction<String, Object> testFunction = (data, cursor1) -> data + "-processed";
-        ExcelColumn<String> column = new ExcelColumn<>(name, testFunction, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, testFunction, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Act
         Object result = column.applyFunction(testData, cursor);
@@ -85,7 +85,7 @@ class ExcelColumnTest {
         ExcelRowFunction<String, Object> exceptionFunction = (data, cursor1) -> {
             throw new RuntimeException("Test exception");
         };
-        ExcelColumn<String> column = new ExcelColumn<>(name, exceptionFunction, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, exceptionFunction, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Act
         Object result = column.applyFunction(testData, cursor);
@@ -98,7 +98,7 @@ class ExcelColumnTest {
     void setColumnWidth_shouldUpdateColumnWidth() {
         // Arrange
         String name = "Column";
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
         int initialWidth = column.getColumnWidth();
         int newWidth = initialWidth + 1000;
 
@@ -113,7 +113,7 @@ class ExcelColumnTest {
     void fitColumnWidthByValue_shouldUpdateColumnWidthBasedOnValue() {
         // Arrange
         String name = "Short";
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
         int initialWidth = column.getColumnWidth();
         String longValue = "This is a much longer value that should increase the column width";
 
@@ -130,7 +130,7 @@ class ExcelColumnTest {
         // Arrange
         String name = "Column";
         String testData = "Test Data";
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Act
         column.setColumnData(cell, testData);
@@ -144,7 +144,7 @@ class ExcelColumnTest {
     void setColumnData_shouldSetEmptyStringWhenDataIsNull() {
         // Arrange
         String name = "Column";
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Act
         column.setColumnData(cell, null);
@@ -165,7 +165,7 @@ class ExcelColumnTest {
             throw new RuntimeException("Test exception");
         };
         
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, exceptionSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, exceptionSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Act
         column.setColumnData(cell, testData);
@@ -179,7 +179,7 @@ class ExcelColumnTest {
     void getName_shouldReturnColumnName() {
         // Arrange
         String name = "Test Column";
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Act
         String result = column.getName();
@@ -192,7 +192,7 @@ class ExcelColumnTest {
     void getStyle_shouldReturnColumnStyle() {
         // Arrange
         String name = "Test Column";
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
 
         // Act
         CellStyle result = column.getStyle();
@@ -205,7 +205,7 @@ class ExcelColumnTest {
     void getColumnWidth_shouldReturnColumnWidth() {
         // Arrange
         String name = "Test Column";
-        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0);
+        ExcelColumn<String> column = new ExcelColumn<>(name, function, cellStyle, columnSetter, 0, 0, false, null, null, null, 0, null, null, null);
         int expectedWidth = column.getColumnWidth(); // Initial width based on name
 
         // Act

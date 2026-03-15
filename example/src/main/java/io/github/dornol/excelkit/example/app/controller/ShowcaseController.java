@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.example.app.util.DownloadFileType;
 import io.github.dornol.excelkit.example.app.util.DownloadUtil;
+import io.github.dornol.excelkit.csv.CsvMapWriter;
 import io.github.dornol.excelkit.excel.*;
 import io.github.dornol.excelkit.shared.ExcelKitSchema;
 import org.slf4j.Logger;
@@ -17,10 +18,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -471,6 +472,199 @@ public class ShowcaseController {
 
         return DownloadUtil.builder("full-showcase", DownloadFileType.EXCEL)
                 .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 12. Border Style - configurable cell borders
+    // ========================================================================
+    @GetMapping("/border-style")
+    public ResponseEntity<StreamingResponseBody> downloadBorderStyle() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+                .sheetName("Border Styles")
+                .column("Name", ProductDto::name).border(ExcelBorderStyle.MEDIUM)
+                .column("Category", ProductDto::category).border(ExcelBorderStyle.DASHED)
+                .column("Price", ProductDto::price)
+                    .type(ExcelDataType.INTEGER)
+                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .border(ExcelBorderStyle.THICK)
+                .column("Quantity", ProductDto::quantity)
+                    .type(ExcelDataType.INTEGER)
+                    .border(ExcelBorderStyle.DOTTED)
+                .column("No Border", p -> "text").border(ExcelBorderStyle.NONE)
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("border-style-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 13. Cell Comments - per-cell notes
+    // ========================================================================
+    @GetMapping("/cell-comment")
+    public ResponseEntity<StreamingResponseBody> downloadCellComment() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.FOREST_GREEN)
+                .sheetName("Cell Comments")
+                .autoFilter(true)
+                .column("Name", ProductDto::name)
+                    .comment(p -> "Product: " + p.name() + " (" + p.category() + ")")
+                .column("Price", ProductDto::price)
+                    .type(ExcelDataType.INTEGER)
+                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .comment(p -> p.price() > 30000 ? "⚠ High price!" : null)
+                .column("Quantity", ProductDto::quantity)
+                    .type(ExcelDataType.INTEGER)
+                    .comment(p -> p.quantity() <= 10 ? "⚠ Low stock alert" : null)
+                .column("Discount", ProductDto::discount)
+                    .type(ExcelDataType.DOUBLE_PERCENT)
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("cell-comment-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 14. Conditional Formatting - Excel native rules
+    // ========================================================================
+    @GetMapping("/conditional-format")
+    public ResponseEntity<StreamingResponseBody> downloadConditionalFormat() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.GOLD)
+                .sheetName("Conditional Formatting")
+                .autoFilter(true)
+                .freezePane(1)
+                .addColumn("Name", ProductDto::name)
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .conditionalFormatting(cf -> cf
+                        .columns(1)  // Price column
+                        .greaterThan("30000", ExcelColor.LIGHT_RED)
+                        .lessThan("5000", ExcelColor.LIGHT_GREEN))
+                .conditionalFormatting(cf -> cf
+                        .columns(2)  // Quantity column
+                        .lessThanOrEqual("10", ExcelColor.LIGHT_ORANGE))
+                .conditionalFormatting(cf -> cf
+                        .columns(3)  // Discount column
+                        .greaterThanOrEqual("0.2", ExcelColor.LIGHT_PURPLE))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("conditional-format-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 15. Sheet Protection - lock/unlock columns
+    // ========================================================================
+    @GetMapping("/sheet-protection")
+    public ResponseEntity<StreamingResponseBody> downloadSheetProtection() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.CORAL)
+                .sheetName("Protected Sheet")
+                .autoFilter(true)
+                .addColumn("Name (locked)", ProductDto::name, c -> c.locked(true))
+                .addColumn("Category (locked)", ProductDto::category, c -> c.locked(true))
+                .addColumn("Price (editable)", p -> p.price(), c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                        .locked(false)
+                        .backgroundColor(ExcelColor.LIGHT_GREEN))
+                .addColumn("Quantity (editable)", p -> p.quantity(), c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .locked(false)
+                        .backgroundColor(ExcelColor.LIGHT_GREEN))
+                .addColumn("Discount (locked)", p -> p.discount(), c -> c
+                        .type(ExcelDataType.DOUBLE_PERCENT)
+                        .locked(true))
+                .protectSheet("1234")
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("sheet-protection-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 16. Chart - bar/line/pie chart generation
+    // ========================================================================
+    @GetMapping("/chart")
+    public ResponseEntity<StreamingResponseBody> downloadChart() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+                .sheetName("Chart Demo")
+                .addColumn("Name", ProductDto::name)
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .chart(chart -> chart
+                        .type(ExcelChartConfig.ChartType.BAR)
+                        .title("Product Price vs Quantity")
+                        .categoryColumn(0)
+                        .valueColumn(1, "Price")
+                        .valueColumn(2, "Quantity"))
+                .write(sampleProducts().stream().limit(10));
+
+        return DownloadUtil.builder("chart-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 17. Map Writer - write Map<String, Object> data
+    // ========================================================================
+    @GetMapping("/map-writer")
+    public ResponseEntity<StreamingResponseBody> downloadMapWriter() {
+        var products = sampleProducts();
+        var maps = products.stream()
+                .<Map<String, Object>>map(p -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("Name", p.name());
+                    m.put("Category", p.category());
+                    m.put("Price", p.price());
+                    m.put("Quantity", p.quantity());
+                    m.put("Discount", String.format("%.0f%%", p.discount() * 100));
+                    return m;
+                });
+
+        var handler = new ExcelMapWriter("Name", "Category", "Price", "Quantity", "Discount")
+                .write(maps);
+
+        return DownloadUtil.builder("map-writer-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 18. Map Reader - read into Map<String, String>
+    // ========================================================================
+    @PostMapping("/map-reader")
+    @ResponseBody
+    public String readMap(MultipartFile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            List<Map<String, String>> results = new ArrayList<>();
+            new ExcelMapReader()
+                    .build(is)
+                    .read(r -> results.add(r.data()));
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("=== Map-Based Read Result ===\n");
+            sb.append("Read %d rows\n\n".formatted(results.size()));
+            if (!results.isEmpty()) {
+                sb.append("Headers: %s\n\n".formatted(results.get(0).keySet()));
+            }
+            results.forEach(row -> sb.append(row).append("\n"));
+            return sb.toString();
+        }
+    }
+
+    // ========================================================================
+    // 19. Sheet Info - discover sheet names
+    // ========================================================================
+    @PostMapping("/sheet-info")
+    @ResponseBody
+    public String sheetInfo(MultipartFile file) throws IOException {
+        byte[] data = file.getBytes();
+        List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(new ByteArrayInputStream(data));
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Sheet Info ===\n\n");
+        for (ExcelSheetInfo info : sheets) {
+            List<String> headers = ExcelReader.getSheetHeaders(new ByteArrayInputStream(data), info.index(), 0);
+            sb.append("Sheet %d: \"%s\" — Headers: %s\n".formatted(info.index(), info.name(), headers));
+        }
+        return sb.toString();
     }
 
     private static ProductReadDto toReadDto(ProductDto p) {

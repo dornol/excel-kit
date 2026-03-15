@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 /**
  * Represents a single Excel column and how its value is derived, styled, and rendered.
@@ -40,11 +41,15 @@ public class ExcelColumn<T> {
     private final CellColorFunction<T> cellColorFunction;
     private final String groupName;
     private final int outlineLevel;
+    private final Function<T, String> commentFunction;
+    private final ExcelBorderStyle borderStyle;
+    private final Boolean locked;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String[] dropdownOptions,
-                CellColorFunction<T> cellColorFunction, String groupName, int outlineLevel) {
+                CellColorFunction<T> cellColorFunction, String groupName, int outlineLevel,
+                Function<T, String> commentFunction, ExcelBorderStyle borderStyle, Boolean locked) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -56,6 +61,9 @@ public class ExcelColumn<T> {
         this.cellColorFunction = cellColorFunction;
         this.groupName = groupName;
         this.outlineLevel = outlineLevel;
+        this.commentFunction = commentFunction;
+        this.borderStyle = borderStyle;
+        this.locked = locked;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -154,6 +162,18 @@ public class ExcelColumn<T> {
         return outlineLevel;
     }
 
+    Function<T, String> getCommentFunction() {
+        return commentFunction;
+    }
+
+    ExcelBorderStyle getBorderStyle() {
+        return borderStyle;
+    }
+
+    Boolean getLocked() {
+        return locked;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -178,6 +198,9 @@ public class ExcelColumn<T> {
         private CellColorFunction<T> cellColorFunction;
         private String groupName;
         private int outlineLevel;
+        private Function<T, String> commentFunction;
+        private ExcelBorderStyle borderStyle;
+        private Boolean locked;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
             this.writer = writer;
@@ -344,6 +367,44 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets a function that generates a cell comment (note) for each row.
+         * <p>
+         * The function receives the row data and returns the comment text,
+         * or {@code null} if no comment should be added.
+         *
+         * @param commentFunction function to generate comment text per row
+         */
+        public ExcelColumnBuilder<T> comment(Function<T, String> commentFunction) {
+            this.commentFunction = commentFunction;
+            return this;
+        }
+
+        /**
+         * Sets the border style for this column's cells.
+         * <p>
+         * Overrides the default THIN border.
+         *
+         * @param borderStyle the border style to apply
+         */
+        public ExcelColumnBuilder<T> border(ExcelBorderStyle borderStyle) {
+            this.borderStyle = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets whether this column's cells should be locked when sheet protection is enabled.
+         * <p>
+         * By default, all cells are locked when sheet protection is active.
+         * Set to {@code false} to allow editing of this column's cells even when the sheet is protected.
+         *
+         * @param locked whether cells should be locked
+         */
+        public ExcelColumnBuilder<T> locked(boolean locked) {
+            this.locked = locked;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -357,6 +418,7 @@ public class ExcelColumn<T> {
                 this.style = ExcelStyleSupporter.cellStyle(
                         writer.getWb(), this.alignment, this.dataFormat,
                         this.backgroundColor, this.bold, this.fontSize,
+                        this.borderStyle, this.locked,
                         writer.getCellStyleCache());
             }
             if (this.columnSetter == null) {
@@ -364,7 +426,8 @@ public class ExcelColumn<T> {
             }
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
                     this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions,
-                    this.cellColorFunction, this.groupName, this.outlineLevel);
+                    this.cellColorFunction, this.groupName, this.outlineLevel,
+                    this.commentFunction, this.borderStyle, this.locked);
         }
 
         /**
