@@ -236,6 +236,7 @@ public class ExcelSheetWriter<T> {
         for (SXSSFSheet s : allSheets) {
             ExcelWriteSupport.applyColumnWidths(s, columns);
             ExcelWriteSupport.applyDataValidations(s, columns, headerRowIndex);
+            ExcelWriteSupport.applyColumnOutline(s, columns);
         }
     }
 
@@ -265,6 +266,7 @@ public class ExcelSheetWriter<T> {
         String[] dropdownOptions = null;
         CellColorFunction<T> cellColorFunction = null;
         String groupName = null;
+        int outlineLevel = 0;
 
         if (config != null) {
             if (config.dataType != null) dataType = config.dataType;
@@ -279,6 +281,7 @@ public class ExcelSheetWriter<T> {
             dropdownOptions = config.dropdownOptions;
             cellColorFunction = config.cellColorFunction;
             groupName = config.groupName;
+            outlineLevel = config.outlineLevel;
         }
 
         if (dataFormat == null) {
@@ -290,7 +293,7 @@ public class ExcelSheetWriter<T> {
         ExcelColumnSetter setter = dataType.getSetter();
 
         return new ExcelColumn<>(name, function, style, setter, minWidth, maxWidth, fixedWidth,
-                dropdownOptions, cellColorFunction, groupName);
+                dropdownOptions, cellColorFunction, groupName, outlineLevel);
     }
 
     /**
@@ -311,6 +314,7 @@ public class ExcelSheetWriter<T> {
         private String[] dropdownOptions;
         private CellColorFunction<T> cellColorFunction;
         private String groupName;
+        private int outlineLevel;
 
         public ColumnConfig<T> type(ExcelDataType dataType) {
             this.dataType = dataType;
@@ -383,6 +387,20 @@ public class ExcelSheetWriter<T> {
          */
         public ColumnConfig<T> group(String groupName) {
             this.groupName = groupName;
+            return this;
+        }
+
+        /**
+         * Sets the outline (grouping) level for this column.
+         * Columns with outline level > 0 can be collapsed/expanded in Excel.
+         *
+         * @param level the outline level (1-7, 0 = no outline)
+         */
+        public ColumnConfig<T> outline(int level) {
+            if (level < 0 || level > 7) {
+                throw new IllegalArgumentException("outline level must be between 0 and 7");
+            }
+            this.outlineLevel = level;
             return this;
         }
     }

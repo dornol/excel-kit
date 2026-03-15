@@ -295,7 +295,9 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             resolvedIndices = new int[columns.size()];
             for (int i = 0; i < columns.size(); i++) {
                 ExcelReadColumn<T> col = columns.get(i);
-                if (col.headerName() != null) {
+                if (col.columnIndex() >= 0) {
+                    resolvedIndices[i] = col.columnIndex();
+                } else if (col.headerName() != null) {
                     int idx = headerNames.indexOf(col.headerName());
                     if (idx < 0) {
                         throw new ExcelReadException("Header '" + col.headerName() + "' not found in sheet. Available headers: " + headerNames);

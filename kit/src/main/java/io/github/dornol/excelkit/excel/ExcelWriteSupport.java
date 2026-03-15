@@ -199,6 +199,22 @@ class ExcelWriteSupport {
         return currentRow;
     }
 
+    static <T> void applyColumnOutline(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
+        int i = 0;
+        while (i < columns.size()) {
+            int level = columns.get(i).getOutlineLevel();
+            if (level > 0) {
+                int start = i;
+                while (i < columns.size() && columns.get(i).getOutlineLevel() == level) {
+                    i++;
+                }
+                sheet.groupColumn(start, i - 1);
+            } else {
+                i++;
+            }
+        }
+    }
+
     static void checkProgress(Cursor cursor, int interval, ProgressCallback callback) {
         if (callback != null && interval > 0 && cursor.getCurrentTotal() % interval == 0) {
             callback.onProgress(cursor.getCurrentTotal(), cursor);

@@ -8,124 +8,96 @@ import java.util.function.BiConsumer;
 /**
  * Represents a single CSV column binding for reading.
  * <p>
- * Holds a setter function that maps a {@link CellData} into a field of a row object.
- * Optionally includes a header name for name-based column matching instead of positional matching.
+ * Supports three matching modes:
+ * <ul>
+ *     <li>Positional (default) — matched by insertion order</li>
+ *     <li>Name-based — matched by header name via {@code headerName}</li>
+ *     <li>Index-based — matched by explicit column index via {@code columnIndex}</li>
+ * </ul>
  *
- * @param headerName optional header name for name-based column matching (null for positional)
- * @param setter     the setter function to bind a column value to a field
+ * @param headerName  optional header name for name-based column matching (null for positional/index)
+ * @param columnIndex explicit 0-based column index (-1 for positional/name-based)
+ * @param setter      the setter function to bind a column value to a field
  * @param <T> The row data type
  * @author dhkim
  * @since 2025-07-19
  */
-public record CsvReadColumn<T>(String headerName, BiConsumer<T, CellData> setter) {
+public record CsvReadColumn<T>(String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
 
-    /**
-     * Creates a positional column binding (matched by column index).
-     *
-     * @param setter the setter function
-     */
     public CsvReadColumn(BiConsumer<T, CellData> setter) {
-        this(null, setter);
+        this(null, -1, setter);
     }
 
-    /**
-     * Builder for defining multiple CSV read columns fluently.
-     *
-     * @param <T> The row data type
-     */
+    public CsvReadColumn(String headerName, BiConsumer<T, CellData> setter) {
+        this(headerName, -1, setter);
+    }
+
     public static class CsvReadColumnBuilder<T> {
         private final CsvReader<T> reader;
         private final String headerName;
+        private final int columnIndex;
         private final BiConsumer<T, CellData> setter;
 
-        /**
-         * Constructs a new column builder for positional matching.
-         *
-         * @param reader The parent {@link CsvReader}
-         * @param setter The setter function to bind a column value to a field
-         */
         CsvReadColumnBuilder(CsvReader<T> reader, BiConsumer<T, CellData> setter) {
-            this(reader, null, setter);
+            this(reader, null, -1, setter);
         }
 
-        /**
-         * Constructs a new column builder with optional header name matching.
-         *
-         * @param reader     The parent {@link CsvReader}
-         * @param headerName The header name to match (null for positional)
-         * @param setter     The setter function to bind a column value to a field
-         */
         CsvReadColumnBuilder(CsvReader<T> reader, String headerName, BiConsumer<T, CellData> setter) {
+            this(reader, headerName, -1, setter);
+        }
+
+        CsvReadColumnBuilder(CsvReader<T> reader, int columnIndex, BiConsumer<T, CellData> setter) {
+            this(reader, null, columnIndex, setter);
+        }
+
+        CsvReadColumnBuilder(CsvReader<T> reader, String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
             if (setter == null) {
                 throw new IllegalArgumentException("setter must not be null");
             }
             this.reader = reader;
             this.headerName = headerName;
+            this.columnIndex = columnIndex;
             this.setter = setter;
         }
 
-        /**
-         * Adds the current column binding to the reader and begins a new positional column definition.
-         *
-         * @param setter The setter function for the next column
-         * @return A new builder instance for chaining the next column
-         */
         public CsvReadColumnBuilder<T> column(BiConsumer<T, CellData> setter) {
             buildCurrentAndAddToReader();
-            return new CsvReadColumn.CsvReadColumnBuilder<>(reader, setter);
+            return new CsvReadColumnBuilder<>(reader, setter);
         }
 
-        /**
-         * Adds the current column binding to the reader and begins a new name-based column definition.
-         *
-         * @param headerName The header name to match in the CSV file
-         * @param setter     The setter function for the next column
-         * @return A new builder instance for chaining the next column
-         */
         public CsvReadColumnBuilder<T> column(String headerName, BiConsumer<T, CellData> setter) {
             buildCurrentAndAddToReader();
-            return new CsvReadColumn.CsvReadColumnBuilder<>(reader, headerName, setter);
+            return new CsvReadColumnBuilder<>(reader, headerName, setter);
         }
 
         /**
-         * Flushes the current column and skips one column by adding a no-op column mapping.
+         * Adds the current column and begins a new index-based column definition.
          *
-         * @return The parent CsvReader for chaining
+         * @param columnIndex 0-based column index in the CSV file
+         * @param setter      the setter function
          */
+        public CsvReadColumnBuilder<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
+            buildCurrentAndAddToReader();
+            return new CsvReadColumnBuilder<>(reader, columnIndex, setter);
+        }
+
         public CsvReader<T> skipColumn() {
             buildCurrentAndAddToReader();
             return reader.skipColumn();
         }
 
-        /**
-         * Flushes the current column and skips the specified number of columns.
-         *
-         * @param count The number of columns to skip (must be non-negative)
-         * @return The parent CsvReader for chaining
-         * @throws IllegalArgumentException if count is negative
-         */
         public CsvReader<T> skipColumns(int count) {
             buildCurrentAndAddToReader();
             return reader.skipColumns(count);
         }
 
-        /**
-         * Finalizes the column definitions and builds a {@link CsvReadHandler} for reading.
-         *
-         * @param inputStream The input stream of the CSV file
-         * @return A configured {@code CsvReadHandler} instance
-         */
         public CsvReadHandler<T> build(InputStream inputStream) {
             buildCurrentAndAddToReader();
             return this.reader.build(inputStream);
         }
 
-        /**
-         * Internal method to add the current column definition to the reader.
-         */
         private void buildCurrentAndAddToReader() {
-            this.reader.addColumn(new CsvReadColumn<>(this.headerName, this.setter));
+            this.reader.addColumn(new CsvReadColumn<>(this.headerName, this.columnIndex, this.setter));
         }
     }
-
 }

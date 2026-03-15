@@ -116,6 +116,19 @@ public class CsvReader<T> {
     }
 
     /**
+     * Adds an index-based column mapping.
+     * The column is matched by explicit 0-based column index.
+     *
+     * @param columnIndex 0-based column index in the CSV file
+     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
+        columns.add(new CsvReadColumn<>(null, columnIndex, setter));
+        return this;
+    }
+
+    /**
      * Skips one column during reading by adding a no-op column mapping.
      *
      * @return This CsvReader instance for chaining

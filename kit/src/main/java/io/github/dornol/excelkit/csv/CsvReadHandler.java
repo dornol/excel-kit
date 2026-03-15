@@ -199,7 +199,9 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         int[] indices = new int[columns.size()];
         for (int i = 0; i < columns.size(); i++) {
             CsvReadColumn<T> col = columns.get(i);
-            if (col.headerName() != null) {
+            if (col.columnIndex() >= 0) {
+                indices[i] = col.columnIndex();
+            } else if (col.headerName() != null) {
                 int idx = headerNames.indexOf(col.headerName());
                 if (idx < 0) {
                     throw new CsvReadException("Header '" + col.headerName() + "' not found in CSV. Available headers: " + headerNames);

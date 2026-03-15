@@ -38,11 +38,12 @@ public class ExcelColumn<T> {
     private final String[] dropdownOptions;
     private final CellColorFunction<T> cellColorFunction;
     private final String groupName;
+    private final int outlineLevel;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String[] dropdownOptions,
-                CellColorFunction<T> cellColorFunction, String groupName) {
+                CellColorFunction<T> cellColorFunction, String groupName, int outlineLevel) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -53,6 +54,7 @@ public class ExcelColumn<T> {
         this.dropdownOptions = dropdownOptions;
         this.cellColorFunction = cellColorFunction;
         this.groupName = groupName;
+        this.outlineLevel = outlineLevel;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -147,6 +149,10 @@ public class ExcelColumn<T> {
         return groupName;
     }
 
+    int getOutlineLevel() {
+        return outlineLevel;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -170,6 +176,7 @@ public class ExcelColumn<T> {
         private String[] dropdownOptions;
         private CellColorFunction<T> cellColorFunction;
         private String groupName;
+        private int outlineLevel;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
             this.writer = writer;
@@ -320,6 +327,22 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets the outline (grouping) level for this column.
+         * <p>
+         * Columns with an outline level > 0 can be collapsed/expanded in Excel.
+         * Adjacent columns with the same outline level are grouped together.
+         *
+         * @param level the outline level (1-7, 0 = no outline)
+         */
+        public ExcelColumnBuilder<T> outline(int level) {
+            if (level < 0 || level > 7) {
+                throw new IllegalArgumentException("outline level must be between 0 and 7");
+            }
+            this.outlineLevel = level;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -340,7 +363,7 @@ public class ExcelColumn<T> {
             }
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
                     this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions,
-                    this.cellColorFunction, this.groupName);
+                    this.cellColorFunction, this.groupName, this.outlineLevel);
         }
 
         /**

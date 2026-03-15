@@ -471,6 +471,7 @@ public class ExcelWriter<T> {
     private void applyColumnWidthAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
             ExcelWriteSupport.applyColumnWidths(wb.getSheetAt(i), columns);
+            ExcelWriteSupport.applyColumnOutline(wb.getSheetAt(i), columns);
         }
     }
 

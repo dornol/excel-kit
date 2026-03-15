@@ -134,6 +134,30 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Adds an index-based column mapping.
+     * The column is matched by explicit 0-based column index.
+     *
+     * @param columnIndex 0-based column index in the Excel file
+     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return This ExcelReader instance for chaining
+     */
+    public ExcelReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
+        columns.add(new ExcelReadColumn<>(null, columnIndex, setter));
+        return this;
+    }
+
+    /**
+     * Begins a new index-based column mapping using a setter function.
+     *
+     * @param columnIndex 0-based column index in the Excel file
+     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return A builder for further column configuration
+     */
+    public ExcelReadColumn.ExcelReadColumnBuilder<T> columnAtBuilder(int columnIndex, BiConsumer<T, CellData> setter) {
+        return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, columnIndex, setter);
+    }
+
+    /**
      * Skips one column during reading by adding a no-op column mapping.
      *
      * @return This ExcelReader instance for chaining
