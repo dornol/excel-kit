@@ -39,17 +39,25 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final int headerRowIndex;
     private final char delimiter;
     private final Charset charset;
+    private final int progressInterval;
+    private final io.github.dornol.excelkit.shared.ProgressCallback progressCallback;
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0, ',', StandardCharsets.UTF_8);
+        this(inputStream, columns, instanceSupplier, validator, 0, ',', StandardCharsets.UTF_8, 0, null);
     }
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int headerRowIndex) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, ',', StandardCharsets.UTF_8);
+        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, ',', StandardCharsets.UTF_8, 0, null);
     }
 
     CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier,
                    Validator validator, int headerRowIndex, char delimiter, Charset charset) {
+        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset, 0, null);
+    }
+
+    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                   Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.shared.ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".csv");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
@@ -61,6 +69,8 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         this.headerRowIndex = headerRowIndex;
         this.delimiter = delimiter;
         this.charset = charset;
+        this.progressInterval = progressInterval;
+        this.progressCallback = progressCallback;
     }
 
     @Override
@@ -72,8 +82,13 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
             int[] resolvedIndices = resolveIndices();
 
             String[] line;
+            long rowCount = 0;
             while ((line = reader.readNext()) != null) {
                 consumer.accept(processRow(line, resolvedIndices));
+                rowCount++;
+                if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
+                    progressCallback.onProgress(rowCount, null);
+                }
             }
         } catch (CsvReadException e) {
             throw e;
@@ -99,6 +114,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
             prepareColumnHeaders(headerLine);
             int[] resolvedIndices = resolveIndices();
 
+            final long[] streamRowCount = {0};
             Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
                     Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
                 @Override
@@ -111,6 +127,11 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                             return false;
                         }
                         action.accept(processRow(line, resolvedIndices));
+                        streamRowCount[0]++;
+                        if (progressCallback != null && progressInterval > 0
+                                && streamRowCount[0] % progressInterval == 0) {
+                            progressCallback.onProgress(streamRowCount[0], null);
+                        }
                         return true;
                     } catch (Exception e) {
                         closeQuietly(reader);

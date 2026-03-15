@@ -377,6 +377,40 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Adds a column with cursor access using an ExcelRowFunction.
+     * Useful when the column value depends on row position (e.g., row number).
+     *
+     * @param name     Column header name
+     * @param function Function to extract cell value from row with cursor access
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, Object> function) {
+        ExcelColumn.ExcelColumnBuilder<T> builder =
+                new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
+        this.columns.add(builder.build());
+        return this;
+    }
+
+    /**
+     * Adds a column with cursor access and additional configuration.
+     *
+     * @param name        Column header name
+     * @param function    Function to extract cell value from row with cursor access
+     * @param configurer  Consumer to configure column properties
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, Object> function,
+                                     Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+        ExcelColumn.ExcelColumnBuilder<T> builder =
+                new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
+        if (configurer != null) {
+            configurer.accept(builder);
+        }
+        this.columns.add(builder.build());
+        return this;
+    }
+
+    /**
      * Writes the stream of row data into an Excel file using custom row-level callback.
      *
      * @param stream   The data stream

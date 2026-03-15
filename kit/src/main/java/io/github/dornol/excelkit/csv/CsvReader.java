@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.csv;
 
 
 import io.github.dornol.excelkit.shared.CellData;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.NonNull;
 
@@ -32,6 +33,8 @@ public class CsvReader<T> {
     private int headerRowIndex = 0;
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
+    private ProgressCallback progressCallback;
+    private int progressInterval;
 
     /**
      * Constructs a CsvReader with instance supplier and optional validator.
@@ -178,12 +181,29 @@ public class CsvReader<T> {
     }
 
     /**
+     * Registers a progress callback that fires every {@code interval} rows during reading.
+     *
+     * @param interval the number of rows between each callback invocation (must be positive)
+     * @param callback the callback to invoke
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> onProgress(int interval, ProgressCallback callback) {
+        if (interval <= 0) {
+            throw new IllegalArgumentException("progress interval must be positive");
+        }
+        this.progressInterval = interval;
+        this.progressCallback = callback;
+        return this;
+    }
+
+    /**
      * Finalizes the configuration and builds a {@link CsvReadHandler} for parsing the given CSV stream.
      *
      * @param inputStream The input stream of the CSV file
      * @return A handler to execute CSV parsing
      */
     public CsvReadHandler<T> build(@NonNull InputStream inputStream) {
-        return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset);
+        return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
+                headerRowIndex, delimiter, charset, progressInterval, progressCallback);
     }
 }
