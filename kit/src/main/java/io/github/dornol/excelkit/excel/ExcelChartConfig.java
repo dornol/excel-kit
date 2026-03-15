@@ -53,7 +53,7 @@ public class ExcelChartConfig {
     /**
      * Legend position relative to the chart area.
      *
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public enum LegendPosition {
         BOTTOM,
@@ -66,7 +66,7 @@ public class ExcelChartConfig {
     /**
      * Bar chart grouping mode. Determines how multiple series are arranged.
      *
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public enum BarGrouping {
         /** Each series is drawn side by side. */
@@ -80,7 +80,7 @@ public class ExcelChartConfig {
     /**
      * Bar chart direction. Controls whether bars are drawn vertically (columns) or horizontally.
      *
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public enum BarDirection {
         /** Bars are drawn as vertical columns. */
@@ -171,7 +171,7 @@ public class ExcelChartConfig {
      *
      * @param title the axis title, or {@code null} to omit
      * @return this config for chaining
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public ExcelChartConfig categoryAxisTitle(String title) {
         this.categoryAxisTitle = title;
@@ -183,7 +183,7 @@ public class ExcelChartConfig {
      *
      * @param title the axis title, or {@code null} to omit
      * @return this config for chaining
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public ExcelChartConfig valueAxisTitle(String title) {
         this.valueAxisTitle = title;
@@ -195,7 +195,7 @@ public class ExcelChartConfig {
      *
      * @param position the legend position, or {@code null} for no legend
      * @return this config for chaining
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public ExcelChartConfig legendPosition(LegendPosition position) {
         this.legendPosition = position;
@@ -210,7 +210,7 @@ public class ExcelChartConfig {
      *
      * @param show {@code true} to show data labels
      * @return this config for chaining
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public ExcelChartConfig showDataLabels(boolean show) {
         this.showDataLabels = show;
@@ -223,7 +223,7 @@ public class ExcelChartConfig {
      *
      * @param grouping the bar grouping mode
      * @return this config for chaining
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public ExcelChartConfig barGrouping(BarGrouping grouping) {
         this.barGrouping = grouping;
@@ -237,7 +237,7 @@ public class ExcelChartConfig {
      *
      * @param direction the bar direction
      * @return this config for chaining
-     * @since 0.7.0
+     * @since 0.6.1
      */
     public ExcelChartConfig barDirection(BarDirection direction) {
         this.barDirection = direction;

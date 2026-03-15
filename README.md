@@ -1037,6 +1037,73 @@ new CsvReader<>(Row::new, null)
     .build(inputStream);
 ```
 
+## Spring MVC Integration
+
+The `example` module includes `ExcelResponse` and `CsvResponse` helpers that wrap
+`ExcelHandler`/`CsvHandler` into a `ResponseEntity<StreamingResponseBody>` with
+proper Content-Type, Content-Disposition (including RFC 5987 Korean filename encoding),
+and Cache-Control headers.
+
+```java
+@GetMapping("/download")
+public ResponseEntity<StreamingResponseBody> download() {
+    ExcelHandler handler = writer.write(dataStream);
+    return ExcelResponse.of(handler, "report");
+}
+
+@GetMapping("/download-csv")
+public ResponseEntity<StreamingResponseBody> downloadCsv() {
+    CsvHandler handler = csvWriter.write(dataStream);
+    return CsvResponse.of(handler, "report");
+}
+
+// Password-encrypted download
+@GetMapping("/download-encrypted")
+public ResponseEntity<StreamingResponseBody> downloadEncrypted() {
+    ExcelHandler handler = writer.write(dataStream);
+    return ExcelResponse.of(handler, "secret", "P@ssw0rd!");
+}
+```
+
+## Spring WebFlux Integration
+
+Since Apache POI is blocking I/O, wrap the write operation on `boundedElastic`:
+
+```java
+@GetMapping("/download")
+public Mono<Void> download(ServerHttpResponse response) {
+    response.getHeaders().setContentType(
+        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+    response.getHeaders().set(HttpHeaders.CONTENT_DISPOSITION,
+        "attachment; filename=\"report.xlsx\"");
+
+    return response.writeWith(DataBufferUtils.readInputStream(
+        () -> {
+            PipedInputStream pis = new PipedInputStream();
+            PipedOutputStream pos = new PipedOutputStream(pis);
+            Schedulers.boundedElastic().schedule(() -> {
+                try {
+                    writer.write(dataStream).consumeOutputStream(pos);
+                    pos.close();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            return pis;
+        },
+        response.bufferFactory(), 8192));
+}
+```
+
+When using reactive repositories (`Flux<T>`), convert to `Stream` with `flux.toStream()`:
+
+```java
+Flux<MyData> flux = repository.findAll();
+ExcelHandler handler = writer.write(flux.toStream());
+```
+
+`Flux.toStream()` handles backpressure internally, so data is not loaded entirely into memory.
+
 ## Exception Handling
 
 | Exception | Description |

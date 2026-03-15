@@ -27,15 +27,15 @@ public enum DownloadFileType {
     public String getContentDisposition(String filename) {
         String csvFilename = filename + "." + extension;
 
-        // ASCII fallback (따옴표 안에 ASCII 문자만)
+        // ASCII fallback (only ASCII characters inside quotes)
         String fallback = csvFilename.replaceAll("[^\\x20-\\x7E]", "_");
 
-        // RFC 5987 인코딩 (UTF-8 + percent encoding)
+        // RFC 5987 encoding (UTF-8 + percent encoding)
         String encoded;
         try {
             encoded = URLEncoder.encode(csvFilename, StandardCharsets.UTF_8)
                     .replace("+", "%20")
-                    .replace("%2B", "+"); // 선택적으로 '+' 복원
+                    .replace("%2B", "+"); // optionally restore literal '+'
         } catch (Exception e) {
             encoded = fallback;
         }
