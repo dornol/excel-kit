@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("jacoco")
     alias(libs.plugins.vanniktech.publish)
     id("signing")
 }
@@ -27,6 +28,14 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        csv.required = true
+    }
 }
 
 tasks.withType<Javadoc>().configureEach {
