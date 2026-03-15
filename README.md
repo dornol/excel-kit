@@ -16,9 +16,13 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Lifecycle callbacks with `SheetContext`: `beforeHeader`, `afterData`, `afterAll`
 - Dropdown data validation (select list) per column
 - Row-level conditional styling (background color)
+- Cell-level conditional styling via `CellColorFunction` (per-cell background based on value)
 - Formula columns (`ExcelDataType.FORMULA`) for computed values
 - Hyperlink columns (`ExcelDataType.HYPERLINK`) for clickable URLs
+- Group headers — merged multi-row headers for column grouping
 - Explicit multi-sheet workbook with different data types per sheet (`ExcelWorkbook`)
+- Auto-rollover for `ExcelSheetWriter` via `maxRows()`
+- Progress callback via `onProgress()` for large dataset monitoring
 - Password-encrypted Excel output
 - Consume-once output via `ExcelHandler`
 
@@ -333,6 +337,79 @@ writer
 
 When a row color is set, it overrides any column-level `backgroundColor`.
 
+### Cell-Level Conditional Styling
+
+Apply per-cell background colors based on cell value and row data using `CellColorFunction`:
+
+```java
+writer
+    .column("Amount", p -> p.amount())
+        .type(ExcelDataType.DOUBLE)
+        .cellColor((value, row) -> {
+            double amt = ((Number) value).doubleValue();
+            if (amt < 0) return ExcelColor.LIGHT_RED;
+            if (amt > 10000) return ExcelColor.LIGHT_GREEN;
+            return null;  // no override
+        })
+    .write(data);
+```
+
+**Priority order:** `cellColor` > `rowColor` > column `backgroundColor`.
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Amount", Item::getAmount, c -> c
+        .type(ExcelDataType.DOUBLE)
+        .cellColor((value, row) ->
+            ((Number) value).doubleValue() < 0 ? ExcelColor.LIGHT_RED : null))
+    .write(stream);
+```
+
+### Group Headers
+
+Create multi-row headers with merged group labels using `.group()`:
+
+```java
+writer
+    .column("Name", p -> p.name())
+    .column("Price", p -> p.price()).type(ExcelDataType.INTEGER).group("Financial")
+    .column("Quantity", p -> p.qty()).type(ExcelDataType.INTEGER).group("Financial")
+    .column("Total", p -> p.total()).type(ExcelDataType.INTEGER).group("Financial")
+    .column("Notes", p -> p.notes())
+    .write(data);
+```
+
+This produces:
+
+| Name | Financial | | | Notes |
+|------|-----------|----------|-------|-------|
+| Name | Price | Quantity | Total | Notes |
+
+Adjacent columns with the same group name are merged horizontally. Ungrouped columns are merged vertically across both header rows.
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Report")
+    .column("Price", Item::getPrice, c -> c.type(ExcelDataType.INTEGER).group("Financial"))
+    .column("Qty", Item::getQty, c -> c.type(ExcelDataType.INTEGER).group("Financial"))
+    .write(stream);
+```
+
+### Progress Callback
+
+Monitor progress during large dataset writes:
+
+```java
+writer
+    .column("Name", p -> p.name())
+    .onProgress(10_000, (count, cursor) ->
+        log.info("Processed {} rows", count))
+    .write(data);
+```
+
+The callback fires every `interval` rows. Works with both `ExcelWriter` and `ExcelSheetWriter`, including across sheet rollovers.
+
 ### Conditional Columns
 
 ```java
@@ -453,11 +530,22 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `onProgress()`
 
-> **Note:** Unlike `ExcelWriter`, `ExcelSheetWriter` does not auto-split sheets.
-> Each `sheet()` call creates exactly one sheet.
+**Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
+
+```java
+workbook.<Order>sheet("Orders")
+    .maxRows(500_000)
+    .sheetName(index -> "Orders-Page" + (index + 1))  // custom rollover sheet naming
+    .column("ID", Order::getId)
+    .column("Amount", Order::getAmount, c -> c.type(ExcelDataType.DOUBLE))
+    .write(orderStream);
+// Creates: "Orders", "Orders-Page2", "Orders-Page3", ... as needed
+```
+
+If `sheetName()` is not set, rollover sheets are named `"baseName (2)"`, `"baseName (3)"`, etc.
 
 ### Cursor Access
 

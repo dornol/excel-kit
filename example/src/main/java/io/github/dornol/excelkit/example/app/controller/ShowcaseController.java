@@ -230,7 +230,101 @@ public class ShowcaseController {
     }
 
     // ========================================================================
-    // 6. Full showcase - everything combined
+    // 6. Cell color - per-cell conditional background
+    // ========================================================================
+    @GetMapping("/cell-color")
+    public ResponseEntity<StreamingResponseBody> downloadCellColor() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+                .sheetName("Cell Color")
+                .autoFilter(true)
+                .freezePane(1)
+                .column("Name", ProductDto::name)
+                .column("Price", ProductDto::price)
+                    .type(ExcelDataType.INTEGER)
+                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .cellColor((value, row) -> {
+                        int price = ((Number) value).intValue();
+                        if (price >= 30000) return ExcelColor.LIGHT_GREEN;
+                        if (price <= 5000) return ExcelColor.LIGHT_RED;
+                        return null;
+                    })
+                .column("Quantity", ProductDto::quantity)
+                    .type(ExcelDataType.INTEGER)
+                    .cellColor((value, row) -> {
+                        int qty = ((Number) value).intValue();
+                        return qty <= 10 ? ExcelColor.LIGHT_ORANGE : null;
+                    })
+                .column("Discount", ProductDto::discount)
+                    .type(ExcelDataType.DOUBLE_PERCENT)
+                    .cellColor((value, row) ->
+                        ((Number) value).doubleValue() >= 0.2 ? ExcelColor.LIGHT_PURPLE : null)
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("cell-color-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 7. Group header - merged multi-row headers
+    // ========================================================================
+    @GetMapping("/group-header")
+    public ResponseEntity<StreamingResponseBody> downloadGroupHeader() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.CORAL)
+                .sheetName("Group Header")
+                .autoFilter(true)
+                .freezePane(1)
+                .column("No.", (row, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
+                .column("Name", ProductDto::name)
+                .column("Category", ProductDto::category)
+                .column("Price", ProductDto::price)
+                    .type(ExcelDataType.INTEGER)
+                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .group("Financial")
+                .column("Quantity", ProductDto::quantity)
+                    .type(ExcelDataType.INTEGER)
+                    .group("Financial")
+                .column("Discount", ProductDto::discount)
+                    .type(ExcelDataType.DOUBLE_PERCENT)
+                    .group("Financial")
+                .column("URL", ProductDto::url)
+                    .type(ExcelDataType.HYPERLINK)
+                    .group("Link")
+                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "View"))
+                    .type(ExcelDataType.HYPERLINK)
+                    .group("Link")
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("group-header-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 8. Rollover - ExcelSheetWriter auto sheet splitting
+    // ========================================================================
+    @GetMapping("/rollover")
+    public ResponseEntity<StreamingResponseBody> downloadRollover() {
+        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.FOREST_GREEN)) {
+            wb.<ProductDto>sheet("Products")
+                    .maxRows(8)
+                    .sheetName(idx -> "Products-Page" + (idx + 1))
+                    .autoFilter()
+                    .freezePane(1)
+                    .column("Name", ProductDto::name)
+                    .column("Category", ProductDto::category)
+                    .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                    .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
+                    .onProgress(5, (count, cursor) ->
+                            log.info("[Rollover Demo] Processed {} rows", count))
+                    .write(sampleProducts().stream());
+
+            var handler = wb.finish();
+            return DownloadUtil.builder("rollover-demo", DownloadFileType.EXCEL)
+                    .body(handler::consumeOutputStream);
+        }
+    }
+
+    // ========================================================================
+    // 9. Full showcase - everything combined
     // ========================================================================
     @GetMapping("/full")
     public ResponseEntity<StreamingResponseBody> downloadFullShowcase() {
@@ -257,11 +351,19 @@ public class ShowcaseController {
                 .column("Price", ProductDto::price)
                     .type(ExcelDataType.INTEGER)
                     .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .group("Financial")
+                    .cellColor((value, row) -> {
+                        int price = ((Number) value).intValue();
+                        return price >= 30000 ? ExcelColor.LIGHT_GREEN : null;
+                    })
                 .column("Quantity", ProductDto::quantity)
                     .type(ExcelDataType.INTEGER)
-                    .backgroundColor(ExcelColor.LIGHT_YELLOW)
+                    .group("Financial")
+                    .cellColor((value, row) ->
+                        ((Number) value).intValue() <= 10 ? ExcelColor.LIGHT_ORANGE : null)
                 .column("Discount", ProductDto::discount)
                     .type(ExcelDataType.DOUBLE_PERCENT)
+                    .group("Financial")
                 .column("Subtotal", (row, cursor) -> {
                     int r = cursor.getRowOfSheet() + 1;
                     return "%s%d*%s%d".formatted(priceCol, r, qtyCol, r);
