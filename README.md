@@ -41,6 +41,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Proper escaping (quotes, commas, newlines)
 - UTF-8 BOM for Excel compatibility
 - Configurable delimiter and charset
+- Progress callback via `onProgress()`
 
 **CSV Reading** (OpenCSV-based)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -586,7 +587,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
 - Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `onProgress()`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
 
@@ -757,7 +758,7 @@ CsvReadHandler<Book> crh = schema.csvReader(Book::new, null)
         .build(inputStream);
 ```
 
-The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`):
+The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`):
 
 ```java
 ExcelKitSchema.<Product>builder()
