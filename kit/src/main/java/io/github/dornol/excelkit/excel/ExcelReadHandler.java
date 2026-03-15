@@ -228,6 +228,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private final List<String> headerNames = new ArrayList<>();
         private final Consumer<ReadResult<T>> consumer;
         private List<String> messages;
+        private int[] resolvedIndices;
 
         public SheetHandler(Consumer<ReadResult<T>> consumer) {
             this.consumer = consumer;
@@ -256,6 +257,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
             if (rowNum == headerRowIndex) {
                 extractHeaderNames();
+                resolveColumnIndices();
                 return;
             }
 
@@ -287,6 +289,18 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         /**
+         * Resolves named columns to their actual indices based on header names.
+         */
+        private void resolveColumnIndices() {
+            resolvedIndices = ExcelReadHandler.this.resolveColumnIndices(
+                    columns.size(),
+                    i -> columns.get(i).headerName(),
+                    i -> columns.get(i).columnIndex(),
+                    headerNames, "sheet"
+            );
+        }
+
+        /**
          * Applies all column setters to the current row data.
          *
          * @return true if all setters succeeded, false if any failed
@@ -295,10 +309,11 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             boolean success = true;
 
             for (int i = 0; i < columns.size(); i++) {
-                if (i >= currentRow.size()) continue;
+                int actualIndex = resolvedIndices[i];
+                if (actualIndex >= currentRow.size()) continue;
 
-                if (!mapColumn(columns.get(i).setter(), currentInstance, currentRow.get(i),
-                        i, headerNames, getOrCreateMessages())) {
+                if (!mapColumn(columns.get(i).setter(), currentInstance, currentRow.get(actualIndex),
+                        actualIndex, headerNames, getOrCreateMessages())) {
                     success = false;
                 }
             }

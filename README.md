@@ -16,12 +16,21 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Lifecycle callbacks with `SheetContext`: `beforeHeader`, `afterData`, `afterAll`
 - Dropdown data validation (select list) per column
 - Row-level conditional styling (background color)
+- Cell-level conditional styling via `CellColorFunction` (per-cell background based on value)
+- Formula columns (`ExcelDataType.FORMULA`) for computed values
+- Hyperlink columns (`ExcelDataType.HYPERLINK`) for clickable URLs
+- Group headers — merged multi-row headers for column grouping
+- Column outline — expand/collapse column groups via `outline()`
 - Explicit multi-sheet workbook with different data types per sheet (`ExcelWorkbook`)
+- Auto-rollover for `ExcelSheetWriter` via `maxRows()`
+- Progress callback via `onProgress()` for large dataset monitoring
 - Password-encrypted Excel output
 - Consume-once output via `ExcelHandler`
 
 **Excel Reading** (SAX-based streaming)
-- Header auto-detection with column mapping DSL
+- Header name-based column mapping — columns matched by header name, order-independent
+- Index-based column mapping via `columnAt()` — read specific columns by index
+- Positional column mapping with skip support
 - Configurable header row index and sheet index
 - Optional Bean Validation integration with per-row results
 - Stream-based reading via `readAsStream()`
@@ -32,11 +41,19 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Proper escaping (quotes, commas, newlines)
 - UTF-8 BOM for Excel compatibility
 - Configurable delimiter and charset
+- Progress callback via `onProgress()`
 
 **CSV Reading** (OpenCSV-based)
+- Header name-based column mapping — columns matched by header name, order-independent
+- Index-based column mapping via `columnAt()`
 - Header auto-detection with BOM removal
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
+
+**Unified Schema**
+- `ExcelKitSchema` — define columns once for both reading and writing
+- Write configuration (type, format, style) embedded in schema
+- Schema-based readers automatically use name-based column matching
 
 ## Installation
 
@@ -80,19 +97,17 @@ record Person(long id, String name, int age) {}
 
 var data = Stream.of(new Person(1, "Alice", 30), new Person(2, "Bob", 28));
 
-try (ExcelWriter<Person> writer = new ExcelWriter<>()) {
-    ExcelHandler handler = writer
-            .column("ID", p -> p.id())
-                .type(ExcelDataType.LONG)
-                .alignment(HorizontalAlignment.RIGHT)
-            .column("Name", p -> p.name())
-            .column("Age", p -> p.age())
-                .type(ExcelDataType.INTEGER)
-            .write(data);
+ExcelHandler handler = new ExcelWriter<Person>()
+        .column("ID", p -> p.id())
+            .type(ExcelDataType.LONG)
+            .alignment(HorizontalAlignment.RIGHT)
+        .column("Name", p -> p.name())
+        .column("Age", p -> p.age())
+            .type(ExcelDataType.INTEGER)
+        .write(data);
 
-    try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
-        handler.consumeOutputStream(os);
-    }
+try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
+    handler.consumeOutputStream(os);
 }
 ```
 
@@ -163,6 +178,133 @@ crh.read(result -> {
 
 ## Advanced Usage
 
+### Name-Based Column Mapping (Reading)
+
+Match columns by header name instead of positional index. Column order in the file doesn't matter:
+
+```java
+// Excel — matched by header name "Name" and "Age", regardless of column order
+new ExcelReader<>(User::new, null)
+        .column("Name", (u, cell) -> u.name = cell.asString())
+        .column("Age", (u, cell) -> u.age = cell.asInt())
+        .build(inputStream)
+        .read(result -> { ... });
+
+// CSV — same API
+new CsvReader<>(User::new, null)
+        .column("Name", (u, cell) -> u.name = cell.asString())
+        .column("Age", (u, cell) -> u.age = cell.asInt())
+        .build(inputStream)
+        .read(result -> { ... });
+```
+
+You can also read a subset of columns — only the named columns are mapped, others are ignored:
+
+```java
+// File has columns: Name, Age, City, Email, Phone
+// Only read Name and City
+new ExcelReader<>(User::new, null)
+        .column("Name", (u, cell) -> u.name = cell.asString())
+        .column("City", (u, cell) -> u.city = cell.asString())
+        .build(inputStream);
+```
+
+The `addColumn(String headerName, BiConsumer)` method also supports name-based mapping:
+
+```java
+new ExcelReader<>(User::new, null)
+        .addColumn("Name", (u, cell) -> u.name = cell.asString())
+        .addColumn("Age", (u, cell) -> u.age = cell.asInt())
+        .build(inputStream);
+```
+
+> **Positional mapping** (existing behavior) — use `column(BiConsumer)` without a header name.
+
+### Index-Based Column Mapping (Reading)
+
+Map columns by explicit 0-based index — no need for `skipColumn()` chains:
+
+```java
+// Read only columns 0, 2, and 4 directly
+new ExcelReader<>(User::new, null)
+        .columnAt(0, (u, cell) -> u.name = cell.asString())
+        .columnAt(2, (u, cell) -> u.city = cell.asString())
+        .columnAt(4, (u, cell) -> u.phone = cell.asString())
+        .build(inputStream);
+```
+
+Can be mixed with name-based and positional mapping:
+
+```java
+new ExcelReader<>(User::new, null)
+        .column("Name", (u, cell) -> u.name = cell.asString())  // by name
+        .columnAt(3, (u, cell) -> u.age = cell.asInt())          // by index
+        .build(inputStream);
+```
+
+Also available for CSV:
+```java
+new CsvReader<>(User::new, null)
+        .columnAt(0, (u, cell) -> u.name = cell.asString())
+        .columnAt(2, (u, cell) -> u.city = cell.asString())
+        .build(inputStream);
+```
+
+### Formula Columns
+
+Use `ExcelDataType.FORMULA` to write Excel formula cells:
+
+```java
+writer
+    .column("Price", Product::price).type(ExcelDataType.INTEGER)
+    .column("Quantity", Product::quantity).type(ExcelDataType.INTEGER)
+    // Formula: Price * Quantity (uses cursor to compute the correct row reference)
+    .column("Subtotal", (row, cursor) ->
+            "D" + (cursor.getRowOfSheet() + 1) + "*E" + (cursor.getRowOfSheet() + 1))
+        .type(ExcelDataType.FORMULA)
+        .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+    .write(data);
+```
+
+Use `SheetContext.columnLetter()` to build formula strings in callbacks:
+
+```java
+writer
+    .column("Price", Product::price).type(ExcelDataType.INTEGER)
+    .afterData(ctx -> {
+        var sheet = ctx.getSheet();
+        int row = ctx.getCurrentRow();
+        String col = SheetContext.columnLetter(0); // "A"
+
+        var sumRow = sheet.createRow(row);
+        sumRow.createCell(0).setCellFormula("SUM(%s2:%s%d)".formatted(col, col, row));
+
+        var avgRow = sheet.createRow(row + 1);
+        avgRow.createCell(0).setCellFormula("AVERAGE(%s2:%s%d)".formatted(col, col, row));
+
+        return row + 2;
+    })
+    .write(data);
+```
+
+### Hyperlink Columns
+
+Use `ExcelDataType.HYPERLINK` to create clickable URL links:
+
+```java
+// Plain URL — displayed text is the URL itself
+writer
+    .column("Website", Product::url)
+        .type(ExcelDataType.HYPERLINK)
+    .write(data);
+
+// Custom label — use ExcelHyperlink to separate display text from URL
+writer
+    .column("Link", p -> new ExcelHyperlink(p.url(), "View Details"))
+        .type(ExcelDataType.HYPERLINK)
+    .write(data);
+```
+
 ### Row Height
 
 ```java
@@ -227,6 +369,103 @@ writer
 
 When a row color is set, it overrides any column-level `backgroundColor`.
 
+### Cell-Level Conditional Styling
+
+Apply per-cell background colors based on cell value and row data using `CellColorFunction`:
+
+```java
+writer
+    .column("Amount", p -> p.amount())
+        .type(ExcelDataType.DOUBLE)
+        .cellColor((value, row) -> {
+            double amt = ((Number) value).doubleValue();
+            if (amt < 0) return ExcelColor.LIGHT_RED;
+            if (amt > 10000) return ExcelColor.LIGHT_GREEN;
+            return null;  // no override
+        })
+    .write(data);
+```
+
+**Priority order:** `cellColor` > `rowColor` > column `backgroundColor`.
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Amount", Item::getAmount, c -> c
+        .type(ExcelDataType.DOUBLE)
+        .cellColor((value, row) ->
+            ((Number) value).doubleValue() < 0 ? ExcelColor.LIGHT_RED : null))
+    .write(stream);
+```
+
+### Group Headers
+
+Create multi-row headers with merged group labels using `.group()`:
+
+```java
+writer
+    .column("Name", p -> p.name())
+    .column("Price", p -> p.price()).type(ExcelDataType.INTEGER).group("Financial")
+    .column("Quantity", p -> p.qty()).type(ExcelDataType.INTEGER).group("Financial")
+    .column("Total", p -> p.total()).type(ExcelDataType.INTEGER).group("Financial")
+    .column("Notes", p -> p.notes())
+    .write(data);
+```
+
+This produces:
+
+| Name | Financial | | | Notes |
+|------|-----------|----------|-------|-------|
+| Name | Price | Quantity | Total | Notes |
+
+Adjacent columns with the same group name are merged horizontally. Ungrouped columns are merged vertically across both header rows.
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Report")
+    .column("Price", Item::getPrice, c -> c.type(ExcelDataType.INTEGER).group("Financial"))
+    .column("Qty", Item::getQty, c -> c.type(ExcelDataType.INTEGER).group("Financial"))
+    .write(stream);
+```
+
+### Column Outline (Grouping)
+
+Group columns so they can be collapsed/expanded in Excel:
+
+```java
+writer
+    .column("Name", p -> p.name())
+    .column("Detail1", p -> p.detail1()).outline(1)
+    .column("Detail2", p -> p.detail2()).outline(1)
+    .column("Detail3", p -> p.detail3()).outline(1)
+    .column("Summary", p -> p.summary())
+    .write(data);
+```
+
+Adjacent columns with the same outline level are grouped together. Supports levels 1–7.
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Report")
+    .column("Detail", Item::getDetail, c -> c.outline(1))
+    .column("Detail2", Item::getDetail2, c -> c.outline(1))
+    .write(stream);
+```
+
+### Progress Callback
+
+Monitor progress during large dataset writes:
+
+```java
+writer
+    .column("Name", p -> p.name())
+    .onProgress(10_000, (count, cursor) ->
+        log.info("Processed {} rows", count))
+    .write(data);
+```
+
+The callback fires every `interval` rows. Works with both `ExcelWriter` and `ExcelSheetWriter`, including across sheet rollovers.
+
 ### Conditional Columns
 
 ```java
@@ -277,6 +516,7 @@ All callbacks receive a `SheetContext` parameter that provides:
 - `getCurrentRow()` — the first available row index for writing
 - `getColumnCount()` — the number of configured columns
 - `getColumnNames()` — unmodifiable list of column header names
+- `columnLetter(int)` — static helper to convert column index to Excel letter (0→"A", 26→"AA")
 
 A new `SheetContext` is created for each callback invocation, so the sheet reference is always current (even after rollover).
 
@@ -346,11 +586,22 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`
 
-> **Note:** Unlike `ExcelWriter`, `ExcelSheetWriter` does not auto-split sheets.
-> Each `sheet()` call creates exactly one sheet.
+**Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
+
+```java
+workbook.<Order>sheet("Orders")
+    .maxRows(500_000)
+    .sheetName(index -> "Orders-Page" + (index + 1))  // custom rollover sheet naming
+    .column("ID", Order::getId)
+    .column("Amount", Order::getAmount, c -> c.type(ExcelDataType.DOUBLE))
+    .write(orderStream);
+// Creates: "Orders", "Orders-Page2", "Orders-Page3", ... as needed
+```
+
+If `sheetName()` is not set, rollover sheets are named `"baseName (2)"`, `"baseName (3)"`, etc.
 
 ### Cursor Access
 
@@ -465,6 +716,8 @@ CellData.setDefaultLocale(Locale.US);
 | `TIME` | LocalTime | `hh:mm:ss` |
 | `BIG_DECIMAL_TO_DOUBLE` | BigDecimal | `#,##0.00` |
 | `BIG_DECIMAL_TO_LONG` | BigDecimal | `#,##0` |
+| `FORMULA` | String (formula) | — |
+| `HYPERLINK` | String or `ExcelHyperlink` | — |
 
 ### ExcelDataFormat Presets
 
@@ -490,21 +743,33 @@ Define columns once, use for both reading and writing:
 ```java
 ExcelKitSchema<Book> schema = ExcelKitSchema.<Book>builder()
         .column("Title",  Book::getTitle,  (b, cell) -> b.setTitle(cell.asString()))
-        .column("Price",  Book::getPrice,  (b, cell) -> b.setPrice(cell.asInt()))
+        .column("Price",  Book::getPrice,  (b, cell) -> b.setPrice(cell.asInt()),
+                c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
         .build();
 
-// writing
+// writing — type/format config is applied automatically
 ExcelHandler handler = schema.excelWriter().write(bookStream);
+CsvHandler ch = schema.csvWriter().write(bookStream);
 
-// reading
+// reading — columns are matched by header name (order-independent)
 ExcelReadHandler<Book> rh = schema.excelReader(Book::new, null)
+        .build(inputStream);
+CsvReadHandler<Book> crh = schema.csvReader(Book::new, null)
         .build(inputStream);
 ```
 
-Also supports CSV:
+The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`):
+
 ```java
-CsvHandler ch = schema.csvWriter().write(bookStream);
-CsvReadHandler<Book> crh = schema.csvReader(Book::new, null).build(inputStream);
+ExcelKitSchema.<Product>builder()
+    .column("Name", Product::getName, (p, cell) -> p.setName(cell.asString()))
+    .column("Price", Product::getPrice, (p, cell) -> p.setPrice(cell.asInt()),
+            c -> c.type(ExcelDataType.INTEGER)
+                  .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                  .backgroundColor(ExcelColor.LIGHT_YELLOW))
+    .column("Discount", Product::getDiscount, (p, cell) -> p.setDiscount(cell.asDouble()),
+            c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+    .build();
 ```
 
 ### CSV Options
@@ -550,6 +815,14 @@ new CsvReader<>(Row::new, null)
 ./gradlew build
 ./gradlew test
 ```
+
+## CI/CD
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| **CI** | Push to `main`, Pull requests | Build + test |
+| **Release** | Tag push (`*.*.*`) | Build, test, create GitHub Release with auto-generated notes |
+| **Maven Publish** | Tag push (`*.*.*`) | Publish to Maven Central |
 
 ## License
 

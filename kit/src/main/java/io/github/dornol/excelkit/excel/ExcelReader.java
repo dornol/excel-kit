@@ -121,6 +121,43 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Adds a name-based column mapping using a setter function.
+     * The column is matched by header name instead of positional index.
+     *
+     * @param headerName The header name to match in the Excel file
+     * @param setter     A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return This ExcelReader instance for chaining
+     */
+    public ExcelReader<T> addColumn(String headerName, BiConsumer<T, CellData> setter) {
+        columns.add(new ExcelReadColumn<>(headerName, setter));
+        return this;
+    }
+
+    /**
+     * Adds an index-based column mapping.
+     * The column is matched by explicit 0-based column index.
+     *
+     * @param columnIndex 0-based column index in the Excel file
+     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return This ExcelReader instance for chaining
+     */
+    public ExcelReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
+        columns.add(new ExcelReadColumn<>(null, columnIndex, setter));
+        return this;
+    }
+
+    /**
+     * Begins a new index-based column mapping using a setter function.
+     *
+     * @param columnIndex 0-based column index in the Excel file
+     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return A builder for further column configuration
+     */
+    public ExcelReadColumn.ExcelReadColumnBuilder<T> columnAtBuilder(int columnIndex, BiConsumer<T, CellData> setter) {
+        return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, columnIndex, setter);
+    }
+
+    /**
      * Skips one column during reading by adding a no-op column mapping.
      *
      * @return This ExcelReader instance for chaining
@@ -148,13 +185,25 @@ public class ExcelReader<T> {
     }
 
     /**
-     * Begins a new column mapping using a setter function.
+     * Begins a new positional column mapping using a setter function.
      *
      * @param setter A {@code BiConsumer} that sets a value from {@link io.github.dornol.excelkit.shared.CellData} to the row object
      * @return A builder for further column configuration
      */
     public ExcelReadColumn.ExcelReadColumnBuilder<T> column(BiConsumer<T, CellData> setter) {
         return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, setter);
+    }
+
+    /**
+     * Begins a new name-based column mapping using a setter function.
+     * The column is matched by header name instead of positional index.
+     *
+     * @param headerName The header name to match in the Excel file
+     * @param setter     A {@code BiConsumer} that sets a value from {@link io.github.dornol.excelkit.shared.CellData} to the row object
+     * @return A builder for further column configuration
+     */
+    public ExcelReadColumn.ExcelReadColumnBuilder<T> column(String headerName, BiConsumer<T, CellData> setter) {
+        return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, headerName, setter);
     }
 
     /**

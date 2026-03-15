@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
@@ -16,6 +17,7 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -32,14 +34,75 @@ class ExcelWriteSupport {
     private ExcelWriteSupport() {
     }
 
+    /**
+     * Writes column headers, with optional group header row if any column has a groupName.
+     */
     static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
                                         List<ExcelColumn<T>> columns, CellStyle headerStyle) {
+        boolean hasGroups = columns.stream().anyMatch(c -> c.getGroupName() != null);
+        if (hasGroups) {
+            writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle);
+        } else {
+            writeSingleHeaderRow(sheet, cursor, columns, headerStyle);
+        }
+    }
+
+    private static <T> void writeSingleHeaderRow(SXSSFSheet sheet, Cursor cursor,
+                                                  List<ExcelColumn<T>> columns, CellStyle headerStyle) {
         SXSSFRow headRow = sheet.createRow(cursor.getRowOfSheet());
         cursor.plusRow();
         for (int j = 0; j < columns.size(); j++) {
             SXSSFCell cell = headRow.createCell(j);
             cell.setCellValue(columns.get(j).getName());
             cell.setCellStyle(headerStyle);
+        }
+    }
+
+    private static <T> void writeGroupAndColumnHeaders(SXSSFSheet sheet, Cursor cursor,
+                                                        List<ExcelColumn<T>> columns, CellStyle headerStyle) {
+        int groupRowIdx = cursor.getRowOfSheet();
+        SXSSFRow groupRow = sheet.createRow(groupRowIdx);
+        cursor.plusRow();
+        int columnRowIdx = cursor.getRowOfSheet();
+        SXSSFRow columnRow = sheet.createRow(columnRowIdx);
+        cursor.plusRow();
+
+        for (int j = 0; j < columns.size(); j++) {
+            ExcelColumn<T> col = columns.get(j);
+            String group = col.getGroupName();
+
+            // Column header row (always written)
+            SXSSFCell colCell = columnRow.createCell(j);
+            colCell.setCellValue(col.getName());
+            colCell.setCellStyle(headerStyle);
+
+            // Group header row
+            SXSSFCell grpCell = groupRow.createCell(j);
+            grpCell.setCellStyle(headerStyle);
+
+            if (group != null) {
+                grpCell.setCellValue(group);
+            }
+        }
+
+        // Merge adjacent group cells with the same name
+        int i = 0;
+        while (i < columns.size()) {
+            String group = columns.get(i).getGroupName();
+            if (group != null) {
+                int start = i;
+                while (i < columns.size() && Objects.equals(group, columns.get(i).getGroupName())) {
+                    i++;
+                }
+                if (i - start > 1) {
+                    sheet.addMergedRegion(new CellRangeAddress(groupRowIdx, groupRowIdx, start, i - 1));
+                }
+            } else {
+                // No group: merge vertically (group row + column row)
+                sheet.addMergedRegion(new CellRangeAddress(groupRowIdx, columnRowIdx, i, i));
+                groupRow.getCell(i).setCellValue(columns.get(i).getName());
+                i++;
+            }
         }
     }
 
@@ -68,19 +131,31 @@ class ExcelWriteSupport {
             ExcelColumn<T> column = columns.get(j);
             Object columnData = column.applyFunction(rowData, cursor);
             column.setColumnData(cell, columnData);
-            if (rowColor != null) {
-                cell.setCellStyle(resolveRowColorStyle(column.getStyle(), rowColor, rowStyleCache, wb));
+
+            // Resolve effective color: cellColor > rowColor > column default
+            ExcelColor effectiveColor = null;
+            CellColorFunction<T> cellColorFn = column.getCellColorFunction();
+            if (cellColorFn != null) {
+                effectiveColor = cellColorFn.apply(columnData, rowData);
+            }
+            if (effectiveColor == null) {
+                effectiveColor = rowColor;
+            }
+
+            if (effectiveColor != null) {
+                cell.setCellStyle(resolveColorStyle(column.getStyle(), effectiveColor, rowStyleCache, wb));
             } else {
                 cell.setCellStyle(column.getStyle());
             }
+
             if (cursor.getRowOfSheet() < AUTO_WIDTH_SAMPLE_ROWS) {
                 column.fitColumnWidthByValue(columnData);
             }
         }
     }
 
-    static CellStyle resolveRowColorStyle(CellStyle baseStyle, ExcelColor color,
-                                           Map<String, CellStyle> cache, SXSSFWorkbook wb) {
+    static CellStyle resolveColorStyle(CellStyle baseStyle, ExcelColor color,
+                                        Map<String, CellStyle> cache, SXSSFWorkbook wb) {
         String key = baseStyle.getIndex() + "_" + color.getR() + "_" + color.getG() + "_" + color.getB();
         return cache.computeIfAbsent(key, k -> {
             CellStyle style = wb.createCellStyle();
@@ -123,5 +198,36 @@ class ExcelWriteSupport {
             currentRow = writer.write(new SheetContext(sheet, wb, currentRow, columns));
         }
         return currentRow;
+    }
+
+    static <T> void applyColumnOutline(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
+        int i = 0;
+        while (i < columns.size()) {
+            int level = columns.get(i).getOutlineLevel();
+            if (level > 0) {
+                int start = i;
+                while (i < columns.size() && columns.get(i).getOutlineLevel() == level) {
+                    i++;
+                }
+                sheet.groupColumn(start, i - 1);
+            } else {
+                i++;
+            }
+        }
+    }
+
+    static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (ExcelColumn<T> col : columns) {
+            if (!seen.add(col.getName())) {
+                throw new ExcelWriteException("Duplicate column name: '" + col.getName() + "'");
+            }
+        }
+    }
+
+    static void checkProgress(Cursor cursor, int interval, ProgressCallback callback) {
+        if (callback != null && interval > 0 && cursor.getCurrentTotal() % interval == 0) {
+            callback.onProgress(cursor.getCurrentTotal(), cursor);
+        }
     }
 }

@@ -103,6 +103,32 @@ public class CsvReader<T> {
     }
 
     /**
+     * Adds a name-based column mapping using a setter function.
+     * The column is matched by header name instead of positional index.
+     *
+     * @param headerName The header name to match in the CSV file
+     * @param setter     A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> addColumn(String headerName, BiConsumer<T, CellData> setter) {
+        columns.add(new CsvReadColumn<>(headerName, setter));
+        return this;
+    }
+
+    /**
+     * Adds an index-based column mapping.
+     * The column is matched by explicit 0-based column index.
+     *
+     * @param columnIndex 0-based column index in the CSV file
+     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return This CsvReader instance for chaining
+     */
+    public CsvReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
+        columns.add(new CsvReadColumn<>(null, columnIndex, setter));
+        return this;
+    }
+
+    /**
      * Skips one column during reading by adding a no-op column mapping.
      *
      * @return This CsvReader instance for chaining
@@ -130,13 +156,25 @@ public class CsvReader<T> {
     }
 
     /**
-     * Begins a new column mapping using a setter function.
+     * Begins a new positional column mapping using a setter function.
      *
      * @param setter A {@code BiConsumer} that sets a value from {@link CellData} to the row object
      * @return A builder for further column configuration
      */
     public CsvReadColumn.CsvReadColumnBuilder<T> column(BiConsumer<T, CellData> setter) {
         return new CsvReadColumn.CsvReadColumnBuilder<>(this, setter);
+    }
+
+    /**
+     * Begins a new name-based column mapping using a setter function.
+     * The column is matched by header name instead of positional index.
+     *
+     * @param headerName The header name to match in the CSV file
+     * @param setter     A {@code BiConsumer} that sets a value from {@link CellData} to the row object
+     * @return A builder for further column configuration
+     */
+    public CsvReadColumn.CsvReadColumnBuilder<T> column(String headerName, BiConsumer<T, CellData> setter) {
+        return new CsvReadColumn.CsvReadColumnBuilder<>(this, headerName, setter);
     }
 
     /**

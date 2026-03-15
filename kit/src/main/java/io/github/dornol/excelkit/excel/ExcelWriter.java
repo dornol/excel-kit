@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.jspecify.annotations.NonNull;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -24,7 +26,7 @@ import java.util.stream.Stream;
  * @param <T> The data type of each row to be written into the Excel file
  * @since 2025-07-19
  */
-public class ExcelWriter<T> implements AutoCloseable {
+public class ExcelWriter<T> {
     private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
@@ -44,6 +46,8 @@ public class ExcelWriter<T> implements AutoCloseable {
     private Function<T, ExcelColor> rowColorFunction;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private int headerRowIndex;
+    private ProgressCallback progressCallback;
+    private int progressInterval;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -255,6 +259,22 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Registers a progress callback that fires every {@code interval} rows.
+     *
+     * @param interval the number of rows between each callback invocation (must be positive)
+     * @param callback the callback to invoke
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> onProgress(int interval, ProgressCallback callback) {
+        if (interval <= 0) {
+            throw new IllegalArgumentException("progress interval must be positive");
+        }
+        this.progressInterval = interval;
+        this.progressCallback = callback;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -312,6 +332,32 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Adds a column with additional configuration using a configurer consumer.
+     * <p>
+     * The configurer receives an {@link ExcelColumn.ExcelColumnBuilder} to set
+     * column properties such as type, format, alignment, width, etc.
+     *
+     * <pre>{@code
+     * writer.addColumn("Price", Book::getPrice, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
+     * }</pre>
+     *
+     * @param name        Column header name
+     * @param function    Function to extract cell value from row
+     * @param configurer  Consumer to configure column properties
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> addColumn(String name, Function<T, Object> function,
+                                     Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+        ExcelColumn.ExcelColumnBuilder<T> builder =
+                new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
+        if (configurer != null) {
+            configurer.accept(builder);
+        }
+        this.columns.add(builder.build());
+        return this;
+    }
+
+    /**
      * Writes the stream of row data into an Excel file using custom row-level callback.
      *
      * @param stream   The data stream
@@ -322,6 +368,7 @@ public class ExcelWriter<T> implements AutoCloseable {
         if (this.columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
+        ExcelWriteSupport.validateUniqueColumnNames(columns);
 
         this.sheet = createNamedSheet();
         int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);
@@ -387,6 +434,7 @@ public class ExcelWriter<T> implements AutoCloseable {
         }
         ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, rowHeightInPoints,
                 rowColorFunction, rowStyleCache, wb);
+        ExcelWriteSupport.checkProgress(cursor, progressInterval, progressCallback);
     }
 
     /**
@@ -425,6 +473,7 @@ public class ExcelWriter<T> implements AutoCloseable {
     private void applyColumnWidthAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
             ExcelWriteSupport.applyColumnWidths(wb.getSheetAt(i), columns);
+            ExcelWriteSupport.applyColumnOutline(wb.getSheetAt(i), columns);
         }
     }
 
@@ -450,18 +499,4 @@ public class ExcelWriter<T> implements AutoCloseable {
         return cellStyleCache;
     }
 
-    /**
-     * Closes the underlying workbook, releasing any resources.
-     * <p>
-     * This is a safety net for cases where {@link #write(Stream)} is never called.
-     * If the workbook has already been consumed via {@link ExcelHandler}, this is a no-op.
-     */
-    @Override
-    public void close() {
-        try {
-            wb.close();
-        } catch (Exception e) {
-            log.debug("ExcelWriter.close() caught exception (likely already closed)", e);
-        }
-    }
 }
