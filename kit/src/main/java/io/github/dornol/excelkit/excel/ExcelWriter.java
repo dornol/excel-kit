@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -307,6 +308,32 @@ public class ExcelWriter<T> implements AutoCloseable {
     public ExcelWriter<T> addColumn(String name, Function<T, Object> function) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
+        this.columns.add(builder.build());
+        return this;
+    }
+
+    /**
+     * Adds a column with additional configuration using a configurer consumer.
+     * <p>
+     * The configurer receives an {@link ExcelColumn.ExcelColumnBuilder} to set
+     * column properties such as type, format, alignment, width, etc.
+     *
+     * <pre>{@code
+     * writer.addColumn("Price", Book::getPrice, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
+     * }</pre>
+     *
+     * @param name        Column header name
+     * @param function    Function to extract cell value from row
+     * @param configurer  Consumer to configure column properties
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> addColumn(String name, Function<T, Object> function,
+                                     Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+        ExcelColumn.ExcelColumnBuilder<T> builder =
+                new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
+        if (configurer != null) {
+            configurer.accept(builder);
+        }
         this.columns.add(builder.build());
         return this;
     }

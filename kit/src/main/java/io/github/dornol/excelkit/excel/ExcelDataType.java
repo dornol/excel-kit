@@ -1,5 +1,9 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.common.usermodel.HyperlinkType;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Hyperlink;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -82,7 +86,37 @@ public enum ExcelDataType {
     /**
      * BigDecimal converted to long (no decimal).
      */
-    BIG_DECIMAL_TO_LONG((cell, value) -> cell.setCellValue(((BigDecimal) value).longValue()), LONG.defaultFormat)
+    BIG_DECIMAL_TO_LONG((cell, value) -> cell.setCellValue(((BigDecimal) value).longValue()), LONG.defaultFormat),
+
+    /**
+     * Formula type. The value is treated as an Excel formula string (without leading '=').
+     * <p>
+     * Example: {@code "SUM(A2:A100)"} or {@code "AVERAGE(B2:B50)"}
+     */
+    FORMULA((cell, value) -> cell.setCellFormula(String.valueOf(value)), null),
+
+    /**
+     * Hyperlink type. Creates a clickable URL link in the cell.
+     * <p>
+     * Accepts either a plain {@code String} (used as both URL and label)
+     * or an {@link ExcelHyperlink} instance (separate URL and label).
+     */
+    HYPERLINK((cell, value) -> {
+        String url;
+        String label;
+        if (value instanceof ExcelHyperlink link) {
+            url = link.url();
+            label = link.label();
+        } else {
+            url = String.valueOf(value);
+            label = url;
+        }
+        cell.setCellValue(label);
+        CreationHelper createHelper = cell.getSheet().getWorkbook().getCreationHelper();
+        Hyperlink hyperlink = createHelper.createHyperlink(HyperlinkType.URL);
+        hyperlink.setAddress(url);
+        cell.setHyperlink(hyperlink);
+    }, null)
     ;
 
     private final ExcelColumnSetter setter;

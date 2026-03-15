@@ -83,4 +83,29 @@ public class SheetContext {
     public List<String> getColumnNames() {
         return columnNames;
     }
+
+    /**
+     * Converts a zero-based column index to an Excel column letter.
+     * <p>
+     * Examples:
+     * <ul>
+     *     <li>0 → "A"</li>
+     *     <li>1 → "B"</li>
+     *     <li>25 → "Z"</li>
+     *     <li>26 → "AA"</li>
+     * </ul>
+     *
+     * @param colIndex zero-based column index
+     * @return the Excel column letter(s)
+     */
+    public static String columnLetter(int colIndex) {
+        StringBuilder sb = new StringBuilder();
+        int idx = colIndex + 1;
+        while (idx > 0) {
+            idx--;
+            sb.insert(0, (char) ('A' + idx % 26));
+            idx /= 26;
+        }
+        return sb.toString();
+    }
 }

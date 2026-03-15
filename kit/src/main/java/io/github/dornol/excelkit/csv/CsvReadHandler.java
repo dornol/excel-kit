@@ -83,6 +83,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 throw new CsvReadException("CSV file is empty or missing header row");
             }
             prepareColumnHeaders(headerLine);
+            int[] resolvedIndices = resolveColumnIndices();
 
             String[] line;
 
@@ -92,9 +93,10 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 List<String> messages = new ArrayList<>();
 
                 for (int i = 0; i < columns.size(); i++) {
-                    String columnValue = (i < line.length) ? line[i] : null;
-                    if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(i, columnValue),
-                            i, headerNames, messages)) {
+                    int actualIndex = resolvedIndices[i];
+                    String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
+                    if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(actualIndex, columnValue),
+                            actualIndex, headerNames, messages)) {
                         success = false;
                     }
                 }
@@ -129,6 +131,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 throw new CsvReadException("CSV file is empty or missing header row");
             }
             prepareColumnHeaders(headerLine);
+            int[] resolvedIndices = resolveColumnIndices();
 
             Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
                     Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
@@ -146,9 +149,10 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                         List<String> messages = new ArrayList<>();
 
                         for (int i = 0; i < columns.size(); i++) {
-                            String columnValue = (i < line.length) ? line[i] : null;
-                            if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(i, columnValue),
-                                    i, headerNames, messages)) {
+                            int actualIndex = resolvedIndices[i];
+                            String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
+                            if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(actualIndex, columnValue),
+                                    actualIndex, headerNames, messages)) {
                                 success = false;
                             }
                         }
@@ -189,6 +193,23 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         CSVParser csvParser = new CSVParserBuilder().withSeparator(this.delimiter).build();
         return new CSVReaderBuilder(new InputStreamReader(Files.newInputStream(getTempFile()), this.charset))
                 .withCSVParser(csvParser).build();
+    }
+
+    private int[] resolveColumnIndices() {
+        int[] indices = new int[columns.size()];
+        for (int i = 0; i < columns.size(); i++) {
+            CsvReadColumn<T> col = columns.get(i);
+            if (col.headerName() != null) {
+                int idx = headerNames.indexOf(col.headerName());
+                if (idx < 0) {
+                    throw new CsvReadException("Header '" + col.headerName() + "' not found in CSV. Available headers: " + headerNames);
+                }
+                indices[i] = idx;
+            } else {
+                indices[i] = i;
+            }
+        }
+        return indices;
     }
 
     private void prepareColumnHeaders(String[] line) {
