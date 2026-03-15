@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFCell;

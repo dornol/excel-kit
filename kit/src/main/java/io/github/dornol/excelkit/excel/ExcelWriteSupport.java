@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
@@ -211,6 +212,15 @@ class ExcelWriteSupport {
                 sheet.groupColumn(start, i - 1);
             } else {
                 i++;
+            }
+        }
+    }
+
+    static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (ExcelColumn<T> col : columns) {
+            if (!seen.add(col.getName())) {
+                throw new ExcelWriteException("Duplicate column name: '" + col.getName() + "'");
             }
         }
     }

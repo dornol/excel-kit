@@ -12,6 +12,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import io.github.dornol.excelkit.shared.ProgressCallback;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +37,8 @@ public class CsvWriter<T> {
     private Charset charset = StandardCharsets.UTF_8;
     private boolean bom = true;
     private CsvAfterDataWriter afterDataWriter;
+    private ProgressCallback progressCallback;
+    private int progressInterval;
 
     /**
      * Sets the delimiter character used to separate fields.
@@ -154,6 +158,22 @@ public class CsvWriter<T> {
     }
 
     /**
+     * Registers a progress callback that fires every {@code interval} rows.
+     *
+     * @param interval the number of rows between each callback invocation (must be positive)
+     * @param callback the callback to invoke
+     * @return This writer instance (for chaining)
+     */
+    public CsvWriter<T> onProgress(int interval, ProgressCallback callback) {
+        if (interval <= 0) {
+            throw new IllegalArgumentException("progress interval must be positive");
+        }
+        this.progressInterval = interval;
+        this.progressCallback = callback;
+        return this;
+    }
+
+    /**
      * Writes the given stream of rows to a temporary CSV file.
      * <p>
      * The returned {@link CsvHandler} can be used to write the file to an {@link OutputStream}.
@@ -227,6 +247,10 @@ public class CsvWriter<T> {
                         .map(this::escapeCsv)
                         .collect(Collectors.joining(joining));
                 writer.println(line);
+                if (progressCallback != null && progressInterval > 0
+                        && cursor.getCurrentTotal() % progressInterval == 0) {
+                    progressCallback.onProgress(cursor.getCurrentTotal(), cursor);
+                }
             });
 
             // Write after-data content

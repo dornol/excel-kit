@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.jspecify.annotations.NonNull;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -367,6 +368,7 @@ public class ExcelWriter<T> {
         if (this.columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
+        ExcelWriteSupport.validateUniqueColumnNames(columns);
 
         this.sheet = createNamedSheet();
         int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);

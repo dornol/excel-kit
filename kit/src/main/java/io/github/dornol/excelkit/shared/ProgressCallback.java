@@ -1,9 +1,7 @@
-package io.github.dornol.excelkit.excel;
-
-import io.github.dornol.excelkit.shared.Cursor;
+package io.github.dornol.excelkit.shared;
 
 /**
- * Callback for reporting progress during large Excel writes.
+ * Callback for reporting progress during large Excel/CSV writes.
  * <p>
  * Invoked every N rows as configured via {@code onProgress(interval, callback)}.
  *

@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -114,6 +115,48 @@ public class ExcelSheetWriter<T> {
         return this;
     }
 
+    /**
+     * Enables or disables auto-filter on the header row.
+     *
+     * @param autoFilter Whether to apply auto-filter
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> autoFilter(boolean autoFilter) {
+        this.autoFilter = autoFilter;
+        return this;
+    }
+
+    /**
+     * Conditionally adds a column using a simple function.
+     *
+     * @param name      Column header name
+     * @param condition Whether to include this column
+     * @param function  Function to extract cell value from row
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, Object> function) {
+        if (condition) {
+            column(name, function);
+        }
+        return this;
+    }
+
+    /**
+     * Conditionally adds a column with additional configuration.
+     *
+     * @param name      Column header name
+     * @param condition Whether to include this column
+     * @param function  Function to extract cell value from row
+     * @param cfg       Consumer to configure column options
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, Object> function, Consumer<ColumnConfig<T>> cfg) {
+        if (condition) {
+            column(name, function, cfg);
+        }
+        return this;
+    }
+
     public ExcelSheetWriter<T> freezePane(int rows) {
         this.freezePaneRows = rows;
         return this;
@@ -189,6 +232,7 @@ public class ExcelSheetWriter<T> {
         if (columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
+        ExcelWriteSupport.validateUniqueColumnNames(columns);
 
         List<SXSSFSheet> allSheets = new ArrayList<>();
         allSheets.add(this.sheet);
