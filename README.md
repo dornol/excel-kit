@@ -584,11 +584,23 @@ new ExcelWriter<Product>()
         .categoryColumn(0)                           // X-axis: Name column
         .valueColumn(1, "Sales")                     // Y-axis series 1
         .valueColumn(2, "Profit")                    // Y-axis series 2
+        .categoryAxisTitle("Product")                // X-axis label
+        .valueAxisTitle("Amount")                    // Y-axis label
+        .legendPosition(ExcelChartConfig.LegendPosition.BOTTOM)
+        .barDirection(ExcelChartConfig.BarDirection.HORIZONTAL)
+        .barGrouping(ExcelChartConfig.BarGrouping.STACKED)
+        .showDataLabels(true)
         .position(3, 0, 12, 20))                     // chart position (col1, row1, col2, row2)
     .write(data);
 ```
 
 Charts are created using Apache POI's XDDF chart API and reference data cell ranges.
+
+Available chart options:
+- Chart types: `BAR`, `LINE`, `PIE`
+- Legend positions: `BOTTOM`, `LEFT`, `RIGHT`, `TOP`, `TOP_RIGHT`
+- Bar directions: `VERTICAL` (default), `HORIZONTAL`
+- Bar groupings: `STANDARD` (default), `STACKED`, `PERCENT_STACKED`
 
 ### Map-Based Writing
 
@@ -715,6 +727,8 @@ All callbacks receive a `SheetContext` parameter that provides:
 - `getColumnCount()` — the number of configured columns
 - `getColumnNames()` — unmodifiable list of column header names
 - `columnLetter(int)` — static helper to convert column index to Excel letter (0→"A", 26→"AA")
+- `mergeCells(int firstRow, int lastRow, int firstCol, int lastCol)` — merge a rectangular cell region
+- `mergeCells(String cellRange)` — merge cells using Excel notation (e.g., `"A1:C3"`)
 
 A new `SheetContext` is created for each callback invocation, so the sheet reference is always current (even after rollover).
 
@@ -741,6 +755,29 @@ writer
         return ctx.getCurrentRow() + 1;
     })
     .write(data);
+```
+
+### Cell Merging
+
+Merge cells in lifecycle callbacks using `SheetContext.mergeCells()`:
+
+```java
+writer
+    .beforeHeader(ctx -> {
+        ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0)
+                .setCellValue("Report Title");
+        ctx.mergeCells(0, 0, 0, 2);  // merge first row across 3 columns
+        return ctx.getCurrentRow() + 1;
+    })
+    .column("A", p -> p.a())
+    .column("B", p -> p.b())
+    .column("C", p -> p.c())
+    .write(data);
+```
+
+You can also use Excel notation:
+```java
+ctx.mergeCells("A1:C1");  // same merge using Excel notation
 ```
 
 ### Sheet Auto-Splitting
@@ -785,7 +822,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
 - Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `locked`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels)
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
 

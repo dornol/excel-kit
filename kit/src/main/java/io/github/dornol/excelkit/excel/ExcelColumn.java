@@ -126,7 +126,7 @@ public class ExcelColumn<T> {
     private int getLogicalLength(String input) {
         int logicalLength = 0;
         for (char ch : input.toCharArray()) {
-            logicalLength += (ch <= 0x7F) ? 1 : 2; // ASCII: 1, 한글 등: 2
+            logicalLength += (ch <= 0x7F) ? 1 : 2; // ASCII: 1, CJK etc: 2
         }
         return Math.min(MAX_COLUMN_WIDTH, logicalLength * 250 + 1024);
     }
@@ -412,7 +412,7 @@ public class ExcelColumn<T> {
                 this.type(ExcelDataType.STRING);
             }
             if (this.dataFormat == null) {
-                this.dataFormat = this.dataType.getDefaultFormat(); // format 먼저
+                this.dataFormat = this.dataType.getDefaultFormat(); // apply format first
             }
             if (this.style == null) {
                 this.style = ExcelStyleSupporter.cellStyle(

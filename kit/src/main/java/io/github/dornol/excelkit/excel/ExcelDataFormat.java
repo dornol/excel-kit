@@ -15,13 +15,13 @@ public enum ExcelDataFormat {
     NUMBER("#,##0"),
 
     /** Number with 1 decimal place (e.g., 1,000.1) */
-    NUMBER_1("#,##0.0"),         // 소수점 1자리
+    NUMBER_1("#,##0.0"),         // 1 decimal place
 
     /** Number with 2 decimal places (e.g., 1,000.12) */
-    NUMBER_2("#,##0.00"),        // 소수점 2자리
+    NUMBER_2("#,##0.00"),        // 2 decimal places
 
     /** Number with 4 decimal places (e.g., 1,000.1234) */
-    NUMBER_4("#,##0.0000"),      // 소수점 4자리
+    NUMBER_4("#,##0.0000"),      // 4 decimal places
 
     /** Percent format with 2 decimal places (e.g., 12.34%) */
     PERCENT("0.00%"),

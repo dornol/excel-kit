@@ -76,9 +76,9 @@ class ExcelStyleSupporter {
         int g = Byte.toUnsignedInt(rgb[1]);
         int b = Byte.toUnsignedInt(rgb[2]);
 
-        // ✅ W3C 표준 밝기 공식 (Y = 0.299R + 0.587G + 0.114B)
+        // W3C brightness formula (Y = 0.299R + 0.587G + 0.114B)
         double luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-        return luminance < 128; // 밝기 기준: 0~255 중 128 미만은 어둡다고 판단
+        return luminance < 128; // threshold: below 128 out of 0-255 is considered dark
     }
 
     /**

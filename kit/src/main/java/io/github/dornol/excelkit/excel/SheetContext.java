@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
@@ -82,6 +83,39 @@ public class SheetContext {
      */
     public List<String> getColumnNames() {
         return columnNames;
+    }
+
+    /**
+     * Merges a rectangular region of cells identified by zero-based row and
+     * column indices.
+     *
+     * <p>Example – merge the first three columns of row 0:
+     * <pre>{@code ctx.mergeCells(0, 0, 0, 2);}</pre>
+     *
+     * @param firstRow zero-based index of the first row in the region
+     * @param lastRow  zero-based index of the last row in the region
+     * @param firstCol zero-based index of the first column in the region
+     * @param lastCol  zero-based index of the last column in the region
+     * @return this {@code SheetContext} for method chaining
+     */
+    public SheetContext mergeCells(int firstRow, int lastRow, int firstCol, int lastCol) {
+        sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+        return this;
+    }
+
+    /**
+     * Merges a rectangular region of cells identified by an Excel-style range
+     * string such as {@code "A1:C3"}.
+     *
+     * <p>Example – merge cells A1 through C1:
+     * <pre>{@code ctx.mergeCells("A1:C1");}</pre>
+     *
+     * @param cellRange an Excel-notation range (e.g. {@code "A1:C3"})
+     * @return this {@code SheetContext} for method chaining
+     */
+    public SheetContext mergeCells(String cellRange) {
+        sheet.addMergedRegion(CellRangeAddress.valueOf(cellRange));
+        return this;
     }
 
     /**

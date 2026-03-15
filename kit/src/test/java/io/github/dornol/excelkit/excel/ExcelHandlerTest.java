@@ -158,7 +158,7 @@ class ExcelHandlerTest {
         
         // Assert - attempting to use the workbook after it's closed should throw an exception
         assertThrows(IOException.class, () -> {
-            testWorkbook.write(outputStream); // 이미 close 후 재시도
+            testWorkbook.write(outputStream); // retry after already closed
         });
     }
 

@@ -21,8 +21,8 @@ import java.util.function.Supplier;
  * Define columns once and use them for both Excel/CSV reading and writing:
  * <pre>{@code
  * ExcelKitSchema<Person> schema = ExcelKitSchema.<Person>builder()
- *     .column("이름", Person::getName, (p, cell) -> p.setName(cell.asString()))
- *     .column("나이", Person::getAge, (p, cell) -> p.setAge(cell.asInt()),
+ *     .column("Name", Person::getName, (p, cell) -> p.setName(cell.asString()))
+ *     .column("Age", Person::getAge, (p, cell) -> p.setAge(cell.asInt()),
  *             c -> c.type(ExcelDataType.INTEGER))
  *     .build();
  *
