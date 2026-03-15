@@ -93,19 +93,17 @@ record Person(long id, String name, int age) {}
 
 var data = Stream.of(new Person(1, "Alice", 30), new Person(2, "Bob", 28));
 
-try (ExcelWriter<Person> writer = new ExcelWriter<>()) {
-    ExcelHandler handler = writer
-            .column("ID", p -> p.id())
-                .type(ExcelDataType.LONG)
-                .alignment(HorizontalAlignment.RIGHT)
-            .column("Name", p -> p.name())
-            .column("Age", p -> p.age())
-                .type(ExcelDataType.INTEGER)
-            .write(data);
+ExcelHandler handler = new ExcelWriter<Person>()
+        .column("ID", p -> p.id())
+            .type(ExcelDataType.LONG)
+            .alignment(HorizontalAlignment.RIGHT)
+        .column("Name", p -> p.name())
+        .column("Age", p -> p.age())
+            .type(ExcelDataType.INTEGER)
+        .write(data);
 
-    try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
-        handler.consumeOutputStream(os);
-    }
+try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
+    handler.consumeOutputStream(os);
 }
 ```
 

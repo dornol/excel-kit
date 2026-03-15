@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * @param <T> The data type of each row to be written into the Excel file
  * @since 2025-07-19
  */
-public class ExcelWriter<T> implements AutoCloseable {
+public class ExcelWriter<T> {
     private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
@@ -496,18 +496,4 @@ public class ExcelWriter<T> implements AutoCloseable {
         return cellStyleCache;
     }
 
-    /**
-     * Closes the underlying workbook, releasing any resources.
-     * <p>
-     * This is a safety net for cases where {@link #write(Stream)} is never called.
-     * If the workbook has already been consumed via {@link ExcelHandler}, this is a no-op.
-     */
-    @Override
-    public void close() {
-        try {
-            wb.close();
-        } catch (Exception e) {
-            log.debug("ExcelWriter.close() caught exception (likely already closed)", e);
-        }
-    }
 }
