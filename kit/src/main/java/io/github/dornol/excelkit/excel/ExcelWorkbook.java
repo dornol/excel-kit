@@ -110,7 +110,7 @@ public class ExcelWorkbook implements AutoCloseable {
         if (!usedSheetNames.add(name)) {
             throw new ExcelWriteException("Duplicate sheet name: " + name);
         }
-        return new ExcelSheetWriter<>(wb, wb.createSheet(name), headerStyle, cellStyleCache);
+        return new ExcelSheetWriter<>(wb, wb.createSheet(name), name, headerStyle, cellStyleCache, usedSheetNames);
     }
 
     /**

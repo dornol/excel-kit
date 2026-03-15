@@ -36,10 +36,13 @@ public class ExcelColumn<T> {
     private final int maxWidth;
     private final boolean fixedWidth;
     private final String[] dropdownOptions;
+    private final CellColorFunction<T> cellColorFunction;
+    private final String groupName;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter,
-                int minWidth, int maxWidth, boolean fixedWidth, String[] dropdownOptions) {
+                int minWidth, int maxWidth, boolean fixedWidth, String[] dropdownOptions,
+                CellColorFunction<T> cellColorFunction, String groupName) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -48,6 +51,8 @@ public class ExcelColumn<T> {
         this.maxWidth = maxWidth;
         this.fixedWidth = fixedWidth;
         this.dropdownOptions = dropdownOptions;
+        this.cellColorFunction = cellColorFunction;
+        this.groupName = groupName;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -134,6 +139,14 @@ public class ExcelColumn<T> {
         return dropdownOptions;
     }
 
+    CellColorFunction<T> getCellColorFunction() {
+        return cellColorFunction;
+    }
+
+    String getGroupName() {
+        return groupName;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -155,6 +168,8 @@ public class ExcelColumn<T> {
         private int maxWidthValue;
         private boolean fixedWidthValue;
         private String[] dropdownOptions;
+        private CellColorFunction<T> cellColorFunction;
+        private String groupName;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
             this.writer = writer;
@@ -278,6 +293,33 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets a per-cell conditional color function.
+         * <p>
+         * The function receives the resolved cell value and the row data, and returns
+         * an {@link ExcelColor} to apply as the cell background, or {@code null} for no override.
+         * Cell-level color takes precedence over row-level {@code rowColor}.
+         *
+         * @param cellColorFunction function to determine per-cell background color
+         */
+        public ExcelColumnBuilder<T> cellColor(CellColorFunction<T> cellColorFunction) {
+            this.cellColorFunction = cellColorFunction;
+            return this;
+        }
+
+        /**
+         * Sets the group header name for this column.
+         * <p>
+         * Adjacent columns with the same group name will share a merged group header row
+         * above the regular column header row.
+         *
+         * @param groupName the group header label
+         */
+        public ExcelColumnBuilder<T> group(String groupName) {
+            this.groupName = groupName;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -297,7 +339,8 @@ public class ExcelColumn<T> {
                 this.columnSetter = this.dataType.getSetter();
             }
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
-                    this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions);
+                    this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions,
+                    this.cellColorFunction, this.groupName);
         }
 
         /**
@@ -363,6 +406,14 @@ public class ExcelColumn<T> {
         public ExcelColumnBuilder<T> constColumn(String name, Object value) {
             this.writer.addColumn(this.build());
             return new ExcelColumnBuilder<>(writer, name, (r, c) -> value);
+        }
+
+        /**
+         * Finalizes the current column and registers a progress callback on the writer.
+         */
+        public ExcelWriter<T> onProgress(int interval, ProgressCallback callback) {
+            this.writer.addColumn(this.build());
+            return this.writer.onProgress(interval, callback);
         }
 
         /**

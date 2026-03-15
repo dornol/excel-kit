@@ -45,6 +45,8 @@ public class ExcelWriter<T> implements AutoCloseable {
     private Function<T, ExcelColor> rowColorFunction;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private int headerRowIndex;
+    private ProgressCallback progressCallback;
+    private int progressInterval;
 
     private SXSSFSheet sheet;
     private Cursor cursor;
@@ -256,6 +258,22 @@ public class ExcelWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Registers a progress callback that fires every {@code interval} rows.
+     *
+     * @param interval the number of rows between each callback invocation (must be positive)
+     * @param callback the callback to invoke
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> onProgress(int interval, ProgressCallback callback) {
+        if (interval <= 0) {
+            throw new IllegalArgumentException("progress interval must be positive");
+        }
+        this.progressInterval = interval;
+        this.progressCallback = callback;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -414,6 +432,7 @@ public class ExcelWriter<T> implements AutoCloseable {
         }
         ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, rowHeightInPoints,
                 rowColorFunction, rowStyleCache, wb);
+        ExcelWriteSupport.checkProgress(cursor, progressInterval, progressCallback);
     }
 
     /**
