@@ -335,9 +335,25 @@ public class ExcelReader<T> {
         }
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExcelReader.class);
+
     private static void cleanupTemp(Path tempDir, Path tempFile) {
-        try { if (tempFile != null) Files.deleteIfExists(tempFile); } catch (IOException ignored) {}
-        try { if (tempDir != null) Files.deleteIfExists(tempDir); } catch (IOException ignored) {}
+        if (tempFile != null) {
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (IOException e) {
+                log.warn("Failed to delete temp file: {}", tempFile, e);
+                tempFile.toFile().deleteOnExit();
+            }
+        }
+        if (tempDir != null) {
+            try {
+                Files.deleteIfExists(tempDir);
+            } catch (IOException e) {
+                log.warn("Failed to delete temp dir: {}", tempDir, e);
+                tempDir.toFile().deleteOnExit();
+            }
+        }
     }
 
     /**

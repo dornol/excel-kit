@@ -3,6 +3,8 @@ package io.github.dornol.excelkit.csv;
 import io.github.dornol.excelkit.shared.Cursor;
 import io.github.dornol.excelkit.shared.TempResourceCreator;
 import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -32,6 +34,7 @@ import java.util.stream.Stream;
  * @since 2025-07-19
  */
 public class CsvWriter<T> {
+    private static final Logger log = LoggerFactory.getLogger(CsvWriter.class);
     private final List<CsvColumn<T>> columns = new ArrayList<>();
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
@@ -204,10 +207,17 @@ public class CsvWriter<T> {
             try (var files = Files.walk(tempDir)) {
                 files.sorted(java.util.Comparator.reverseOrder())
                         .forEach(path -> {
-                            try { Files.deleteIfExists(path); } catch (IOException ignored) { }
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException e) {
+                                log.warn("Failed to delete temp path: {}", path, e);
+                                path.toFile().deleteOnExit();
+                            }
                         });
             }
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            log.warn("Failed to walk temp dir for cleanup: {}", tempDir, e);
+            tempDir.toFile().deleteOnExit();
         }
     }
 

@@ -1118,6 +1118,33 @@ ExcelHandler handler = writer.write(flux.toStream());
 - Calling `consumeOutputStream` on an already-consumed handler throws the corresponding `WriteException`.
 - Empty password on encrypted export throws `IllegalArgumentException`.
 
+## Security & Resource Management
+
+### Temporary File Handling
+
+The library creates temporary files during read and write operations (e.g., SAX-based Excel parsing, password encryption, CSV export). All temporary resources are managed with the following guarantees:
+
+- **Secure creation:** On POSIX systems, temp directories are created with `rwx------` (owner-only) permissions. On Windows, ACLs are restricted to the current user.
+- **Automatic cleanup:** Temp files and directories are deleted immediately after each operation completes (success or failure).
+- **Fallback on failure:** If immediate deletion fails (e.g., Windows file lock), the library logs a warning and registers `deleteOnExit()` so the JVM cleans up on shutdown.
+- **UUID-based naming:** Temp files use UUID-based names to prevent path prediction.
+
+### Password Encryption
+
+- Uses Apache POI's **Agile encryption mode** (AES-256, modern Excel standard).
+- The `char[]` password overload zeroes the array after use to minimize password exposure in memory.
+- Encryption uses a two-stage write (workbook → temp file → encrypted output) to keep memory usage low.
+
+> **Note:** Excel sheet protection (`protectSheet()`) is a UI-level deterrent, not cryptographic security. It prevents casual editing but can be bypassed by tools. Use file-level password encryption (`consumeOutputStreamWithPassword`) for actual data protection.
+
+### CSV Injection Defense
+
+`CsvWriter` automatically defends against CSV formula injection by prefixing dangerous leading characters (`=`, `+`, `-`, `@`, `\t`, `\r`) with a single quote (`'`). This prevents malicious payloads from being executed when the CSV is opened in spreadsheet applications.
+
+### Formula Columns
+
+`ExcelDataType.FORMULA` writes cell values as Excel formulas via `setCellFormula()`. This type is intended for developer-controlled formula strings (e.g., `SUM(A2:A100)`). Do **not** pass untrusted user input as formula values — use `ExcelDataType.STRING` for user-supplied data instead.
+
 ## Requirements
 
 - **JDK 17+**

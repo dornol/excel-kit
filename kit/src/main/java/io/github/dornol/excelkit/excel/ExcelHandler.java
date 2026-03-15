@@ -8,6 +8,9 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jspecify.annotations.NonNull;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @since 2025-07-19
  */
 public class ExcelHandler {
+    private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
     private final SXSSFWorkbook wb;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
@@ -132,8 +136,18 @@ public class ExcelHandler {
             }
         } finally {
             // Clean up temp resources
-            try { Files.deleteIfExists(tempFile); } catch (IOException ignored) { }
-            try { Files.deleteIfExists(tempDir); } catch (IOException ignored) { }
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (IOException e) {
+                log.warn("Failed to delete temp file: {}", tempFile, e);
+                tempFile.toFile().deleteOnExit();
+            }
+            try {
+                Files.deleteIfExists(tempDir);
+            } catch (IOException e) {
+                log.warn("Failed to delete temp dir: {}", tempDir, e);
+                tempDir.toFile().deleteOnExit();
+            }
         }
     }
 
