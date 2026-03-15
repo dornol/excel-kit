@@ -49,6 +49,7 @@ public class ExcelSheetWriter<T> {
     private int progressInterval;
     private int maxRows = Integer.MAX_VALUE;
     private Function<Integer, String> sheetNameFunction;
+    private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -226,6 +227,21 @@ public class ExcelSheetWriter<T> {
     }
 
     /**
+     * Sets the number of rows sampled for auto column width calculation.
+     * Defaults to 100. Set to 0 to disable.
+     *
+     * @param rows number of rows to sample
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> autoWidthSampleRows(int rows) {
+        if (rows < 0) {
+            throw new IllegalArgumentException("autoWidthSampleRows must be non-negative");
+        }
+        this.autoWidthSampleRows = rows;
+        return this;
+    }
+
+    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      */
     public void write(Stream<T> stream) {
@@ -267,7 +283,7 @@ public class ExcelSheetWriter<T> {
                     ExcelWriteSupport.applySheetOptions(currentSheet[0], hdrIdx, autoFilter, freezePaneRows, columns.size());
                 }
                 ExcelWriteSupport.writeRowCells(currentSheet[0], cursor, rowData, columns, rowHeightInPoints,
-                        rowColorFunction, rowStyleCache, wb);
+                        rowColorFunction, rowStyleCache, wb, autoWidthSampleRows);
                 ExcelWriteSupport.checkProgress(cursor, progressInterval, progressCallback);
             });
         }

@@ -6,6 +6,8 @@ import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.util.IOUtils;
 import org.jspecify.annotations.NonNull;
 
+import io.github.dornol.excelkit.shared.ProgressCallback;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +36,8 @@ public class ExcelReader<T> {
     private final Validator validator;
     private int sheetIndex = 0;
     private int headerRowIndex = 0;
+    private ProgressCallback progressCallback;
+    private int progressInterval;
 
     /**
      * Configures Apache POI's internal limits for reading large Excel files.
@@ -207,12 +211,29 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Registers a progress callback that fires every {@code interval} rows during reading.
+     *
+     * @param interval the number of rows between each callback invocation (must be positive)
+     * @param callback the callback to invoke
+     * @return This ExcelReader instance for chaining
+     */
+    public ExcelReader<T> onProgress(int interval, ProgressCallback callback) {
+        if (interval <= 0) {
+            throw new IllegalArgumentException("progress interval must be positive");
+        }
+        this.progressInterval = interval;
+        this.progressCallback = callback;
+        return this;
+    }
+
+    /**
      * Finalizes the configuration and builds an {@link ExcelReadHandler} for parsing the given Excel stream.
      *
      * @param inputStream The input stream of the Excel file
      * @return A handler to execute Excel parsing
      */
     public ExcelReadHandler<T> build(@NonNull InputStream inputStream) {
-        return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex);
+        return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
+                sheetIndex, headerRowIndex, progressInterval, progressCallback);
     }
 }

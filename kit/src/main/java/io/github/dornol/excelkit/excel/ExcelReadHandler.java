@@ -52,6 +52,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final List<ExcelReadColumn<T>> columns;
     private final int sheetIndex;
     private final int headerRowIndex;
+    private final int progressInterval;
+    private final io.github.dornol.excelkit.shared.ProgressCallback progressCallback;
 
     /**
      * Constructs a handler for reading the first sheet of an Excel file.
@@ -62,7 +64,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param validator        Optional bean validator for validating mapped instances
      */
     ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0, 0);
+        this(inputStream, columns, instanceSupplier, validator, 0, 0, 0, null);
     }
 
     /**
@@ -75,7 +77,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param sheetIndex       The zero-based index of the sheet to read
      */
     ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, 0);
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, 0, 0, null);
     }
 
     /**
@@ -89,6 +91,12 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param headerRowIndex   The zero-based index of the header row (rows before this are skipped)
      */
     ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex, int headerRowIndex) {
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, 0, null);
+    }
+
+    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                     Validator validator, int sheetIndex, int headerRowIndex,
+                     int progressInterval, io.github.dornol.excelkit.shared.ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".xlsx");
         if (columns == null || columns.isEmpty()) {
             throw new IllegalArgumentException("Columns cannot be null or empty");
@@ -102,6 +110,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         this.columns = columns;
         this.sheetIndex = sheetIndex;
         this.headerRowIndex = headerRowIndex;
+        this.progressInterval = progressInterval;
+        this.progressCallback = progressCallback;
     }
 
     /**
@@ -229,6 +239,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private final Consumer<ReadResult<T>> consumer;
         private List<String> messages;
         private int[] resolvedIndices;
+        private long dataRowCount;
 
         public SheetHandler(Consumer<ReadResult<T>> consumer) {
             this.consumer = consumer;
@@ -265,6 +276,12 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
 
             consumer.accept(new ReadResult<>(currentInstance, validationSuccess, messages));
+
+            dataRowCount++;
+            if (progressCallback != null && progressInterval > 0
+                    && dataRowCount % progressInterval == 0) {
+                progressCallback.onProgress(dataRowCount, null);
+            }
         }
 
         /**

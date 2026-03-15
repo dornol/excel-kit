@@ -84,11 +84,13 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @throws ReadAbortException if any row fails validation or mapping
      */
     public void readStrict(Consumer<T> consumer) {
+        final long[] rowNum = {0};
         read(result -> {
+            rowNum[0]++;
             if (!result.success()) {
                 String detail = (result.messages() != null && !result.messages().isEmpty())
                         ? String.join("; ", result.messages()) : "Unknown error";
-                throw new ReadAbortException("Row read failed: " + detail);
+                throw new ReadAbortException("Row " + rowNum[0] + " read failed: " + detail);
             }
             consumer.accept(result.data());
         });

@@ -120,6 +120,14 @@ public record ExcelReadColumn<T>(String headerName, int columnIndex, BiConsumer<
             return this.reader.build(inputStream);
         }
 
+        /**
+         * Registers a progress callback and returns the parent reader.
+         */
+        public ExcelReader<T> onProgress(int interval, io.github.dornol.excelkit.shared.ProgressCallback callback) {
+            buildCurrentAndAddToReader();
+            return this.reader.onProgress(interval, callback);
+        }
+
         private void buildCurrentAndAddToReader() {
             this.reader.addColumn(new ExcelReadColumn<>(this.headerName, this.columnIndex, this.setter));
         }
