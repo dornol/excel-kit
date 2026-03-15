@@ -816,6 +816,14 @@ new CsvReader<>(Row::new, null)
 ./gradlew test
 ```
 
+## CI/CD
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| **CI** | Push to `main`, Pull requests | Build + test |
+| **Release** | Tag push (`*.*.*`) | Build, test, create GitHub Release with auto-generated notes |
+| **Maven Publish** | Tag push (`*.*.*`) | Publish to Maven Central |
+
 ## License
 
 MIT License. See [LICENSE](./LICENSE) for details.
