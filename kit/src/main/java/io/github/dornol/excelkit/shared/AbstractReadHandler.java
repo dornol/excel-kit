@@ -131,6 +131,41 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     /**
+     * Resolves column indices based on headerName, columnIndex, or positional order.
+     *
+     * @param columnCount   number of columns to resolve
+     * @param headerNameFn  function to get headerName for column i (may return null)
+     * @param columnIndexFn function to get explicit columnIndex for column i (-1 if not set)
+     * @param headerNames   the header names from the file
+     * @param errorPrefix   prefix for error messages (e.g., "sheet" or "CSV")
+     * @return resolved index array
+     */
+    protected int[] resolveColumnIndices(int columnCount,
+                                          java.util.function.IntFunction<String> headerNameFn,
+                                          java.util.function.IntUnaryOperator columnIndexFn,
+                                          List<String> headerNames, String errorPrefix) {
+        int[] indices = new int[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            int explicitIndex = columnIndexFn.applyAsInt(i);
+            if (explicitIndex >= 0) {
+                indices[i] = explicitIndex;
+            } else {
+                String headerName = headerNameFn.apply(i);
+                if (headerName != null) {
+                    int idx = headerNames.indexOf(headerName);
+                    if (idx < 0) {
+                        throw new ExcelKitException("Header '" + headerName + "' not found in " + errorPrefix + ". Available headers: " + headerNames);
+                    }
+                    indices[i] = idx;
+                } else {
+                    indices[i] = i;
+                }
+            }
+        }
+        return indices;
+    }
+
+    /**
      * Maps a single column value to the instance, handling exceptions.
      *
      * @param setter      The setter to apply

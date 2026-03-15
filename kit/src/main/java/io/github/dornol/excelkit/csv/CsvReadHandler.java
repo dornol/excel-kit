@@ -28,8 +28,6 @@ import java.util.stream.StreamSupport;
 
 /**
  * Reads CSV files and maps rows to Java objects.
- * <p>
- * Stores the input stream as a temporary file and uses OpenCSV for parsing.
  *
  * @param <T> The target row data type
  * @author dhkim
@@ -65,44 +63,17 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         this.charset = charset;
     }
 
-    /**
-     * Reads the CSV file and invokes the given consumer for each row result.
-     *
-     * @param consumer Callback to receive parsed and validated row results
-     */
     @Override
     public void read(@NonNull Consumer<ReadResult<T>> consumer) {
         try (CSVReader reader = buildCsvReader()) {
-            for (int i = 0; i < headerRowIndex; i++) {
-                if (reader.readNext() == null) {
-                    throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
-                }
-            }
-            String[] headerLine = reader.readNext();
-            if (headerLine == null) {
-                throw new CsvReadException("CSV file is empty or missing header row");
-            }
+            skipToHeader(reader);
+            String[] headerLine = readHeaderLine(reader);
             prepareColumnHeaders(headerLine);
-            int[] resolvedIndices = resolveColumnIndices();
+            int[] resolvedIndices = resolveIndices();
 
             String[] line;
-
             while ((line = reader.readNext()) != null) {
-                T currentInstance = instanceSupplier.get();
-                boolean success = true;
-                List<String> messages = new ArrayList<>();
-
-                for (int i = 0; i < columns.size(); i++) {
-                    int actualIndex = resolvedIndices[i];
-                    String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
-                    if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(actualIndex, columnValue),
-                            actualIndex, headerNames, messages)) {
-                        success = false;
-                    }
-                }
-
-                boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
-                consumer.accept(new ReadResult<>(currentInstance, validationSuccess, messages));
+                consumer.accept(processRow(line, resolvedIndices));
             }
         } catch (CsvReadException e) {
             throw e;
@@ -119,19 +90,14 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     public Stream<ReadResult<T>> readAsStream() {
         try {
             CSVReader reader = buildCsvReader();
-            for (int i = 0; i < headerRowIndex; i++) {
-                if (reader.readNext() == null) {
-                    closeQuietly(reader);
-                    throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
-                }
-            }
-            String[] headerLine = reader.readNext();
+            skipToHeader(reader);
+            String[] headerLine = readHeaderLine(reader);
             if (headerLine == null) {
                 closeQuietly(reader);
                 throw new CsvReadException("CSV file is empty or missing header row");
             }
             prepareColumnHeaders(headerLine);
-            int[] resolvedIndices = resolveColumnIndices();
+            int[] resolvedIndices = resolveIndices();
 
             Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
                     Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
@@ -144,21 +110,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                             close();
                             return false;
                         }
-                        T currentInstance = instanceSupplier.get();
-                        boolean success = true;
-                        List<String> messages = new ArrayList<>();
-
-                        for (int i = 0; i < columns.size(); i++) {
-                            int actualIndex = resolvedIndices[i];
-                            String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
-                            if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(actualIndex, columnValue),
-                                    actualIndex, headerNames, messages)) {
-                                success = false;
-                            }
-                        }
-
-                        boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
-                        action.accept(new ReadResult<>(currentInstance, validationSuccess, messages));
+                        action.accept(processRow(line, resolvedIndices));
                         return true;
                     } catch (Exception e) {
                         closeQuietly(reader);
@@ -182,6 +134,49 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
+    private ReadResult<T> processRow(String[] line, int[] resolvedIndices) {
+        T currentInstance = instanceSupplier.get();
+        boolean success = true;
+        List<String> messages = new ArrayList<>();
+
+        for (int i = 0; i < columns.size(); i++) {
+            int actualIndex = resolvedIndices[i];
+            String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
+            if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(actualIndex, columnValue),
+                    actualIndex, headerNames, messages)) {
+                success = false;
+            }
+        }
+
+        boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
+        return new ReadResult<>(currentInstance, validationSuccess, messages);
+    }
+
+    private void skipToHeader(CSVReader reader) throws Exception {
+        for (int i = 0; i < headerRowIndex; i++) {
+            if (reader.readNext() == null) {
+                throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
+            }
+        }
+    }
+
+    private String[] readHeaderLine(CSVReader reader) throws Exception {
+        String[] headerLine = reader.readNext();
+        if (headerLine == null) {
+            throw new CsvReadException("CSV file is empty or missing header row");
+        }
+        return headerLine;
+    }
+
+    private int[] resolveIndices() {
+        return resolveColumnIndices(
+                columns.size(),
+                i -> columns.get(i).headerName(),
+                i -> columns.get(i).columnIndex(),
+                headerNames, "CSV"
+        );
+    }
+
     private void closeQuietly(CSVReader reader) {
         try {
             reader.close();
@@ -193,25 +188,6 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         CSVParser csvParser = new CSVParserBuilder().withSeparator(this.delimiter).build();
         return new CSVReaderBuilder(new InputStreamReader(Files.newInputStream(getTempFile()), this.charset))
                 .withCSVParser(csvParser).build();
-    }
-
-    private int[] resolveColumnIndices() {
-        int[] indices = new int[columns.size()];
-        for (int i = 0; i < columns.size(); i++) {
-            CsvReadColumn<T> col = columns.get(i);
-            if (col.columnIndex() >= 0) {
-                indices[i] = col.columnIndex();
-            } else if (col.headerName() != null) {
-                int idx = headerNames.indexOf(col.headerName());
-                if (idx < 0) {
-                    throw new CsvReadException("Header '" + col.headerName() + "' not found in CSV. Available headers: " + headerNames);
-                }
-                indices[i] = idx;
-            } else {
-                indices[i] = i;
-            }
-        }
-        return indices;
     }
 
     private void prepareColumnHeaders(String[] line) {

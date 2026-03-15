@@ -292,21 +292,12 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          * Resolves named columns to their actual indices based on header names.
          */
         private void resolveColumnIndices() {
-            resolvedIndices = new int[columns.size()];
-            for (int i = 0; i < columns.size(); i++) {
-                ExcelReadColumn<T> col = columns.get(i);
-                if (col.columnIndex() >= 0) {
-                    resolvedIndices[i] = col.columnIndex();
-                } else if (col.headerName() != null) {
-                    int idx = headerNames.indexOf(col.headerName());
-                    if (idx < 0) {
-                        throw new ExcelReadException("Header '" + col.headerName() + "' not found in sheet. Available headers: " + headerNames);
-                    }
-                    resolvedIndices[i] = idx;
-                } else {
-                    resolvedIndices[i] = i;
-                }
-            }
+            resolvedIndices = ExcelReadHandler.this.resolveColumnIndices(
+                    columns.size(),
+                    i -> columns.get(i).headerName(),
+                    i -> columns.get(i).columnIndex(),
+                    headerNames, "sheet"
+            );
         }
 
         /**
