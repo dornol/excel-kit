@@ -324,7 +324,59 @@ public class ShowcaseController {
     }
 
     // ========================================================================
-    // 9. Full showcase - everything combined
+    // 9. Column outline - expand/collapse column groups
+    // ========================================================================
+    @GetMapping("/outline")
+    public ResponseEntity<StreamingResponseBody> downloadOutline() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.GOLD)
+                .sheetName("Outline Demo")
+                .autoFilter(true)
+                .freezePane(1)
+                .column("Name", ProductDto::name)
+                .column("Category", ProductDto::category)
+                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER)
+                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat()).outline(1)
+                .column("Quantity", ProductDto::quantity).type(ExcelDataType.INTEGER).outline(1)
+                .column("Discount", ProductDto::discount).type(ExcelDataType.DOUBLE_PERCENT).outline(1)
+                .column("URL", ProductDto::url).type(ExcelDataType.HYPERLINK).outline(2)
+                .column("Summary", p -> "%s (%s)".formatted(p.name(), p.category()))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("outline-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 10. columnAt - index-based reading
+    // ========================================================================
+    @PostMapping("/read-by-index")
+    @ResponseBody
+    public String readByIndex(MultipartFile file) throws IOException {
+        List<ProductReadDto> results = new ArrayList<>();
+
+        try (InputStream is = file.getInputStream()) {
+            // Read only Name (col 0), Price (col 2), Discount (col 4) by index
+            new ExcelReader<>(ProductReadDto::new, null)
+                    .columnAt(0, (p, cell) -> p.setName(cell.asString()))
+                    .columnAt(2, (p, cell) -> p.setPrice(cell.asInt()))
+                    .columnAt(4, (p, cell) -> p.setDiscount(cell.asDouble()))
+                    .build(is)
+                    .read(result -> {
+                        if (result.success()) results.add(result.data());
+                    });
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Index-Based Read Result ===\n");
+        sb.append("Read %d rows (cols 0, 2, 4 only)\n\n".formatted(results.size()));
+        results.forEach(p -> sb.append(p).append("\n"));
+
+        log.info("Read by index: {} rows", results.size());
+        return sb.toString();
+    }
+
+    // ========================================================================
+    // 11. Full showcase - everything combined
     // ========================================================================
     @GetMapping("/full")
     public ResponseEntity<StreamingResponseBody> downloadFullShowcase() {

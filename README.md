@@ -20,6 +20,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Formula columns (`ExcelDataType.FORMULA`) for computed values
 - Hyperlink columns (`ExcelDataType.HYPERLINK`) for clickable URLs
 - Group headers — merged multi-row headers for column grouping
+- Column outline — expand/collapse column groups via `outline()`
 - Explicit multi-sheet workbook with different data types per sheet (`ExcelWorkbook`)
 - Auto-rollover for `ExcelSheetWriter` via `maxRows()`
 - Progress callback via `onProgress()` for large dataset monitoring
@@ -28,6 +29,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
+- Index-based column mapping via `columnAt()` — read specific columns by index
 - Positional column mapping with skip support
 - Configurable header row index and sheet index
 - Optional Bean Validation integration with per-row results
@@ -42,6 +44,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 
 **CSV Reading** (OpenCSV-based)
 - Header name-based column mapping — columns matched by header name, order-independent
+- Index-based column mapping via `columnAt()`
 - Header auto-detection with BOM removal
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
@@ -215,6 +218,36 @@ new ExcelReader<>(User::new, null)
 ```
 
 > **Positional mapping** (existing behavior) — use `column(BiConsumer)` without a header name.
+
+### Index-Based Column Mapping (Reading)
+
+Map columns by explicit 0-based index — no need for `skipColumn()` chains:
+
+```java
+// Read only columns 0, 2, and 4 directly
+new ExcelReader<>(User::new, null)
+        .columnAt(0, (u, cell) -> u.name = cell.asString())
+        .columnAt(2, (u, cell) -> u.city = cell.asString())
+        .columnAt(4, (u, cell) -> u.phone = cell.asString())
+        .build(inputStream);
+```
+
+Can be mixed with name-based and positional mapping:
+
+```java
+new ExcelReader<>(User::new, null)
+        .column("Name", (u, cell) -> u.name = cell.asString())  // by name
+        .columnAt(3, (u, cell) -> u.age = cell.asInt())          // by index
+        .build(inputStream);
+```
+
+Also available for CSV:
+```java
+new CsvReader<>(User::new, null)
+        .columnAt(0, (u, cell) -> u.name = cell.asString())
+        .columnAt(2, (u, cell) -> u.city = cell.asString())
+        .build(inputStream);
+```
 
 ### Formula Columns
 
@@ -394,6 +427,30 @@ workbook.<Item>sheet("Report")
     .write(stream);
 ```
 
+### Column Outline (Grouping)
+
+Group columns so they can be collapsed/expanded in Excel:
+
+```java
+writer
+    .column("Name", p -> p.name())
+    .column("Detail1", p -> p.detail1()).outline(1)
+    .column("Detail2", p -> p.detail2()).outline(1)
+    .column("Detail3", p -> p.detail3()).outline(1)
+    .column("Summary", p -> p.summary())
+    .write(data);
+```
+
+Adjacent columns with the same outline level are grouped together. Supports levels 1–7.
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Report")
+    .column("Detail", Item::getDetail, c -> c.outline(1))
+    .column("Detail2", Item::getDetail2, c -> c.outline(1))
+    .write(stream);
+```
+
 ### Progress Callback
 
 Monitor progress during large dataset writes:
@@ -528,7 +585,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`
 - `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `onProgress()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:

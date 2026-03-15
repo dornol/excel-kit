@@ -64,7 +64,12 @@
 </div>
 
 <div class="section">
-    <p><strong>Full Showcase</strong> - All features: formula, hyperlink, cellColor, group header, callbacks, dropdown, rowColor</p>
+    <p><strong>Outline</strong> - Column grouping with expand/collapse (outline level 1, 2)</p>
+    <a href="/showcase/outline" target="_blank"><button class="showcase">Download Outline Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Full Showcase</strong> - All features: formula, hyperlink, cellColor, group header, outline, callbacks, dropdown, rowColor</p>
     <a href="/showcase/full" target="_blank"><button class="showcase">Download Full Showcase</button></a>
 </div>
 
@@ -77,6 +82,10 @@
     <form action="/showcase/read-by-name-csv" method="POST" enctype="multipart/form-data" target="_blank">
         <input type="file" name="file" accept=".csv" required>
         <button type="submit" class="upload">Upload CSV (Name-Based Read)</button>
+    </form>
+    <form action="/showcase/read-by-index" method="POST" enctype="multipart/form-data" target="_blank">
+        <input type="file" name="file" accept=".xlsx" required>
+        <button type="submit" class="upload">Upload Excel (Index-Based Read)</button>
     </form>
 </div>
 
