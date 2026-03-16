@@ -55,6 +55,7 @@ public class ExcelSheetWriter<T> {
     private @Nullable String sheetPassword;
     private @Nullable List<ExcelConditionalRule> conditionalRules;
     private @Nullable ExcelChartConfig chartConfig;
+    private @Nullable ExcelPrintSetup printSetup;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -287,6 +288,21 @@ public class ExcelSheetWriter<T> {
     }
 
     /**
+     * Configures print setup (page layout) for the sheet(s).
+     * <p>
+     * Controls orientation, paper size, margins, headers/footers, repeat rows, and fit-to-page.
+     *
+     * @param configurer consumer to configure the print setup
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> printSetup(Consumer<ExcelPrintSetup> configurer) {
+        ExcelPrintSetup config = new ExcelPrintSetup();
+        configurer.accept(config);
+        this.printSetup = config;
+        return this;
+    }
+
+    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      */
     public void write(Stream<T> stream) {
@@ -342,8 +358,10 @@ public class ExcelSheetWriter<T> {
             ExcelWriteSupport.applyColumnWidths(s, columns);
             ExcelWriteSupport.applyDataValidations(s, columns, headerRowIndex);
             ExcelWriteSupport.applyColumnOutline(s, columns);
+            ExcelWriteSupport.applyColumnHidden(s, columns);
             ExcelWriteSupport.applySheetProtection(s, sheetPassword);
             ExcelWriteSupport.applyConditionalFormatting(s, conditionalRules, headerRowIndex, columns.size());
+            ExcelWriteSupport.applyPrintSetup(s, printSetup, headerRowIndex);
         }
 
         // Apply chart on last sheet
@@ -383,6 +401,7 @@ public class ExcelSheetWriter<T> {
         Function<T, String> commentFunction = null;
         ExcelBorderStyle borderStyle = null;
         Boolean locked = null;
+        boolean hidden = false;
 
         if (config != null) {
             if (config.dataType != null) dataType = config.dataType;
@@ -401,6 +420,7 @@ public class ExcelSheetWriter<T> {
             commentFunction = config.commentFunction;
             borderStyle = config.borderStyle;
             locked = config.locked;
+            hidden = config.hidden;
         }
 
         if (dataFormat == null) {
@@ -413,7 +433,7 @@ public class ExcelSheetWriter<T> {
 
         return new ExcelColumn<>(name, function, style, setter, minWidth, maxWidth, fixedWidth,
                 dropdownOptions, cellColorFunction, groupName, outlineLevel,
-                commentFunction, borderStyle, locked);
+                commentFunction, borderStyle, locked, hidden);
     }
 
     /**
@@ -438,6 +458,7 @@ public class ExcelSheetWriter<T> {
         private @Nullable Function<T, @Nullable String> commentFunction;
         private @Nullable ExcelBorderStyle borderStyle;
         private @Nullable Boolean locked;
+        private boolean hidden;
 
         public ColumnConfig<T> type(ExcelDataType dataType) {
             this.dataType = dataType;
@@ -548,6 +569,24 @@ public class ExcelSheetWriter<T> {
          */
         public ColumnConfig<T> locked(boolean locked) {
             this.locked = locked;
+            return this;
+        }
+
+        /**
+         * Marks this column as hidden in the Excel output.
+         */
+        public ColumnConfig<T> hidden() {
+            this.hidden = true;
+            return this;
+        }
+
+        /**
+         * Sets whether this column should be hidden in the Excel output.
+         *
+         * @param hidden whether the column should be hidden
+         */
+        public ColumnConfig<T> hidden(boolean hidden) {
+            this.hidden = hidden;
             return this;
         }
     }

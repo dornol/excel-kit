@@ -53,6 +53,7 @@ public class ExcelWriter<T> {
     private @Nullable String sheetPassword;
     private @Nullable List<ExcelConditionalRule> conditionalRules;
     private @Nullable ExcelChartConfig chartConfig;
+    private @Nullable ExcelPrintSetup printSetup;
 
     private @Nullable SXSSFSheet sheet;
     private @Nullable Cursor cursor;
@@ -341,6 +342,21 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Configures print setup (page layout) for all sheets.
+     * <p>
+     * Controls orientation, paper size, margins, headers/footers, repeat rows, and fit-to-page.
+     *
+     * @param configurer consumer to configure the print setup
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> printSetup(Consumer<ExcelPrintSetup> configurer) {
+        ExcelPrintSetup config = new ExcelPrintSetup();
+        configurer.accept(config);
+        this.printSetup = config;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -497,6 +513,7 @@ public class ExcelWriter<T> {
         applyColumnWidthAllSheets();
         applyProtectionAllSheets();
         applyConditionalFormattingAllSheets();
+        applyPrintSetupAllSheets();
 
         // Apply chart on last sheet
         if (chartConfig != null) {
@@ -582,6 +599,7 @@ public class ExcelWriter<T> {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
             ExcelWriteSupport.applyColumnWidths(wb.getSheetAt(i), columns);
             ExcelWriteSupport.applyColumnOutline(wb.getSheetAt(i), columns);
+            ExcelWriteSupport.applyColumnHidden(wb.getSheetAt(i), columns);
         }
     }
 
@@ -613,6 +631,17 @@ public class ExcelWriter<T> {
             for (int i = 0; i < wb.getNumberOfSheets(); i++) {
                 ExcelWriteSupport.applyConditionalFormatting(
                         wb.getSheetAt(i), conditionalRules, headerRowIndex, columns.size());
+            }
+        }
+    }
+
+    /**
+     * Applies print setup configuration to all sheets.
+     */
+    private void applyPrintSetupAllSheets() {
+        if (printSetup != null) {
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+                ExcelWriteSupport.applyPrintSetup(wb.getSheetAt(i), printSetup, headerRowIndex);
             }
         }
     }

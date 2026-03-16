@@ -46,12 +46,14 @@ public class ExcelColumn<T> {
     private final @Nullable Function<T, @Nullable String> commentFunction;
     private final @Nullable ExcelBorderStyle borderStyle;
     private final @Nullable Boolean locked;
+    private final boolean hidden;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, @Nullable Object> function, CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
-                @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked) {
+                @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
+                boolean hidden) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -66,6 +68,7 @@ public class ExcelColumn<T> {
         this.commentFunction = commentFunction;
         this.borderStyle = borderStyle;
         this.locked = locked;
+        this.hidden = hidden;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -176,6 +179,10 @@ public class ExcelColumn<T> {
         return locked;
     }
 
+    boolean isHidden() {
+        return hidden;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -203,6 +210,7 @@ public class ExcelColumn<T> {
         private @Nullable Function<T, @Nullable String> commentFunction;
         private @Nullable ExcelBorderStyle borderStyle;
         private @Nullable Boolean locked;
+        private boolean hiddenValue;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, @Nullable Object> function) {
             this.writer = writer;
@@ -407,6 +415,24 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Marks this column as hidden in the Excel output.
+         */
+        public ExcelColumnBuilder<T> hidden() {
+            this.hiddenValue = true;
+            return this;
+        }
+
+        /**
+         * Sets whether this column should be hidden in the Excel output.
+         *
+         * @param hidden whether the column should be hidden
+         */
+        public ExcelColumnBuilder<T> hidden(boolean hidden) {
+            this.hiddenValue = hidden;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -429,7 +455,7 @@ public class ExcelColumn<T> {
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
                     this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions,
                     this.cellColorFunction, this.groupName, this.outlineLevel,
-                    this.commentFunction, this.borderStyle, this.locked);
+                    this.commentFunction, this.borderStyle, this.locked, this.hiddenValue);
         }
 
         /**

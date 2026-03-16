@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.excel;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Hyperlink;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import org.jspecify.annotations.Nullable;
 
@@ -140,6 +141,21 @@ public enum ExcelDataType {
         anchor.setCol2(cell.getColumnIndex() + 1);
         anchor.setRow2(cell.getRowIndex() + 1);
         drawing.createPicture(anchor, pictureIdx);
+    }, null),
+
+    /**
+     * Rich text type. Creates a cell with mixed formatting (partial bold, italic, colors, etc.).
+     * <p>
+     * Accepts an {@link ExcelRichText} instance built using its fluent API.
+     * If the value is not an {@code ExcelRichText}, it falls back to {@code String.valueOf(value)}.
+     */
+    RICH_TEXT((cell, value) -> {
+        if (value instanceof ExcelRichText rt) {
+            SXSSFWorkbook wb = (SXSSFWorkbook) cell.getSheet().getWorkbook();
+            cell.setCellValue(rt.toRichTextString(wb, ExcelRichText.getFontCache(wb)));
+        } else {
+            cell.setCellValue(String.valueOf(value));
+        }
     }, null)
     ;
 

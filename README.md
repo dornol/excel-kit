@@ -21,6 +21,9 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Hyperlink columns (`ExcelDataType.HYPERLINK`) for clickable URLs
 - Group headers — merged multi-row headers for column grouping
 - Column outline — expand/collapse column groups via `outline()`
+- Column hiding via `hidden()` — hide columns in the output while still writing data
+- Rich text via `ExcelDataType.RICH_TEXT` — mixed formatting (bold, italic, colors) within a single cell
+- Print setup via `printSetup()` — page orientation, paper size, margins, headers/footers, repeat rows, fit-to-page
 - Explicit multi-sheet workbook with different data types per sheet (`ExcelWorkbook`)
 - Auto-rollover for `ExcelSheetWriter` via `maxRows()`
 - Progress callback via `onProgress()` for large dataset monitoring
@@ -316,6 +319,23 @@ writer
     .write(data);
 ```
 
+### Rich Text
+
+Use `ExcelDataType.RICH_TEXT` to write mixed formatting within a single cell:
+
+```java
+writer
+    .column("Description", p -> new ExcelRichText()
+            .text("Status: ")
+            .bold("APPROVED")
+            .text(" — reviewed by ")
+            .styled("admin", s -> s.color(ExcelColor.BLUE).italic(true)))
+        .type(ExcelDataType.RICH_TEXT)
+    .write(data);
+```
+
+Available FontStyle options: `bold(boolean)`, `italic(boolean)`, `underline(boolean)`, `strikethrough(boolean)`, `color(int r, int g, int b)`, `color(ExcelColor)`, `fontSize(int)`
+
 ### Auto Width Sample Rows
 
 Column widths are auto-calculated from the first N data rows. Configurable via `autoWidthSampleRows()`:
@@ -476,6 +496,28 @@ For `ExcelSheetWriter`:
 workbook.<Item>sheet("Report")
     .column("Detail", Item::getDetail, c -> c.outline(1))
     .column("Detail2", Item::getDetail2, c -> c.outline(1))
+    .write(stream);
+```
+
+### Column Hiding
+
+Hide columns in the Excel output while still writing data:
+
+```java
+writer
+    .column("ID", p -> p.id())
+        .type(ExcelDataType.LONG)
+    .column("Internal Code", p -> p.code())
+        .hidden()                              // hidden in Excel but data is still written
+    .column("Name", p -> p.name())
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Internal", Item::getCode, c -> c.hidden())
+    .column("Name", Item::getName)
     .write(stream);
 ```
 
@@ -821,8 +863,8 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `locked`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels)
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `locked`, `hidden`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
 
@@ -965,6 +1007,7 @@ CellData.setDefaultLocale(Locale.US);
 | `FORMULA` | String (formula) | — |
 | `HYPERLINK` | String or `ExcelHyperlink` | — |
 | `IMAGE` | `ExcelImage` | — |
+| `RICH_TEXT` | `ExcelRichText` | — |
 
 ### ExcelDataFormat Presets
 
@@ -1036,6 +1079,33 @@ new CsvReader<>(Row::new, null)
     .column((r, cell) -> r.name = cell.asString())
     .build(inputStream);
 ```
+
+### Print Setup
+
+Configure print layout for Excel sheets:
+
+```java
+new ExcelWriter<Invoice>()
+    .printSetup(ps -> ps
+        .orientation(ExcelPrintSetup.Orientation.LANDSCAPE)
+        .paperSize(ExcelPrintSetup.PaperSize.A4)
+        .margins(0.5, 0.5, 0.75, 0.75)
+        .headerCenter("Invoice Report")
+        .footerCenter("Page &P of &N")
+        .repeatHeaderRows()
+        .fitToPageWidth())
+    .column("Invoice #", Invoice::getNumber)
+    .write(data);
+```
+
+Available options:
+- Orientation: `PORTRAIT`, `LANDSCAPE`
+- Paper sizes: `LETTER`, `LEGAL`, `A3`, `A4`, `A5`, `B4`, `B5`
+- Margins: `margins(left, right, top, bottom)` or individual `leftMargin()`, `rightMargin()`, `topMargin()`, `bottomMargin()` (in inches)
+- Headers/Footers: `headerLeft()`, `headerCenter()`, `headerRight()`, `footerLeft()`, `footerCenter()`, `footerRight()`
+- Special codes: `&P` (page number), `&N` (total pages), `&D` (date), `&T` (time), `&F` (filename)
+- Repeat rows: `repeatHeaderRows()` or `repeatRows(firstRow, lastRow)`
+- Fit to page: `fitToPageWidth()` or `fitToPage(width, height)`
 
 ## Spring MVC Integration
 

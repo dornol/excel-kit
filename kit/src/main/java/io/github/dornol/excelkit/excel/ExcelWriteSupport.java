@@ -190,6 +190,12 @@ class ExcelWriteSupport {
         }
     }
 
+    static void applyPrintSetup(SXSSFSheet sheet, @Nullable ExcelPrintSetup printSetup, int headerRowIndex) {
+        if (printSetup != null) {
+            printSetup.apply(sheet, headerRowIndex);
+        }
+    }
+
     static void applyChart(SXSSFSheet sheet, @Nullable ExcelChartConfig chartConfig,
                             int headerRow, int dataEndRow) {
         if (chartConfig != null) {
@@ -241,6 +247,14 @@ class ExcelWriteSupport {
             currentRow = writer.write(new SheetContext(sheet, wb, currentRow, columns));
         }
         return currentRow;
+    }
+
+    static <T> void applyColumnHidden(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
+        for (int j = 0; j < columns.size(); j++) {
+            if (columns.get(j).isHidden()) {
+                sheet.setColumnHidden(j, true);
+            }
+        }
     }
 
     static <T> void applyColumnOutline(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
