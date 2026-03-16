@@ -30,12 +30,19 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Password-encrypted Excel output
 - Consume-once output via `ExcelHandler`
 - Cell border styles via `border()` — THIN, MEDIUM, THICK, DASHED, DOTTED, DOUBLE, etc.
+- Per-side border control via `borderTop()`, `borderBottom()`, `borderLeft()`, `borderRight()`
 - Cell comments (notes) via `comment()` — conditional per-cell comments
 - Conditional formatting rules via `conditionalFormatting()` — greaterThan, lessThan, between, etc.
 - Sheet protection via `protectSheet()` with per-column `locked()` control
 - Image embedding via `ExcelDataType.IMAGE` with `ExcelImage.png()` / `ExcelImage.jpeg()`
-- Chart generation via `chart()` — BAR, LINE, PIE charts with XDDF API
+- Chart generation via `chart()` — BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT charts with XDDF API
 - Map-based writing via `ExcelMapWriter` — write `Map<String, Object>` without typed POJOs
+- Text rotation via `rotation()` — rotate cell text from -90 to 90 degrees
+- Font color via `fontColor()` — RGB or preset color for cell text
+- Strikethrough via `strikethrough()` and underline via `underline()` for font styling
+- Advanced data validation via `validation()` — integer/decimal ranges, text length, date ranges, custom formulas
+- Row grouping via `SheetContext.groupRows()` — collapsible row groups in callbacks
+- Sheet tab color via `tabColor()` — colorize sheet tabs
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -546,6 +553,180 @@ workbook.<Item>sheet("Report")
     .write(stream);
 ```
 
+### Per-Side Border Control
+
+Set different border styles for each side individually. Per-side borders override the uniform `border()` setting; unset sides fall back to `border()` or default `THIN`:
+
+```java
+writer
+    .column("Mixed", p -> p.value())
+        .borderTop(ExcelBorderStyle.THICK)
+        .borderBottom(ExcelBorderStyle.THIN)
+        .borderLeft(ExcelBorderStyle.DASHED)
+        .borderRight(ExcelBorderStyle.DOTTED)
+    .write(data);
+
+// Partial override: top=THICK, rest=MEDIUM
+writer
+    .column("Partial", p -> p.value())
+        .border(ExcelBorderStyle.MEDIUM)
+        .borderTop(ExcelBorderStyle.THICK)
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Report")
+    .column("Amount", Item::getAmount, c -> c
+        .borderTop(ExcelBorderStyle.DOUBLE)
+        .borderBottom(ExcelBorderStyle.HAIR))
+    .write(stream);
+```
+
+### Text Rotation
+
+Rotate cell text counter-clockwise (positive) or clockwise (negative), from -90 to 90 degrees:
+
+```java
+writer
+    .column("Rotated", p -> p.label())
+        .rotation(45)       // 45° counter-clockwise
+    .column("Vertical", p -> p.code())
+        .rotation(90)       // straight up
+    .column("Clock", p -> p.note())
+        .rotation(-30)      // 30° clockwise
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Header", Item::getLabel, c -> c.rotation(45))
+    .write(stream);
+```
+
+### Font Color, Strikethrough, Underline
+
+Customize font appearance per column:
+
+```java
+writer
+    .column("Warning", p -> p.message())
+        .fontColor(255, 0, 0)                  // RGB red
+    .column("Info", p -> p.info())
+        .fontColor(ExcelColor.BLUE)            // preset color
+    .column("Deleted", p -> p.oldValue())
+        .strikethrough()                        // strike-through text
+    .column("Important", p -> p.key())
+        .underline()                            // single underline
+    .column("All Styles", p -> p.summary())
+        .fontColor(ExcelColor.RED)
+        .bold(true)
+        .underline()
+        .strikethrough()
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Report")
+    .column("Amount", Item::getAmount, c -> c
+        .fontColor(ExcelColor.RED)
+        .strikethrough()
+        .underline())
+    .write(stream);
+```
+
+### Advanced Data Validation
+
+Apply advanced data validation rules beyond dropdowns:
+
+```java
+writer
+    .column("Age", p -> p.age())
+        .type(ExcelDataType.INTEGER)
+        .validation(ExcelValidation.integerBetween(0, 150))
+    .column("GPA", p -> p.gpa())
+        .type(ExcelDataType.DOUBLE)
+        .validation(ExcelValidation.decimalBetween(0.0, 4.0))
+    .column("Name", p -> p.name())
+        .validation(ExcelValidation.textLength(1, 100))
+    .column("Date", p -> p.date())
+        .type(ExcelDataType.DATE)
+        .validation(ExcelValidation.dateRange(
+            LocalDate.of(2024, 1, 1),
+            LocalDate.of(2024, 12, 31)))
+    .column("Custom", p -> p.value())
+        .validation(ExcelValidation.formula("AND(A2>0,A2<100)"))
+    .write(data);
+```
+
+Available factory methods:
+- `ExcelValidation.integerBetween(min, max)` — integer range (inclusive)
+- `ExcelValidation.integerGreaterThan(min)` — integer greater than
+- `ExcelValidation.integerLessThan(max)` — integer less than
+- `ExcelValidation.decimalBetween(min, max)` — decimal range (inclusive)
+- `ExcelValidation.textLength(min, max)` — text length constraint
+- `ExcelValidation.dateRange(start, end)` — date range constraint
+- `ExcelValidation.formula(formula)` — custom Excel formula
+
+Fluent error configuration:
+```java
+ExcelValidation.integerBetween(1, 100)
+    .errorTitle("Invalid Value")
+    .errorMessage("Please enter a number between 1 and 100")
+    .showError(true)    // default: true
+```
+
+### Row Grouping/Outlining
+
+Group rows so they can be collapsed/expanded in Excel. Use in `afterData` or `afterAll` callbacks via `SheetContext`:
+
+```java
+writer
+    .addColumn("Data", p -> p.value())
+    .afterData(ctx -> {
+        ctx.groupRows(1, 5);                    // group rows 1-5
+        ctx.groupRows(7, 10, true);             // group rows 7-10 and collapse
+        return ctx.getCurrentRow();
+    })
+    .write(data);
+```
+
+Methods:
+- `groupRows(int firstRow, int lastRow)` — group rows (expanded)
+- `groupRows(int firstRow, int lastRow, boolean collapsed)` — group rows with optional collapse
+
+### Sheet Tab Color
+
+Colorize the sheet tab in the workbook:
+
+```java
+// ExcelWriter — applies to all sheets (including rollover)
+new ExcelWriter<Product>()
+    .tabColor(255, 0, 0)                       // RGB red
+    .addColumn("Name", Product::name)
+    .write(data);
+
+new ExcelWriter<Product>()
+    .tabColor(ExcelColor.STEEL_BLUE)           // preset color
+    .addColumn("Name", Product::name)
+    .write(data);
+```
+
+For `ExcelSheetWriter` — set per sheet:
+```java
+workbook.<User>sheet("Users")
+    .tabColor(ExcelColor.BLUE)
+    .column("Name", User::getName)
+    .write(userStream);
+
+workbook.<Order>sheet("Orders")
+    .tabColor(ExcelColor.GREEN)
+    .column("ID", Order::getId)
+    .write(orderStream);
+```
+
 ### Cell Comments (Notes)
 
 Add conditional cell comments (notes) to specific columns:
@@ -621,7 +802,7 @@ new ExcelWriter<Product>()
     .addColumn("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
     .addColumn("Profit", p -> p.profit(), c -> c.type(ExcelDataType.INTEGER))
     .chart(chart -> chart
-        .type(ExcelChartConfig.ChartType.BAR)       // BAR, LINE, or PIE
+        .type(ExcelChartConfig.ChartType.BAR)       // BAR, LINE, PIE, SCATTER, AREA, or DOUGHNUT
         .title("Sales vs Profit")
         .categoryColumn(0)                           // X-axis: Name column
         .valueColumn(1, "Sales")                     // Y-axis series 1
@@ -639,10 +820,49 @@ new ExcelWriter<Product>()
 Charts are created using Apache POI's XDDF chart API and reference data cell ranges.
 
 Available chart options:
-- Chart types: `BAR`, `LINE`, `PIE`
+- Chart types: `BAR`, `LINE`, `PIE`, `SCATTER`, `AREA`, `DOUGHNUT`
 - Legend positions: `BOTTOM`, `LEFT`, `RIGHT`, `TOP`, `TOP_RIGHT`
 - Bar directions: `VERTICAL` (default), `HORIZONTAL`
 - Bar groupings: `STANDARD` (default), `STACKED`, `PERCENT_STACKED`
+
+**Scatter chart** — both axes are numeric (no category axis):
+```java
+writer
+    .addColumn("X", p -> p.x(), c -> c.type(ExcelDataType.DOUBLE))
+    .addColumn("Y", p -> p.y(), c -> c.type(ExcelDataType.DOUBLE))
+    .chart(chart -> chart
+        .type(ExcelChartConfig.ChartType.SCATTER)
+        .categoryColumn(0)          // X-axis data
+        .valueColumn(1, "Y values")
+        .categoryAxisTitle("X Axis")
+        .valueAxisTitle("Y Axis"))
+    .write(data);
+```
+
+**Area chart** — like line chart but with filled regions:
+```java
+writer
+    .addColumn("Month", Product::month)
+    .addColumn("Revenue", p -> p.revenue(), c -> c.type(ExcelDataType.DOUBLE))
+    .chart(chart -> chart
+        .type(ExcelChartConfig.ChartType.AREA)
+        .categoryColumn(0)
+        .valueColumn(1, "Revenue"))
+    .write(data);
+```
+
+**Doughnut chart** — like pie chart with a hollow center:
+```java
+writer
+    .addColumn("Category", Product::category)
+    .addColumn("Share", p -> p.share(), c -> c.type(ExcelDataType.INTEGER))
+    .chart(chart -> chart
+        .type(ExcelChartConfig.ChartType.DOUGHNUT)
+        .categoryColumn(0)
+        .valueColumn(1, "Share")
+        .showDataLabels(true))
+    .write(data);
+```
 
 ### Map-Based Writing
 
@@ -771,6 +991,8 @@ All callbacks receive a `SheetContext` parameter that provides:
 - `columnLetter(int)` — static helper to convert column index to Excel letter (0→"A", 26→"AA")
 - `mergeCells(int firstRow, int lastRow, int firstCol, int lastCol)` — merge a rectangular cell region
 - `mergeCells(String cellRange)` — merge cells using Excel notation (e.g., `"A1:C3"`)
+- `groupRows(int firstRow, int lastRow)` — group rows for collapsible outlining
+- `groupRows(int firstRow, int lastRow, boolean collapsed)` — group rows with optional initial collapse
 
 A new `SheetContext` is created for each callback invocation, so the sheet reference is always current (even after rollover).
 
@@ -863,8 +1085,8 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `locked`, `hidden`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `validation`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`, `tabColor()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
 

@@ -49,7 +49,10 @@ public class ExcelChartConfig {
     public enum ChartType {
         BAR,
         LINE,
-        PIE
+        PIE,
+        SCATTER,
+        AREA,
+        DOUGHNUT
     }
 
     /**
@@ -292,6 +295,9 @@ public class ExcelChartConfig {
             case BAR -> createBarChart(chart, categories, xssfSheet, dataStartRow, dataEndRow);
             case LINE -> createLineChart(chart, categories, xssfSheet, dataStartRow, dataEndRow);
             case PIE -> createPieChart(chart, categories, xssfSheet, dataStartRow, dataEndRow);
+            case SCATTER -> createScatterChart(chart, xssfSheet, dataStartRow, dataEndRow);
+            case AREA -> createAreaChart(chart, categories, xssfSheet, dataStartRow, dataEndRow);
+            case DOUGHNUT -> createDoughnutChart(chart, categories, xssfSheet, dataStartRow, dataEndRow);
         }
 
         applyLegend(chart);
@@ -335,6 +341,61 @@ public class ExcelChartConfig {
     private void createPieChart(XSSFChart chart, XDDFDataSource<String> categories,
                                 XSSFSheet sheet, int dataStart, int dataEnd) {
         XDDFChartData data = chart.createData(ChartTypes.PIE, null, null);
+
+        addSeries(data, categories, sheet, dataStart, dataEnd);
+        chart.plot(data);
+    }
+
+    private void createScatterChart(XSSFChart chart, XSSFSheet sheet,
+                                    int dataStart, int dataEnd) {
+        XDDFValueAxis xAxis = chart.createValueAxis(AxisPosition.BOTTOM);
+        XDDFValueAxis yAxis = chart.createValueAxis(AxisPosition.LEFT);
+        yAxis.setCrosses(AxisCrosses.AUTO_ZERO);
+
+        if (categoryAxisTitle != null) xAxis.setTitle(categoryAxisTitle);
+        if (valueAxisTitle != null) yAxis.setTitle(valueAxisTitle);
+
+        XDDFScatterChartData data = (XDDFScatterChartData) chart.createData(
+                ChartTypes.SCATTER, xAxis, yAxis);
+
+        // For scatter, X-axis is numeric
+        XDDFNumericalDataSource<Double> xValues = XDDFDataSourcesFactory.fromNumericCellRange(
+                sheet,
+                new org.apache.poi.ss.util.CellRangeAddress(
+                        dataStart, dataEnd,
+                        categoryColumnIndex, categoryColumnIndex));
+
+        for (ValueSeries vs : valueSeries) {
+            XDDFNumericalDataSource<Double> yValues = XDDFDataSourcesFactory.fromNumericCellRange(
+                    sheet,
+                    new org.apache.poi.ss.util.CellRangeAddress(
+                            dataStart, dataEnd,
+                            vs.columnIndex, vs.columnIndex));
+            XDDFChartData.Series series = data.addSeries(xValues, yValues);
+            series.setTitle(vs.title, null);
+        }
+
+        chart.plot(data);
+    }
+
+    private void createAreaChart(XSSFChart chart, XDDFDataSource<String> categories,
+                                 XSSFSheet sheet, int dataStart, int dataEnd) {
+        XDDFChartAxis categoryAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
+        XDDFValueAxis valueAxis = chart.createValueAxis(AxisPosition.LEFT);
+        valueAxis.setCrosses(AxisCrosses.AUTO_ZERO);
+
+        applyAxisTitles(categoryAxis, valueAxis);
+
+        XDDFAreaChartData data = (XDDFAreaChartData) chart.createData(
+                ChartTypes.AREA, categoryAxis, valueAxis);
+
+        addSeries(data, categories, sheet, dataStart, dataEnd);
+        chart.plot(data);
+    }
+
+    private void createDoughnutChart(XSSFChart chart, XDDFDataSource<String> categories,
+                                     XSSFSheet sheet, int dataStart, int dataEnd) {
+        XDDFChartData data = chart.createData(ChartTypes.DOUGHNUT, null, null);
 
         addSeries(data, categories, sheet, dataStart, dataEnd);
         chart.plot(data);
@@ -412,6 +473,30 @@ public class ExcelChartConfig {
             // Apply data labels to pie charts
             for (var pieChart : plotArea.getPieChartList()) {
                 var dLbls = pieChart.isSetDLbls() ? pieChart.getDLbls() : pieChart.addNewDLbls();
+                dLbls.addNewShowVal().setVal(true);
+                dLbls.addNewShowCatName().setVal(false);
+                dLbls.addNewShowSerName().setVal(false);
+            }
+
+            // Apply data labels to scatter charts
+            for (var scatterChart : plotArea.getScatterChartList()) {
+                var dLbls = scatterChart.isSetDLbls() ? scatterChart.getDLbls() : scatterChart.addNewDLbls();
+                dLbls.addNewShowVal().setVal(true);
+                dLbls.addNewShowCatName().setVal(false);
+                dLbls.addNewShowSerName().setVal(false);
+            }
+
+            // Apply data labels to area charts
+            for (var areaChart : plotArea.getAreaChartList()) {
+                var dLbls = areaChart.isSetDLbls() ? areaChart.getDLbls() : areaChart.addNewDLbls();
+                dLbls.addNewShowVal().setVal(true);
+                dLbls.addNewShowCatName().setVal(false);
+                dLbls.addNewShowSerName().setVal(false);
+            }
+
+            // Apply data labels to doughnut charts
+            for (var doughnutChart : plotArea.getDoughnutChartList()) {
+                var dLbls = doughnutChart.isSetDLbls() ? doughnutChart.getDLbls() : doughnutChart.addNewDLbls();
                 dLbls.addNewShowVal().setVal(true);
                 dLbls.addNewShowCatName().setVal(false);
                 dLbls.addNewShowSerName().setVal(false);

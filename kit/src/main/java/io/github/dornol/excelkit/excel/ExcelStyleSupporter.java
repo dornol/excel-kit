@@ -4,6 +4,7 @@ import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 
 import org.jspecify.annotations.Nullable;
 
@@ -101,59 +102,116 @@ class ExcelStyleSupporter {
                                int @Nullable [] backgroundColor, @Nullable Boolean bold, @Nullable Integer fontSize,
                                @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
                                Map<String, CellStyle> cache) {
+        CellStyleParams params = new CellStyleParams(alignment, format, backgroundColor, bold, fontSize,
+                borderStyle, locked, null, null, null, null, null, null, null, null);
+        return cellStyle(wb, params, cache);
+    }
+
+    static CellStyle cellStyle(SXSSFWorkbook wb, CellStyleParams params, Map<String, CellStyle> cache) {
+        String key = buildCacheKey(params);
+        return cache.computeIfAbsent(key, k -> createCellStyle(wb, params));
+    }
+
+    private static String buildCacheKey(CellStyleParams params) {
         StringBuilder keyBuilder = new StringBuilder();
-        keyBuilder.append(alignment.name()).append("|").append(format);
+        keyBuilder.append(params.alignment().name()).append("|").append(params.format());
+        int[] backgroundColor = params.backgroundColor();
         if (backgroundColor != null) {
             keyBuilder.append("|bg=").append(backgroundColor[0]).append(",").append(backgroundColor[1]).append(",").append(backgroundColor[2]);
         }
-        if (bold != null) {
-            keyBuilder.append("|bold=").append(bold);
+        if (params.bold() != null) {
+            keyBuilder.append("|bold=").append(params.bold());
         }
-        if (fontSize != null) {
-            keyBuilder.append("|fs=").append(fontSize);
+        if (params.fontSize() != null) {
+            keyBuilder.append("|fs=").append(params.fontSize());
         }
-        if (borderStyle != null) {
-            keyBuilder.append("|border=").append(borderStyle.name());
+        if (params.borderStyle() != null) {
+            keyBuilder.append("|border=").append(params.borderStyle().name());
         }
-        if (locked != null) {
-            keyBuilder.append("|locked=").append(locked);
+        if (params.locked() != null) {
+            keyBuilder.append("|locked=").append(params.locked());
         }
-        String key = keyBuilder.toString();
-        return cache.computeIfAbsent(key, k -> createCellStyle(wb, alignment, format, backgroundColor, bold, fontSize, borderStyle, locked));
+        if (params.rotation() != null) {
+            keyBuilder.append("|rot=").append(params.rotation());
+        }
+        if (params.borderTop() != null) {
+            keyBuilder.append("|bt=").append(params.borderTop().name());
+        }
+        if (params.borderBottom() != null) {
+            keyBuilder.append("|bb=").append(params.borderBottom().name());
+        }
+        if (params.borderLeft() != null) {
+            keyBuilder.append("|bl=").append(params.borderLeft().name());
+        }
+        if (params.borderRight() != null) {
+            keyBuilder.append("|br=").append(params.borderRight().name());
+        }
+        int[] fontColor = params.fontColor();
+        if (fontColor != null) {
+            keyBuilder.append("|fc=").append(fontColor[0]).append(",").append(fontColor[1]).append(",").append(fontColor[2]);
+        }
+        if (params.strikethrough() != null) {
+            keyBuilder.append("|strike=").append(params.strikethrough());
+        }
+        if (params.underline() != null) {
+            keyBuilder.append("|ul=").append(params.underline());
+        }
+        return keyBuilder.toString();
     }
 
-    private static CellStyle createCellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, @Nullable String format,
-                                             int @Nullable [] backgroundColor, @Nullable Boolean bold, @Nullable Integer fontSize,
-                                             @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked) {
+    private static CellStyle createCellStyle(SXSSFWorkbook wb, CellStyleParams params) {
         CellStyle nowStyle = wb.createCellStyle();
 
-        nowStyle.setAlignment(alignment);
-        if (format != null) {
+        nowStyle.setAlignment(params.alignment());
+        if (params.format() != null) {
             DataFormat dataFormat = wb.createDataFormat();
-            nowStyle.setDataFormat(dataFormat.getFormat(format));
+            nowStyle.setDataFormat(dataFormat.getFormat(params.format()));
         }
+        int[] backgroundColor = params.backgroundColor();
         if (backgroundColor != null) {
             nowStyle.setFillForegroundColor(new XSSFColor(new byte[]{
                     (byte) backgroundColor[0], (byte) backgroundColor[1], (byte) backgroundColor[2]}));
             nowStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         }
-        if (bold != null || fontSize != null) {
+
+        // Font: bold, fontSize, fontColor, strikethrough, underline
+        boolean needsFont = params.bold() != null || params.fontSize() != null
+                || params.fontColor() != null || params.strikethrough() != null || params.underline() != null;
+        if (needsFont) {
             Font font = wb.createFont();
-            if (bold != null) {
-                font.setBold(bold);
+            if (params.bold() != null) {
+                font.setBold(params.bold());
             }
-            if (fontSize != null) {
-                font.setFontHeightInPoints(fontSize.shortValue());
+            if (params.fontSize() != null) {
+                font.setFontHeightInPoints(params.fontSize().shortValue());
+            }
+            int[] fontColor = params.fontColor();
+            if (fontColor != null) {
+                ((XSSFFont) font).setColor(new XSSFColor(new byte[]{
+                        (byte) fontColor[0], (byte) fontColor[1], (byte) fontColor[2]}));
+            }
+            if (params.strikethrough() != null) {
+                font.setStrikeout(params.strikethrough());
+            }
+            if (params.underline() != null && params.underline()) {
+                font.setUnderline(Font.U_SINGLE);
             }
             nowStyle.setFont(font);
         }
-        BorderStyle border = (borderStyle != null) ? borderStyle.toPoiBorderStyle() : BorderStyle.THIN;
-        nowStyle.setBorderTop(border);
-        nowStyle.setBorderBottom(border);
-        nowStyle.setBorderLeft(border);
-        nowStyle.setBorderRight(border);
-        if (locked != null) {
-            nowStyle.setLocked(locked);
+
+        // Borders: per-side > uniform borderStyle > default THIN
+        BorderStyle defaultBorder = (params.borderStyle() != null)
+                ? params.borderStyle().toPoiBorderStyle() : BorderStyle.THIN;
+        nowStyle.setBorderTop(params.borderTop() != null ? params.borderTop().toPoiBorderStyle() : defaultBorder);
+        nowStyle.setBorderBottom(params.borderBottom() != null ? params.borderBottom().toPoiBorderStyle() : defaultBorder);
+        nowStyle.setBorderLeft(params.borderLeft() != null ? params.borderLeft().toPoiBorderStyle() : defaultBorder);
+        nowStyle.setBorderRight(params.borderRight() != null ? params.borderRight().toPoiBorderStyle() : defaultBorder);
+
+        if (params.locked() != null) {
+            nowStyle.setLocked(params.locked());
+        }
+        if (params.rotation() != null) {
+            nowStyle.setRotation(params.rotation());
         }
         nowStyle.setWrapText(true);
         return nowStyle;

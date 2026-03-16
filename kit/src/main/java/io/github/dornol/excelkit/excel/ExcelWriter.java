@@ -54,6 +54,7 @@ public class ExcelWriter<T> {
     private @Nullable List<ExcelConditionalRule> conditionalRules;
     private @Nullable ExcelChartConfig chartConfig;
     private @Nullable ExcelPrintSetup printSetup;
+    private int @Nullable [] tabColor;
 
     private @Nullable SXSSFSheet sheet;
     private @Nullable Cursor cursor;
@@ -357,6 +358,31 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Sets the sheet tab color using RGB values.
+     *
+     * @param r Red component (0–255)
+     * @param g Green component (0–255)
+     * @param b Blue component (0–255)
+     * @return Current ExcelWriter instance for chaining
+     * @since 0.7.0
+     */
+    public ExcelWriter<T> tabColor(int r, int g, int b) {
+        this.tabColor = new int[]{r, g, b};
+        return this;
+    }
+
+    /**
+     * Sets the sheet tab color using a preset color.
+     *
+     * @param color Preset color
+     * @return Current ExcelWriter instance for chaining
+     * @since 0.7.0
+     */
+    public ExcelWriter<T> tabColor(ExcelColor color) {
+        return tabColor(color.getR(), color.getG(), color.getB());
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -597,9 +623,11 @@ public class ExcelWriter<T> {
      */
     private void applyColumnWidthAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-            ExcelWriteSupport.applyColumnWidths(wb.getSheetAt(i), columns);
-            ExcelWriteSupport.applyColumnOutline(wb.getSheetAt(i), columns);
-            ExcelWriteSupport.applyColumnHidden(wb.getSheetAt(i), columns);
+            SXSSFSheet s = wb.getSheetAt(i);
+            ExcelWriteSupport.applyColumnWidths(s, columns);
+            ExcelWriteSupport.applyColumnOutline(s, columns);
+            ExcelWriteSupport.applyColumnHidden(s, columns);
+            ExcelWriteSupport.applyTabColor(s, tabColor);
         }
     }
 

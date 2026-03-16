@@ -119,6 +119,38 @@ public class SheetContext {
     }
 
     /**
+     * Groups (outlines) a range of rows so they can be collapsed/expanded in Excel.
+     * <p>
+     * Typically called from an {@link AfterDataWriter} callback.
+     *
+     * @param firstRow zero-based index of the first row to group
+     * @param lastRow  zero-based index of the last row to group
+     * @return this {@code SheetContext} for method chaining
+     * @since 0.7.0
+     */
+    public SheetContext groupRows(int firstRow, int lastRow) {
+        sheet.groupRow(firstRow, lastRow);
+        return this;
+    }
+
+    /**
+     * Groups (outlines) a range of rows, optionally collapsing them.
+     *
+     * @param firstRow  zero-based index of the first row to group
+     * @param lastRow   zero-based index of the last row to group
+     * @param collapsed whether the group should be initially collapsed
+     * @return this {@code SheetContext} for method chaining
+     * @since 0.7.0
+     */
+    public SheetContext groupRows(int firstRow, int lastRow, boolean collapsed) {
+        sheet.groupRow(firstRow, lastRow);
+        if (collapsed) {
+            sheet.setRowGroupCollapsed(firstRow, true);
+        }
+        return this;
+    }
+
+    /**
      * Converts a zero-based column index to an Excel column letter.
      * <p>
      * Examples:

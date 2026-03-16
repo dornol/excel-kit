@@ -10,6 +10,7 @@ import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 
 import org.jspecify.annotations.Nullable;
 
@@ -220,7 +221,8 @@ class ExcelWriteSupport {
                                           int headerRowIndex) {
         DataValidationHelper helper = sheet.getDataValidationHelper();
         for (int j = 0; j < columns.size(); j++) {
-            String[] options = columns.get(j).getDropdownOptions();
+            ExcelColumn<T> column = columns.get(j);
+            String[] options = column.getDropdownOptions();
             if (options != null) {
                 DataValidationConstraint constraint = helper.createExplicitListConstraint(options);
                 CellRangeAddressList range = new CellRangeAddressList(
@@ -229,6 +231,10 @@ class ExcelWriteSupport {
                 validation.setSuppressDropDownArrow(false);
                 validation.setShowErrorBox(true);
                 sheet.addValidationData(validation);
+            }
+            ExcelValidation excelValidation = column.getValidation();
+            if (excelValidation != null) {
+                excelValidation.apply(helper, sheet, j, headerRowIndex);
             }
         }
     }
@@ -285,6 +291,19 @@ class ExcelWriteSupport {
     static void checkProgress(Cursor cursor, int interval, @Nullable ProgressCallback callback) {
         if (callback != null && interval > 0 && cursor.getCurrentTotal() % interval == 0) {
             callback.onProgress(cursor.getCurrentTotal(), cursor);
+        }
+    }
+
+    static void applyTabColor(SXSSFSheet sheet, int @Nullable [] tabColor) {
+        if (tabColor == null) return;
+        try {
+            var field = SXSSFSheet.class.getDeclaredField("_sh");
+            field.setAccessible(true);
+            XSSFSheet xssfSheet = (XSSFSheet) field.get(sheet);
+            xssfSheet.setTabColor(new XSSFColor(new byte[]{
+                    (byte) tabColor[0], (byte) tabColor[1], (byte) tabColor[2]}));
+        } catch (Exception e) {
+            // Best-effort: skip if reflection fails
         }
     }
 }

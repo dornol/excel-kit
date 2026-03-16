@@ -56,6 +56,7 @@ public class ExcelSheetWriter<T> {
     private @Nullable List<ExcelConditionalRule> conditionalRules;
     private @Nullable ExcelChartConfig chartConfig;
     private @Nullable ExcelPrintSetup printSetup;
+    private int @Nullable [] tabColor;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -303,6 +304,31 @@ public class ExcelSheetWriter<T> {
     }
 
     /**
+     * Sets the sheet tab color using RGB values.
+     *
+     * @param r Red component (0–255)
+     * @param g Green component (0–255)
+     * @param b Blue component (0–255)
+     * @return this writer for chaining
+     * @since 0.7.0
+     */
+    public ExcelSheetWriter<T> tabColor(int r, int g, int b) {
+        this.tabColor = new int[]{r, g, b};
+        return this;
+    }
+
+    /**
+     * Sets the sheet tab color using a preset color.
+     *
+     * @param color Preset color
+     * @return this writer for chaining
+     * @since 0.7.0
+     */
+    public ExcelSheetWriter<T> tabColor(ExcelColor color) {
+        return tabColor(color.getR(), color.getG(), color.getB());
+    }
+
+    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      */
     public void write(Stream<T> stream) {
@@ -362,6 +388,7 @@ public class ExcelSheetWriter<T> {
             ExcelWriteSupport.applySheetProtection(s, sheetPassword);
             ExcelWriteSupport.applyConditionalFormatting(s, conditionalRules, headerRowIndex, columns.size());
             ExcelWriteSupport.applyPrintSetup(s, printSetup, headerRowIndex);
+            ExcelWriteSupport.applyTabColor(s, tabColor);
         }
 
         // Apply chart on last sheet
@@ -402,6 +429,15 @@ public class ExcelSheetWriter<T> {
         ExcelBorderStyle borderStyle = null;
         Boolean locked = null;
         boolean hidden = false;
+        ExcelValidation validation = null;
+        Short rotation = null;
+        ExcelBorderStyle borderTop = null;
+        ExcelBorderStyle borderBottom = null;
+        ExcelBorderStyle borderLeft = null;
+        ExcelBorderStyle borderRight = null;
+        int[] fontColor = null;
+        Boolean strikethrough = null;
+        Boolean underline = null;
 
         if (config != null) {
             if (config.dataType != null) dataType = config.dataType;
@@ -421,19 +457,31 @@ public class ExcelSheetWriter<T> {
             borderStyle = config.borderStyle;
             locked = config.locked;
             hidden = config.hidden;
+            validation = config.validation;
+            rotation = config.rotation;
+            borderTop = config.borderTop;
+            borderBottom = config.borderBottom;
+            borderLeft = config.borderLeft;
+            borderRight = config.borderRight;
+            fontColor = config.fontColor;
+            strikethrough = config.strikethrough;
+            underline = config.underline;
         }
 
         if (dataFormat == null) {
             dataFormat = dataType.getDefaultFormat();
         }
 
-        CellStyle style = ExcelStyleSupporter.cellStyle(wb, alignment, dataFormat,
-                backgroundColor, bold, fontSize, borderStyle, locked, cellStyleCache);
+        CellStyleParams params = new CellStyleParams(alignment, dataFormat,
+                backgroundColor, bold, fontSize, borderStyle, locked,
+                rotation, borderTop, borderBottom, borderLeft, borderRight,
+                fontColor, strikethrough, underline);
+        CellStyle style = ExcelStyleSupporter.cellStyle(wb, params, cellStyleCache);
         ExcelColumnSetter setter = dataType.getSetter();
 
         return new ExcelColumn<>(name, function, style, setter, minWidth, maxWidth, fixedWidth,
                 dropdownOptions, cellColorFunction, groupName, outlineLevel,
-                commentFunction, borderStyle, locked, hidden);
+                commentFunction, borderStyle, locked, hidden, validation);
     }
 
     /**
@@ -459,6 +507,15 @@ public class ExcelSheetWriter<T> {
         private @Nullable ExcelBorderStyle borderStyle;
         private @Nullable Boolean locked;
         private boolean hidden;
+        private @Nullable ExcelValidation validation;
+        private @Nullable Short rotation;
+        private @Nullable ExcelBorderStyle borderTop;
+        private @Nullable ExcelBorderStyle borderBottom;
+        private @Nullable ExcelBorderStyle borderLeft;
+        private @Nullable ExcelBorderStyle borderRight;
+        private int @Nullable [] fontColor;
+        private @Nullable Boolean strikethrough;
+        private @Nullable Boolean underline;
 
         public ColumnConfig<T> type(ExcelDataType dataType) {
             this.dataType = dataType;
@@ -565,6 +622,38 @@ public class ExcelSheetWriter<T> {
         }
 
         /**
+         * Sets the top border style for this column.
+         */
+        public ColumnConfig<T> borderTop(ExcelBorderStyle borderStyle) {
+            this.borderTop = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets the bottom border style for this column.
+         */
+        public ColumnConfig<T> borderBottom(ExcelBorderStyle borderStyle) {
+            this.borderBottom = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets the left border style for this column.
+         */
+        public ColumnConfig<T> borderLeft(ExcelBorderStyle borderStyle) {
+            this.borderLeft = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets the right border style for this column.
+         */
+        public ColumnConfig<T> borderRight(ExcelBorderStyle borderStyle) {
+            this.borderRight = borderStyle;
+            return this;
+        }
+
+        /**
          * Sets whether cells in this column should be locked.
          */
         public ColumnConfig<T> locked(boolean locked) {
@@ -587,6 +676,74 @@ public class ExcelSheetWriter<T> {
          */
         public ColumnConfig<T> hidden(boolean hidden) {
             this.hidden = hidden;
+            return this;
+        }
+
+        /**
+         * Sets the text rotation angle for this column's cells.
+         *
+         * @param degrees rotation angle (-90 to 90)
+         */
+        public ColumnConfig<T> rotation(int degrees) {
+            if (degrees < -90 || degrees > 90) {
+                throw new IllegalArgumentException("rotation must be between -90 and 90 degrees");
+            }
+            this.rotation = (short) (degrees >= 0 ? degrees : 90 + Math.abs(degrees));
+            return this;
+        }
+
+        /**
+         * Sets the font color for this column's cells using RGB values.
+         */
+        public ColumnConfig<T> fontColor(int r, int g, int b) {
+            this.fontColor = new int[]{r, g, b};
+            return this;
+        }
+
+        /**
+         * Sets the font color for this column's cells using a preset color.
+         */
+        public ColumnConfig<T> fontColor(ExcelColor color) {
+            return fontColor(color.getR(), color.getG(), color.getB());
+        }
+
+        /**
+         * Enables strikethrough on this column's font.
+         */
+        public ColumnConfig<T> strikethrough() {
+            this.strikethrough = true;
+            return this;
+        }
+
+        /**
+         * Sets whether this column's font should be strikethrough.
+         */
+        public ColumnConfig<T> strikethrough(boolean strikethrough) {
+            this.strikethrough = strikethrough;
+            return this;
+        }
+
+        /**
+         * Enables underline on this column's font.
+         */
+        public ColumnConfig<T> underline() {
+            this.underline = true;
+            return this;
+        }
+
+        /**
+         * Sets whether this column's font should be underlined.
+         */
+        public ColumnConfig<T> underline(boolean underline) {
+            this.underline = underline;
+            return this;
+        }
+
+        /**
+         * Sets advanced data validation for this column.
+         */
+        public ColumnConfig<T> validation(ExcelValidation validation) {
+            this.validation = validation;
             return this;
         }
     }

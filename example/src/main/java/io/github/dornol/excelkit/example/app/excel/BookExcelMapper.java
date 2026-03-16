@@ -20,20 +20,44 @@ public class BookExcelMapper {
 
     /**
      * Configures and returns an ExcelHandler for exporting BookDto data.
+     * <p>
+     * Demonstrates: tab color, font color, strikethrough, underline, rotation,
+     * per-side borders, advanced data validation, and row grouping.
      *
      * @param stream Stream of BookDto data
      * @return ExcelHandler for outputting the file
      */
     public static ExcelHandler getHandler(Stream<BookDto> stream) {
         return new ExcelWriter<BookDto>(0xCC, 0xFF, 0x99)
-                .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
-                .column("id", BookDto::id).type(ExcelDataType.LONG)
+                .tabColor(ExcelColor.STEEL_BLUE)
+                .column("no", (rowData, cursor) -> cursor.getCurrentTotal())
+                    .type(ExcelDataType.LONG)
+                    .fontColor(ExcelColor.GRAY)
+                .column("id", BookDto::id)
+                    .type(ExcelDataType.LONG)
                 .column("title", BookDto::title)
+                    .bold(true)
+                    .fontColor(ExcelColor.BLUE)
+                    .underline()
                 .column("subtitle", BookDto::subtitle)
                 .column("author", BookDto::author)
+                    .rotation(0)
+                    .borderBottom(ExcelBorderStyle.MEDIUM)
                 .column("publisher", BookDto::publisher)
                 .column("isbn", BookDto::isbn)
+                    .validation(ExcelValidation.textLength(10, 13)
+                            .errorTitle("Invalid ISBN")
+                            .errorMessage("ISBN must be 10–13 characters"))
                 .column("description", BookDto::description)
+                    .fontColor(ExcelColor.GRAY)
+                    .strikethrough(false)
+                .afterData(ctx -> {
+                    // Group all data rows for collapsible view
+                    if (ctx.getCurrentRow() > 2) {
+                        ctx.groupRows(1, ctx.getCurrentRow() - 1);
+                    }
+                    return ctx.getCurrentRow();
+                })
                 .write(stream);
     }
 

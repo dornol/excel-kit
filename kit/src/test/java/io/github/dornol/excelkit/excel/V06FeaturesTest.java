@@ -632,10 +632,13 @@ class V06FeaturesTest {
 
         @Test
         void chartType_enum_coverage() {
-            assertEquals(3, ExcelChartConfig.ChartType.values().length);
+            assertEquals(6, ExcelChartConfig.ChartType.values().length);
             assertNotNull(ExcelChartConfig.ChartType.valueOf("BAR"));
             assertNotNull(ExcelChartConfig.ChartType.valueOf("LINE"));
             assertNotNull(ExcelChartConfig.ChartType.valueOf("PIE"));
+            assertNotNull(ExcelChartConfig.ChartType.valueOf("SCATTER"));
+            assertNotNull(ExcelChartConfig.ChartType.valueOf("AREA"));
+            assertNotNull(ExcelChartConfig.ChartType.valueOf("DOUGHNUT"));
         }
     }
 

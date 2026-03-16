@@ -47,13 +47,14 @@ public class ExcelColumn<T> {
     private final @Nullable ExcelBorderStyle borderStyle;
     private final @Nullable Boolean locked;
     private final boolean hidden;
+    private final @Nullable ExcelValidation validation;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, @Nullable Object> function, CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
-                boolean hidden) {
+                boolean hidden, @Nullable ExcelValidation validation) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -69,6 +70,7 @@ public class ExcelColumn<T> {
         this.borderStyle = borderStyle;
         this.locked = locked;
         this.hidden = hidden;
+        this.validation = validation;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -183,6 +185,10 @@ public class ExcelColumn<T> {
         return hidden;
     }
 
+    @Nullable ExcelValidation getValidation() {
+        return validation;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -211,6 +217,16 @@ public class ExcelColumn<T> {
         private @Nullable ExcelBorderStyle borderStyle;
         private @Nullable Boolean locked;
         private boolean hiddenValue;
+        private @Nullable ExcelValidation validation;
+        // New styling fields (consumed during build, baked into CellStyle)
+        private @Nullable Short rotation;
+        private @Nullable ExcelBorderStyle borderTop;
+        private @Nullable ExcelBorderStyle borderBottom;
+        private @Nullable ExcelBorderStyle borderLeft;
+        private @Nullable ExcelBorderStyle borderRight;
+        private int @Nullable [] fontColor;
+        private @Nullable Boolean strikethrough;
+        private @Nullable Boolean underline;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, @Nullable Object> function) {
             this.writer = writer;
@@ -392,12 +408,52 @@ public class ExcelColumn<T> {
         /**
          * Sets the border style for this column's cells.
          * <p>
-         * Overrides the default THIN border.
+         * Overrides the default THIN border on all sides.
          *
          * @param borderStyle the border style to apply
          */
         public ExcelColumnBuilder<T> border(ExcelBorderStyle borderStyle) {
             this.borderStyle = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets the top border style for this column's cells.
+         *
+         * @param borderStyle the border style to apply to the top border
+         */
+        public ExcelColumnBuilder<T> borderTop(ExcelBorderStyle borderStyle) {
+            this.borderTop = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets the bottom border style for this column's cells.
+         *
+         * @param borderStyle the border style to apply to the bottom border
+         */
+        public ExcelColumnBuilder<T> borderBottom(ExcelBorderStyle borderStyle) {
+            this.borderBottom = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets the left border style for this column's cells.
+         *
+         * @param borderStyle the border style to apply to the left border
+         */
+        public ExcelColumnBuilder<T> borderLeft(ExcelBorderStyle borderStyle) {
+            this.borderLeft = borderStyle;
+            return this;
+        }
+
+        /**
+         * Sets the right border style for this column's cells.
+         *
+         * @param borderStyle the border style to apply to the right border
+         */
+        public ExcelColumnBuilder<T> borderRight(ExcelBorderStyle borderStyle) {
+            this.borderRight = borderStyle;
             return this;
         }
 
@@ -433,6 +489,91 @@ public class ExcelColumn<T> {
         }
 
         /**
+         * Sets the text rotation angle for this column's cells.
+         * <p>
+         * Positive values rotate text counter-clockwise (0 to 90 degrees).
+         * Negative values rotate text clockwise (-1 to -90 degrees).
+         *
+         * @param degrees rotation angle (-90 to 90)
+         */
+        public ExcelColumnBuilder<T> rotation(int degrees) {
+            if (degrees < -90 || degrees > 90) {
+                throw new IllegalArgumentException("rotation must be between -90 and 90 degrees");
+            }
+            // POI uses 0-90 for counter-clockwise and 91-180 for clockwise
+            // -1 degree → 91, -90 degrees → 180
+            this.rotation = (short) (degrees >= 0 ? degrees : 90 + Math.abs(degrees));
+            return this;
+        }
+
+        /**
+         * Sets the font color for this column's cells using RGB values.
+         *
+         * @param r Red component (0–255)
+         * @param g Green component (0–255)
+         * @param b Blue component (0–255)
+         */
+        public ExcelColumnBuilder<T> fontColor(int r, int g, int b) {
+            this.fontColor = new int[]{r, g, b};
+            return this;
+        }
+
+        /**
+         * Sets the font color for this column's cells using a preset color.
+         *
+         * @param color Preset color
+         */
+        public ExcelColumnBuilder<T> fontColor(ExcelColor color) {
+            return fontColor(color.getR(), color.getG(), color.getB());
+        }
+
+        /**
+         * Enables strikethrough on this column's font.
+         */
+        public ExcelColumnBuilder<T> strikethrough() {
+            this.strikethrough = true;
+            return this;
+        }
+
+        /**
+         * Sets whether this column's font should be strikethrough.
+         *
+         * @param strikethrough whether to apply strikethrough
+         */
+        public ExcelColumnBuilder<T> strikethrough(boolean strikethrough) {
+            this.strikethrough = strikethrough;
+            return this;
+        }
+
+        /**
+         * Enables underline on this column's font.
+         */
+        public ExcelColumnBuilder<T> underline() {
+            this.underline = true;
+            return this;
+        }
+
+        /**
+         * Sets whether this column's font should be underlined.
+         *
+         * @param underline whether to apply underline
+         */
+        public ExcelColumnBuilder<T> underline(boolean underline) {
+            this.underline = underline;
+            return this;
+        }
+
+        /**
+         * Sets advanced data validation for this column.
+         *
+         * @param validation the validation configuration
+         */
+        public ExcelColumnBuilder<T> validation(ExcelValidation validation) {
+            this.validation = validation;
+            return this;
+        }
+
+        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -443,11 +584,16 @@ public class ExcelColumn<T> {
                 this.dataFormat = this.dataType.getDefaultFormat(); // apply format first
             }
             if (this.style == null) {
-                this.style = ExcelStyleSupporter.cellStyle(
-                        writer.getWb(), this.alignment, this.dataFormat,
+                CellStyleParams params = new CellStyleParams(
+                        this.alignment, this.dataFormat,
                         this.backgroundColor, this.bold, this.fontSize,
                         this.borderStyle, this.locked,
-                        writer.getCellStyleCache());
+                        this.rotation,
+                        this.borderTop, this.borderBottom, this.borderLeft, this.borderRight,
+                        this.fontColor, this.strikethrough, this.underline
+                );
+                this.style = ExcelStyleSupporter.cellStyle(
+                        writer.getWb(), params, writer.getCellStyleCache());
             }
             if (this.columnSetter == null) {
                 this.columnSetter = this.dataType.getSetter();
@@ -455,7 +601,7 @@ public class ExcelColumn<T> {
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
                     this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions,
                     this.cellColorFunction, this.groupName, this.outlineLevel,
-                    this.commentFunction, this.borderStyle, this.locked, this.hiddenValue);
+                    this.commentFunction, this.borderStyle, this.locked, this.hiddenValue, this.validation);
         }
 
         /**
