@@ -261,14 +261,7 @@ public class ExcelChartConfig {
         if (valueSeries.isEmpty()) return;
 
         // Access underlying XSSFSheet for chart support
-        XSSFSheet xssfSheet;
-        try {
-            var field = SXSSFSheet.class.getDeclaredField("_sh");
-            field.setAccessible(true);
-            xssfSheet = (XSSFSheet) field.get(sheet);
-        } catch (Exception e) {
-            throw new ExcelWriteException("Failed to access underlying XSSFSheet for chart creation", e);
-        }
+        XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheetOrThrow(sheet);
 
         int row1 = anchorRow1 >= 0 ? anchorRow1 : dataEndRow + 2;
         int row2 = anchorRow2 >= 0 ? anchorRow2 : row1 + 15;

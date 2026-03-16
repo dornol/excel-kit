@@ -8,6 +8,7 @@ import org.apache.poi.xssf.usermodel.XSSFFont;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -113,50 +114,15 @@ class ExcelStyleSupporter {
     }
 
     private static String buildCacheKey(CellStyleParams params) {
-        StringBuilder keyBuilder = new StringBuilder();
-        keyBuilder.append(params.alignment().name()).append("|").append(params.format());
-        int[] backgroundColor = params.backgroundColor();
-        if (backgroundColor != null) {
-            keyBuilder.append("|bg=").append(backgroundColor[0]).append(",").append(backgroundColor[1]).append(",").append(backgroundColor[2]);
-        }
-        if (params.bold() != null) {
-            keyBuilder.append("|bold=").append(params.bold());
-        }
-        if (params.fontSize() != null) {
-            keyBuilder.append("|fs=").append(params.fontSize());
-        }
-        if (params.borderStyle() != null) {
-            keyBuilder.append("|border=").append(params.borderStyle().name());
-        }
-        if (params.locked() != null) {
-            keyBuilder.append("|locked=").append(params.locked());
-        }
-        if (params.rotation() != null) {
-            keyBuilder.append("|rot=").append(params.rotation());
-        }
-        if (params.borderTop() != null) {
-            keyBuilder.append("|bt=").append(params.borderTop().name());
-        }
-        if (params.borderBottom() != null) {
-            keyBuilder.append("|bb=").append(params.borderBottom().name());
-        }
-        if (params.borderLeft() != null) {
-            keyBuilder.append("|bl=").append(params.borderLeft().name());
-        }
-        if (params.borderRight() != null) {
-            keyBuilder.append("|br=").append(params.borderRight().name());
-        }
-        int[] fontColor = params.fontColor();
-        if (fontColor != null) {
-            keyBuilder.append("|fc=").append(fontColor[0]).append(",").append(fontColor[1]).append(",").append(fontColor[2]);
-        }
-        if (params.strikethrough() != null) {
-            keyBuilder.append("|strike=").append(params.strikethrough());
-        }
-        if (params.underline() != null) {
-            keyBuilder.append("|ul=").append(params.underline());
-        }
-        return keyBuilder.toString();
+        return params.alignment().name() + "|" + params.format()
+                + "|" + Arrays.toString(params.backgroundColor())
+                + "|" + params.bold() + "|" + params.fontSize()
+                + "|" + params.borderStyle() + "|" + params.locked()
+                + "|" + params.rotation()
+                + "|" + params.borderTop() + "|" + params.borderBottom()
+                + "|" + params.borderLeft() + "|" + params.borderRight()
+                + "|" + Arrays.toString(params.fontColor())
+                + "|" + params.strikethrough() + "|" + params.underline();
     }
 
     private static CellStyle createCellStyle(SXSSFWorkbook wb, CellStyleParams params) {

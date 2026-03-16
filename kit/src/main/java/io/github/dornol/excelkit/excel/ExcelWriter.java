@@ -535,11 +535,7 @@ public class ExcelWriter<T> {
             this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns));
         }
 
-        applyDataValidationsAllSheets();
-        applyColumnWidthAllSheets();
-        applyProtectionAllSheets();
-        applyConditionalFormattingAllSheets();
-        applyPrintSetupAllSheets();
+        applyPostProcessingAllSheets();
 
         // Apply chart on last sheet
         if (chartConfig != null) {
@@ -619,58 +615,20 @@ public class ExcelWriter<T> {
     }
 
     /**
-     * Applies the calculated column widths to all sheets after writing is complete.
+     * Applies all post-processing steps (column widths, validations, outlines, hiding,
+     * protection, conditional formatting, print setup, tab color) to every sheet.
      */
-    private void applyColumnWidthAllSheets() {
+    private void applyPostProcessingAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
             SXSSFSheet s = wb.getSheetAt(i);
             ExcelWriteSupport.applyColumnWidths(s, columns);
+            ExcelWriteSupport.applyDataValidations(s, columns, headerRowIndex);
             ExcelWriteSupport.applyColumnOutline(s, columns);
             ExcelWriteSupport.applyColumnHidden(s, columns);
+            ExcelWriteSupport.applySheetProtection(s, sheetPassword);
+            ExcelWriteSupport.applyConditionalFormatting(s, conditionalRules, headerRowIndex, columns.size());
+            ExcelWriteSupport.applyPrintSetup(s, printSetup, headerRowIndex);
             ExcelWriteSupport.applyTabColor(s, tabColor);
-        }
-    }
-
-    /**
-     * Applies dropdown data validations to all sheets for columns that have dropdownOptions.
-     */
-    private void applyDataValidationsAllSheets() {
-        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-            ExcelWriteSupport.applyDataValidations(wb.getSheetAt(i), columns, headerRowIndex);
-        }
-    }
-
-    /**
-     * Applies sheet protection to all sheets.
-     */
-    private void applyProtectionAllSheets() {
-        if (sheetPassword != null) {
-            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-                ExcelWriteSupport.applySheetProtection(wb.getSheetAt(i), sheetPassword);
-            }
-        }
-    }
-
-    /**
-     * Applies conditional formatting rules to all sheets.
-     */
-    private void applyConditionalFormattingAllSheets() {
-        if (conditionalRules != null) {
-            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-                ExcelWriteSupport.applyConditionalFormatting(
-                        wb.getSheetAt(i), conditionalRules, headerRowIndex, columns.size());
-            }
-        }
-    }
-
-    /**
-     * Applies print setup configuration to all sheets.
-     */
-    private void applyPrintSetupAllSheets() {
-        if (printSetup != null) {
-            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-                ExcelWriteSupport.applyPrintSetup(wb.getSheetAt(i), printSetup, headerRowIndex);
-            }
         }
     }
 

@@ -3,7 +3,6 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.shared.Cursor;
 import io.github.dornol.excelkit.shared.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +11,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
-import java.util.function.Consumer;
 
 /**
  * Represents a single Excel column and how its value is derived, styled, and rendered.
@@ -194,68 +192,17 @@ public class ExcelColumn<T> {
      *
      * @param <T> the row data type
      */
-    public static class ExcelColumnBuilder<T> {
+    public static class ExcelColumnBuilder<T> extends ColumnStyleConfig<T, ExcelColumnBuilder<T>> {
         private final ExcelWriter<T> writer;
         private final String name;
         private final ExcelRowFunction<T, @Nullable Object> function;
-        private @Nullable ExcelDataType dataType;
-        private @Nullable String dataFormat;
-        private HorizontalAlignment alignment = HorizontalAlignment.CENTER;
         private @Nullable CellStyle style;
         private @Nullable ExcelColumnSetter columnSetter;
-        private int @Nullable [] backgroundColor;
-        private @Nullable Boolean bold;
-        private @Nullable Integer fontSize;
-        private int minWidthValue;
-        private int maxWidthValue;
-        private boolean fixedWidthValue;
-        private String @Nullable [] dropdownOptions;
-        private @Nullable CellColorFunction<T> cellColorFunction;
-        private @Nullable String groupName;
-        private int outlineLevel;
-        private @Nullable Function<T, @Nullable String> commentFunction;
-        private @Nullable ExcelBorderStyle borderStyle;
-        private @Nullable Boolean locked;
-        private boolean hiddenValue;
-        private @Nullable ExcelValidation validation;
-        // New styling fields (consumed during build, baked into CellStyle)
-        private @Nullable Short rotation;
-        private @Nullable ExcelBorderStyle borderTop;
-        private @Nullable ExcelBorderStyle borderBottom;
-        private @Nullable ExcelBorderStyle borderLeft;
-        private @Nullable ExcelBorderStyle borderRight;
-        private int @Nullable [] fontColor;
-        private @Nullable Boolean strikethrough;
-        private @Nullable Boolean underline;
 
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, @Nullable Object> function) {
             this.writer = writer;
             this.name = name;
             this.function = function;
-        }
-
-        /**
-         * Sets the column's data type (used for styling and value conversion).
-         */
-        public ExcelColumnBuilder<T> type(ExcelDataType dataType) {
-            this.dataType = dataType;
-            return this;
-        }
-
-        /**
-         * Sets the column's Excel cell data format.
-         */
-        public ExcelColumnBuilder<T> format(String dataFormat) {
-            this.dataFormat = dataFormat;
-            return this;
-        }
-
-        /**
-         * Sets the column's horizontal text alignment.
-         */
-        public ExcelColumnBuilder<T> alignment(HorizontalAlignment alignment) {
-            this.alignment = alignment;
-            return this;
         }
 
         /**
@@ -267,313 +214,6 @@ public class ExcelColumn<T> {
         }
 
         /**
-         * Sets the background color for this column's cells.
-         *
-         * @param r Red component (0–255)
-         * @param g Green component (0–255)
-         * @param b Blue component (0–255)
-         */
-        public ExcelColumnBuilder<T> backgroundColor(int r, int g, int b) {
-            this.backgroundColor = new int[]{r, g, b};
-            return this;
-        }
-
-        /**
-         * Sets the background color for this column's cells using a preset color.
-         *
-         * @param color Preset color
-         */
-        public ExcelColumnBuilder<T> backgroundColor(ExcelColor color) {
-            return backgroundColor(color.getR(), color.getG(), color.getB());
-        }
-
-        /**
-         * Sets whether this column's font should be bold.
-         */
-        public ExcelColumnBuilder<T> bold(boolean bold) {
-            this.bold = bold;
-            return this;
-        }
-
-        /**
-         * Sets the font size for this column's cells.
-         *
-         * @param fontSize Font size in points (must be positive)
-         */
-        public ExcelColumnBuilder<T> fontSize(int fontSize) {
-            if (fontSize <= 0) {
-                throw new IllegalArgumentException("fontSize must be positive");
-            }
-            this.fontSize = fontSize;
-            return this;
-        }
-
-        /**
-         * Sets a fixed column width. The column will not auto-resize.
-         *
-         * @param fixedWidth Fixed width value (in Excel internal units)
-         */
-        public ExcelColumnBuilder<T> width(int fixedWidth) {
-            this.fixedWidthValue = true;
-            this.minWidthValue = fixedWidth;
-            return this;
-        }
-
-        /**
-         * Sets the minimum column width. Auto-resize will not shrink below this value.
-         *
-         * @param minWidth Minimum width value (in Excel internal units)
-         */
-        public ExcelColumnBuilder<T> minWidth(int minWidth) {
-            this.minWidthValue = minWidth;
-            return this;
-        }
-
-        /**
-         * Sets the maximum column width. Auto-resize will not grow beyond this value.
-         *
-         * @param maxWidth Maximum width value (in Excel internal units)
-         */
-        public ExcelColumnBuilder<T> maxWidth(int maxWidth) {
-            this.maxWidthValue = maxWidth;
-            return this;
-        }
-
-        /**
-         * Sets dropdown validation options for this column's cells.
-         *
-         * @param options The list of allowed values for the dropdown
-         */
-        public ExcelColumnBuilder<T> dropdown(String... options) {
-            this.dropdownOptions = options;
-            return this;
-        }
-
-        /**
-         * Sets a per-cell conditional color function.
-         * <p>
-         * The function receives the resolved cell value and the row data, and returns
-         * an {@link ExcelColor} to apply as the cell background, or {@code null} for no override.
-         * Cell-level color takes precedence over row-level {@code rowColor}.
-         *
-         * @param cellColorFunction function to determine per-cell background color
-         */
-        public ExcelColumnBuilder<T> cellColor(CellColorFunction<T> cellColorFunction) {
-            this.cellColorFunction = cellColorFunction;
-            return this;
-        }
-
-        /**
-         * Sets the group header name for this column.
-         * <p>
-         * Adjacent columns with the same group name will share a merged group header row
-         * above the regular column header row.
-         *
-         * @param groupName the group header label
-         */
-        public ExcelColumnBuilder<T> group(String groupName) {
-            this.groupName = groupName;
-            return this;
-        }
-
-        /**
-         * Sets the outline (grouping) level for this column.
-         * <p>
-         * Columns with an outline level > 0 can be collapsed/expanded in Excel.
-         * Adjacent columns with the same outline level are grouped together.
-         *
-         * @param level the outline level (1-7, 0 = no outline)
-         */
-        public ExcelColumnBuilder<T> outline(int level) {
-            if (level < 0 || level > 7) {
-                throw new IllegalArgumentException("outline level must be between 0 and 7");
-            }
-            this.outlineLevel = level;
-            return this;
-        }
-
-        /**
-         * Sets a function that generates a cell comment (note) for each row.
-         * <p>
-         * The function receives the row data and returns the comment text,
-         * or {@code null} if no comment should be added.
-         *
-         * @param commentFunction function to generate comment text per row
-         */
-        public ExcelColumnBuilder<T> comment(Function<T, @Nullable String> commentFunction) {
-            this.commentFunction = commentFunction;
-            return this;
-        }
-
-        /**
-         * Sets the border style for this column's cells.
-         * <p>
-         * Overrides the default THIN border on all sides.
-         *
-         * @param borderStyle the border style to apply
-         */
-        public ExcelColumnBuilder<T> border(ExcelBorderStyle borderStyle) {
-            this.borderStyle = borderStyle;
-            return this;
-        }
-
-        /**
-         * Sets the top border style for this column's cells.
-         *
-         * @param borderStyle the border style to apply to the top border
-         */
-        public ExcelColumnBuilder<T> borderTop(ExcelBorderStyle borderStyle) {
-            this.borderTop = borderStyle;
-            return this;
-        }
-
-        /**
-         * Sets the bottom border style for this column's cells.
-         *
-         * @param borderStyle the border style to apply to the bottom border
-         */
-        public ExcelColumnBuilder<T> borderBottom(ExcelBorderStyle borderStyle) {
-            this.borderBottom = borderStyle;
-            return this;
-        }
-
-        /**
-         * Sets the left border style for this column's cells.
-         *
-         * @param borderStyle the border style to apply to the left border
-         */
-        public ExcelColumnBuilder<T> borderLeft(ExcelBorderStyle borderStyle) {
-            this.borderLeft = borderStyle;
-            return this;
-        }
-
-        /**
-         * Sets the right border style for this column's cells.
-         *
-         * @param borderStyle the border style to apply to the right border
-         */
-        public ExcelColumnBuilder<T> borderRight(ExcelBorderStyle borderStyle) {
-            this.borderRight = borderStyle;
-            return this;
-        }
-
-        /**
-         * Sets whether this column's cells should be locked when sheet protection is enabled.
-         * <p>
-         * By default, all cells are locked when sheet protection is active.
-         * Set to {@code false} to allow editing of this column's cells even when the sheet is protected.
-         *
-         * @param locked whether cells should be locked
-         */
-        public ExcelColumnBuilder<T> locked(boolean locked) {
-            this.locked = locked;
-            return this;
-        }
-
-        /**
-         * Marks this column as hidden in the Excel output.
-         */
-        public ExcelColumnBuilder<T> hidden() {
-            this.hiddenValue = true;
-            return this;
-        }
-
-        /**
-         * Sets whether this column should be hidden in the Excel output.
-         *
-         * @param hidden whether the column should be hidden
-         */
-        public ExcelColumnBuilder<T> hidden(boolean hidden) {
-            this.hiddenValue = hidden;
-            return this;
-        }
-
-        /**
-         * Sets the text rotation angle for this column's cells.
-         * <p>
-         * Positive values rotate text counter-clockwise (0 to 90 degrees).
-         * Negative values rotate text clockwise (-1 to -90 degrees).
-         *
-         * @param degrees rotation angle (-90 to 90)
-         */
-        public ExcelColumnBuilder<T> rotation(int degrees) {
-            if (degrees < -90 || degrees > 90) {
-                throw new IllegalArgumentException("rotation must be between -90 and 90 degrees");
-            }
-            // POI uses 0-90 for counter-clockwise and 91-180 for clockwise
-            // -1 degree → 91, -90 degrees → 180
-            this.rotation = (short) (degrees >= 0 ? degrees : 90 + Math.abs(degrees));
-            return this;
-        }
-
-        /**
-         * Sets the font color for this column's cells using RGB values.
-         *
-         * @param r Red component (0–255)
-         * @param g Green component (0–255)
-         * @param b Blue component (0–255)
-         */
-        public ExcelColumnBuilder<T> fontColor(int r, int g, int b) {
-            this.fontColor = new int[]{r, g, b};
-            return this;
-        }
-
-        /**
-         * Sets the font color for this column's cells using a preset color.
-         *
-         * @param color Preset color
-         */
-        public ExcelColumnBuilder<T> fontColor(ExcelColor color) {
-            return fontColor(color.getR(), color.getG(), color.getB());
-        }
-
-        /**
-         * Enables strikethrough on this column's font.
-         */
-        public ExcelColumnBuilder<T> strikethrough() {
-            this.strikethrough = true;
-            return this;
-        }
-
-        /**
-         * Sets whether this column's font should be strikethrough.
-         *
-         * @param strikethrough whether to apply strikethrough
-         */
-        public ExcelColumnBuilder<T> strikethrough(boolean strikethrough) {
-            this.strikethrough = strikethrough;
-            return this;
-        }
-
-        /**
-         * Enables underline on this column's font.
-         */
-        public ExcelColumnBuilder<T> underline() {
-            this.underline = true;
-            return this;
-        }
-
-        /**
-         * Sets whether this column's font should be underlined.
-         *
-         * @param underline whether to apply underline
-         */
-        public ExcelColumnBuilder<T> underline(boolean underline) {
-            this.underline = underline;
-            return this;
-        }
-
-        /**
-         * Sets advanced data validation for this column.
-         *
-         * @param validation the validation configuration
-         */
-        public ExcelColumnBuilder<T> validation(ExcelValidation validation) {
-            this.validation = validation;
-            return this;
-        }
-
-        /**
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
@@ -581,7 +221,7 @@ public class ExcelColumn<T> {
                 this.type(ExcelDataType.STRING);
             }
             if (this.dataFormat == null) {
-                this.dataFormat = this.dataType.getDefaultFormat(); // apply format first
+                this.dataFormat = this.dataType.getDefaultFormat();
             }
             if (this.style == null) {
                 CellStyleParams params = new CellStyleParams(
@@ -599,9 +239,9 @@ public class ExcelColumn<T> {
                 this.columnSetter = this.dataType.getSetter();
             }
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
-                    this.minWidthValue, this.maxWidthValue, this.fixedWidthValue, this.dropdownOptions,
+                    this.minWidth, this.maxWidth, this.fixedWidth, this.dropdownOptions,
                     this.cellColorFunction, this.groupName, this.outlineLevel,
-                    this.commentFunction, this.borderStyle, this.locked, this.hiddenValue, this.validation);
+                    this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation);
         }
 
         /**

@@ -4,9 +4,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Provides contextual information passed to {@link BeforeHeaderWriter} and
@@ -33,11 +31,7 @@ public class SheetContext {
         this.workbook = workbook;
         this.currentRow = currentRow;
         this.columnCount = columns.size();
-        this.columnNames = Collections.unmodifiableList(
-                columns.stream()
-                        .map(ExcelColumn::getName)
-                        .collect(Collectors.toList())
-        );
+        this.columnNames = List.copyOf(columns.stream().map(ExcelColumn::getName).toList());
     }
 
     /**

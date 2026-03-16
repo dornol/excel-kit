@@ -296,14 +296,10 @@ class ExcelWriteSupport {
 
     static void applyTabColor(SXSSFSheet sheet, int @Nullable [] tabColor) {
         if (tabColor == null) return;
-        try {
-            var field = SXSSFSheet.class.getDeclaredField("_sh");
-            field.setAccessible(true);
-            XSSFSheet xssfSheet = (XSSFSheet) field.get(sheet);
+        XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
+        if (xssfSheet != null) {
             xssfSheet.setTabColor(new XSSFColor(new byte[]{
                     (byte) tabColor[0], (byte) tabColor[1], (byte) tabColor[2]}));
-        } catch (Exception e) {
-            // Best-effort: skip if reflection fails
         }
     }
 }
