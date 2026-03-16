@@ -230,7 +230,8 @@ public class ExcelColumn<T> {
                         this.borderStyle, this.locked,
                         this.rotation,
                         this.borderTop, this.borderBottom, this.borderLeft, this.borderRight,
-                        this.fontColor, this.strikethrough, this.underline
+                        this.fontColor, this.strikethrough, this.underline,
+                        this.verticalAlignment, this.wrapText, this.fontName, this.indentation
                 );
                 this.style = ExcelStyleSupporter.cellStyle(
                         writer.getWb(), params, writer.getCellStyleCache());

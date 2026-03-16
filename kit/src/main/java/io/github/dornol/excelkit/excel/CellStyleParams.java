@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -25,6 +26,10 @@ record CellStyleParams(
         @Nullable ExcelBorderStyle borderRight,
         int @Nullable [] fontColor,
         @Nullable Boolean strikethrough,
-        @Nullable Boolean underline
+        @Nullable Boolean underline,
+        @Nullable VerticalAlignment verticalAlignment,
+        @Nullable Boolean wrapText,
+        @Nullable String fontName,
+        @Nullable Short indentation
 ) {
 }

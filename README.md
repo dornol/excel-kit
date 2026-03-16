@@ -43,6 +43,10 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Advanced data validation via `validation()` — integer/decimal ranges, text length, date ranges, custom formulas
 - Row grouping via `SheetContext.groupRows()` — collapsible row groups in callbacks
 - Sheet tab color via `tabColor()` — colorize sheet tabs
+- Vertical alignment via `verticalAlignment()` — TOP, CENTER, BOTTOM, JUSTIFY
+- Text wrapping via `wrapText()` — configurable per-column text wrapping (default: enabled)
+- Font name via `fontName()` — custom font family (e.g., "Arial", "맑은 고딕")
+- Cell indentation via `indentation()` — indent cell content by level (0–250)
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -637,6 +641,90 @@ workbook.<Item>sheet("Report")
     .write(stream);
 ```
 
+### Vertical Alignment
+
+Set the vertical text alignment within cells (default: `CENTER`):
+
+```java
+writer
+    .column("Top", p -> p.value())
+        .verticalAlignment(VerticalAlignment.TOP)
+    .column("Bottom", p -> p.other())
+        .verticalAlignment(VerticalAlignment.BOTTOM)
+    .column("Justify", p -> p.text())
+        .verticalAlignment(VerticalAlignment.JUSTIFY)
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Notes", Item::getNotes, c -> c.verticalAlignment(VerticalAlignment.TOP))
+    .write(stream);
+```
+
+### Text Wrapping
+
+Control per-column text wrapping (enabled by default). Disable to clip content at column width:
+
+```java
+writer
+    .column("Description", p -> p.desc())
+        .wrapText()                                 // explicitly enable (default)
+    .column("Code", p -> p.code())
+        .wrapText(false)                            // disable wrapping
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Code", Item::getCode, c -> c.wrapText(false))
+    .write(stream);
+```
+
+### Font Name
+
+Specify the font family for a column's cells:
+
+```java
+writer
+    .column("Title", p -> p.title())
+        .fontName("Arial")
+    .column("한국어", p -> p.korean())
+        .fontName("맑은 고딕")
+    .column("Serif", p -> p.content())
+        .fontName("Times New Roman")
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Name", Item::getName, c -> c.fontName("Arial"))
+    .write(stream);
+```
+
+### Cell Indentation
+
+Indent cell content by a specified level (0–250):
+
+```java
+writer
+    .column("Category", p -> p.category())
+    .column("Sub-item", p -> p.item())
+        .indentation(2)
+        .alignment(HorizontalAlignment.LEFT)
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .column("Detail", Item::getDetail, c -> c.indentation(3))
+    .write(stream);
+```
+
 ### Advanced Data Validation
 
 Apply advanced data validation rules beyond dropdowns:
@@ -1085,7 +1173,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `validation`
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`
 - `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`, `tabColor()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
@@ -1270,7 +1358,7 @@ CsvReadHandler<Book> crh = schema.csvReader(Book::new, null)
         .build(inputStream);
 ```
 
-The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `backgroundColor`, `bold`, `fontSize`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `validation`):
+The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`):
 
 ```java
 ExcelKitSchema.<Product>builder()

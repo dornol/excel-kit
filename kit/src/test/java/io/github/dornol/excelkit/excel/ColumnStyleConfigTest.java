@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -61,6 +62,11 @@ class ColumnStyleConfigTest {
             assertSame(c, c.strikethrough(false));
             assertSame(c, c.underline());
             assertSame(c, c.underline(false));
+            assertSame(c, c.verticalAlignment(VerticalAlignment.TOP));
+            assertSame(c, c.wrapText());
+            assertSame(c, c.wrapText(false));
+            assertSame(c, c.fontName("Arial"));
+            assertSame(c, c.indentation(2));
             assertSame(c, c.validation(ExcelValidation.integerBetween(1, 10)));
         }
 
@@ -224,6 +230,10 @@ class ColumnStyleConfigTest {
             assertNull(c.fontColor);
             assertNull(c.strikethrough);
             assertNull(c.underline);
+            assertNull(c.verticalAlignment);
+            assertNull(c.wrapText);
+            assertNull(c.fontName);
+            assertNull(c.indentation);
         }
     }
 
@@ -372,6 +382,106 @@ class ColumnStyleConfigTest {
             assertEquals(ExcelBorderStyle.DASHED, c.borderLeft);
             assertEquals(ExcelBorderStyle.DOTTED, c.borderRight);
             assertNull(c.borderStyle, "Uniform border should remain null");
+        }
+    }
+
+    // ============================================================
+    // Vertical alignment
+    // ============================================================
+    @Nested
+    class VerticalAlignmentTests {
+
+        @Test
+        void verticalAlignment_setsValue() {
+            var c = config().verticalAlignment(VerticalAlignment.TOP);
+            assertEquals(VerticalAlignment.TOP, c.verticalAlignment);
+        }
+
+        @Test
+        void verticalAlignment_allValues() {
+            for (VerticalAlignment va : VerticalAlignment.values()) {
+                var c = config().verticalAlignment(va);
+                assertEquals(va, c.verticalAlignment);
+            }
+        }
+    }
+
+    // ============================================================
+    // Text wrapping
+    // ============================================================
+    @Nested
+    class WrapTextTests {
+
+        @Test
+        void wrapText_noArg_setsTrue() {
+            var c = config().wrapText();
+            assertEquals(true, c.wrapText);
+        }
+
+        @Test
+        void wrapText_boolean() {
+            assertEquals(true, config().wrapText(true).wrapText);
+            assertEquals(false, config().wrapText(false).wrapText);
+        }
+
+        @Test
+        void wrapText_toggle() {
+            var c = config().wrapText().wrapText(false);
+            assertEquals(false, c.wrapText);
+        }
+    }
+
+    // ============================================================
+    // Font name
+    // ============================================================
+    @Nested
+    class FontNameTests {
+
+        @Test
+        void fontName_setsValue() {
+            var c = config().fontName("Arial");
+            assertEquals("Arial", c.fontName);
+        }
+
+        @Test
+        void fontName_korean() {
+            var c = config().fontName("맑은 고딕");
+            assertEquals("맑은 고딕", c.fontName);
+        }
+
+        @Test
+        void fontName_overwrite() {
+            var c = config().fontName("Arial").fontName("Times New Roman");
+            assertEquals("Times New Roman", c.fontName);
+        }
+    }
+
+    // ============================================================
+    // Indentation
+    // ============================================================
+    @Nested
+    class IndentationTests {
+
+        @Test
+        void indentation_validRange() {
+            var c = config().indentation(0);
+            assertEquals((short) 0, c.indentation);
+
+            c.indentation(5);
+            assertEquals((short) 5, c.indentation);
+
+            c.indentation(250);
+            assertEquals((short) 250, c.indentation);
+        }
+
+        @Test
+        void indentation_negative_throws() {
+            assertThrows(IllegalArgumentException.class, () -> config().indentation(-1));
+        }
+
+        @Test
+        void indentation_tooHigh_throws() {
+            assertThrows(IllegalArgumentException.class, () -> config().indentation(251));
         }
     }
 

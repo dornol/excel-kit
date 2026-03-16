@@ -104,7 +104,8 @@ class ExcelStyleSupporter {
                                @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
                                Map<String, CellStyle> cache) {
         CellStyleParams params = new CellStyleParams(alignment, format, backgroundColor, bold, fontSize,
-                borderStyle, locked, null, null, null, null, null, null, null, null);
+                borderStyle, locked, null, null, null, null, null, null, null, null,
+                null, null, null, null);
         return cellStyle(wb, params, cache);
     }
 
@@ -122,7 +123,9 @@ class ExcelStyleSupporter {
                 + "|" + params.borderTop() + "|" + params.borderBottom()
                 + "|" + params.borderLeft() + "|" + params.borderRight()
                 + "|" + Arrays.toString(params.fontColor())
-                + "|" + params.strikethrough() + "|" + params.underline();
+                + "|" + params.strikethrough() + "|" + params.underline()
+                + "|" + params.verticalAlignment() + "|" + params.wrapText()
+                + "|" + params.fontName() + "|" + params.indentation();
     }
 
     private static CellStyle createCellStyle(SXSSFWorkbook wb, CellStyleParams params) {
@@ -140,9 +143,10 @@ class ExcelStyleSupporter {
             nowStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         }
 
-        // Font: bold, fontSize, fontColor, strikethrough, underline
+        // Font: bold, fontSize, fontColor, strikethrough, underline, fontName
         boolean needsFont = params.bold() != null || params.fontSize() != null
-                || params.fontColor() != null || params.strikethrough() != null || params.underline() != null;
+                || params.fontColor() != null || params.strikethrough() != null
+                || params.underline() != null || params.fontName() != null;
         if (needsFont) {
             Font font = wb.createFont();
             if (params.bold() != null) {
@@ -162,6 +166,9 @@ class ExcelStyleSupporter {
             if (params.underline() != null && params.underline()) {
                 font.setUnderline(Font.U_SINGLE);
             }
+            if (params.fontName() != null) {
+                font.setFontName(params.fontName());
+            }
             nowStyle.setFont(font);
         }
 
@@ -179,7 +186,12 @@ class ExcelStyleSupporter {
         if (params.rotation() != null) {
             nowStyle.setRotation(params.rotation());
         }
-        nowStyle.setWrapText(true);
+        nowStyle.setVerticalAlignment(params.verticalAlignment() != null
+                ? params.verticalAlignment() : VerticalAlignment.CENTER);
+        nowStyle.setWrapText(params.wrapText() != null ? params.wrapText() : true);
+        if (params.indentation() != null) {
+            nowStyle.setIndention(params.indentation());
+        }
         return nowStyle;
     }
 

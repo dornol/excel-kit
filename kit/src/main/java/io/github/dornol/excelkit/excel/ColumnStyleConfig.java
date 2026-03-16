@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
@@ -46,6 +47,10 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     int @Nullable [] fontColor;
     @Nullable Boolean strikethrough;
     @Nullable Boolean underline;
+    @Nullable VerticalAlignment verticalAlignment;
+    @Nullable Boolean wrapText;
+    @Nullable String fontName;
+    @Nullable Short indentation;
 
     // Return self for fluent chaining
     private SELF self() {
@@ -368,6 +373,62 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      */
     public SELF underline(boolean underline) {
         this.underline = underline;
+        return self();
+    }
+
+    /**
+     * Sets the column's vertical text alignment.
+     *
+     * @param verticalAlignment vertical alignment (e.g., TOP, CENTER, BOTTOM, JUSTIFY)
+     */
+    public SELF verticalAlignment(VerticalAlignment verticalAlignment) {
+        this.verticalAlignment = verticalAlignment;
+        return self();
+    }
+
+    /**
+     * Enables text wrapping for this column's cells.
+     * <p>
+     * When enabled, cell content that exceeds the column width wraps to the next line
+     * within the cell instead of being clipped.
+     */
+    public SELF wrapText() {
+        this.wrapText = true;
+        return self();
+    }
+
+    /**
+     * Sets whether text wrapping is enabled for this column's cells.
+     *
+     * @param wrapText whether to enable text wrapping
+     */
+    public SELF wrapText(boolean wrapText) {
+        this.wrapText = wrapText;
+        return self();
+    }
+
+    /**
+     * Sets the font family name for this column's cells.
+     *
+     * @param fontName the font name (e.g., "Arial", "맑은 고딕", "Times New Roman")
+     */
+    public SELF fontName(String fontName) {
+        this.fontName = fontName;
+        return self();
+    }
+
+    /**
+     * Sets the indentation level for this column's cells.
+     * <p>
+     * Indentation shifts the cell content to the right by the specified number of levels.
+     *
+     * @param level the indentation level (0-250)
+     */
+    public SELF indentation(int level) {
+        if (level < 0 || level > 250) {
+            throw new IllegalArgumentException("indentation level must be between 0 and 250");
+        }
+        this.indentation = (short) level;
         return self();
     }
 

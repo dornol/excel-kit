@@ -418,7 +418,8 @@ public class ExcelSheetWriter<T> {
         CellStyleParams params = new CellStyleParams(c.alignment, dataFormat,
                 c.backgroundColor, c.bold, c.fontSize, c.borderStyle, c.locked,
                 c.rotation, c.borderTop, c.borderBottom, c.borderLeft, c.borderRight,
-                c.fontColor, c.strikethrough, c.underline);
+                c.fontColor, c.strikethrough, c.underline,
+                c.verticalAlignment, c.wrapText, c.fontName, c.indentation);
         CellStyle style = ExcelStyleSupporter.cellStyle(wb, params, cellStyleCache);
 
         return new ExcelColumn<>(name, function, style, dataType.getSetter(),
