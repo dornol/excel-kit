@@ -294,6 +294,13 @@ class ExcelWriteSupport {
         }
     }
 
+    static void applyWorkbookProtection(SXSSFWorkbook wb, @Nullable String password) {
+        if (password != null) {
+            wb.getXSSFWorkbook().lockStructure();
+            wb.getXSSFWorkbook().setWorkbookPassword(password, null);
+        }
+    }
+
     static void applyTabColor(SXSSFSheet sheet, int @Nullable [] tabColor) {
         if (tabColor == null) return;
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);

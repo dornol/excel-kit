@@ -33,7 +33,8 @@ public class ExcelValidation {
         DECIMAL,
         TEXT_LENGTH,
         DATE,
-        FORMULA
+        FORMULA,
+        LIST_FORMULA
     }
 
     private final ValidationType type;
@@ -109,6 +110,19 @@ public class ExcelValidation {
     }
 
     /**
+     * Creates a list validation that references a cell range for dropdown options.
+     * <p>
+     * Use this when dropdown options come from another sheet or cell range
+     * instead of inline string arrays.
+     *
+     * @param range the cell range reference (e.g., "Sheet2!$A$1:$A$10")
+     */
+    public static ExcelValidation listFromRange(String range) {
+        return new ExcelValidation(ValidationType.LIST_FORMULA,
+                DataValidationConstraint.OperatorType.BETWEEN, range, null);
+    }
+
+    /**
      * Creates a validation using a custom Excel formula.
      */
     public static ExcelValidation formula(String formula) {
@@ -172,6 +186,7 @@ public class ExcelValidation {
                     value1 != null ? value1 : "", value2 != null ? value2 : "",
                     "yyyy-MM-dd");
             case FORMULA -> helper.createCustomConstraint(value1 != null ? value1 : "TRUE");
+            case LIST_FORMULA -> helper.createFormulaListConstraint(value1 != null ? value1 : "");
         };
     }
 }

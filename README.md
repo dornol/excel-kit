@@ -47,6 +47,12 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Text wrapping via `wrapText()` — configurable per-column text wrapping (default: enabled)
 - Font name via `fontName()` — custom font family (e.g., "Arial", "맑은 고딕")
 - Cell indentation via `indentation()` — indent cell content by level (0–250)
+- Workbook protection via `protectWorkbook()` — prevent sheet add/delete/rename/reorder
+- Header font customization via `headerFontName()` and `headerFontSize()`
+- Default column style via `defaultStyle()` — writer-level style defaults inherited by all columns
+- Summary/footer rows via `summary()` — fluent DSL for SUM, AVERAGE, COUNT, MIN, MAX formulas
+- Named ranges via `SheetContext.namedRange()` — create workbook-scoped named ranges in callbacks
+- List validation from cell range via `ExcelValidation.listFromRange()` — dropdown options from sheet/range reference
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -725,6 +731,144 @@ workbook.<Item>sheet("Data")
     .write(stream);
 ```
 
+### Workbook Protection
+
+Protect the workbook structure to prevent adding, deleting, renaming, or reordering sheets:
+
+```java
+new ExcelWriter<Product>()
+    .protectWorkbook("password123")
+    .addColumn("Name", Product::name)
+    .write(data);
+```
+
+For `ExcelWorkbook`:
+```java
+try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+    workbook.protectWorkbook("password123");
+    workbook.<User>sheet("Users").column("Name", User::getName).write(userStream);
+    workbook.finish().consumeOutputStream(outputStream);
+}
+```
+
+Can be combined with `protectSheet()` — workbook protection prevents structural changes, sheet protection prevents cell editing.
+
+### Header Font Customization
+
+Customize the header row font name and size (default: bold, 11pt):
+
+```java
+new ExcelWriter<Product>()
+    .headerFontName("Arial")
+    .headerFontSize(14)
+    .addColumn("Name", Product::name)
+    .write(data);
+```
+
+For `ExcelWorkbook`:
+```java
+try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+    workbook.headerFontName("맑은 고딕").headerFontSize(12);
+    workbook.<User>sheet("Users").column("Name", User::getName).write(userStream);
+    workbook.finish().consumeOutputStream(outputStream);
+}
+```
+
+### Default Column Style
+
+Set writer-level default styles that all columns inherit unless overridden per-column:
+
+```java
+new ExcelWriter<Product>()
+    .defaultStyle(d -> d
+        .fontName("Arial")
+        .fontSize(10)
+        .alignment(HorizontalAlignment.LEFT)
+        .bold(true))
+    .column("Name", p -> p.name())                       // inherits all defaults
+    .column("Price", p -> p.price())
+        .type(ExcelDataType.INTEGER)
+        .bold(false)                                       // override: not bold
+        .alignment(HorizontalAlignment.RIGHT)              // override: right-aligned
+    .write(data);
+```
+
+For `ExcelSheetWriter`:
+```java
+workbook.<Item>sheet("Data")
+    .defaultStyle(d -> d.fontName("Courier New").fontSize(9))
+    .column("Code", Item::getCode)
+    .column("Value", Item::getValue)
+    .write(stream);
+```
+
+### Summary/Footer Rows
+
+Add summary rows with formulas using a fluent DSL:
+
+```java
+new ExcelWriter<Product>()
+    .addColumn("Name", Product::name)
+    .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
+    .addColumn("Qty", p -> p.qty(), c -> c.type(ExcelDataType.INTEGER))
+    .summary(s -> s
+        .label("Total")
+        .sum("Price")
+        .sum("Qty"))
+    .write(data);
+```
+
+Multiple operations create multiple summary rows:
+```java
+.summary(s -> s
+    .sum("Amount")          // row 1: "Sum" label + SUM formula
+    .average("Amount")      // row 2: "Average" label + AVERAGE formula
+    .count("Amount")        // row 3: "Count" label + COUNT formula
+    .min("Score")           // row 4: "Min" label + MIN formula
+    .max("Score"))          // row 5: "Max" label + MAX formula
+```
+
+Place the label in a specific column:
+```java
+.summary(s -> s.label("Total", "Grand Total").sum("Amount"))
+```
+
+Summary rows work with sheet rollover — formulas are generated per-sheet.
+
+### Named Ranges
+
+Create workbook-scoped named ranges in lifecycle callbacks:
+
+```java
+writer
+    .addColumn("Category", p -> p.category())
+    .afterData(ctx -> {
+        // By reference string
+        ctx.namedRange("Categories", "Sheet1!$A$2:$A$100");
+
+        // By column index and row range (auto-generates reference for current sheet)
+        ctx.namedRange("CategoryList", 0, 1, ctx.getCurrentRow() - 1);
+
+        return ctx.getCurrentRow();
+    })
+    .write(data);
+```
+
+Named ranges can be used as validation sources with `ExcelValidation.listFromRange()`.
+
+### List Validation from Cell Range
+
+Create dropdown validations that reference a cell range instead of inline string arrays:
+
+```java
+writer
+    .column("Status", p -> p.status())
+        .validation(ExcelValidation.listFromRange("Options!$A$1:$A$5"))
+    .write(data);
+```
+
+Useful for large option lists stored on a separate sheet, or dynamic lists that can be updated independently.
+
 ### Advanced Data Validation
 
 Apply advanced data validation rules beyond dropdowns:
@@ -757,6 +901,7 @@ Available factory methods:
 - `ExcelValidation.textLength(min, max)` — text length constraint
 - `ExcelValidation.dateRange(start, end)` — date range constraint
 - `ExcelValidation.formula(formula)` — custom Excel formula
+- `ExcelValidation.listFromRange(range)` — dropdown from cell range (e.g., `"Sheet2!$A$1:$A$10"`)
 
 Fluent error configuration:
 ```java
@@ -1174,7 +1319,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
 - Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`, `tabColor()`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`, `tabColor()`, `defaultStyle()`, `summary()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
 
@@ -1358,7 +1503,7 @@ CsvReadHandler<Book> crh = schema.csvReader(Book::new, null)
         .build(inputStream);
 ```
 
-The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`):
+The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`). Writer-level features like `defaultStyle`, `summary`, `protectWorkbook`, `headerFontName`, `headerFontSize` are available on `ExcelWriter` and `ExcelWorkbook`.
 
 ```java
 ExcelKitSchema.<Product>builder()

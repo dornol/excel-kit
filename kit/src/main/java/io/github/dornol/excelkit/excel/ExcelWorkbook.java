@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.excel;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,10 +41,14 @@ public class ExcelWorkbook implements AutoCloseable {
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
     private final SXSSFWorkbook wb;
-    private final CellStyle headerStyle;
+    private CellStyle headerStyle;
+    private final XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private final Set<String> usedSheetNames = new HashSet<>();
     private boolean finished = false;
+    private @Nullable String workbookPassword;
+    private @Nullable String headerFontName;
+    private @Nullable Integer headerFontSize;
 
     /**
      * Creates a workbook with a default white header color.
@@ -73,7 +78,8 @@ public class ExcelWorkbook implements AutoCloseable {
      */
     public ExcelWorkbook(int r, int g, int b, int rowAccessWindowSize) {
         this.wb = new SXSSFWorkbook(rowAccessWindowSize);
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b}));
+        this.headerColor = new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b});
+        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
     }
 
     /**
@@ -103,6 +109,46 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return an {@link ExcelSheetWriter} for configuring and writing the sheet
      * @throws ExcelWriteException if the workbook is already finished or the sheet name is duplicate
      */
+    /**
+     * Protects the workbook structure with the given password.
+     * <p>
+     * When enabled, users cannot add, delete, rename, or reorder sheets.
+     *
+     * @param password the protection password
+     * @return this workbook for chaining
+     */
+    public ExcelWorkbook protectWorkbook(String password) {
+        this.workbookPassword = password;
+        return this;
+    }
+
+    /**
+     * Sets the header font name for all sheets.
+     *
+     * @param fontName the font name (e.g., "Arial", "맑은 고딕")
+     * @return this workbook for chaining
+     */
+    public ExcelWorkbook headerFontName(String fontName) {
+        this.headerFontName = fontName;
+        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize);
+        return this;
+    }
+
+    /**
+     * Sets the header font size for all sheets.
+     *
+     * @param fontSize font size in points (must be positive)
+     * @return this workbook for chaining
+     */
+    public ExcelWorkbook headerFontSize(int fontSize) {
+        if (fontSize <= 0) {
+            throw new IllegalArgumentException("fontSize must be positive");
+        }
+        this.headerFontSize = fontSize;
+        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize);
+        return this;
+    }
+
     public <T> ExcelSheetWriter<T> sheet(String name) {
         if (finished) {
             throw new ExcelWriteException("Workbook is already finished");
@@ -122,6 +168,7 @@ public class ExcelWorkbook implements AutoCloseable {
      */
     public ExcelHandler finish() {
         finished = true;
+        ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
         return new ExcelHandler(wb);
     }
 

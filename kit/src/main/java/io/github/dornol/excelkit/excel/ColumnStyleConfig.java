@@ -24,6 +24,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable ExcelDataType dataType;
     @Nullable String dataFormat;
     HorizontalAlignment alignment = HorizontalAlignment.CENTER;
+    boolean alignmentSet;
     int @Nullable [] backgroundColor;
     @Nullable Boolean bold;
     @Nullable Integer fontSize;
@@ -78,6 +79,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      */
     public SELF alignment(HorizontalAlignment alignment) {
         this.alignment = alignment;
+        this.alignmentSet = true;
         return self();
     }
 
@@ -451,6 +453,44 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param degrees user-facing rotation angle
      * @return POI-internal rotation value
      */
+    /**
+     * Applies defaults from the given config to this config.
+     * Only null/default fields in this config are overridden.
+     */
+    void applyDefaults(ColumnStyleConfig<?, ?> defaults) {
+        if (this.dataType == null) this.dataType = defaults.dataType;
+        if (this.dataFormat == null) this.dataFormat = defaults.dataFormat;
+        if (this.backgroundColor == null) this.backgroundColor = defaults.backgroundColor;
+        if (this.bold == null) this.bold = defaults.bold;
+        if (this.fontSize == null) this.fontSize = defaults.fontSize;
+        if (this.borderStyle == null) this.borderStyle = defaults.borderStyle;
+        if (this.locked == null) this.locked = defaults.locked;
+        if (this.rotation == null) this.rotation = defaults.rotation;
+        if (this.borderTop == null) this.borderTop = defaults.borderTop;
+        if (this.borderBottom == null) this.borderBottom = defaults.borderBottom;
+        if (this.borderLeft == null) this.borderLeft = defaults.borderLeft;
+        if (this.borderRight == null) this.borderRight = defaults.borderRight;
+        if (this.fontColor == null) this.fontColor = defaults.fontColor;
+        if (this.strikethrough == null) this.strikethrough = defaults.strikethrough;
+        if (this.underline == null) this.underline = defaults.underline;
+        if (this.verticalAlignment == null) this.verticalAlignment = defaults.verticalAlignment;
+        if (this.wrapText == null) this.wrapText = defaults.wrapText;
+        if (this.fontName == null) this.fontName = defaults.fontName;
+        if (this.indentation == null) this.indentation = defaults.indentation;
+        if (!this.alignmentSet && defaults.alignmentSet) {
+            this.alignment = defaults.alignment;
+            this.alignmentSet = true;
+        }
+    }
+
+    /**
+     * Concrete subclass for defining default column styles at the writer level.
+     *
+     * @param <T> the row data type
+     */
+    public static class DefaultStyleConfig<T> extends ColumnStyleConfig<T, DefaultStyleConfig<T>> {
+    }
+
     static short toExcelRotation(int degrees) {
         return (short) (degrees >= 0 ? degrees : 90 + Math.abs(degrees));
     }

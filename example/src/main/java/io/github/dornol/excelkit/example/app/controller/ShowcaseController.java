@@ -7,6 +7,7 @@ import io.github.dornol.excelkit.example.app.util.DownloadUtil;
 import io.github.dornol.excelkit.csv.CsvMapWriter;
 import io.github.dornol.excelkit.excel.*;
 import io.github.dornol.excelkit.shared.ExcelKitSchema;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -665,6 +666,145 @@ public class ShowcaseController {
             sb.append("Sheet %d: \"%s\" — Headers: %s\n".formatted(info.index(), info.name(), headers));
         }
         return sb.toString();
+    }
+
+    // ========================================================================
+    // 20. Workbook Protection - protectWorkbook + protectSheet combined
+    // ========================================================================
+    @GetMapping("/workbook-protection")
+    public ResponseEntity<StreamingResponseBody> downloadWorkbookProtection() {
+        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+            wb.protectWorkbook("secret");
+
+            wb.<ProductDto>sheet("Protected Data")
+                    .protectSheet("1234")
+                    .autoFilter()
+                    .freezePane(1)
+                    .column("Name (locked)", ProductDto::name, c -> c.locked(true))
+                    .column("Category (locked)", ProductDto::category, c -> c.locked(true))
+                    .column("Price (editable)", p -> p.price(), c -> c
+                            .type(ExcelDataType.INTEGER)
+                            .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                            .locked(false)
+                            .backgroundColor(ExcelColor.LIGHT_GREEN))
+                    .column("Quantity (editable)", p -> p.quantity(), c -> c
+                            .type(ExcelDataType.INTEGER)
+                            .locked(false)
+                            .backgroundColor(ExcelColor.LIGHT_GREEN))
+                    .column("Discount (locked)", p -> p.discount(), c -> c
+                            .type(ExcelDataType.DOUBLE_PERCENT)
+                            .locked(true))
+                    .write(sampleProducts().stream());
+
+            var handler = wb.finish();
+            return DownloadUtil.builder("workbook-protection-demo", DownloadFileType.EXCEL)
+                    .body(handler::consumeOutputStream);
+        }
+    }
+
+    // ========================================================================
+    // 21. Header Font - headerFontName + headerFontSize
+    // ========================================================================
+    @GetMapping("/header-font")
+    public ResponseEntity<StreamingResponseBody> downloadHeaderFont() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.CORAL)
+                .sheetName("Header Font Demo")
+                .headerFontName("Arial")
+                .headerFontSize(14)
+                .autoFilter(true)
+                .freezePane(1)
+                .addColumn("Name", ProductDto::name)
+                .addColumn("Category", ProductDto::category)
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("header-font-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 22. Default Style - defaultStyle with fontName, fontSize, alignment
+    // ========================================================================
+    @GetMapping("/default-style")
+    public ResponseEntity<StreamingResponseBody> downloadDefaultStyle() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.FOREST_GREEN)
+                .sheetName("Default Style Demo")
+                .autoFilter(true)
+                .freezePane(1)
+                .defaultStyle(d -> d
+                        .fontName("Arial")
+                        .fontSize(10)
+                        .alignment(HorizontalAlignment.LEFT))
+                .addColumn("Name", ProductDto::name)
+                .addColumn("Category", ProductDto::category)
+                .addColumn("Price", p -> p.price(), c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                        .alignment(HorizontalAlignment.RIGHT))
+                .addColumn("Quantity", p -> p.quantity(), c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .alignment(HorizontalAlignment.RIGHT))
+                .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("default-style-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 23. Summary Rows - summary with sum + average
+    // ========================================================================
+    @GetMapping("/summary")
+    public ResponseEntity<StreamingResponseBody> downloadSummary() {
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.GOLD)
+                .sheetName("Summary Demo")
+                .autoFilter(true)
+                .freezePane(1)
+                .addColumn("Name", ProductDto::name)
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .summary(s -> s
+                        .label("Total")
+                        .sum("Price").sum("Quantity")
+                        .average("Price").average("Quantity"))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("summary-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 24. Named Range + List Validation - combined demo
+    // ========================================================================
+    @GetMapping("/named-range")
+    public ResponseEntity<StreamingResponseBody> downloadNamedRange() {
+        var categories = List.of("Electronics", "Accessories", "Office", "Peripherals");
+
+        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+            wb.<String>sheet("Options")
+                    .column("Category", s -> s)
+                    .afterData(ctx -> {
+                        ctx.namedRange("CategoryList", 0, 1, categories.size());
+                        return ctx.getCurrentRow();
+                    })
+                    .write(categories.stream());
+
+            wb.<ProductDto>sheet("Data")
+                    .autoFilter()
+                    .freezePane(1)
+                    .column("Name", ProductDto::name)
+                    .column("Category", ProductDto::category, c -> c
+                            .validation(ExcelValidation.listFromRange("Options!$A$2:$A$5")))
+                    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                    .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                    .write(sampleProducts().stream());
+
+            var handler = wb.finish();
+            return DownloadUtil.builder("named-range-demo", DownloadFileType.EXCEL)
+                    .body(handler::consumeOutputStream);
+        }
     }
 
     private static ProductReadDto toReadDto(ProductDto p) {

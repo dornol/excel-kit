@@ -34,7 +34,8 @@ public class ExcelWriter<T> {
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final int maxRowsOfSheet;
-    private final CellStyle headerStyle;
+    private CellStyle headerStyle;
+    private final XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private float rowHeightInPoints = 20;
     private boolean autoFilter = false;
@@ -55,6 +56,11 @@ public class ExcelWriter<T> {
     private @Nullable ExcelChartConfig chartConfig;
     private @Nullable ExcelPrintSetup printSetup;
     private int @Nullable [] tabColor;
+    private @Nullable String workbookPassword;
+    private @Nullable String headerFontName;
+    private @Nullable Integer headerFontSize;
+    private ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyleConfig;
+    private @Nullable ExcelSummary summaryConfig;
 
     private @Nullable SXSSFSheet sheet;
     private @Nullable Cursor cursor;
@@ -72,7 +78,8 @@ public class ExcelWriter<T> {
     public ExcelWriter(int r, int g, int b, int maxRowsOfSheet, int rowAccessWindowSize) {
         this.wb = new SXSSFWorkbook(rowAccessWindowSize);
         this.maxRowsOfSheet = maxRowsOfSheet;
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b}));
+        this.headerColor = new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b});
+        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
     }
 
     /**
@@ -383,6 +390,72 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Protects the workbook structure with the given password.
+     * <p>
+     * When enabled, users cannot add, delete, rename, or reorder sheets.
+     *
+     * @param password the protection password
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> protectWorkbook(String password) {
+        this.workbookPassword = password;
+        return this;
+    }
+
+    /**
+     * Sets the header font name.
+     *
+     * @param fontName the font name (e.g., "Arial", "맑은 고딕")
+     * @return Current ExcelWriter instance for chaining
+     */
+    /**
+     * Configures summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
+     * <p>
+     * Summary rows are appended after data rows on each sheet.
+     *
+     * @param configurer consumer to configure the summary
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> summary(Consumer<ExcelSummary> configurer) {
+        ExcelSummary summary = new ExcelSummary();
+        configurer.accept(summary);
+        this.summaryConfig = summary;
+        return this;
+    }
+
+    public ExcelWriter<T> headerFontName(String fontName) {
+        this.headerFontName = fontName;
+        return this;
+    }
+
+    /**
+     * Sets the header font size in points.
+     *
+     * @param fontSize font size in points (must be positive)
+     * @return Current ExcelWriter instance for chaining
+     */
+    /**
+     * Sets default column styles that apply to all columns unless overridden per-column.
+     *
+     * @param configurer consumer to configure default style properties
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
+        ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
+        configurer.accept(config);
+        this.defaultStyleConfig = config;
+        return this;
+    }
+
+    public ExcelWriter<T> headerFontSize(int fontSize) {
+        if (fontSize <= 0) {
+            throw new IllegalArgumentException("fontSize must be positive");
+        }
+        this.headerFontSize = fontSize;
+        return this;
+    }
+
+    /**
      * Adds an already-built column to the column list.
      *
      * @param column The ExcelColumn to add
@@ -512,6 +585,10 @@ public class ExcelWriter<T> {
         }
         ExcelWriteSupport.validateUniqueColumnNames(columns);
 
+        if (headerFontName != null || headerFontSize != null) {
+            this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize);
+        }
+
         this.sheet = createNamedSheet();
         int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);
         this.cursor = new Cursor(headerStartRow);
@@ -529,13 +606,17 @@ public class ExcelWriter<T> {
 
         int nextRow = cursor.getRowOfSheet();
         if (this.afterDataWriter != null) {
-            nextRow = this.afterDataWriter.write(new SheetContext(sheet, wb, nextRow, columns));
+            nextRow = this.afterDataWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
+        }
+        if (this.summaryConfig != null) {
+            nextRow = this.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
         }
         if (this.afterAllWriter != null) {
-            this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns));
+            this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
         }
 
         applyPostProcessingAllSheets();
+        ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
 
         // Apply chart on last sheet
         if (chartConfig != null) {
@@ -571,8 +652,12 @@ public class ExcelWriter<T> {
     void handleRowData(T rowData) {
         cursor.plusTotal();
         if (isOverMaxRows()) {
+            int rolloverRow = cursor.getRowOfSheet();
             if (this.afterDataWriter != null) {
-                this.afterDataWriter.write(new SheetContext(sheet, wb, cursor.getRowOfSheet(), columns));
+                rolloverRow = this.afterDataWriter.write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
+            }
+            if (this.summaryConfig != null) {
+                this.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
             }
             turnOverSheet();
             ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);
@@ -643,6 +728,10 @@ public class ExcelWriter<T> {
 
     Map<String, CellStyle> getCellStyleCache() {
         return cellStyleCache;
+    }
+
+    ColumnStyleConfig.@Nullable DefaultStyleConfig<T> getDefaultStyleConfig() {
+        return defaultStyleConfig;
     }
 
 }

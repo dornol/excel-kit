@@ -24,14 +24,21 @@ public class SheetContext {
     private final int currentRow;
     private final int columnCount;
     private final List<String> columnNames;
+    private final int headerRowIndex;
 
     SheetContext(SXSSFSheet sheet, SXSSFWorkbook workbook, int currentRow,
                  List<? extends ExcelColumn<?>> columns) {
+        this(sheet, workbook, currentRow, columns, 0);
+    }
+
+    SheetContext(SXSSFSheet sheet, SXSSFWorkbook workbook, int currentRow,
+                 List<? extends ExcelColumn<?>> columns, int headerRowIndex) {
         this.sheet = sheet;
         this.workbook = workbook;
         this.currentRow = currentRow;
         this.columnCount = columns.size();
         this.columnNames = List.copyOf(columns.stream().map(ExcelColumn::getName).toList());
+        this.headerRowIndex = headerRowIndex;
     }
 
     /**
@@ -66,6 +73,15 @@ public class SheetContext {
      *
      * @return the column count
      */
+    /**
+     * Returns the header row index (zero-based) for this sheet.
+     *
+     * @return the header row index
+     */
+    public int getHeaderRowIndex() {
+        return headerRowIndex;
+    }
+
     public int getColumnCount() {
         return columnCount;
     }
@@ -142,6 +158,37 @@ public class SheetContext {
             sheet.setRowGroupCollapsed(firstRow, true);
         }
         return this;
+    }
+
+    /**
+     * Creates a workbook-scoped named range with the given reference formula.
+     *
+     * @param name      the name for the range (e.g., "Categories")
+     * @param reference the reference formula (e.g., "Sheet1!$A$1:$A$10")
+     * @return this {@code SheetContext} for method chaining
+     */
+    public SheetContext namedRange(String name, String reference) {
+        var namedRange = workbook.createName();
+        namedRange.setNameName(name);
+        namedRange.setRefersToFormula(reference);
+        return this;
+    }
+
+    /**
+     * Creates a workbook-scoped named range for a column range on the current sheet.
+     *
+     * @param name     the name for the range
+     * @param col      zero-based column index
+     * @param firstRow zero-based first row index
+     * @param lastRow  zero-based last row index
+     * @return this {@code SheetContext} for method chaining
+     */
+    public SheetContext namedRange(String name, int col, int firstRow, int lastRow) {
+        String sheetName = sheet.getSheetName();
+        String colLetter = columnLetter(col);
+        String ref = "'" + sheetName + "'!$" + colLetter + "$" + (firstRow + 1)
+                + ":$" + colLetter + "$" + (lastRow + 1);
+        return namedRange(name, ref);
     }
 
     /**

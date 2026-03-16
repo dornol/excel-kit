@@ -56,6 +56,8 @@ public class ExcelSheetWriter<T> {
     private @Nullable ExcelChartConfig chartConfig;
     private @Nullable ExcelPrintSetup printSetup;
     private int @Nullable [] tabColor;
+    private ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyleConfig;
+    private @Nullable ExcelSummary summaryConfig;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -328,6 +330,32 @@ public class ExcelSheetWriter<T> {
     }
 
     /**
+     * Sets default column styles that apply to all columns unless overridden per-column.
+     *
+     * @param configurer consumer to configure default style properties
+     * @return this writer for chaining
+     */
+    /**
+     * Configures summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
+     *
+     * @param configurer consumer to configure the summary
+     * @return this writer for chaining
+     */
+    public ExcelSheetWriter<T> summary(Consumer<ExcelSummary> configurer) {
+        ExcelSummary summary = new ExcelSummary();
+        configurer.accept(summary);
+        this.summaryConfig = summary;
+        return this;
+    }
+
+    public ExcelSheetWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
+        ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
+        configurer.accept(config);
+        this.defaultStyleConfig = config;
+        return this;
+    }
+
+    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      */
     public void write(Stream<T> stream) {
@@ -356,8 +384,12 @@ public class ExcelSheetWriter<T> {
                 if (maxRows != Integer.MAX_VALUE && cursor.getCurrentTotal() >= maxRows
                         && cursor.getCurrentTotal() % maxRows == 1) {
                     // afterData on current sheet
+                    int rolloverRow = cursor.getRowOfSheet();
                     if (afterDataWriter != null) {
-                        afterDataWriter.write(new SheetContext(currentSheet[0], wb, cursor.getRowOfSheet(), columns));
+                        rolloverRow = afterDataWriter.write(new SheetContext(currentSheet[0], wb, rolloverRow, columns, headerRowIndex));
+                    }
+                    if (summaryConfig != null) {
+                        summaryConfig.toAfterDataWriter().write(new SheetContext(currentSheet[0], wb, rolloverRow, columns, headerRowIndex));
                     }
                     // Create rollover sheet
                     currentSheet[0] = createRolloverSheet(allSheets.size());
@@ -376,7 +408,10 @@ public class ExcelSheetWriter<T> {
 
         int nextRow = cursor.getRowOfSheet();
         if (this.afterDataWriter != null) {
-            this.afterDataWriter.write(new SheetContext(currentSheet[0], wb, nextRow, columns));
+            nextRow = this.afterDataWriter.write(new SheetContext(currentSheet[0], wb, nextRow, columns, headerRowIndex));
+        }
+        if (this.summaryConfig != null) {
+            this.summaryConfig.toAfterDataWriter().write(new SheetContext(currentSheet[0], wb, nextRow, columns, headerRowIndex));
         }
 
         for (SXSSFSheet s : allSheets) {
@@ -412,6 +447,9 @@ public class ExcelSheetWriter<T> {
 
     private ExcelColumn<T> buildColumn(String name, ExcelRowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
         ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
+        if (defaultStyleConfig != null) {
+            c.applyDefaults(defaultStyleConfig);
+        }
         ExcelDataType dataType = c.dataType != null ? c.dataType : ExcelDataType.STRING;
         String dataFormat = c.dataFormat != null ? c.dataFormat : dataType.getDefaultFormat();
 

@@ -217,6 +217,10 @@ public class ExcelColumn<T> {
          * Builds the column definition with all current configurations.
          */
         ExcelColumn<T> build() {
+            var defaults = writer.getDefaultStyleConfig();
+            if (defaults != null) {
+                this.applyDefaults(defaults);
+            }
             if (this.dataType == null) {
                 this.type(ExcelDataType.STRING);
             }

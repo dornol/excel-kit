@@ -37,6 +37,11 @@ class ExcelStyleSupporter {
      * @return Configured CellStyle for headers
      */
     static CellStyle headerStyle(SXSSFWorkbook wb, XSSFColor headerColor) {
+        return headerStyle(wb, headerColor, null, null);
+    }
+
+    static CellStyle headerStyle(SXSSFWorkbook wb, XSSFColor headerColor,
+                                  @Nullable String fontName, @Nullable Integer fontSize) {
         CellStyle headerStyle = wb.createCellStyle();
         Font headerFont = wb.createFont();
         headerStyle.setAlignment(HorizontalAlignment.CENTER);
@@ -48,7 +53,10 @@ class ExcelStyleSupporter {
         headerStyle.setBorderLeft(BorderStyle.THIN);
         headerStyle.setBorderRight(BorderStyle.THIN);
         headerFont.setBold(true);
-        headerFont.setFontHeight((short) (11 * 20));
+        headerFont.setFontHeight((short) ((fontSize != null ? fontSize : 11) * 20));
+        if (fontName != null) {
+            headerFont.setFontName(fontName);
+        }
 
         if (isDarkColor(headerColor)) {
             headerFont.setColor(HSSFColor.HSSFColorPredefined.WHITE.getIndex());
