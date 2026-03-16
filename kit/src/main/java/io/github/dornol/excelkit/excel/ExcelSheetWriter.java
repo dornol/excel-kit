@@ -45,7 +45,7 @@ public class ExcelSheetWriter<T> {
     private int freezePaneRows = 0;
     private @Nullable BeforeHeaderWriter beforeHeaderWriter;
     private @Nullable AfterDataWriter afterDataWriter;
-    private @Nullable Function<T, ExcelColor> rowColorFunction;
+    private @Nullable Function<T, @Nullable ExcelColor> rowColorFunction;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
@@ -70,7 +70,7 @@ public class ExcelSheetWriter<T> {
     /**
      * Adds a column using a simple function.
      */
-    public ExcelSheetWriter<T> column(String name, Function<T, Object> function) {
+    public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function) {
         columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
         return this;
     }
@@ -78,7 +78,7 @@ public class ExcelSheetWriter<T> {
     /**
      * Adds a column with additional configuration.
      */
-    public ExcelSheetWriter<T> column(String name, Function<T, Object> function, Consumer<ColumnConfig<T>> cfg) {
+    public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
         ColumnConfig<T> config = new ColumnConfig<>();
         cfg.accept(config);
         columns.add(buildColumn(name, (r, c) -> function.apply(r), config));
@@ -88,7 +88,7 @@ public class ExcelSheetWriter<T> {
     /**
      * Adds a column using a row function with cursor support.
      */
-    public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, Object> function) {
+    public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
         columns.add(buildColumn(name, function, null));
         return this;
     }
@@ -96,7 +96,7 @@ public class ExcelSheetWriter<T> {
     /**
      * Adds a column using a row function with cursor support and additional configuration.
      */
-    public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, Object> function, Consumer<ColumnConfig<T>> cfg) {
+    public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
         ColumnConfig<T> config = new ColumnConfig<>();
         cfg.accept(config);
         columns.add(buildColumn(name, function, config));
@@ -106,7 +106,7 @@ public class ExcelSheetWriter<T> {
     /**
      * Adds a column with a constant value for all rows.
      */
-    public ExcelSheetWriter<T> constColumn(String name, Object value) {
+    public ExcelSheetWriter<T> constColumn(String name, @Nullable Object value) {
         columns.add(buildColumn(name, (r, c) -> value, null));
         return this;
     }
@@ -140,7 +140,7 @@ public class ExcelSheetWriter<T> {
      * @param function  Function to extract cell value from row
      * @return this writer for chaining
      */
-    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, Object> function) {
+    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
         if (condition) {
             column(name, function);
         }
@@ -156,7 +156,7 @@ public class ExcelSheetWriter<T> {
      * @param cfg       Consumer to configure column options
      * @return this writer for chaining
      */
-    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, Object> function, Consumer<ColumnConfig<T>> cfg) {
+    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
         if (condition) {
             column(name, function, cfg);
         }
@@ -178,7 +178,7 @@ public class ExcelSheetWriter<T> {
         return this;
     }
 
-    public ExcelSheetWriter<T> rowColor(Function<T, ExcelColor> fn) {
+    public ExcelSheetWriter<T> rowColor(Function<T, @Nullable ExcelColor> fn) {
         this.rowColorFunction = fn;
         return this;
     }
@@ -366,7 +366,7 @@ public class ExcelSheetWriter<T> {
         return wb.createSheet(name);
     }
 
-    private ExcelColumn<T> buildColumn(String name, ExcelRowFunction<T, Object> function, ColumnConfig<T> config) {
+    private ExcelColumn<T> buildColumn(String name, ExcelRowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
         ExcelDataType dataType = ExcelDataType.STRING;
         String dataFormat = null;
         HorizontalAlignment alignment = HorizontalAlignment.CENTER;
@@ -422,22 +422,22 @@ public class ExcelSheetWriter<T> {
      * @param <T> the row data type
      */
     public static class ColumnConfig<T> {
-        private ExcelDataType dataType;
-        private String dataFormat;
-        private HorizontalAlignment alignment;
-        private int[] backgroundColor;
-        private Boolean bold;
-        private Integer fontSize;
+        private @Nullable ExcelDataType dataType;
+        private @Nullable String dataFormat;
+        private @Nullable HorizontalAlignment alignment;
+        private int @Nullable [] backgroundColor;
+        private @Nullable Boolean bold;
+        private @Nullable Integer fontSize;
         private int minWidth;
         private int maxWidth;
         private boolean fixedWidth;
-        private String[] dropdownOptions;
-        private CellColorFunction<T> cellColorFunction;
-        private String groupName;
+        private String @Nullable [] dropdownOptions;
+        private @Nullable CellColorFunction<T> cellColorFunction;
+        private @Nullable String groupName;
         private int outlineLevel;
-        private Function<T, String> commentFunction;
-        private ExcelBorderStyle borderStyle;
-        private Boolean locked;
+        private @Nullable Function<T, @Nullable String> commentFunction;
+        private @Nullable ExcelBorderStyle borderStyle;
+        private @Nullable Boolean locked;
 
         public ColumnConfig<T> type(ExcelDataType dataType) {
             this.dataType = dataType;
@@ -530,7 +530,7 @@ public class ExcelSheetWriter<T> {
         /**
          * Sets a comment function for this column.
          */
-        public ColumnConfig<T> comment(Function<T, String> commentFunction) {
+        public ColumnConfig<T> comment(Function<T, @Nullable String> commentFunction) {
             this.commentFunction = commentFunction;
             return this;
         }

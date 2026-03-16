@@ -148,14 +148,14 @@ public class ExcelKitSchema<T> {
      */
     public record SchemaColumn<T>(
             String name,
-            Function<T, Object> writeFunction,
+            Function<T, @Nullable Object> writeFunction,
             BiConsumer<T, CellData> readSetter,
             @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer
     ) {
         /**
          * Creates a schema column without write configuration.
          */
-        public SchemaColumn(String name, Function<T, Object> writeFunction, BiConsumer<T, CellData> readSetter) {
+        public SchemaColumn(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter) {
             this(name, writeFunction, readSetter, null);
         }
     }
@@ -178,7 +178,7 @@ public class ExcelKitSchema<T> {
          * @param readSetter    BiConsumer to set the cell value into a row object for reading
          * @return This builder for chaining
          */
-        public Builder<T> column(String name, Function<T, Object> writeFunction, BiConsumer<T, CellData> readSetter) {
+        public Builder<T> column(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter));
             return this;
         }
@@ -202,7 +202,7 @@ public class ExcelKitSchema<T> {
          * @param writeConfigurer Consumer to configure Excel column properties
          * @return This builder for chaining
          */
-        public Builder<T> column(String name, Function<T, Object> writeFunction, BiConsumer<T, CellData> readSetter,
+        public Builder<T> column(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter,
                                   Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer));
             return this;

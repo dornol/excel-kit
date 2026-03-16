@@ -117,7 +117,7 @@ class ExcelWriteSupport {
 
     static <T> void writeRowCells(SXSSFSheet sheet, Cursor cursor, T rowData,
                                    List<ExcelColumn<T>> columns, float rowHeightInPoints,
-                                   @Nullable Function<T, ExcelColor> rowColorFunction,
+                                   @Nullable Function<T, @Nullable ExcelColor> rowColorFunction,
                                    Map<String, CellStyle> rowStyleCache, SXSSFWorkbook wb,
                                    int autoWidthSampleRows) {
         SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
@@ -129,7 +129,7 @@ class ExcelWriteSupport {
         for (int j = 0; j < columns.size(); j++) {
             SXSSFCell cell = row.createCell(j);
             ExcelColumn<T> column = columns.get(j);
-            Object columnData = column.applyFunction(rowData, cursor);
+            @Nullable Object columnData = column.applyFunction(rowData, cursor);
             column.setColumnData(cell, columnData);
 
             // Resolve effective color: cellColor > rowColor > column default
@@ -153,7 +153,7 @@ class ExcelWriteSupport {
             }
 
             // Cell comment
-            Function<T, String> commentFn = column.getCommentFunction();
+            Function<T, @Nullable String> commentFn = column.getCommentFunction();
             if (commentFn != null) {
                 String commentText = commentFn.apply(rowData);
                 if (commentText != null) {

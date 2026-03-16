@@ -100,7 +100,7 @@ public class CsvWriter<T> {
      * @param function A function to compute the value for each row
      * @return This writer instance (for chaining)
      */
-    public CsvWriter<T> column(String name, CsvRowFunction<T, Object> function) {
+    public CsvWriter<T> column(String name, CsvRowFunction<T, @Nullable Object> function) {
         var column = new CsvColumn<>(name, function);
         this.columns.add(column);
         return this;
@@ -113,7 +113,7 @@ public class CsvWriter<T> {
      * @param function A function to compute the value from the row
      * @return This writer instance
      */
-    public CsvWriter<T> column(String name, Function<T, Object> function) {
+    public CsvWriter<T> column(String name, Function<T, @Nullable Object> function) {
         return column(name, (r, c) -> function.apply(r));
     }
 
@@ -126,7 +126,7 @@ public class CsvWriter<T> {
      * @param function  A function to compute the value for each row
      * @return This writer instance
      */
-    public CsvWriter<T> columnIf(String name, boolean condition, CsvRowFunction<T, Object> function) {
+    public CsvWriter<T> columnIf(String name, boolean condition, CsvRowFunction<T, @Nullable Object> function) {
         if (condition) {
             column(name, function);
         }
@@ -142,7 +142,7 @@ public class CsvWriter<T> {
      * @param function  A function to compute the value from the row
      * @return This writer instance
      */
-    public CsvWriter<T> columnIf(String name, boolean condition, Function<T, Object> function) {
+    public CsvWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
         if (condition) {
             column(name, function);
         }
@@ -156,7 +156,7 @@ public class CsvWriter<T> {
      * @param value The constant value
      * @return This writer instance
      */
-    public CsvWriter<T> constColumn(String name, Object value) {
+    public CsvWriter<T> constColumn(String name, @Nullable Object value) {
         return column(name, (r, c) -> value);
     }
 
@@ -278,7 +278,7 @@ public class CsvWriter<T> {
      * @param input The input value (nullable)
      * @return A properly escaped CSV field
      */
-    private String escapeCsv(Object input) {
+    private String escapeCsv(@Nullable Object input) {
         if (input == null) {
             return "";
         }

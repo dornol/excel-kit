@@ -33,7 +33,7 @@ public class ExcelColumn<T> {
     private static final Logger log = LoggerFactory.getLogger(ExcelColumn.class);
     private static final int MAX_COLUMN_WIDTH = 255 * 256;
     private final String name;
-    private final ExcelRowFunction<T, Object> function;
+    private final ExcelRowFunction<T, @Nullable Object> function;
     private final CellStyle style;
     private final ExcelColumnSetter columnSetter;
     private final int minWidth;
@@ -43,15 +43,15 @@ public class ExcelColumn<T> {
     private final @Nullable CellColorFunction<T> cellColorFunction;
     private final @Nullable String groupName;
     private final int outlineLevel;
-    private final @Nullable Function<T, String> commentFunction;
+    private final @Nullable Function<T, @Nullable String> commentFunction;
     private final @Nullable ExcelBorderStyle borderStyle;
     private final @Nullable Boolean locked;
     private int columnWidth = 1;
 
-    ExcelColumn(String name, ExcelRowFunction<T, Object> function, CellStyle style, ExcelColumnSetter columnSetter,
+    ExcelColumn(String name, ExcelRowFunction<T, @Nullable Object> function, CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
-                @Nullable Function<T, String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked) {
+                @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -76,7 +76,7 @@ public class ExcelColumn<T> {
      * @param cursor  the current cursor (position)
      * @return the cell value
      */
-    Object applyFunction(T rowData, Cursor cursor) {
+    @Nullable Object applyFunction(T rowData, Cursor cursor) {
         try {
             return function.apply(rowData, cursor);
         } catch (RuntimeException e) {
@@ -95,7 +95,7 @@ public class ExcelColumn<T> {
     /**
      * Updates the column width based on the logical string length of a value.
      */
-    void fitColumnWidthByValue(Object value) {
+    void fitColumnWidthByValue(@Nullable Object value) {
         if (fixedWidth || value == null) {
             return;
         }
@@ -108,7 +108,7 @@ public class ExcelColumn<T> {
     /**
      * Writes a value into a given cell using the column's setter logic.
      */
-    void setColumnData(SXSSFCell cell, Object columnData) {
+    void setColumnData(SXSSFCell cell, @Nullable Object columnData) {
         if (columnData == null) {
             cell.setCellValue("");
             return;
@@ -164,7 +164,7 @@ public class ExcelColumn<T> {
         return outlineLevel;
     }
 
-    @Nullable Function<T, String> getCommentFunction() {
+    @Nullable Function<T, @Nullable String> getCommentFunction() {
         return commentFunction;
     }
 
@@ -184,7 +184,7 @@ public class ExcelColumn<T> {
     public static class ExcelColumnBuilder<T> {
         private final ExcelWriter<T> writer;
         private final String name;
-        private final ExcelRowFunction<T, Object> function;
+        private final ExcelRowFunction<T, @Nullable Object> function;
         private @Nullable ExcelDataType dataType;
         private @Nullable String dataFormat;
         private HorizontalAlignment alignment = HorizontalAlignment.CENTER;
@@ -200,11 +200,11 @@ public class ExcelColumn<T> {
         private @Nullable CellColorFunction<T> cellColorFunction;
         private @Nullable String groupName;
         private int outlineLevel;
-        private @Nullable Function<T, String> commentFunction;
+        private @Nullable Function<T, @Nullable String> commentFunction;
         private @Nullable ExcelBorderStyle borderStyle;
         private @Nullable Boolean locked;
 
-        ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, Object> function) {
+        ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, @Nullable Object> function) {
             this.writer = writer;
             this.name = name;
             this.function = function;
@@ -376,7 +376,7 @@ public class ExcelColumn<T> {
          *
          * @param commentFunction function to generate comment text per row
          */
-        public ExcelColumnBuilder<T> comment(Function<T, String> commentFunction) {
+        public ExcelColumnBuilder<T> comment(Function<T, @Nullable String> commentFunction) {
             this.commentFunction = commentFunction;
             return this;
         }
@@ -435,7 +435,7 @@ public class ExcelColumn<T> {
         /**
          * Finalizes the current column and returns a new builder for the next column.
          */
-        public ExcelColumnBuilder<T> column(String name, ExcelRowFunction<T, Object> function) {
+        public ExcelColumnBuilder<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
             this.writer.addColumn(this.build());
             return new ExcelColumnBuilder<>(writer, name, function);
         }
@@ -449,7 +449,7 @@ public class ExcelColumn<T> {
          * @param function  the function to extract values for the new column
          * @return a new builder for the next column, or the same builder if condition is false
          */
-        public ExcelColumnBuilder<T> columnIf(String name, boolean condition, ExcelRowFunction<T, Object> function) {
+        public ExcelColumnBuilder<T> columnIf(String name, boolean condition, ExcelRowFunction<T, @Nullable Object> function) {
             if (!condition) {
                 return this;
             }
@@ -464,7 +464,7 @@ public class ExcelColumn<T> {
          * @param function the function to extract values for the new column
          * @return a new builder for the next column
          */
-        public ExcelColumnBuilder<T> column(String name, Function<T, Object> function) {
+        public ExcelColumnBuilder<T> column(String name, Function<T, @Nullable Object> function) {
             this.writer.addColumn(this.build());
             return new ExcelColumnBuilder<>(writer, name, (r, c) -> function.apply(r));
         }
@@ -477,7 +477,7 @@ public class ExcelColumn<T> {
          * @param function  the function to extract values for the new column
          * @return a new builder for the next column, or the same builder if condition is false
          */
-        public ExcelColumnBuilder<T> columnIf(String name, boolean condition, Function<T, Object> function) {
+        public ExcelColumnBuilder<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
             if (!condition) {
                 return this;
             }
@@ -492,7 +492,7 @@ public class ExcelColumn<T> {
          * @param value the constant value for all cells in this column
          * @return a new builder for the next column
          */
-        public ExcelColumnBuilder<T> constColumn(String name, Object value) {
+        public ExcelColumnBuilder<T> constColumn(String name, @Nullable Object value) {
             this.writer.addColumn(this.build());
             return new ExcelColumnBuilder<>(writer, name, (r, c) -> value);
         }

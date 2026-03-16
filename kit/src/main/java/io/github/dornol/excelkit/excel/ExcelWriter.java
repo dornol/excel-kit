@@ -44,7 +44,7 @@ public class ExcelWriter<T> {
     private @Nullable AfterDataWriter afterAllWriter;
     private @Nullable Function<Integer, String> sheetNameFunction;
     private int sheetCount = 0;
-    private @Nullable Function<T, ExcelColor> rowColorFunction;
+    private @Nullable Function<T, @Nullable ExcelColor> rowColorFunction;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private int headerRowIndex;
     private @Nullable ProgressCallback progressCallback;
@@ -258,7 +258,7 @@ public class ExcelWriter<T> {
      * @param rowColorFunction function that takes row data and returns an ExcelColor (or null for no override)
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> rowColor(Function<T, ExcelColor> rowColorFunction) {
+    public ExcelWriter<T> rowColor(Function<T, @Nullable ExcelColor> rowColorFunction) {
         this.rowColorFunction = rowColorFunction;
         return this;
     }
@@ -356,7 +356,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row with cursor
      * @return Column builder
      */
-    public ExcelColumn.ExcelColumnBuilder<T> column(String name, ExcelRowFunction<T, Object> function) {
+    public ExcelColumn.ExcelColumnBuilder<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
         return new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
     }
 
@@ -367,7 +367,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row
      * @return Column builder
      */
-    public ExcelColumn.ExcelColumnBuilder<T> column(String name, Function<T, Object> function) {
+    public ExcelColumn.ExcelColumnBuilder<T> column(String name, Function<T, @Nullable Object> function) {
         return new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
     }
 
@@ -378,7 +378,7 @@ public class ExcelWriter<T> {
      * @param value Constant value to be used in all rows
      * @return Column builder
      */
-    public ExcelColumn.ExcelColumnBuilder<T> constColumn(String name, Object value) {
+    public ExcelColumn.ExcelColumnBuilder<T> constColumn(String name, @Nullable Object value) {
         return new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> value);
     }
 
@@ -390,7 +390,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, Function<T, Object> function) {
+    public ExcelWriter<T> addColumn(String name, Function<T, @Nullable Object> function) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
         this.columns.add(builder.build());
@@ -412,7 +412,7 @@ public class ExcelWriter<T> {
      * @param configurer  Consumer to configure column properties
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, Function<T, Object> function,
+    public ExcelWriter<T> addColumn(String name, Function<T, @Nullable Object> function,
                                      Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
@@ -431,7 +431,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row with cursor access
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, Object> function) {
+    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, @Nullable Object> function) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
         this.columns.add(builder.build());
@@ -446,7 +446,7 @@ public class ExcelWriter<T> {
      * @param configurer  Consumer to configure column properties
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, Object> function,
+    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, @Nullable Object> function,
                                      Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
