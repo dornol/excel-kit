@@ -168,6 +168,15 @@ public class CsvWriter<T> {
      * @param callback the callback to invoke
      * @return This writer instance (for chaining)
      */
+    public CsvWriter<T> onProgress(int interval, ProgressCallback callback) {
+        if (interval <= 0) {
+            throw new IllegalArgumentException("progress interval must be positive");
+        }
+        this.progressInterval = interval;
+        this.progressCallback = callback;
+        return this;
+    }
+
     /**
      * Enables or disables CSV injection defense.
      * <p>
@@ -182,15 +191,6 @@ public class CsvWriter<T> {
      */
     public CsvWriter<T> csvInjectionDefense(boolean enabled) {
         this.csvInjectionDefense = enabled;
-        return this;
-    }
-
-    public CsvWriter<T> onProgress(int interval, ProgressCallback callback) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("progress interval must be positive");
-        }
-        this.progressInterval = interval;
-        this.progressCallback = callback;
         return this;
     }
 

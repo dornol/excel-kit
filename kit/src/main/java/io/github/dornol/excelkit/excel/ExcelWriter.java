@@ -408,21 +408,6 @@ public class ExcelWriter<T> {
      * @param fontName the font name (e.g., "Arial", "맑은 고딕")
      * @return Current ExcelWriter instance for chaining
      */
-    /**
-     * Configures summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
-     * <p>
-     * Summary rows are appended after data rows on each sheet.
-     *
-     * @param configurer consumer to configure the summary
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> summary(Consumer<ExcelSummary> configurer) {
-        ExcelSummary summary = new ExcelSummary();
-        configurer.accept(summary);
-        this.summaryConfig = summary;
-        return this;
-    }
-
     public ExcelWriter<T> headerFontName(String fontName) {
         this.headerFontName = fontName;
         return this;
@@ -434,6 +419,14 @@ public class ExcelWriter<T> {
      * @param fontSize font size in points (must be positive)
      * @return Current ExcelWriter instance for chaining
      */
+    public ExcelWriter<T> headerFontSize(int fontSize) {
+        if (fontSize <= 0) {
+            throw new IllegalArgumentException("fontSize must be positive");
+        }
+        this.headerFontSize = fontSize;
+        return this;
+    }
+
     /**
      * Sets default column styles that apply to all columns unless overridden per-column.
      *
@@ -447,11 +440,18 @@ public class ExcelWriter<T> {
         return this;
     }
 
-    public ExcelWriter<T> headerFontSize(int fontSize) {
-        if (fontSize <= 0) {
-            throw new IllegalArgumentException("fontSize must be positive");
-        }
-        this.headerFontSize = fontSize;
+    /**
+     * Configures summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
+     * <p>
+     * Summary rows are appended after data rows on each sheet.
+     *
+     * @param configurer consumer to configure the summary
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> summary(Consumer<ExcelSummary> configurer) {
+        ExcelSummary summary = new ExcelSummary();
+        configurer.accept(summary);
+        this.summaryConfig = summary;
         return this;
     }
 

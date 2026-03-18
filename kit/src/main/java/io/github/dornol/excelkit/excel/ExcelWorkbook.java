@@ -102,14 +102,6 @@ public class ExcelWorkbook implements AutoCloseable {
     }
 
     /**
-     * Creates a new sheet with the given name and returns a typed writer for it.
-     *
-     * @param name the sheet name (must be unique within this workbook)
-     * @param <T>  the data type for this sheet's rows
-     * @return an {@link ExcelSheetWriter} for configuring and writing the sheet
-     * @throws ExcelWriteException if the workbook is already finished or the sheet name is duplicate
-     */
-    /**
      * Protects the workbook structure with the given password.
      * <p>
      * When enabled, users cannot add, delete, rename, or reorder sheets.
@@ -149,6 +141,14 @@ public class ExcelWorkbook implements AutoCloseable {
         return this;
     }
 
+    /**
+     * Creates a new sheet with the given name and returns a typed writer for it.
+     *
+     * @param name the sheet name (must be unique within this workbook)
+     * @param <T>  the data type for this sheet's rows
+     * @return an {@link ExcelSheetWriter} for configuring and writing the sheet
+     * @throws ExcelWriteException if the workbook is already finished or the sheet name is duplicate
+     */
     public <T> ExcelSheetWriter<T> sheet(String name) {
         if (finished) {
             throw new ExcelWriteException("Workbook is already finished");

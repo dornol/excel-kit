@@ -73,6 +73,10 @@ public class SheetContext {
      *
      * @return the column count
      */
+    public int getColumnCount() {
+        return columnCount;
+    }
+
     /**
      * Returns the header row index (zero-based) for this sheet.
      *
@@ -80,10 +84,6 @@ public class SheetContext {
      */
     public int getHeaderRowIndex() {
         return headerRowIndex;
-    }
-
-    public int getColumnCount() {
-        return columnCount;
     }
 
     /**

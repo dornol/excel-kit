@@ -445,15 +445,6 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     }
 
     /**
-     * Converts a user-facing rotation angle (-90 to 90) to the POI internal representation.
-     * <p>
-     * POI uses 0-90 for counter-clockwise and 91-180 for clockwise
-     * (e.g., -1 degree maps to 91, -90 degrees maps to 180).
-     *
-     * @param degrees user-facing rotation angle
-     * @return POI-internal rotation value
-     */
-    /**
      * Applies defaults from the given config to this config.
      * Only null/default fields in this config are overridden.
      */
@@ -491,6 +482,15 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     public static class DefaultStyleConfig<T> extends ColumnStyleConfig<T, DefaultStyleConfig<T>> {
     }
 
+    /**
+     * Converts a user-facing rotation angle (-90 to 90) to the POI internal representation.
+     * <p>
+     * POI uses 0-90 for counter-clockwise and 91-180 for clockwise
+     * (e.g., -1 degree maps to 91, -90 degrees maps to 180).
+     *
+     * @param degrees user-facing rotation angle
+     * @return POI-internal rotation value
+     */
     static short toExcelRotation(int degrees) {
         return (short) (degrees >= 0 ? degrees : 90 + Math.abs(degrees));
     }

@@ -114,11 +114,22 @@ public class ExcelSheetWriter<T> {
         return this;
     }
 
+    /**
+     * Sets the row height for data rows in points.
+     *
+     * @param rowHeightInPoints Row height in points
+     * @return this writer for chaining
+     */
     public ExcelSheetWriter<T> rowHeight(float rowHeightInPoints) {
         this.rowHeightInPoints = rowHeightInPoints;
         return this;
     }
 
+    /**
+     * Enables auto-filter on the header row.
+     *
+     * @return this writer for chaining
+     */
     public ExcelSheetWriter<T> autoFilter() {
         this.autoFilter = true;
         return this;
@@ -335,6 +346,13 @@ public class ExcelSheetWriter<T> {
      * @param configurer consumer to configure default style properties
      * @return this writer for chaining
      */
+    public ExcelSheetWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
+        ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
+        configurer.accept(config);
+        this.defaultStyleConfig = config;
+        return this;
+    }
+
     /**
      * Configures summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
      *
@@ -345,13 +363,6 @@ public class ExcelSheetWriter<T> {
         ExcelSummary summary = new ExcelSummary();
         configurer.accept(summary);
         this.summaryConfig = summary;
-        return this;
-    }
-
-    public ExcelSheetWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
-        ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
-        configurer.accept(config);
-        this.defaultStyleConfig = config;
         return this;
     }
 
