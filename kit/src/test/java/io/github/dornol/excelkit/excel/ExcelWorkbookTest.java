@@ -304,4 +304,170 @@ class ExcelWorkbookTest {
         }
         workbook.close();
     }
+
+    // ============================================================
+    // Constructor variants
+    // ============================================================
+
+    @Test
+    void defaultConstructor_createsWorkbook() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
+            ExcelHandler handler = wb.finish();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                handler.consumeOutputStream(bos);
+                assertTrue(bos.toByteArray().length > 0);
+            }
+        }
+    }
+
+    @Test
+    void rgbConstructor_createsWorkbook() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook(100, 150, 200)) {
+            wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
+            ExcelHandler handler = wb.finish();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                handler.consumeOutputStream(bos);
+                assertTrue(bos.toByteArray().length > 0);
+            }
+        }
+    }
+
+    @Test
+    void rgbWithWindowSizeConstructor_createsWorkbook() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook(100, 150, 200, 500)) {
+            wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
+            ExcelHandler handler = wb.finish();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                handler.consumeOutputStream(bos);
+                assertTrue(bos.toByteArray().length > 0);
+            }
+        }
+    }
+
+    @Test
+    void colorConstructor_createsWorkbook() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.LIGHT_BLUE)) {
+            wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
+            ExcelHandler handler = wb.finish();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                handler.consumeOutputStream(bos);
+                assertTrue(bos.toByteArray().length > 0);
+            }
+        }
+    }
+
+    @Test
+    void colorWithWindowSizeConstructor_createsWorkbook() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE, 2000)) {
+            wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
+            ExcelHandler handler = wb.finish();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                handler.consumeOutputStream(bos);
+                assertTrue(bos.toByteArray().length > 0);
+            }
+        }
+    }
+
+    // ============================================================
+    // protectWorkbook
+    // ============================================================
+
+    @Test
+    void protectWorkbook_chainsCorrectly() {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            ExcelWorkbook result = wb.protectWorkbook("password123");
+            assertSame(wb, result);
+        }
+    }
+
+    @Test
+    void protectWorkbook_producesValidOutput() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            wb.protectWorkbook("secret");
+            wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
+            ExcelHandler handler = wb.finish();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                handler.consumeOutputStream(bos);
+                assertTrue(bos.toByteArray().length > 0);
+            }
+        }
+    }
+
+    // ============================================================
+    // headerFontName / headerFontSize
+    // ============================================================
+
+    @Test
+    void headerFontName_chainsCorrectly() {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            ExcelWorkbook result = wb.headerFontName("Arial");
+            assertSame(wb, result);
+        }
+    }
+
+    @Test
+    void headerFontSize_chainsCorrectly() {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            ExcelWorkbook result = wb.headerFontSize(14);
+            assertSame(wb, result);
+        }
+    }
+
+    @Test
+    void headerFontSize_zero_throws() {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            assertThrows(IllegalArgumentException.class, () -> wb.headerFontSize(0));
+        }
+    }
+
+    @Test
+    void headerFontSize_negative_throws() {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            assertThrows(IllegalArgumentException.class, () -> wb.headerFontSize(-1));
+        }
+    }
+
+    @Test
+    void headerFont_producesValidOutput() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            wb.headerFontName("Arial").headerFontSize(16);
+            wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
+            ExcelHandler handler = wb.finish();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                handler.consumeOutputStream(bos);
+                assertTrue(bos.toByteArray().length > 0);
+            }
+        }
+    }
+
+    // ============================================================
+    // close() behavior
+    // ============================================================
+
+    @Test
+    void close_beforeFinish_doesNotThrow() {
+        ExcelWorkbook wb = new ExcelWorkbook();
+        wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
+        assertDoesNotThrow(wb::close);
+    }
+
+    @Test
+    void close_afterFinish_doesNotThrow() throws IOException {
+        ExcelWorkbook wb = new ExcelWorkbook();
+        wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
+        ExcelHandler handler = wb.finish();
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        }
+        // close() after finish should not close the wb (managed by ExcelHandler)
+        assertDoesNotThrow(wb::close);
+    }
+
+    @Test
+    void close_multipleTimes_doesNotThrow() {
+        ExcelWorkbook wb = new ExcelWorkbook();
+        assertDoesNotThrow(wb::close);
+        assertDoesNotThrow(wb::close);
+    }
 }

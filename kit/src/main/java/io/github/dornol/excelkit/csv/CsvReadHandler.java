@@ -11,6 +11,8 @@ import io.github.dornol.excelkit.shared.ReadResult;
 import io.github.dornol.excelkit.shared.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,6 +40,8 @@ import java.util.stream.StreamSupport;
  * @since 2025-07-19
  */
 public class CsvReadHandler<T> extends AbstractReadHandler<T> {
+    private static final Logger log = LoggerFactory.getLogger(CsvReadHandler.class);
+
     private final List<String> headerNames = new ArrayList<>();
     private final @Nullable List<CsvReadColumn<T>> columns;
     private final int headerRowIndex;
@@ -259,7 +263,12 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private void closeQuietly(CSVReader reader) {
         try {
             reader.close();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            // Log at debug level — closeQuietly is used in cleanup paths
+            // where reporting errors is less critical
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to close CSVReader", e);
+            }
         }
     }
 

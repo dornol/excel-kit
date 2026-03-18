@@ -4,6 +4,8 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +39,7 @@ import java.util.Set;
  * @author dhkim
  */
 public class ExcelWorkbook implements AutoCloseable {
+    private static final Logger log = LoggerFactory.getLogger(ExcelWorkbook.class);
 
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
@@ -181,7 +184,8 @@ public class ExcelWorkbook implements AutoCloseable {
         if (!finished) {
             try {
                 wb.close();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                log.warn("Failed to close workbook", e);
             }
         }
     }

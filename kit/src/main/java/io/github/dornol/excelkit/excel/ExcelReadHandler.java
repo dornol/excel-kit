@@ -190,6 +190,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
         });
         producer.setDaemon(true);
+        producer.setName("excel-kit-reader");
         producer.start();
 
         Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(

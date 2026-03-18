@@ -38,6 +38,21 @@ tasks.jacocoTestReport {
     }
 }
 
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.70".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
 tasks.withType<Javadoc>().configureEach {
     options.encoding = "UTF-8"
 }
