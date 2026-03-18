@@ -162,6 +162,19 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
+    /**
+     * Reads the file as a stream of row results using a background producer thread.
+     * <p>
+     * <strong>Important:</strong> The returned stream holds file and thread resources.
+     * Always use try-with-resources to ensure proper cleanup:
+     * <pre>{@code
+     * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
+     *     stream.forEach(result -> ...);
+     * }
+     * }</pre>
+     *
+     * @return A stream of parsed and validated row results
+     */
     @Override
     public Stream<ReadResult<T>> readAsStream() {
         int bufferSize = 1024;

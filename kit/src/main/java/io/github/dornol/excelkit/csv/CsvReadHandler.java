@@ -139,6 +139,19 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
+    /**
+     * Reads the CSV file as a stream of row results.
+     * <p>
+     * <strong>Important:</strong> The returned stream holds file resources (CSVReader, temp file).
+     * Always use try-with-resources to ensure proper cleanup:
+     * <pre>{@code
+     * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
+     *     stream.forEach(result -> ...);
+     * }
+     * }</pre>
+     *
+     * @return A stream of parsed and validated row results
+     */
     @Override
     public Stream<ReadResult<T>> readAsStream() {
         try {

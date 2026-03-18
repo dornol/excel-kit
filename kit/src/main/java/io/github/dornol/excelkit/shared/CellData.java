@@ -74,27 +74,36 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             DateTimeFormatter.ofPattern("M/d/yy[ HH:mm[:ss]]"),
             DateTimeFormatter.ISO_LOCAL_DATE_TIME
     );
+    private static final Object FORMAT_LOCK = new Object();
     private static volatile List<DateTimeFormatter> dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
     private static volatile List<DateTimeFormatter> dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
 
     /**
      * Adds a custom date format pattern for {@link #asLocalDate()}.
      * The pattern is inserted at the beginning of the list so it takes priority over built-in patterns.
+     * <p>
+     * This method is thread-safe.
      *
      * @param pattern the date pattern (e.g., "dd.MM.yyyy")
      */
     public static void addDateFormat(String pattern) {
-        dateFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
+        synchronized (FORMAT_LOCK) {
+            dateFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
+        }
     }
 
     /**
      * Adds a custom date-time format pattern for {@link #asLocalDateTime()}.
      * The pattern is inserted at the beginning of the list so it takes priority over built-in patterns.
+     * <p>
+     * This method is thread-safe.
      *
      * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
      */
     public static void addDateTimeFormat(String pattern) {
-        dateTimeFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
+        synchronized (FORMAT_LOCK) {
+            dateTimeFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
+        }
     }
 
     /**
@@ -118,17 +127,25 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
     /**
      * Resets the date format patterns to the built-in defaults.
      * Removes any custom patterns previously added via {@link #addDateFormat(String)}.
+     * <p>
+     * This method is thread-safe.
      */
     public static void resetDateFormats() {
-        dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
+        synchronized (FORMAT_LOCK) {
+            dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
+        }
     }
 
     /**
      * Resets the date-time format patterns to the built-in defaults.
      * Removes any custom patterns previously added via {@link #addDateTimeFormat(String)}.
+     * <p>
+     * This method is thread-safe.
      */
     public static void resetDateTimeFormats() {
-        dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
+        synchronized (FORMAT_LOCK) {
+            dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
+        }
     }
 
     public CellData {

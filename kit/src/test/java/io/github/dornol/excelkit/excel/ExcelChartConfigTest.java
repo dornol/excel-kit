@@ -182,6 +182,37 @@ class ExcelChartConfigTest {
     }
 
     // ============================================================
+    // Input validation
+    // ============================================================
+    @Nested
+    class ValidationTests {
+
+        @Test
+        void categoryColumn_negative_throws() {
+            ExcelChartConfig c = new ExcelChartConfig();
+            assertThrows(IllegalArgumentException.class, () -> c.categoryColumn(-1));
+        }
+
+        @Test
+        void valueColumn_negative_throws() {
+            ExcelChartConfig c = new ExcelChartConfig();
+            assertThrows(IllegalArgumentException.class, () -> c.valueColumn(-1, "Sales"));
+        }
+
+        @Test
+        void categoryColumn_zero_accepted() {
+            ExcelChartConfig c = new ExcelChartConfig();
+            assertDoesNotThrow(() -> c.categoryColumn(0));
+        }
+
+        @Test
+        void valueColumn_zero_accepted() {
+            ExcelChartConfig c = new ExcelChartConfig();
+            assertDoesNotThrow(() -> c.valueColumn(0, "Sales"));
+        }
+    }
+
+    // ============================================================
     // Integration: chart via ExcelWriter
     // ============================================================
     @Nested

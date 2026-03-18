@@ -138,6 +138,9 @@ public class ExcelChartConfig {
      * @return this config for chaining
      */
     public ExcelChartConfig categoryColumn(int columnIndex) {
+        if (columnIndex < 0) {
+            throw new IllegalArgumentException("categoryColumn index must be non-negative");
+        }
         this.categoryColumnIndex = columnIndex;
         return this;
     }
@@ -150,6 +153,9 @@ public class ExcelChartConfig {
      * @return this config for chaining
      */
     public ExcelChartConfig valueColumn(int columnIndex, String seriesTitle) {
+        if (columnIndex < 0) {
+            throw new IllegalArgumentException("valueColumn index must be non-negative");
+        }
         this.valueSeries.add(new ValueSeries(columnIndex, seriesTitle));
         return this;
     }

@@ -1,6 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.CellData;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -9,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -467,5 +470,197 @@ class CellDataTest {
 
         // Assert
         assertEquals(new BigDecimal("123.456"), result, "asBigDecimal should convert number to BigDecimal correctly");
+    }
+
+    // ============================================================
+    // asEnum tests
+    // ============================================================
+    @Nested
+    class AsEnumTests {
+
+        enum Color { RED, GREEN, BLUE }
+
+        @Test
+        void asEnum_shouldReturnNullWhenBlank() {
+            assertNull(new CellData(0, "").asEnum(Color.class));
+        }
+
+        @Test
+        void asEnum_shouldMatchCaseInsensitively() {
+            assertEquals(Color.RED, new CellData(0, "red").asEnum(Color.class));
+            assertEquals(Color.RED, new CellData(0, "RED").asEnum(Color.class));
+            assertEquals(Color.RED, new CellData(0, "Red").asEnum(Color.class));
+        }
+
+        @Test
+        void asEnum_shouldThrowForInvalidValue() {
+            CellData cellData = new CellData(0, "PURPLE");
+            assertThrows(IllegalArgumentException.class, () -> cellData.asEnum(Color.class));
+        }
+
+        @Test
+        void asEnum_shouldTrimWhitespace() {
+            assertEquals(Color.BLUE, new CellData(0, " BLUE ").asEnum(Color.class));
+        }
+
+        @Test
+        void asEnum_whitespaceOnly_returnsNull() {
+            assertNull(new CellData(0, "   ").asEnum(Color.class));
+        }
+    }
+
+    // ============================================================
+    // asBooleanOrNull tests
+    // ============================================================
+    @Nested
+    class AsBooleanOrNullTests {
+
+        @Test
+        void asBooleanOrNull_blank_returnsNull() {
+            assertNull(new CellData(0, "").asBooleanOrNull());
+        }
+
+        @Test
+        void asBooleanOrNull_whitespace_returnsNull() {
+            assertNull(new CellData(0, "   ").asBooleanOrNull());
+        }
+
+        @Test
+        void asBooleanOrNull_true_returnsTrue() {
+            assertEquals(Boolean.TRUE, new CellData(0, "true").asBooleanOrNull());
+            assertEquals(Boolean.TRUE, new CellData(0, "1").asBooleanOrNull());
+            assertEquals(Boolean.TRUE, new CellData(0, "y").asBooleanOrNull());
+            assertEquals(Boolean.TRUE, new CellData(0, "yes").asBooleanOrNull());
+        }
+
+        @Test
+        void asBooleanOrNull_false_returnsFalse() {
+            assertEquals(Boolean.FALSE, new CellData(0, "false").asBooleanOrNull());
+            assertEquals(Boolean.FALSE, new CellData(0, "0").asBooleanOrNull());
+            assertEquals(Boolean.FALSE, new CellData(0, "no").asBooleanOrNull());
+        }
+    }
+
+    // ============================================================
+    // isEmpty tests
+    // ============================================================
+    @Nested
+    class IsEmptyTests {
+
+        @Test
+        void isEmpty_blank_returnsTrue() {
+            assertTrue(new CellData(0, "").isEmpty());
+        }
+
+        @Test
+        void isEmpty_whitespace_returnsTrue() {
+            assertTrue(new CellData(0, "   ").isEmpty());
+        }
+
+        @Test
+        void isEmpty_nonBlank_returnsFalse() {
+            assertFalse(new CellData(0, "x").isEmpty());
+        }
+
+        @Test
+        void isEmpty_null_returnsTrue() {
+            assertTrue(new CellData(0, null).isEmpty());
+        }
+    }
+
+    // ============================================================
+    // Date format add/reset
+    // ============================================================
+    @Nested
+    class DateFormatTests {
+
+        @AfterEach
+        void resetFormats() {
+            CellData.resetDateFormats();
+            CellData.resetDateTimeFormats();
+        }
+
+        @Test
+        void addDateFormat_shouldBeUsableForParsing() {
+            CellData.addDateFormat("dd.MM.yyyy");
+            LocalDate result = new CellData(0, "25.12.2024").asLocalDate();
+            assertEquals(LocalDate.of(2024, 12, 25), result);
+        }
+
+        @Test
+        void resetDateFormats_shouldRestoreDefaults() {
+            int before = CellData.getDateFormats().size();
+            CellData.addDateFormat("dd.MM.yyyy");
+            assertEquals(before + 1, CellData.getDateFormats().size());
+
+            CellData.resetDateFormats();
+            assertEquals(before, CellData.getDateFormats().size());
+        }
+
+        @Test
+        void addDateTimeFormat_shouldBeUsableForParsing() {
+            CellData.addDateTimeFormat("dd.MM.yyyy HH:mm:ss");
+            LocalDateTime result = new CellData(0, "25.12.2024 10:30:00").asLocalDateTime();
+            assertEquals(LocalDateTime.of(2024, 12, 25, 10, 30, 0), result);
+        }
+
+        @Test
+        void resetDateTimeFormats_shouldRestoreDefaults() {
+            int before = CellData.getDateTimeFormats().size();
+            CellData.addDateTimeFormat("dd.MM.yyyy HH:mm:ss");
+            assertEquals(before + 1, CellData.getDateTimeFormats().size());
+
+            CellData.resetDateTimeFormats();
+            assertEquals(before, CellData.getDateTimeFormats().size());
+        }
+
+        @Test
+        void asLocalDateTime_unparseable_shouldThrow() {
+            CellData cellData = new CellData(0, "not-a-date");
+            assertThrows(DateTimeParseException.class, cellData::asLocalDateTime);
+        }
+
+        @Test
+        void asLocalDate_customFormat_blank_returnsNull() {
+            assertNull(new CellData(0, "").asLocalDate("dd.MM.yyyy"));
+        }
+
+        @Test
+        void asLocalDateTime_customFormat_blank_returnsNull() {
+            assertNull(new CellData(0, "").asLocalDateTime("dd.MM.yyyy HH:mm"));
+        }
+
+        @Test
+        void asLocalTime_customFormat_blank_returnsNull() {
+            assertNull(new CellData(0, "").asLocalTime("HH:mm"));
+        }
+    }
+
+    // ============================================================
+    // Locale tests
+    // ============================================================
+    @Nested
+    class LocaleTests {
+
+        @AfterEach
+        void resetLocale() {
+            CellData.setDefaultLocale(Locale.KOREA);
+        }
+
+        @Test
+        void getDefaultLocale_returnsKoreaByDefault() {
+            assertEquals(Locale.KOREA, CellData.getDefaultLocale());
+        }
+
+        @Test
+        void setDefaultLocale_changesLocale() {
+            CellData.setDefaultLocale(Locale.US);
+            assertEquals(Locale.US, CellData.getDefaultLocale());
+        }
+
+        @Test
+        void setDefaultLocale_null_throws() {
+            assertThrows(IllegalArgumentException.class, () -> CellData.setDefaultLocale(null));
+        }
     }
 }

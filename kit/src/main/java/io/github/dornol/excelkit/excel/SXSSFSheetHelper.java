@@ -3,6 +3,8 @@ package io.github.dornol.excelkit.excel;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Package-private utility that consolidates reflective access to the
@@ -16,6 +18,7 @@ import org.jspecify.annotations.Nullable;
  * @since 0.7.0
  */
 class SXSSFSheetHelper {
+    private static final Logger log = LoggerFactory.getLogger(SXSSFSheetHelper.class);
 
     private SXSSFSheetHelper() {
     }
@@ -33,6 +36,8 @@ class SXSSFSheetHelper {
             field.setAccessible(true);
             return (XSSFSheet) field.get(sheet);
         } catch (Exception e) {
+            log.warn("Failed to access underlying XSSFSheet via reflection. "
+                    + "Features requiring XSSFSheet (charts, tab colors) will be unavailable.", e);
             return null;
         }
     }
