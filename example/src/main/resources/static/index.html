@@ -151,6 +151,27 @@
 </div>
 
 <hr>
+<h2>New in v0.8.x</h2>
+
+<div class="section">
+    <p><strong>Mapping Read with Custom Conversion</strong> - Upload Excel, read with as()/asInt(0)/asString("N/A") default methods</p>
+    <form action="/showcase/mapping-read" method="POST" enctype="multipart/form-data" target="_blank">
+        <input type="file" name="file" accept=".xlsx" required>
+        <button type="submit" class="upload">Upload Excel (Mapping Read)</button>
+    </form>
+</div>
+
+<div class="section">
+    <p><strong>CSV Defense Off</strong> - Download CSV with injection defense disabled (formulas preserved)</p>
+    <a href="/showcase/csv-defense-off" target="_blank"><button class="showcase">Download CSV Defense Off</button></a>
+</div>
+
+<div class="section">
+    <p><strong>CSV Defense On</strong> - Download CSV with injection defense enabled (formulas prefixed with ')</p>
+    <a href="/showcase/csv-defense-on" target="_blank"><button class="showcase">Download CSV Defense On</button></a>
+</div>
+
+<hr>
 <h2>Showcase (Existing Features)</h2>
 
 <div class="section">

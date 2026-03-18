@@ -5,6 +5,7 @@ import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.example.app.util.DownloadFileType;
 import io.github.dornol.excelkit.example.app.util.DownloadUtil;
 import io.github.dornol.excelkit.csv.CsvMapWriter;
+import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.*;
 import io.github.dornol.excelkit.shared.ExcelKitSchema;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
@@ -805,6 +806,87 @@ public class ShowcaseController {
             return DownloadUtil.builder("named-range-demo", DownloadFileType.EXCEL)
                     .body(handler::consumeOutputStream);
         }
+    }
+
+    // ========================================================================
+    // 25. Mapping Mode with Custom Conversion - CellData default methods
+    // ========================================================================
+    @PostMapping("/mapping-read")
+    @ResponseBody
+    public String readMappingMode(MultipartFile file) throws IOException {
+        List<String> results = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        try (InputStream is = file.getInputStream()) {
+            ExcelReader.<String[]>mapping(row -> new String[]{
+                    row.get("Name").asString("Unknown"),
+                    String.valueOf(row.get("Price").asInt(0)),
+                    String.valueOf(row.get("Quantity").asInt(0)),
+                    String.valueOf(row.get("Discount").asDouble(0.0))
+            }).build(is).read(result -> {
+                if (result.success()) {
+                    String[] data = result.data();
+                    results.add("Name=%s, Price=%s, Qty=%s, Discount=%s".formatted(
+                            data[0], data[1], data[2], data[3]));
+                } else {
+                    errors.add(result.messages().toString());
+                }
+            });
+        }
+
+        log.info("Mapping read: {} success, {} errors", results.size(), errors.size());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Mapping Mode Read Result ===\n");
+        sb.append("Success: %d rows, Errors: %d rows\n\n".formatted(results.size(), errors.size()));
+        results.forEach(r -> sb.append(r).append("\n"));
+        if (!errors.isEmpty()) {
+            sb.append("\n--- Errors ---\n");
+            errors.forEach(e -> sb.append(e).append("\n"));
+        }
+        return sb.toString();
+    }
+
+    // ========================================================================
+    // 26. CSV Injection Defense Toggle - defense OFF (formulas preserved)
+    // ========================================================================
+    @GetMapping("/csv-defense-off")
+    public ResponseEntity<StreamingResponseBody> downloadCsvDefenseOff() {
+        var handler = new CsvWriter<String[]>()
+                .csvInjectionDefense(false)
+                .column("Label", row -> row[0])
+                .column("Value", row -> row[1])
+                .write(Stream.of(
+                        new String[]{"Sum Formula", "=SUM(A1:A10)"},
+                        new String[]{"Phone Number", "+1-234-5678"},
+                        new String[]{"Negative Number", "-15.5"},
+                        new String[]{"At Symbol", "@importdata(...)"},
+                        new String[]{"Normal Text", "Hello World"}
+                ));
+
+        return DownloadUtil.builder("csv-defense-off", DownloadFileType.CSV)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 27. CSV Injection Defense Toggle - defense ON (default)
+    // ========================================================================
+    @GetMapping("/csv-defense-on")
+    public ResponseEntity<StreamingResponseBody> downloadCsvDefenseOn() {
+        var handler = new CsvWriter<String[]>()
+                .csvInjectionDefense(true)
+                .column("Label", row -> row[0])
+                .column("Value", row -> row[1])
+                .write(Stream.of(
+                        new String[]{"Sum Formula", "=SUM(A1:A10)"},
+                        new String[]{"Phone Number", "+1-234-5678"},
+                        new String[]{"Negative Number", "-15.5"},
+                        new String[]{"At Symbol", "@importdata(...)"},
+                        new String[]{"Normal Text", "Hello World"}
+                ));
+
+        return DownloadUtil.builder("csv-defense-on", DownloadFileType.CSV)
+                .body(handler::consumeOutputStream);
     }
 
     private static ProductReadDto toReadDto(ProductDto p) {

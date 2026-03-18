@@ -42,6 +42,7 @@ public class CsvWriter<T> {
     private @Nullable CsvAfterDataWriter afterDataWriter;
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
+    private boolean csvInjectionDefense = true;
 
     /**
      * Sets the delimiter character used to separate fields.
@@ -167,6 +168,23 @@ public class CsvWriter<T> {
      * @param callback the callback to invoke
      * @return This writer instance (for chaining)
      */
+    /**
+     * Enables or disables CSV injection defense.
+     * <p>
+     * When enabled (default), cell values starting with formula characters
+     * ({@code =}, {@code +}, {@code -}, {@code @}, {@code \t}, {@code \r})
+     * are prefixed with a single quote to prevent formula injection.
+     * <p>
+     * Disable only when writing trusted data where the prefix would corrupt values.
+     *
+     * @param enabled whether to enable injection defense (default: true)
+     * @return This writer instance (for chaining)
+     */
+    public CsvWriter<T> csvInjectionDefense(boolean enabled) {
+        this.csvInjectionDefense = enabled;
+        return this;
+    }
+
     public CsvWriter<T> onProgress(int interval, ProgressCallback callback) {
         if (interval <= 0) {
             throw new IllegalArgumentException("progress interval must be positive");
@@ -284,7 +302,7 @@ public class CsvWriter<T> {
         }
         String value = input.toString();
         // CSV Injection defense: prefix formula-triggering characters with a single quote
-        if (!value.isEmpty() && isFormulaCharacter(value.charAt(0))) {
+        if (csvInjectionDefense && !value.isEmpty() && isFormulaCharacter(value.charAt(0))) {
             value = "'" + value;
         }
         if (value.contains(String.valueOf(this.delimiter)) || value.contains("\"") || value.contains("\n") || value.contains("\r")) {

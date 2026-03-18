@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 
 /**
  * Represents a single cell's value read from an Excel file,
@@ -411,6 +412,90 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             }
         }
         throw new IllegalArgumentException("No enum constant " + enumType.getSimpleName() + " for value: '" + trimmed + "'");
+    }
+
+    /**
+     * Converts the cell value using a custom conversion function.
+     * <p>
+     * The function receives the raw string value and returns the converted result.
+     * Returns {@code null} if the value is empty or blank.
+     *
+     * <pre>{@code
+     * UUID id = cell.as(UUID::fromString);
+     * MyType obj = cell.as(MyType::parse);
+     * }</pre>
+     *
+     * @param converter the conversion function
+     * @param <R>       the return type
+     * @return the converted value, or {@code null} if blank
+     */
+    public <R> @Nullable R as(Function<String, R> converter) {
+        if (formattedValue.isBlank()) {
+            return null;
+        }
+        return converter.apply(formattedValue);
+    }
+
+    /**
+     * Converts the cell value to {@link Integer}, returning the given default if blank.
+     *
+     * @param defaultValue the value to return if the cell is blank
+     * @return the parsed integer or the default value
+     */
+    public int asInt(int defaultValue) {
+        Integer value = asInt();
+        return value != null ? value : defaultValue;
+    }
+
+    /**
+     * Converts the cell value to {@link Long}, returning the given default if blank.
+     *
+     * @param defaultValue the value to return if the cell is blank
+     * @return the parsed long or the default value
+     */
+    public long asLong(long defaultValue) {
+        Long value = asLong();
+        return value != null ? value : defaultValue;
+    }
+
+    /**
+     * Converts the cell value to {@link Double}, returning the given default if blank.
+     *
+     * @param defaultValue the value to return if the cell is blank
+     * @return the parsed double or the default value
+     */
+    public double asDouble(double defaultValue) {
+        Double value = asDouble();
+        return value != null ? value : defaultValue;
+    }
+
+    /**
+     * Returns the string value, or the given default if blank.
+     *
+     * @param defaultValue the value to return if the cell is blank
+     * @return the string value or the default value
+     */
+    public String asString(String defaultValue) {
+        return formattedValue.isBlank() ? defaultValue : formattedValue;
+    }
+
+    /**
+     * Converts the cell value using a custom function, returning the given default if blank.
+     *
+     * <pre>{@code
+     * UUID id = cell.as(UUID::fromString, DEFAULT_UUID);
+     * }</pre>
+     *
+     * @param converter    the conversion function
+     * @param defaultValue the value to return if the cell is blank
+     * @param <R>          the return type
+     * @return the converted value or the default value
+     */
+    public <R> R as(Function<String, R> converter, R defaultValue) {
+        if (formattedValue.isBlank()) {
+            return defaultValue;
+        }
+        return converter.apply(formattedValue);
     }
 
 }

@@ -53,6 +53,8 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Summary/footer rows via `summary()` — fluent DSL for SUM, AVERAGE, COUNT, MIN, MAX formulas
 - Named ranges via `SheetContext.namedRange()` — create workbook-scoped named ranges in callbacks
 - List validation from cell range via `ExcelValidation.listFromRange()` — dropdown options from sheet/range reference
+- Custom cell conversion via `CellData.as(Function)` — ad-hoc type conversion (e.g., `UUID::fromString`)
+- Default value overloads — `asInt(defaultValue)`, `asLong(defaultValue)`, `asDouble(defaultValue)`, `asString(defaultValue)`, `as(Function, defaultValue)`
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -73,6 +75,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 - UTF-8 BOM for Excel compatibility
 - Configurable delimiter and charset
 - Progress callback via `onProgress()`
+- Configurable CSV injection defense via `csvInjectionDefense()` — toggle formula character prefixing
 
 **CSV Reading** (OpenCSV-based)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -1511,7 +1514,32 @@ When reading Excel/CSV, `CellData` provides type-safe conversions:
 | `asLocalDateTime()` | `LocalDateTime` |
 | `asLocalTime()` | `LocalTime` |
 | `asEnum(Class<E>)` | `E` (case-insensitive name match) |
+| `as(Function<String, R>)` | `R` (custom conversion, null if blank) |
 | `isEmpty()` | `boolean` |
+
+**Default value overloads** — return the given default instead of `null` when the cell is blank:
+
+| Method | Return Type |
+|--------|-------------|
+| `asInt(int defaultValue)` | `int` |
+| `asLong(long defaultValue)` | `long` |
+| `asDouble(double defaultValue)` | `double` |
+| `asString(String defaultValue)` | `String` |
+| `as(Function<String, R>, R defaultValue)` | `R` |
+
+**Custom conversion examples:**
+```java
+// UUID parsing
+UUID id = cell.as(UUID::fromString);
+
+// Custom domain object
+MyType obj = cell.as(MyType::parse);
+
+// With default value
+UUID id = cell.as(UUID::fromString, DEFAULT_UUID);
+int qty = cell.asInt(0);       // 0 if blank
+String name = cell.asString("N/A");  // "N/A" if blank
+```
 
 Custom date formats:
 ```java
@@ -1754,6 +1782,15 @@ The library creates temporary files during read and write operations (e.g., SAX-
 ### CSV Injection Defense
 
 `CsvWriter` automatically defends against CSV formula injection by prefixing dangerous leading characters (`=`, `+`, `-`, `@`, `\t`, `\r`) with a single quote (`'`). This prevents malicious payloads from being executed when the CSV is opened in spreadsheet applications.
+
+The defense can be disabled when writing trusted data where the prefix would corrupt values:
+
+```java
+new CsvWriter<Row>()
+    .csvInjectionDefense(false)   // disable for trusted data
+    .column("Formula", r -> r.formula())
+    .write(rows);
+```
 
 ### Formula Columns
 
