@@ -389,6 +389,161 @@ class ExcelKitSchemaTest {
         }
     }
 
+    // --- Mapping mode (immutable objects) ---
+
+    @Test
+    void excelReader_mapping_shouldReadExcelFile() throws IOException {
+        ByteArrayOutputStream excelOut = new ByteArrayOutputStream();
+        schema.excelWriter()
+                .write(Stream.of(
+                        new TestPerson("Alice", 30),
+                        new TestPerson("Bob", 25)
+                ))
+                .consumeOutputStream(excelOut);
+
+        List<TestPerson> results = new ArrayList<>();
+        try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
+            schema.excelReader(row -> {
+                TestPerson p = new TestPerson();
+                p.setName(row.get("Name").asString());
+                p.setAge(row.get("Age").asInt());
+                return p;
+            }, null).build(is).read(result -> {
+                if (result.success()) {
+                    results.add(result.data());
+                }
+            });
+        }
+
+        assertEquals(2, results.size());
+        assertEquals("Alice", results.get(0).getName());
+        assertEquals(30, results.get(0).getAge());
+        assertEquals("Bob", results.get(1).getName());
+        assertEquals(25, results.get(1).getAge());
+    }
+
+    @Test
+    void csvReader_mapping_shouldReadCsvData() {
+        String csv = "Name,Age\nAlice,30\nBob,25\n";
+        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
+
+        List<TestPerson> results = new ArrayList<>();
+        schema.csvReader(row -> {
+            TestPerson p = new TestPerson();
+            p.setName(row.get("Name").asString());
+            p.setAge(row.get("Age").asInt());
+            return p;
+        }, null).build(is).read(result -> {
+            if (result.success()) {
+                results.add(result.data());
+            }
+        });
+
+        assertEquals(2, results.size());
+        assertEquals("Alice", results.get(0).getName());
+        assertEquals(30, results.get(0).getAge());
+    }
+
+    @Test
+    void excelReader_mapping_shouldSupportValidation() throws IOException {
+        ByteArrayOutputStream excelOut = new ByteArrayOutputStream();
+        schema.excelWriter()
+                .write(Stream.of(
+                        new TestPerson("Valid", 30),
+                        new TestPerson("", 25),
+                        new TestPerson("TooOld", 150)
+                ))
+                .consumeOutputStream(excelOut);
+
+        List<TestPerson> valid = new ArrayList<>();
+        List<ReadResult<TestPerson>> invalid = new ArrayList<>();
+        try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
+            schema.excelReader(row -> {
+                TestPerson p = new TestPerson();
+                p.setName(row.get("Name").asString());
+                p.setAge(row.get("Age").asInt());
+                return p;
+            }, validator).build(is).read(result -> {
+                if (result.success()) {
+                    valid.add(result.data());
+                } else {
+                    invalid.add(result);
+                }
+            });
+        }
+
+        assertEquals(1, valid.size());
+        assertEquals("Valid", valid.get(0).getName());
+        assertEquals(2, invalid.size());
+    }
+
+    @Test
+    void roundTrip_excel_mapping_shouldPreserveData() throws IOException {
+        List<TestPerson> original = List.of(
+                new TestPerson("Alice", 30),
+                new TestPerson("Bob", 25),
+                new TestPerson("Charlie", 35)
+        );
+
+        ByteArrayOutputStream excelOut = new ByteArrayOutputStream();
+        schema.excelWriter()
+                .write(original.stream())
+                .consumeOutputStream(excelOut);
+
+        List<TestPerson> results = new ArrayList<>();
+        try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
+            schema.excelReader(row -> {
+                TestPerson p = new TestPerson();
+                p.setName(row.get("Name").asString());
+                p.setAge(row.get("Age").asInt());
+                return p;
+            }, null).build(is).read(result -> {
+                if (result.success()) {
+                    results.add(result.data());
+                }
+            });
+        }
+
+        assertEquals(original.size(), results.size());
+        for (int i = 0; i < original.size(); i++) {
+            assertEquals(original.get(i).getName(), results.get(i).getName());
+            assertEquals(original.get(i).getAge(), results.get(i).getAge());
+        }
+    }
+
+    @Test
+    void roundTrip_csv_mapping_shouldPreserveData() {
+        List<TestPerson> original = List.of(
+                new TestPerson("Alice", 30),
+                new TestPerson("Bob", 25)
+        );
+
+        ByteArrayOutputStream csvOut = new ByteArrayOutputStream();
+        schema.csvWriter()
+                .bom(false)
+                .write(original.stream())
+                .consumeOutputStream(csvOut);
+
+        InputStream is = new ByteArrayInputStream(csvOut.toByteArray());
+        List<TestPerson> results = new ArrayList<>();
+        schema.csvReader(row -> {
+            TestPerson p = new TestPerson();
+            p.setName(row.get("Name").asString());
+            p.setAge(row.get("Age").asInt());
+            return p;
+        }, null).build(is).read(result -> {
+            if (result.success()) {
+                results.add(result.data());
+            }
+        });
+
+        assertEquals(original.size(), results.size());
+        for (int i = 0; i < original.size(); i++) {
+            assertEquals(original.get(i).getName(), results.get(i).getName());
+            assertEquals(original.get(i).getAge(), results.get(i).getAge());
+        }
+    }
+
     public static class TestPerson {
         @NotBlank
         private String name;

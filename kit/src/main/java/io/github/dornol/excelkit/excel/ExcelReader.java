@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ExcelKitException;
+import io.github.dornol.excelkit.shared.RowData;
 import io.github.dornol.excelkit.shared.TempResourceCreator;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -27,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -46,7 +48,8 @@ public class ExcelReader<T> {
     private static final int DEFAULT_MAX_BYTE_ARRAY_SIZE = 500_000_000;
 
     private final List<ExcelReadColumn<T>> columns = new ArrayList<>();
-    private final Supplier<T> instanceSupplier;
+    private final @Nullable Supplier<T> instanceSupplier;
+    private final @Nullable Function<RowData, T> rowMapper;
     private final @Nullable Validator validator;
     private int sheetIndex = 0;
     private int headerRowIndex = 0;
@@ -82,14 +85,57 @@ public class ExcelReader<T> {
     }
 
     /**
-     * Constructs an ExcelReader with instance supplier and optional validator.
+     * Constructs an ExcelReader in setter mode with instance supplier and optional validator.
      *
      * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      * @param validator        Optional Bean Validation validator (nullable)
      */
     public ExcelReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
+        this.rowMapper = null;
         this.validator = validator;
+    }
+
+    private ExcelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
+        this.instanceSupplier = null;
+        this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
+        this.validator = validator;
+    }
+
+    /**
+     * Creates an ExcelReader in mapping mode for immutable object construction.
+     * <p>
+     * In this mode, each row is passed as a {@link RowData} to the mapping function,
+     * which creates the target object in a single step. Column definitions are not needed —
+     * access columns by header name or index within the mapping function.
+     *
+     * <pre>{@code
+     * ExcelReader.mapping(row -> new PersonRecord(
+     *         row.get("Name").asString(),
+     *         row.get("Age").asInt(),
+     *         row.get("Email").asString()
+     * )).build(inputStream).read(result -> { ... });
+     * }</pre>
+     *
+     * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
+     * @param <T>       The type of the object that represents one Excel row
+     * @return A new ExcelReader configured in mapping mode
+     */
+    public static <T> ExcelReader<T> mapping(Function<RowData, T> rowMapper) {
+        return new ExcelReader<>(rowMapper, null);
+    }
+
+    /**
+     * Creates an ExcelReader in mapping mode with Bean Validation support.
+     *
+     * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
+     * @param validator Optional Bean Validation validator (nullable)
+     * @param <T>       The type of the object that represents one Excel row
+     * @return A new ExcelReader configured in mapping mode
+     * @see #mapping(Function)
+     */
+    public static <T> ExcelReader<T> mapping(Function<RowData, T> rowMapper, @Nullable Validator validator) {
+        return new ExcelReader<>(rowMapper, validator);
     }
 
     /**
@@ -247,6 +293,10 @@ public class ExcelReader<T> {
      * @return A handler to execute Excel parsing
      */
     public ExcelReadHandler<T> build(InputStream inputStream) {
+        if (rowMapper != null) {
+            return new ExcelReadHandler<>(inputStream, rowMapper, validator,
+                    sheetIndex, headerRowIndex, progressInterval, progressCallback);
+        }
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 sheetIndex, headerRowIndex, progressInterval, progressCallback);
     }

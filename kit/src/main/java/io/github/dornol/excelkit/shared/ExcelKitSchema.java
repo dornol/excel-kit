@@ -91,7 +91,7 @@ public class ExcelKitSchema<T> {
     }
 
     /**
-     * Creates a new {@link ExcelReader} pre-configured with this schema's columns.
+     * Creates a new {@link ExcelReader} pre-configured with this schema's columns (setter mode).
      * <p>
      * Columns are matched by header name (not positional index), so the column order
      * in the Excel file does not need to match the schema definition order.
@@ -110,7 +110,21 @@ public class ExcelKitSchema<T> {
     }
 
     /**
-     * Creates a new {@link CsvReader} pre-configured with this schema's columns.
+     * Creates a new {@link ExcelReader} in mapping mode for immutable object construction.
+     * <p>
+     * The mapping function receives a {@link RowData} and creates the target object in a single step.
+     * Column definitions from this schema are not used for reading in this mode.
+     *
+     * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
+     * @param validator Optional Bean Validation validator (nullable)
+     * @return A configured ExcelReader instance in mapping mode
+     */
+    public ExcelReader<T> excelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
+        return ExcelReader.mapping(rowMapper, validator);
+    }
+
+    /**
+     * Creates a new {@link CsvReader} pre-configured with this schema's columns (setter mode).
      * <p>
      * Columns are matched by header name (not positional index), so the column order
      * in the CSV file does not need to match the schema definition order.
@@ -126,6 +140,17 @@ public class ExcelKitSchema<T> {
             reader.addColumn(col.name(), col.readSetter());
         }
         return reader;
+    }
+
+    /**
+     * Creates a new {@link CsvReader} in mapping mode for immutable object construction.
+     *
+     * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
+     * @param validator Optional Bean Validation validator (nullable)
+     * @return A configured CsvReader instance in mapping mode
+     */
+    public CsvReader<T> csvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
+        return CsvReader.mapping(rowMapper, validator);
     }
 
     /**

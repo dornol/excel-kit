@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -35,11 +36,12 @@ import java.util.stream.Stream;
 public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     private static final Logger log = LoggerFactory.getLogger(AbstractReadHandler.class);
 
-    protected final Supplier<T> instanceSupplier;
+    protected final @Nullable Supplier<T> instanceSupplier;
+    protected final @Nullable Function<RowData, T> rowMapper;
     protected final @Nullable Validator validator;
 
     /**
-     * Constructs a read handler by validating inputs and initializing a temporary file.
+     * Constructs a read handler in setter mode by validating inputs and initializing a temporary file.
      *
      * @param inputStream      The input stream of the uploaded file
      * @param instanceSupplier A supplier to instantiate new row objects
@@ -54,6 +56,28 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             throw new IllegalArgumentException("Instance supplier cannot be null");
         }
         this.instanceSupplier = instanceSupplier;
+        this.rowMapper = null;
+        this.validator = validator;
+        initTempFile(inputStream, extension);
+    }
+
+    /**
+     * Constructs a read handler in mapping mode for immutable object construction.
+     *
+     * @param inputStream The input stream of the uploaded file
+     * @param rowMapper   A function that creates an instance from a {@link RowData}
+     * @param validator   Optional bean validator for validating mapped instances
+     * @param extension   File extension for the temporary file (e.g., ".xlsx", ".csv")
+     */
+    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator, String extension) {
+        if (inputStream == null) {
+            throw new IllegalArgumentException("InputStream cannot be null");
+        }
+        if (rowMapper == null) {
+            throw new IllegalArgumentException("Row mapper cannot be null");
+        }
+        this.instanceSupplier = null;
+        this.rowMapper = rowMapper;
         this.validator = validator;
         initTempFile(inputStream, extension);
     }
@@ -190,5 +214,28 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             log.warn("Column mapping failed for '{}': value='{}'", header, cellData.formattedValue(), e);
             return false;
         }
+    }
+
+    /**
+     * Maps a row using the row mapper function (mapping mode).
+     * Catches exceptions from the mapper and wraps them in a failed {@link ReadResult}.
+     *
+     * @param rowData The row data to map
+     * @return A {@link ReadResult} containing the mapped instance or error messages
+     */
+    protected ReadResult<T> mapWithRowMapper(RowData rowData) {
+        assert rowMapper != null;
+        T instance;
+        try {
+            instance = rowMapper.apply(rowData);
+        } catch (Exception e) {
+            log.warn("Row mapping failed", e);
+            List<String> messages = new ArrayList<>();
+            messages.add("Row mapping failed: " + e.getMessage());
+            return new ReadResult<>(null, false, messages);
+        }
+        List<String> messages = new ArrayList<>();
+        boolean valid = validateIfNeeded(instance, messages);
+        return new ReadResult<>(instance, valid, messages.isEmpty() ? null : messages);
     }
 }

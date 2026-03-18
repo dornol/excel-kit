@@ -8,6 +8,7 @@ import io.github.dornol.excelkit.shared.AbstractReadHandler;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.shared.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
@@ -18,10 +19,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -35,7 +39,7 @@ import java.util.stream.StreamSupport;
  */
 public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final List<String> headerNames = new ArrayList<>();
-    private final List<CsvReadColumn<T>> columns;
+    private final @Nullable List<CsvReadColumn<T>> columns;
     private final int headerRowIndex;
     private final char delimiter;
     private final Charset charset;
@@ -73,21 +77,51 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         this.progressCallback = progressCallback;
     }
 
+    /**
+     * Constructs a handler in mapping mode for immutable object construction.
+     */
+    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.shared.@Nullable ProgressCallback progressCallback) {
+        super(inputStream, rowMapper, validator, ".csv");
+        if (headerRowIndex < 0) {
+            throw new IllegalArgumentException("headerRowIndex must be non-negative");
+        }
+        this.columns = null;
+        this.headerRowIndex = headerRowIndex;
+        this.delimiter = delimiter;
+        this.charset = charset;
+        this.progressInterval = progressInterval;
+        this.progressCallback = progressCallback;
+    }
+
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
         try (CSVReader reader = buildCsvReader()) {
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);
             prepareColumnHeaders(headerLine);
-            int[] resolvedIndices = resolveIndices();
 
             String[] line;
             long rowCount = 0;
-            while ((line = reader.readNext()) != null) {
-                consumer.accept(processRow(line, resolvedIndices));
-                rowCount++;
-                if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
-                    progressCallback.onProgress(rowCount, null);
+
+            if (rowMapper != null) {
+                Map<String, Integer> headerIndexMap = buildHeaderIndexMap();
+                while ((line = reader.readNext()) != null) {
+                    consumer.accept(processRowMapping(line, headerIndexMap));
+                    rowCount++;
+                    if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
+                        progressCallback.onProgress(rowCount, null);
+                    }
+                }
+            } else {
+                int[] resolvedIndices = resolveIndices();
+                while ((line = reader.readNext()) != null) {
+                    consumer.accept(processRow(line, resolvedIndices));
+                    rowCount++;
+                    if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
+                        progressCallback.onProgress(rowCount, null);
+                    }
                 }
             }
         } catch (CsvReadException e) {
@@ -112,7 +146,10 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 throw new CsvReadException("CSV file is empty or missing header row");
             }
             prepareColumnHeaders(headerLine);
-            int[] resolvedIndices = resolveIndices();
+
+            final boolean mappingMode = rowMapper != null;
+            final int[] resolvedIndices = mappingMode ? null : resolveIndices();
+            final Map<String, Integer> headerIndexMap = mappingMode ? buildHeaderIndexMap() : null;
 
             final long[] streamRowCount = {0};
             Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
@@ -126,7 +163,10 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                             close();
                             return false;
                         }
-                        action.accept(processRow(line, resolvedIndices));
+                        ReadResult<T> result = mappingMode
+                                ? processRowMapping(line, headerIndexMap)
+                                : processRow(line, resolvedIndices);
+                        action.accept(result);
                         streamRowCount[0]++;
                         if (progressCallback != null && progressInterval > 0
                                 && streamRowCount[0] % progressInterval == 0) {
@@ -156,6 +196,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private ReadResult<T> processRow(String[] line, int[] resolvedIndices) {
+        assert columns != null && instanceSupplier != null;
         T currentInstance = instanceSupplier.get();
         boolean success = true;
         List<String> messages = new ArrayList<>();
@@ -171,6 +212,23 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
         boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
         return new ReadResult<>(currentInstance, validationSuccess, messages);
+    }
+
+    private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap) {
+        List<CellData> cells = new ArrayList<>();
+        for (int i = 0; i < line.length; i++) {
+            cells.add(new CellData(i, line[i]));
+        }
+        RowData rowData = new RowData(cells, headerNames, headerIndexMap);
+        return mapWithRowMapper(rowData);
+    }
+
+    private Map<String, Integer> buildHeaderIndexMap() {
+        Map<String, Integer> map = new LinkedHashMap<>();
+        for (int i = 0; i < headerNames.size(); i++) {
+            map.putIfAbsent(headerNames.get(i), i);
+        }
+        return map;
     }
 
     private void skipToHeader(CSVReader reader) throws Exception {

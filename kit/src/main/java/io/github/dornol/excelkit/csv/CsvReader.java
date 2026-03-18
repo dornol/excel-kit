@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ProgressCallback;
+import io.github.dornol.excelkit.shared.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -28,7 +30,8 @@ import java.util.function.Supplier;
  */
 public class CsvReader<T> {
     private final List<CsvReadColumn<T>> columns = new ArrayList<>();
-    private final Supplier<T> instanceSupplier;
+    private final @Nullable Supplier<T> instanceSupplier;
+    private final @Nullable Function<RowData, T> rowMapper;
     private final @Nullable Validator validator;
     private int headerRowIndex = 0;
     private char delimiter = ',';
@@ -37,14 +40,55 @@ public class CsvReader<T> {
     private int progressInterval;
 
     /**
-     * Constructs a CsvReader with instance supplier and optional validator.
+     * Constructs a CsvReader in setter mode with instance supplier and optional validator.
      *
      * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      * @param validator        Optional Bean Validation validator (nullable)
      */
     public CsvReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
+        this.rowMapper = null;
         this.validator = validator;
+    }
+
+    private CsvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
+        this.instanceSupplier = null;
+        this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
+        this.validator = validator;
+    }
+
+    /**
+     * Creates a CsvReader in mapping mode for immutable object construction.
+     * <p>
+     * In this mode, each row is passed as a {@link RowData} to the mapping function,
+     * which creates the target object in a single step.
+     *
+     * <pre>{@code
+     * CsvReader.mapping(row -> new PersonRecord(
+     *         row.get("Name").asString(),
+     *         row.get("Age").asInt()
+     * )).build(inputStream).read(result -> { ... });
+     * }</pre>
+     *
+     * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
+     * @param <T>       The type of the object that represents one CSV row
+     * @return A new CsvReader configured in mapping mode
+     */
+    public static <T> CsvReader<T> mapping(Function<RowData, T> rowMapper) {
+        return new CsvReader<>(rowMapper, null);
+    }
+
+    /**
+     * Creates a CsvReader in mapping mode with Bean Validation support.
+     *
+     * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
+     * @param validator Optional Bean Validation validator (nullable)
+     * @param <T>       The type of the object that represents one CSV row
+     * @return A new CsvReader configured in mapping mode
+     * @see #mapping(Function)
+     */
+    public static <T> CsvReader<T> mapping(Function<RowData, T> rowMapper, @Nullable Validator validator) {
+        return new CsvReader<>(rowMapper, validator);
     }
 
     /**
@@ -203,6 +247,10 @@ public class CsvReader<T> {
      * @return A handler to execute CSV parsing
      */
     public CsvReadHandler<T> build(InputStream inputStream) {
+        if (rowMapper != null) {
+            return new CsvReadHandler<>(inputStream, rowMapper, validator,
+                    headerRowIndex, delimiter, charset, progressInterval, progressCallback);
+        }
         return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 headerRowIndex, delimiter, charset, progressInterval, progressCallback);
     }

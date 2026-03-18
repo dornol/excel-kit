@@ -5,6 +5,7 @@ import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ProgressCallback;
 import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.shared.RowData;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.util.XMLHelper;
@@ -21,13 +22,16 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -50,7 +54,7 @@ import java.util.stream.StreamSupport;
  * @since 2025-07-19
  */
 public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
-    private final List<ExcelReadColumn<T>> columns;
+    private final @Nullable List<ExcelReadColumn<T>> columns;
     private final int sheetIndex;
     private final int headerRowIndex;
     private final int progressInterval;
@@ -109,6 +113,26 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             throw new IllegalArgumentException("headerRowIndex must be non-negative");
         }
         this.columns = columns;
+        this.sheetIndex = sheetIndex;
+        this.headerRowIndex = headerRowIndex;
+        this.progressInterval = progressInterval;
+        this.progressCallback = progressCallback;
+    }
+
+    /**
+     * Constructs a handler in mapping mode for immutable object construction.
+     */
+    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
+                     int progressInterval, @Nullable ProgressCallback progressCallback) {
+        super(inputStream, rowMapper, validator, ".xlsx");
+        if (sheetIndex < 0 || sheetIndex > 255) {
+            throw new IllegalArgumentException("sheetIndex must be between 0 and 255");
+        }
+        if (headerRowIndex < 0) {
+            throw new IllegalArgumentException("headerRowIndex must be non-negative");
+        }
+        this.columns = null;
         this.sheetIndex = sheetIndex;
         this.headerRowIndex = headerRowIndex;
         this.progressInterval = progressInterval;
@@ -234,12 +258,13 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * Internal handler for row-by-row Excel parsing.
      */
     private class SheetHandler extends DefaultHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
-        private T currentInstance;
+        private @Nullable T currentInstance;
         private final List<CellData> currentRow = new ArrayList<>();
         private final List<String> headerNames = new ArrayList<>();
         private final Consumer<ReadResult<T>> consumer;
-        private List<String> messages;
-        private int[] resolvedIndices;
+        private @Nullable List<String> messages;
+        private int @Nullable [] resolvedIndices;
+        private @Nullable Map<String, Integer> headerIndexMap;
         private long dataRowCount;
 
         public SheetHandler(Consumer<ReadResult<T>> consumer) {
@@ -251,7 +276,9 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          */
         @Override
         public void startRow(int rowNum) {
-            currentInstance = instanceSupplier.get();
+            if (instanceSupplier != null) {
+                currentInstance = instanceSupplier.get();
+            }
             currentRow.clear();
             messages = null;
         }
@@ -259,7 +286,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         /**
          * Called at the end of each row.
          * <p>
-         * - Row 0 is treated as the header.
+         * - Row at headerRowIndex is treated as the header.
          * - Later rows are mapped to the target object, validated (if applicable), and passed to consumer.
          */
         @Override
@@ -269,14 +296,25 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
             if (rowNum == headerRowIndex) {
                 extractHeaderNames();
-                resolveColumnIndices();
+                if (rowMapper != null) {
+                    buildHeaderIndex();
+                } else {
+                    resolveColumnIndices();
+                }
                 return;
             }
 
-            boolean mappingSuccess = mapValuesToInstance();
-            boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
+            ReadResult<T> result;
+            if (rowMapper != null) {
+                RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap);
+                result = mapWithRowMapper(rowData);
+            } else {
+                boolean mappingSuccess = mapValuesToInstance();
+                boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
+                result = new ReadResult<>(currentInstance, validationSuccess, messages);
+            }
 
-            consumer.accept(new ReadResult<>(currentInstance, validationSuccess, messages));
+            consumer.accept(result);
 
             dataRowCount++;
             if (progressCallback != null && progressInterval > 0
@@ -307,9 +345,10 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         /**
-         * Resolves named columns to their actual indices based on header names.
+         * Resolves named columns to their actual indices based on header names (setter mode).
          */
         private void resolveColumnIndices() {
+            assert columns != null;
             resolvedIndices = ExcelReadHandler.this.resolveColumnIndices(
                     columns.size(),
                     i -> columns.get(i).headerName(),
@@ -319,11 +358,22 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         /**
-         * Applies all column setters to the current row data.
+         * Builds header name to index map (mapping mode).
+         */
+        private void buildHeaderIndex() {
+            headerIndexMap = new LinkedHashMap<>();
+            for (int i = 0; i < headerNames.size(); i++) {
+                headerIndexMap.putIfAbsent(headerNames.get(i), i);
+            }
+        }
+
+        /**
+         * Applies all column setters to the current row data (setter mode).
          *
          * @return true if all setters succeeded, false if any failed
          */
         private boolean mapValuesToInstance() {
+            assert columns != null && resolvedIndices != null;
             boolean success = true;
 
             for (int i = 0; i < columns.size(); i++) {
@@ -348,14 +398,6 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
         /**
          * Converts an Excel cell reference (e.g., "C5", "AA12") to a zero-based column index.
-         * <p>
-         * Only the alphabetic part (column letters) is used. For example:
-         * <ul>
-         *   <li>"A1"  -> 0</li>
-         *   <li>"B3"  -> 1</li>
-         *   <li>"C5"  -> 2</li>
-         *   <li>"AA10"-> 26</li>
-         * </ul>
          *
          * @param cellReference The Excel cell reference (e.g., "C5", "AA10")
          * @return The zero-based column index

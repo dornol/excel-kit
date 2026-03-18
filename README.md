@@ -58,6 +58,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 - Header name-based column mapping — columns matched by header name, order-independent
 - Index-based column mapping via `columnAt()` — read specific columns by index
 - Positional column mapping with skip support
+- **Mapping mode** via `ExcelReader.mapping()` — immutable object / Java record support with `RowData`
 - Configurable header row index and sheet index
 - Optional Bean Validation integration with per-row results
 - Stream-based reading via `readAsStream()`
@@ -76,6 +77,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 **CSV Reading** (OpenCSV-based)
 - Header name-based column mapping — columns matched by header name, order-independent
 - Index-based column mapping via `columnAt()`
+- **Mapping mode** via `CsvReader.mapping()` — immutable object / Java record support with `RowData`
 - Header auto-detection with BOM removal
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
@@ -91,7 +93,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.dornol:excel-kit:<latest-version>")
+    implementation("io.github.dornol:excel-kit:0.8.0")
 }
 ```
 
@@ -100,7 +102,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version><!-- latest-version --></version>
+  <version>0.8.0</version>
 </dependency>
 ```
 
@@ -279,6 +281,88 @@ new CsvReader<>(User::new, null)
         .columnAt(0, (u, cell) -> u.name = cell.asString())
         .columnAt(2, (u, cell) -> u.city = cell.asString())
         .build(inputStream);
+```
+
+### Mapping Mode — Immutable Objects / Java Records (Reading)
+
+Use `ExcelReader.mapping()` or `CsvReader.mapping()` to read into immutable objects (Java records, final-field classes) without setters. Instead of defining columns with `BiConsumer` setters, provide a single `Function<RowData, T>` that creates the object in one step:
+
+```java
+record PersonRecord(String name, Integer age, String city) {}
+
+// Excel
+ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
+        row.get("Name").asString(),
+        row.get("Age").asInt(),
+        row.get("City").asString()
+)).build(inputStream).read(result -> {
+    if (result.success()) {
+        PersonRecord p = result.data();
+    }
+});
+
+// CSV — same API
+CsvReader.<PersonRecord>mapping(row -> new PersonRecord(
+        row.get("Name").asString(),
+        row.get("Age").asInt(),
+        row.get("City").asString()
+)).build(inputStream).read(result -> { ... });
+```
+
+**`RowData` access methods:**
+
+| Method | Description |
+|--------|-------------|
+| `get(String headerName)` | Get cell by header name (throws if not found) |
+| `get(int columnIndex)` | Get cell by 0-based index (empty if out of bounds) |
+| `has(String headerName)` | Check if header exists |
+| `size()` | Number of cells in this row |
+| `headerNames()` | List of header names |
+
+Column order in the file doesn't matter — columns are matched by header name. No column definitions are needed:
+
+```java
+// File has columns in any order: City, Age, Name, Email
+// Only read Name and City — other columns are ignored
+ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
+        row.get("Name").asString(),
+        null,  // skip Age
+        row.get("City").asString()
+)).build(inputStream);
+```
+
+All read modes work with mapping: `read()`, `readStrict()`, `readAsStream()`. Configuration options (`sheetIndex`, `headerRowIndex`, `onProgress`) are also supported:
+
+```java
+ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
+        row.get("Name").asString(),
+        row.get("Age").asInt(),
+        null
+)).sheetIndex(1)
+  .headerRowIndex(2)
+  .onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count))
+  .build(inputStream)
+  .read(consumer);
+```
+
+Bean Validation is supported via the second argument:
+
+```java
+Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+ExcelReader.mapping(row -> { ... }, validator).build(inputStream);
+```
+
+**Error handling:** If the mapping function throws an exception (e.g., missing header, type conversion error), the row is reported as failed in `ReadResult` with `success() == false` and the error message. Other rows continue processing normally.
+
+Also available via `ExcelKitSchema`:
+
+```java
+schema.excelReader(row -> {
+    Person p = new Person();
+    p.setName(row.get("Name").asString());
+    p.setAge(row.get("Age").asInt());
+    return p;
+}, validator).build(inputStream);
 ```
 
 ### Formula Columns
@@ -1496,11 +1580,16 @@ ExcelKitSchema<Book> schema = ExcelKitSchema.<Book>builder()
 ExcelHandler handler = schema.excelWriter().write(bookStream);
 CsvHandler ch = schema.csvWriter().write(bookStream);
 
-// reading — columns are matched by header name (order-independent)
+// reading (setter mode) — columns are matched by header name (order-independent)
 ExcelReadHandler<Book> rh = schema.excelReader(Book::new, null)
         .build(inputStream);
 CsvReadHandler<Book> crh = schema.csvReader(Book::new, null)
         .build(inputStream);
+
+// reading (mapping mode) — for immutable objects
+schema.excelReader(row -> new BookRecord(
+        row.get("Title").asString(), row.get("Price").asInt()
+), null).build(inputStream);
 ```
 
 The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`). Writer-level features like `defaultStyle`, `summary`, `protectWorkbook`, `headerFontName`, `headerFontSize` are available on `ExcelWriter` and `ExcelWorkbook`.
