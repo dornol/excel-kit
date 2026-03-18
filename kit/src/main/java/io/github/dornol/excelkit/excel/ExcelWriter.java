@@ -37,30 +37,14 @@ public class ExcelWriter<T> {
     private CellStyle headerStyle;
     private final XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
-    private float rowHeightInPoints = 20;
-    private boolean autoFilter = false;
-    private int freezePaneRows = 0;
-    private @Nullable BeforeHeaderWriter beforeHeaderWriter;
-    private @Nullable AfterDataWriter afterDataWriter;
+    private final SheetConfig<T> cfg = new SheetConfig<>();
     private @Nullable AfterDataWriter afterAllWriter;
-    private @Nullable Function<Integer, String> sheetNameFunction;
     private int sheetCount = 0;
-    private @Nullable Function<T, @Nullable ExcelColor> rowColorFunction;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private int headerRowIndex;
-    private @Nullable ProgressCallback progressCallback;
-    private int progressInterval;
-    private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
-    private @Nullable String sheetPassword;
-    private @Nullable List<ExcelConditionalRule> conditionalRules;
-    private @Nullable ExcelChartConfig chartConfig;
-    private @Nullable ExcelPrintSetup printSetup;
-    private int @Nullable [] tabColor;
     private @Nullable String workbookPassword;
     private @Nullable String headerFontName;
     private @Nullable Integer headerFontSize;
-    private ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyleConfig;
-    private @Nullable ExcelSummary summaryConfig;
 
     private @Nullable SXSSFSheet sheet;
     private @Nullable Cursor cursor;
@@ -162,7 +146,7 @@ public class ExcelWriter<T> {
         if (rowHeightInPoints <= 0) {
             throw new IllegalArgumentException("rowHeightInPoints must be positive");
         }
-        this.rowHeightInPoints = rowHeightInPoints;
+        this.cfg.rowHeightInPoints = rowHeightInPoints;
         return this;
     }
 
@@ -173,7 +157,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> autoFilter(boolean autoFilter) {
-        this.autoFilter = autoFilter;
+        this.cfg.autoFilter = autoFilter;
         return this;
     }
 
@@ -188,7 +172,7 @@ public class ExcelWriter<T> {
         if (rows < 0) {
             throw new IllegalArgumentException("freezePaneRows must be non-negative");
         }
-        this.freezePaneRows = rows;
+        this.cfg.freezePaneRows = rows;
         return this;
     }
 
@@ -202,7 +186,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> beforeHeader(BeforeHeaderWriter beforeHeaderWriter) {
-        this.beforeHeaderWriter = beforeHeaderWriter;
+        this.cfg.beforeHeaderWriter = beforeHeaderWriter;
         return this;
     }
 
@@ -216,7 +200,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> afterData(AfterDataWriter afterDataWriter) {
-        this.afterDataWriter = afterDataWriter;
+        this.cfg.afterDataWriter = afterDataWriter;
         return this;
     }
 
@@ -241,7 +225,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> sheetName(Function<Integer, String> sheetNameFunction) {
-        this.sheetNameFunction = sheetNameFunction;
+        this.cfg.sheetNameFunction = sheetNameFunction;
         return this;
     }
 
@@ -253,7 +237,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> sheetName(String name) {
-        this.sheetNameFunction = index -> index == 0 ? name : name + " (" + (index + 1) + ")";
+        this.cfg.sheetNameFunction = index -> index == 0 ? name : name + " (" + (index + 1) + ")";
         return this;
     }
 
@@ -268,7 +252,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> rowColor(Function<T, @Nullable ExcelColor> rowColorFunction) {
-        this.rowColorFunction = rowColorFunction;
+        this.cfg.rowColorFunction = rowColorFunction;
         return this;
     }
 
@@ -283,8 +267,8 @@ public class ExcelWriter<T> {
         if (interval <= 0) {
             throw new IllegalArgumentException("progress interval must be positive");
         }
-        this.progressInterval = interval;
-        this.progressCallback = callback;
+        this.cfg.progressInterval = interval;
+        this.cfg.progressCallback = callback;
         return this;
     }
 
@@ -302,7 +286,7 @@ public class ExcelWriter<T> {
         if (rows < 0) {
             throw new IllegalArgumentException("autoWidthSampleRows must be non-negative");
         }
-        this.autoWidthSampleRows = rows;
+        this.cfg.autoWidthSampleRows = rows;
         return this;
     }
 
@@ -316,7 +300,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> protectSheet(String password) {
-        this.sheetPassword = password;
+        this.cfg.sheetPassword = password;
         return this;
     }
 
@@ -327,12 +311,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> conditionalFormatting(Consumer<ExcelConditionalRule> configurer) {
-        if (conditionalRules == null) {
-            conditionalRules = new ArrayList<>();
-        }
-        ExcelConditionalRule rule = new ExcelConditionalRule();
-        configurer.accept(rule);
-        conditionalRules.add(rule);
+        cfg.addConditionalRule(configurer);
         return this;
     }
 
@@ -345,7 +324,7 @@ public class ExcelWriter<T> {
     public ExcelWriter<T> chart(Consumer<ExcelChartConfig> configurer) {
         ExcelChartConfig config = new ExcelChartConfig();
         configurer.accept(config);
-        this.chartConfig = config;
+        this.cfg.chartConfig = config;
         return this;
     }
 
@@ -360,7 +339,7 @@ public class ExcelWriter<T> {
     public ExcelWriter<T> printSetup(Consumer<ExcelPrintSetup> configurer) {
         ExcelPrintSetup config = new ExcelPrintSetup();
         configurer.accept(config);
-        this.printSetup = config;
+        this.cfg.printSetup = config;
         return this;
     }
 
@@ -374,7 +353,7 @@ public class ExcelWriter<T> {
      * @since 0.7.0
      */
     public ExcelWriter<T> tabColor(int r, int g, int b) {
-        this.tabColor = new int[]{r, g, b};
+        this.cfg.tabColor = new int[]{r, g, b};
         return this;
     }
 
@@ -436,7 +415,7 @@ public class ExcelWriter<T> {
     public ExcelWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
         ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
         configurer.accept(config);
-        this.defaultStyleConfig = config;
+        this.cfg.defaultStyleConfig = config;
         return this;
     }
 
@@ -451,7 +430,7 @@ public class ExcelWriter<T> {
     public ExcelWriter<T> summary(Consumer<ExcelSummary> configurer) {
         ExcelSummary summary = new ExcelSummary();
         configurer.accept(summary);
-        this.summaryConfig = summary;
+        this.cfg.summaryConfig = summary;
         return this;
     }
 
@@ -590,7 +569,7 @@ public class ExcelWriter<T> {
         }
 
         this.sheet = createNamedSheet();
-        int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);
+        int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
         this.cursor = new Cursor(headerStartRow);
         this.headerRowIndex = headerStartRow;
 
@@ -605,11 +584,11 @@ public class ExcelWriter<T> {
         }
 
         int nextRow = cursor.getRowOfSheet();
-        if (this.afterDataWriter != null) {
-            nextRow = this.afterDataWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
+        if (this.cfg.afterDataWriter != null) {
+            nextRow = this.cfg.afterDataWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
         }
-        if (this.summaryConfig != null) {
-            nextRow = this.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
+        if (this.cfg.summaryConfig != null) {
+            nextRow = this.cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
         }
         if (this.afterAllWriter != null) {
             this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
@@ -619,8 +598,8 @@ public class ExcelWriter<T> {
         ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
 
         // Apply chart on last sheet
-        if (chartConfig != null) {
-            ExcelWriteSupport.applyChart(sheet, chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
+        if (cfg.chartConfig != null) {
+            ExcelWriteSupport.applyChart(sheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
         }
 
         return new ExcelHandler(this.wb);
@@ -641,7 +620,7 @@ public class ExcelWriter<T> {
      */
     private void applySheetOptions() {
         int headerRowIdx = cursor.getRowOfSheet() - 1;
-        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, autoFilter, freezePaneRows, columns.size());
+        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
     }
 
     /**
@@ -653,20 +632,20 @@ public class ExcelWriter<T> {
         cursor.plusTotal();
         if (isOverMaxRows()) {
             int rolloverRow = cursor.getRowOfSheet();
-            if (this.afterDataWriter != null) {
-                rolloverRow = this.afterDataWriter.write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
+            if (this.cfg.afterDataWriter != null) {
+                rolloverRow = this.cfg.afterDataWriter.write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
             }
-            if (this.summaryConfig != null) {
-                this.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
+            if (this.cfg.summaryConfig != null) {
+                this.cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
             }
             turnOverSheet();
-            ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, beforeHeaderWriter);
+            ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
             ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
             applySheetOptions();
         }
-        ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, rowHeightInPoints,
-                rowColorFunction, rowStyleCache, wb, autoWidthSampleRows);
-        ExcelWriteSupport.checkProgress(cursor, progressInterval, progressCallback);
+        ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg.rowHeightInPoints,
+                cfg.rowColorFunction, rowStyleCache, wb, cfg.autoWidthSampleRows);
+        ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
     }
 
     /**
@@ -676,8 +655,8 @@ public class ExcelWriter<T> {
      */
     private SXSSFSheet createNamedSheet() {
         int index = sheetCount++;
-        if (sheetNameFunction != null) {
-            return wb.createSheet(sheetNameFunction.apply(index));
+        if (cfg.sheetNameFunction != null) {
+            return wb.createSheet(cfg.sheetNameFunction.apply(index));
         }
         return wb.createSheet();
     }
@@ -710,10 +689,10 @@ public class ExcelWriter<T> {
             ExcelWriteSupport.applyDataValidations(s, columns, headerRowIndex);
             ExcelWriteSupport.applyColumnOutline(s, columns);
             ExcelWriteSupport.applyColumnHidden(s, columns);
-            ExcelWriteSupport.applySheetProtection(s, sheetPassword);
-            ExcelWriteSupport.applyConditionalFormatting(s, conditionalRules, headerRowIndex, columns.size());
-            ExcelWriteSupport.applyPrintSetup(s, printSetup, headerRowIndex);
-            ExcelWriteSupport.applyTabColor(s, tabColor);
+            ExcelWriteSupport.applySheetProtection(s, cfg.sheetPassword);
+            ExcelWriteSupport.applyConditionalFormatting(s, cfg.conditionalRules, headerRowIndex, columns.size());
+            ExcelWriteSupport.applyPrintSetup(s, cfg.printSetup, headerRowIndex);
+            ExcelWriteSupport.applyTabColor(s, cfg.tabColor);
         }
     }
 
@@ -731,7 +710,7 @@ public class ExcelWriter<T> {
     }
 
     ColumnStyleConfig.@Nullable DefaultStyleConfig<T> getDefaultStyleConfig() {
-        return defaultStyleConfig;
+        return cfg.defaultStyleConfig;
     }
 
 }
