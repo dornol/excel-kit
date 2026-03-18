@@ -33,7 +33,7 @@ import java.util.function.Function;
  */
 public record CellData(int columnIndex, @Nullable String formattedValue) {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
-    private static volatile Locale defaultLocale = Locale.KOREA;
+    private static volatile Locale defaultLocale = Locale.getDefault();
 
     /**
      * Returns the default locale used by no-arg number parsing methods.
@@ -49,7 +49,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * Affects all subsequent calls to {@link #asNumber()}, {@link #asLong()},
      * {@link #asInt()}, {@link #asDouble()}, {@link #asFloat()}, and {@link #asBigDecimal()}.
      * <p>
-     * The default value is {@link Locale#KOREA}.
+     * The default value is {@link Locale#getDefault()}.
      *
      * @param locale The locale to use as default (must not be null)
      */

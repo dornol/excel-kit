@@ -644,12 +644,13 @@ class CellDataTest {
 
         @AfterEach
         void resetLocale() {
-            CellData.setDefaultLocale(Locale.KOREA);
+            CellData.setDefaultLocale(Locale.getDefault());
         }
 
         @Test
-        void getDefaultLocale_returnsKoreaByDefault() {
-            assertEquals(Locale.KOREA, CellData.getDefaultLocale());
+        void getDefaultLocale_returnsJvmDefaultByDefault() {
+            CellData.setDefaultLocale(Locale.getDefault());
+            assertEquals(Locale.getDefault(), CellData.getDefaultLocale());
         }
 
         @Test

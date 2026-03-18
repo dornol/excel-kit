@@ -33,7 +33,7 @@ class CoverageBoostTest {
 
     @AfterEach
     void resetCellDataDefaults() {
-        CellData.setDefaultLocale(Locale.KOREA);
+        CellData.setDefaultLocale(Locale.getDefault());
         CellData.resetDateFormats();
         CellData.resetDateTimeFormats();
     }
