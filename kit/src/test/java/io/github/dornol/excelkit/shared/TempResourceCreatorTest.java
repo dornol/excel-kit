@@ -1,10 +1,14 @@
 package io.github.dornol.excelkit.shared;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -70,5 +74,42 @@ class TempResourceCreatorTest {
         assertThrows(TempResourceCreateException.class, () -> {
             TempResourceCreator.createTempFile(nonExistentDir, prefix, suffix);
         }, "Should throw TempResourceCreateException when directory doesn't exist");
+    }
+
+    @Nested
+    class PlatformSpecificTests {
+
+        @Test
+        void createTempDirectory_onPosix_shouldHaveRestrictedPermissions() throws IOException {
+            boolean isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+            if (!isPosix) {
+                return; // Skip on Windows
+            }
+            Path tempDir = TempResourceCreator.createTempDirectory();
+            try {
+                Set<PosixFilePermission> perms = Files.getPosixFilePermissions(tempDir);
+                assertTrue(perms.contains(PosixFilePermission.OWNER_READ));
+                assertTrue(perms.contains(PosixFilePermission.OWNER_WRITE));
+                assertTrue(perms.contains(PosixFilePermission.OWNER_EXECUTE));
+                assertFalse(perms.contains(PosixFilePermission.GROUP_READ));
+                assertFalse(perms.contains(PosixFilePermission.OTHERS_READ));
+            } finally {
+                Files.delete(tempDir);
+            }
+        }
+
+        @Test
+        void createTempDirectory_multipleCalls_createDistinctDirs() throws IOException {
+            Path dir1 = TempResourceCreator.createTempDirectory();
+            Path dir2 = TempResourceCreator.createTempDirectory();
+            try {
+                assertNotEquals(dir1, dir2);
+                assertTrue(Files.exists(dir1));
+                assertTrue(Files.exists(dir2));
+            } finally {
+                Files.delete(dir1);
+                Files.delete(dir2);
+            }
+        }
     }
 }
