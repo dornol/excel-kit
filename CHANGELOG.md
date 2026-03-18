@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.2] - 2026-03-18
 
 ### Changed
 - **CellData default locale**: Changed from `Locale.KOREA` to `Locale.getDefault()`.
