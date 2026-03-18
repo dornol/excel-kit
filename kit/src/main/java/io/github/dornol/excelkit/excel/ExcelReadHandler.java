@@ -362,7 +362,9 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          * Resolves named columns to their actual indices based on header names (setter mode).
          */
         private void resolveColumnIndices() {
-            assert columns != null;
+            if (columns == null) {
+                throw new IllegalStateException("columns must not be null in setter mode");
+            }
             resolvedIndices = ExcelReadHandler.this.resolveColumnIndices(
                     columns.size(),
                     i -> columns.get(i).headerName(),
@@ -387,7 +389,9 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          * @return true if all setters succeeded, false if any failed
          */
         private boolean mapValuesToInstance() {
-            assert columns != null && resolvedIndices != null;
+            if (columns == null || resolvedIndices == null) {
+                throw new IllegalStateException("columns and resolvedIndices must not be null in setter mode");
+            }
             boolean success = true;
 
             for (int i = 0; i < columns.size(); i++) {

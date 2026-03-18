@@ -213,7 +213,9 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private ReadResult<T> processRow(String[] line, int[] resolvedIndices) {
-        assert columns != null && instanceSupplier != null;
+        if (columns == null || instanceSupplier == null) {
+            throw new IllegalStateException("columns and instanceSupplier must not be null in setter mode");
+        }
         T currentInstance = instanceSupplier.get();
         boolean success = true;
         List<String> messages = new ArrayList<>();
@@ -295,7 +297,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         if (line.length > 0 && line[0] != null && line[0].startsWith("\uFEFF")) {
             line[0] = line[0].substring(1);
             if (line[0].isEmpty()) {
-                throw new CsvReadException("First header column is empty (contained only BOM character)");
+                throw new CsvReadException("First header column is empty after BOM removal");
             }
         }
         Collections.addAll(headerNames, line);

@@ -92,7 +92,7 @@ public class ExcelHandler {
      */
     public void consumeOutputStreamWithPassword(OutputStream outputStream, char[] password) throws IOException {
         if (password == null || password.length == 0) {
-            throw new IllegalArgumentException("Password cannot be null or empty");
+            throw new IllegalArgumentException("Password cannot be null or blank");
         }
         try {
             encryptAndWrite(outputStream, new String(password));

@@ -90,8 +90,11 @@ public class RowData {
     }
 
     private CellData getCell(int index) {
-        if (index < 0 || index >= cells.size()) {
-            return new CellData(Math.max(0, index), null);
+        if (index < 0) {
+            throw new IllegalArgumentException("Column index must be non-negative, but was: " + index);
+        }
+        if (index >= cells.size()) {
+            return new CellData(index, null);
         }
         return cells.get(index);
     }

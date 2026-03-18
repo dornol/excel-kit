@@ -70,13 +70,12 @@ class RowDataTest {
     }
 
     @Test
-    void get_byIndex_negativeIndex_shouldReturnEmptyCell() {
+    void get_byIndex_negativeIndex_shouldThrow() {
         RowData row = createRowData(
                 new String[]{"Name"},
                 new String[]{"Alice"});
 
-        CellData cell = row.get(-1);
-        assertTrue(cell.isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> row.get(-1));
     }
 
     @Test

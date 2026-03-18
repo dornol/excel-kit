@@ -224,7 +224,9 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @return A {@link ReadResult} containing the mapped instance or error messages
      */
     protected ReadResult<T> mapWithRowMapper(RowData rowData) {
-        assert rowMapper != null;
+        if (rowMapper == null) {
+            throw new IllegalStateException("rowMapper must not be null in mapping mode");
+        }
         T instance;
         try {
             instance = rowMapper.apply(rowData);

@@ -129,8 +129,8 @@ public enum ExcelDataType {
      */
     IMAGE((cell, value) -> {
         if (!(value instanceof ExcelImage img)) {
-            cell.setCellValue(String.valueOf(value));
-            return;
+            throw new ExcelWriteException(
+                    "IMAGE column requires ExcelImage value, but got: " + (value == null ? "null" : value.getClass().getSimpleName()));
         }
         var wb = cell.getSheet().getWorkbook();
         int pictureIdx = wb.addPicture(img.data(), img.imageType());
