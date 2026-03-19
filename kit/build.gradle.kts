@@ -27,8 +27,20 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("benchmark")
+    }
     finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.register<Test>("benchmark") {
+    useJUnitPlatform {
+        includeTags("benchmark")
+    }
+    maxHeapSize = "1g"
+    testLogging {
+        showStandardStreams = true
+    }
 }
 
 tasks.jacocoTestReport {

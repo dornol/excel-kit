@@ -105,7 +105,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.8.0</version>
+  <version>0.8.2</version>
 </dependency>
 ```
 
@@ -123,6 +123,60 @@ The library declares the following as `compileOnly`. You must provide them at ru
 You also need runtime implementations:
 - **SLF4J:** e.g. `org.slf4j:slf4j-simple` or Logback
 - **Bean Validation:** e.g. `org.hibernate:hibernate-validator` (if using validation)
+
+## Migration Guide (0.8.1 → 0.8.2)
+
+### CellData default locale changed
+
+`CellData.asNumber()` (and `asInt()`, `asLong()`, `asDouble()`, `asFloat()`, `asBigDecimal()`) now uses `Locale.getDefault()` instead of the previously hard-coded `Locale.KOREA`.
+
+Korean environments are **unaffected** (JVM default is already `Locale.KOREA`). If you relied on Korean locale parsing in a non-Korean JVM, add:
+
+```java
+CellData.setDefaultLocale(Locale.KOREA);
+```
+
+### ExcelDataType.IMAGE throws on type mismatch
+
+IMAGE columns now throw `ExcelWriteException` if the value is not an `ExcelImage` instance. Previously it silently fell back to `String.valueOf()`.
+
+```java
+// Before: silently wrote the toString() of the object
+// After: throws ExcelWriteException
+.column("Photo", p -> p.getPhoto()) // must return ExcelImage
+```
+
+### RowData.get(int) rejects negative index
+
+`RowData.get(-1)` now throws `IllegalArgumentException`. Previously it silently returned an empty `CellData` mapped to index 0.
+
+### ExcelChartConfig rejects negative column indices
+
+`categoryColumn()` and `valueColumn()` now throw `IllegalArgumentException` on negative indices.
+
+## Performance
+
+Pure write throughput measured on Apple M-series, JDK 21, excel-kit 0.8.2.
+These numbers exclude data source (DB, API) latency — only the file generation step.
+
+| Scenario | Rows | Time | File Size | Throughput |
+|----------|------|------|-----------|------------|
+| Excel 100K rows × 5 cols | 100,000 | 0.36s | 2.7 MB | ~275K rows/s |
+| Excel 1M rows × 5 cols | 1,000,000 | 3.3s | 27 MB | ~300K rows/s |
+| Excel 100K rows × 50 cols | 100,000 | 2.9s | 18 MB | ~34K rows/s |
+| Excel rollover 100K × 10 sheets | 1,000,000 | 2.7s | 20 MB | ~377K rows/s |
+| ExcelWorkbook 2 sheets × 50K | 100,000 | 0.18s | 1.2 MB | ~546K rows/s |
+| CSV 100K rows × 5 cols | 100,000 | 0.05s | 3.5 MB | ~2.1M rows/s |
+| CSV 1M rows × 5 cols | 1,000,000 | 0.45s | 39 MB | ~2.2M rows/s |
+
+> **Note:** In real-world scenarios (e.g., Spring + JPA), most of the elapsed time is spent
+> on DB queries and network I/O, not on file generation. Optimize your data source
+> (fetch size, indexing, connection pool) for best end-to-end performance.
+
+Run benchmarks locally:
+```bash
+./gradlew :kit:benchmark
+```
 
 ## Quick Start
 
