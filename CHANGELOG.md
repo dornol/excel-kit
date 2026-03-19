@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2026-03-19
+
+### Added
+- **ExcelTemplateWriter** — fill data into existing .xlsx templates while preserving
+  formatting, images, charts, and merged regions. Supports cell-level writes,
+  list streaming via `TemplateListWriter`, and mixed mode (cell + list + afterData).
+- **TemplateListWriter** — stream tabular data into a template sheet with column
+  definition, afterData callbacks, summary rows, and all existing styling options.
+- Write benchmarks (`WriteBenchmarkTest`) — 7 scenarios measuring Excel/CSV throughput.
+- Migration guide in README for 0.8.1 → 0.8.2 breaking changes.
+- Performance section in README with throughput table.
+
 ## [0.8.2] - 2026-03-18
 
 ### Changed
