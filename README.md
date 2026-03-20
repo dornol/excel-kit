@@ -7,6 +7,13 @@ password-encrypted Excel export, and optional Bean Validation support.
 - **Group/Artifact:** `io.github.dornol:excel-kit`
 - **License:** MIT
 
+## Design Philosophy
+
+Unlike annotation-based libraries (e.g., `@ExcelColumn`), excel-kit defines column mappings in the adapter layer
+using a fluent API — not on domain objects. This means your DTOs and domain models stay free of
+infrastructure concerns, naturally encouraging clean separation of responsibilities
+without requiring any additional architectural effort.
+
 ## Features
 
 **Excel Writing** (SXSSFWorkbook streaming)
