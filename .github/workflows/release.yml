@@ -54,7 +54,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.notes.outputs.tag }}
-          name: v${{ steps.notes.outputs.tag }}
+          name: ${{ steps.notes.outputs.tag }}
           body: ${{ steps.notes.outputs.body }}
           draft: false
           prerelease: false

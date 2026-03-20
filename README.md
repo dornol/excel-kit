@@ -1866,9 +1866,9 @@ new CsvWriter<Row>()
 
 | Workflow | Trigger | Description |
 |----------|---------|-------------|
-| **CI** | Push to `main`, Pull requests | Build + test |
-| **Release** | Tag push (`*.*.*`) | Build, test, create GitHub Release with auto-generated notes |
-| **Maven Publish** | Tag push (`*.*.*`) | Publish to Maven Central |
+| **CI** | Push to `main`, Pull requests | Build, test, upload coverage report |
+| **Release** | Tag push (`v*.*.*`) | Build, test, create GitHub Release with auto-generated notes |
+| **Maven Publish** | Tag push (`v*.*.*`) | Build, test, publish to Maven Central |
 
 ## License
 
