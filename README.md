@@ -96,7 +96,7 @@ password-encrypted Excel export, and optional Bean Validation support.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.dornol:excel-kit:0.9.0")
+    implementation("io.github.dornol:excel-kit:0.9.1")
 }
 ```
 
@@ -105,7 +105,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.8.2</version>
+  <version>0.9.1</version>
 </dependency>
 ```
 
