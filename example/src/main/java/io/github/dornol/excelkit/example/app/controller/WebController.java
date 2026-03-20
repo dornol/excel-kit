@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.example.app.controller;
 import com.sun.management.OperatingSystemMXBean;
 import io.github.dornol.excelkit.example.app.dto.TypeTestDto;
 import io.github.dornol.excelkit.example.app.excel.TypeTestExcelMapper;
+import io.github.dornol.excelkit.example.app.service.BookMyBatisService;
 import io.github.dornol.excelkit.example.app.service.BookService;
 import io.github.dornol.excelkit.example.app.util.DownloadFileType;
 import io.github.dornol.excelkit.example.app.util.DownloadUtil;
@@ -19,9 +20,11 @@ import java.util.stream.Stream;
 @Controller
 public class WebController {
     private final BookService bookService;
+    private final BookMyBatisService bookMyBatisService;
 
-    public WebController(BookService bookService) {
+    public WebController(BookService bookService, BookMyBatisService bookMyBatisService) {
         this.bookService = bookService;
+        this.bookMyBatisService = bookMyBatisService;
     }
 
     @GetMapping("/download-excel-with-password")
@@ -46,6 +49,17 @@ public class WebController {
         String filename = "book list csv";
         var handler = bookService.getCsvHandler();
         return DownloadUtil.builder(filename, DownloadFileType.CSV).body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // MyBatis - Cursor-based Excel download
+    // ========================================================================
+    @GetMapping("/download-excel-mybatis")
+    public ResponseEntity<StreamingResponseBody> downloadExcelMyBatis() {
+        String filename = "book list excel (mybatis)";
+        var handler = bookMyBatisService.getExcelHandler();
+        return DownloadUtil.builder(filename, DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
     }
 
     @GetMapping("/download-excel-types")
