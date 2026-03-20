@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
  * and fit-to-page scaling. Use with {@link ExcelWriter#printSetup(java.util.function.Consumer)}
  * or {@link ExcelSheetWriter#printSetup(java.util.function.Consumer)}.
  *
- * <h3>Header/Footer special codes</h3>
+ * <h2>Header/Footer special codes</h2>
  * <ul>
  *   <li>{@code &P} — current page number</li>
  *   <li>{@code &N} — total number of pages</li>
