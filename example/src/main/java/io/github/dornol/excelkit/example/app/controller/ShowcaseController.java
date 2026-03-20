@@ -40,7 +40,7 @@ public class ShowcaseController {
             .column("Name", ProductReadDto::getName, (p, cell) -> p.setName(cell.asString()))
             .column("Category", ProductReadDto::getCategory, (p, cell) -> p.setCategory(cell.asString()))
             .column("Price", ProductReadDto::getPrice, (p, cell) -> p.setPrice(cell.asInt()),
-                    c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                    c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
             .column("Quantity", ProductReadDto::getQuantity, (p, cell) -> p.setQuantity(cell.asInt()),
                     c -> c.type(ExcelDataType.INTEGER))
             .column("Discount", ProductReadDto::getDiscount, (p, cell) -> p.setDiscount(cell.asDouble()),
@@ -63,14 +63,14 @@ public class ShowcaseController {
                 .column("No.", (row, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
-                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format("#,##0")
                 .column("Quantity", ProductDto::quantity).type(ExcelDataType.INTEGER)
                 .column("Subtotal", (row, cursor) ->
                         "%s%d*%s%d".formatted(
                                 SheetContext.columnLetter(3), cursor.getRowOfSheet() + 1,
                                 SheetContext.columnLetter(4), cursor.getRowOfSheet() + 1))
                     .type(ExcelDataType.FORMULA)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                 .afterData(ctx -> {
                     var sheet = ctx.getSheet();
                     int row = ctx.getCurrentRow();
@@ -79,13 +79,13 @@ public class ShowcaseController {
                     String subtotalCol = SheetContext.columnLetter(5);
 
                     var sumRow = sheet.createRow(row);
-                    sumRow.createCell(2).setCellValue("합계");
+                    sumRow.createCell(2).setCellValue("Total");
                     sumRow.createCell(3).setCellFormula("SUM(%s2:%s%d)".formatted(priceCol, priceCol, row));
                     sumRow.createCell(4).setCellFormula("SUM(%s2:%s%d)".formatted(qtyCol, qtyCol, row));
                     sumRow.createCell(5).setCellFormula("SUM(%s2:%s%d)".formatted(subtotalCol, subtotalCol, row));
 
                     var avgRow = sheet.createRow(row + 1);
-                    avgRow.createCell(2).setCellValue("평균");
+                    avgRow.createCell(2).setCellValue("Average");
                     avgRow.createCell(3).setCellFormula("AVERAGE(%s2:%s%d)".formatted(priceCol, priceCol, row));
                     avgRow.createCell(4).setCellFormula("AVERAGE(%s2:%s%d)".formatted(qtyCol, qtyCol, row));
                     avgRow.createCell(5).setCellFormula("AVERAGE(%s2:%s%d)".formatted(subtotalCol, subtotalCol, row));
@@ -107,9 +107,9 @@ public class ShowcaseController {
                 .sheetName("Hyperlinks")
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
-                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format("#,##0")
                 .column("URL", ProductDto::url).type(ExcelDataType.HYPERLINK)
-                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "상세보기"))
+                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "Details"))
                     .type(ExcelDataType.HYPERLINK)
                 .write(sampleProducts().stream());
 
@@ -199,7 +199,7 @@ public class ShowcaseController {
                     .autoFilter()
                     .freezePane(1)
                     .column("Name", ProductDto::name)
-                    .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                    .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                     .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
                     .column("Status", p -> p.quantity() > 50 ? "In Stock" : "Low Stock",
                             c -> c.dropdown("In Stock", "Low Stock", "Out of Stock"))
@@ -244,7 +244,7 @@ public class ShowcaseController {
                 .column("Name", ProductDto::name)
                 .column("Price", ProductDto::price)
                     .type(ExcelDataType.INTEGER)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                     .cellColor((value, row) -> {
                         int price = ((Number) value).intValue();
                         if (price >= 30000) return ExcelColor.LIGHT_GREEN;
@@ -281,7 +281,7 @@ public class ShowcaseController {
                 .column("Category", ProductDto::category)
                 .column("Price", ProductDto::price)
                     .type(ExcelDataType.INTEGER)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                     .group("Financial")
                 .column("Quantity", ProductDto::quantity)
                     .type(ExcelDataType.INTEGER)
@@ -314,7 +314,7 @@ public class ShowcaseController {
                     .freezePane(1)
                     .column("Name", ProductDto::name)
                     .column("Category", ProductDto::category)
-                    .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                    .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                     .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
                     .onProgress(5, (count, cursor) ->
                             log.info("[Rollover Demo] Processed {} rows", count))
@@ -338,7 +338,7 @@ public class ShowcaseController {
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
                 .column("Price", ProductDto::price).type(ExcelDataType.INTEGER)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat()).outline(1)
+                    .format("#,##0").outline(1)
                 .column("Quantity", ProductDto::quantity).type(ExcelDataType.INTEGER).outline(1)
                 .column("Discount", ProductDto::discount).type(ExcelDataType.DOUBLE_PERCENT).outline(1)
                 .column("URL", ProductDto::url).type(ExcelDataType.HYPERLINK).outline(2)
@@ -405,7 +405,7 @@ public class ShowcaseController {
                     .dropdown("Electronics", "Accessories", "Office", "Peripherals")
                 .column("Price", ProductDto::price)
                     .type(ExcelDataType.INTEGER)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                     .group("Financial")
                     .cellColor((value, row) -> {
                         int price = ((Number) value).intValue();
@@ -424,13 +424,13 @@ public class ShowcaseController {
                     return "%s%d*%s%d".formatted(priceCol, r, qtyCol, r);
                 })
                     .type(ExcelDataType.FORMULA)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                 .column("After Discount", (row, cursor) -> {
                     int r = cursor.getRowOfSheet() + 1;
                     return "%s%d*(1-%s%d)".formatted(subtotalCol, r, discountCol, r);
                 })
                     .type(ExcelDataType.FORMULA)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                 .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "View"))
                     .type(ExcelDataType.HYPERLINK)
                 .beforeHeader(ctx -> {
@@ -454,7 +454,7 @@ public class ShowcaseController {
                     row++;
 
                     var sumRow = sheet.createRow(row);
-                    sumRow.createCell(2).setCellValue("합계");
+                    sumRow.createCell(2).setCellValue("Total");
                     sumRow.createCell(3).setCellFormula("SUM(%s%d:%s%d)".formatted(priceCol, dataStart, priceCol, row - 1));
                     sumRow.createCell(4).setCellFormula("SUM(%s%d:%s%d)".formatted(qtyCol, dataStart, qtyCol, row - 1));
                     sumRow.createCell(6).setCellFormula("SUM(%s%d:%s%d)".formatted(subtotalCol, dataStart, subtotalCol, row - 1));
@@ -462,7 +462,7 @@ public class ShowcaseController {
                     row++;
 
                     var avgRow = sheet.createRow(row);
-                    avgRow.createCell(2).setCellValue("평균");
+                    avgRow.createCell(2).setCellValue("Average");
                     avgRow.createCell(3).setCellFormula("AVERAGE(%s%d:%s%d)".formatted(priceCol, dataStart, priceCol, row - 2));
                     avgRow.createCell(4).setCellFormula("AVERAGE(%s%d:%s%d)".formatted(qtyCol, dataStart, qtyCol, row - 2));
                     avgRow.createCell(5).setCellFormula("AVERAGE(%s%d:%s%d)".formatted(discountCol, dataStart, discountCol, row - 2));
@@ -487,7 +487,7 @@ public class ShowcaseController {
                 .column("Category", ProductDto::category).border(ExcelBorderStyle.DASHED)
                 .column("Price", ProductDto::price)
                     .type(ExcelDataType.INTEGER)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                     .border(ExcelBorderStyle.THICK)
                 .column("Quantity", ProductDto::quantity)
                     .type(ExcelDataType.INTEGER)
@@ -511,7 +511,7 @@ public class ShowcaseController {
                     .comment(p -> "Product: " + p.name() + " (" + p.category() + ")")
                 .column("Price", ProductDto::price)
                     .type(ExcelDataType.INTEGER)
-                    .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                    .format("#,##0")
                     .comment(p -> p.price() > 30000 ? "⚠ High price!" : null)
                 .column("Quantity", ProductDto::quantity)
                     .type(ExcelDataType.INTEGER)
@@ -534,7 +534,7 @@ public class ShowcaseController {
                 .autoFilter(true)
                 .freezePane(1)
                 .addColumn("Name", ProductDto::name)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
                 .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .conditionalFormatting(cf -> cf
@@ -565,7 +565,7 @@ public class ShowcaseController {
                 .addColumn("Category (locked)", ProductDto::category, c -> c.locked(true))
                 .addColumn("Price (editable)", p -> p.price(), c -> c
                         .type(ExcelDataType.INTEGER)
-                        .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                        .format("#,##0")
                         .locked(false)
                         .backgroundColor(ExcelColor.LIGHT_GREEN))
                 .addColumn("Quantity (editable)", p -> p.quantity(), c -> c
@@ -590,7 +590,7 @@ public class ShowcaseController {
         var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
                 .sheetName("Chart Demo")
                 .addColumn("Name", ProductDto::name)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
                         .type(ExcelChartConfig.ChartType.BAR)
@@ -685,7 +685,7 @@ public class ShowcaseController {
                     .column("Category (locked)", ProductDto::category, c -> c.locked(true))
                     .column("Price (editable)", p -> p.price(), c -> c
                             .type(ExcelDataType.INTEGER)
-                            .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                            .format("#,##0")
                             .locked(false)
                             .backgroundColor(ExcelColor.LIGHT_GREEN))
                     .column("Quantity (editable)", p -> p.quantity(), c -> c
@@ -716,7 +716,7 @@ public class ShowcaseController {
                 .freezePane(1)
                 .addColumn("Name", ProductDto::name)
                 .addColumn("Category", ProductDto::category)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
                 .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
@@ -742,7 +742,7 @@ public class ShowcaseController {
                 .addColumn("Category", ProductDto::category)
                 .addColumn("Price", p -> p.price(), c -> c
                         .type(ExcelDataType.INTEGER)
-                        .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+                        .format("#,##0")
                         .alignment(HorizontalAlignment.RIGHT))
                 .addColumn("Quantity", p -> p.quantity(), c -> c
                         .type(ExcelDataType.INTEGER)
@@ -764,7 +764,7 @@ public class ShowcaseController {
                 .autoFilter(true)
                 .freezePane(1)
                 .addColumn("Name", ProductDto::name)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
                 .summary(s -> s
                         .label("Total")
@@ -798,7 +798,7 @@ public class ShowcaseController {
                     .column("Name", ProductDto::name)
                     .column("Category", ProductDto::category, c -> c
                             .validation(ExcelValidation.listFromRange("Options!$A$2:$A$5")))
-                    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
+                    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                     .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
                     .write(sampleProducts().stream());
 
