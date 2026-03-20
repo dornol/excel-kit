@@ -129,17 +129,18 @@ public class ExcelConditionalRule {
      * Applies all configured rules to the given sheet.
      * Package-private, called by the writer.
      */
-    void apply(SXSSFSheet sheet, int headerRowIndex, int columnCount) {
+    void apply(SXSSFSheet sheet, int headerRowIndex, int columnCount, int lastDataRow) {
         if (rules.isEmpty()) return;
 
         SheetConditionalFormatting scf = sheet.getSheetConditionalFormatting();
         int dataStartRow = (startRow >= 0) ? startRow : headerRowIndex + 1;
+        int endRow = Math.max(dataStartRow, lastDataRow);
 
         int[] cols = (columnIndices != null) ? columnIndices : defaultColumnRange(columnCount);
 
         for (int colIdx : cols) {
             CellRangeAddress[] ranges = {
-                    new CellRangeAddress(dataStartRow, ExcelWriteSupport.EXCEL_MAX_ROWS, colIdx, colIdx)
+                    new CellRangeAddress(dataStartRow, endRow, colIdx, colIdx)
             };
 
             for (RuleEntry entry : rules) {

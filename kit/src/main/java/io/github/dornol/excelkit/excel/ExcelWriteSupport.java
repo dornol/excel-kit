@@ -184,10 +184,10 @@ class ExcelWriteSupport {
     }
 
     static <T> void applyConditionalFormatting(SXSSFSheet sheet, @Nullable List<ExcelConditionalRule> rules,
-                                                int headerRowIndex, int columnCount) {
+                                                int headerRowIndex, int columnCount, int lastDataRow) {
         if (rules == null) return;
         for (ExcelConditionalRule rule : rules) {
-            rule.apply(sheet, headerRowIndex, columnCount);
+            rule.apply(sheet, headerRowIndex, columnCount, lastDataRow);
         }
     }
 

@@ -410,7 +410,7 @@ public class ExcelSheetWriter<T> {
             ExcelWriteSupport.applyColumnOutline(s, columns);
             ExcelWriteSupport.applyColumnHidden(s, columns);
             ExcelWriteSupport.applySheetProtection(s, cfg.sheetPassword);
-            ExcelWriteSupport.applyConditionalFormatting(s, cfg.conditionalRules, headerRowIndex, columns.size());
+            ExcelWriteSupport.applyConditionalFormatting(s, cfg.conditionalRules, headerRowIndex, columns.size(), s.getLastRowNum());
             ExcelWriteSupport.applyPrintSetup(s, cfg.printSetup, headerRowIndex);
             ExcelWriteSupport.applyTabColor(s, cfg.tabColor);
         }
