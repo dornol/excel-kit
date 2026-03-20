@@ -35,6 +35,29 @@ class ConditionalFormattingTest {
     }
 
     @Test
+    void conditionalFormatting_rangeEndsAtLastDataRow() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        new ExcelWriter<Product>()
+                .addColumn("Name", Product::name)
+                .addColumn("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
+                .conditionalFormatting(cf -> cf
+                        .columns(1)
+                        .greaterThan("100", ExcelColor.LIGHT_RED))
+                .write(Stream.of(new Product("A", 50), new Product("B", 200), new Product("C", 150)))
+                .consumeOutputStream(out);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+            SheetConditionalFormatting scf = wb.getSheetAt(0).getSheetConditionalFormatting();
+            assertEquals(1, scf.getNumConditionalFormattings());
+            ConditionalFormatting cf = scf.getConditionalFormattingAt(0);
+            var range = cf.getFormattingRanges()[0];
+            // header at row 0, data rows 1-3, so range should be 1..3
+            assertEquals(1, range.getFirstRow());
+            assertEquals(3, range.getLastRow());
+        }
+    }
+
+    @Test
     void conditionalFormatting_multipleRules() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<Product>()
