@@ -176,6 +176,44 @@ class MiscEdgeCaseTest {
         }
 
         @Test
+        void summary_singleOp_withLabel_shouldUseLabelText() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .addColumn("Name", Item::name)
+                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s
+                            .label("Total")
+                            .sum("Value"))
+                    .write(Stream.of(new Item("A", 10), new Item("B", 20)))
+                    .consumeOutputStream(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var summaryRow = wb.getSheetAt(0).getRow(3);
+                // Single op with label → uses labelText "Total"
+                assertEquals("Total", summaryRow.getCell(0).getStringCellValue());
+            }
+        }
+
+        @Test
+        void summary_labelInNonExistentColumn_shouldFallbackToFirstColumn() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .addColumn("Name", Item::name)
+                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s
+                            .label("NonExistent", "Total:")
+                            .sum("Value"))
+                    .write(Stream.of(new Item("A", 10)))
+                    .consumeOutputStream(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var summaryRow = wb.getSheetAt(0).getRow(2);
+                // NonExistent column → falls back to idx=0
+                assertEquals("Total:", summaryRow.getCell(0).getStringCellValue());
+            }
+        }
+
+        @Test
         void summary_labelInColumn_shouldWriteLabelAndFormula() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
@@ -265,6 +303,64 @@ class MiscEdgeCaseTest {
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertTrue(wb.getCTWorkbook().isSetWorkbookProtection(),
                         "Workbook protection should be set");
+            }
+        }
+    }
+
+    // ============================================================
+    // ExcelWriter header font customization
+    // ============================================================
+    @Nested
+    class ExcelWriterHeaderFontTests {
+
+        @Test
+        void headerFontName_shouldApplyCustomFont() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .headerFontName("Arial")
+                    .addColumn("Name", Item::name)
+                    .addColumn("Value", i -> i.value)
+                    .write(Stream.of(new Item("A", 1)))
+                    .consumeOutputStream(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
+                var font = wb.getFontAt(headerCell.getCellStyle().getFontIndex());
+                assertEquals("Arial", font.getFontName());
+            }
+        }
+
+        @Test
+        void headerFontSize_shouldApplyCustomSize() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .headerFontSize(16)
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)))
+                    .consumeOutputStream(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
+                var font = wb.getFontAt(headerCell.getCellStyle().getFontIndex());
+                assertEquals(16, font.getFontHeightInPoints());
+            }
+        }
+
+        @Test
+        void headerFontNameAndSize_combined() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .headerFontName("Times New Roman")
+                    .headerFontSize(14)
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)))
+                    .consumeOutputStream(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
+                var font = wb.getFontAt(headerCell.getCellStyle().getFontIndex());
+                assertEquals("Times New Roman", font.getFontName());
+                assertEquals(14, font.getFontHeightInPoints());
             }
         }
     }

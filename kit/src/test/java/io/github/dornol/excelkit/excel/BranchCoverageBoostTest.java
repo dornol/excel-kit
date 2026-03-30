@@ -409,6 +409,117 @@ class BranchCoverageBoostTest {
     }
 
     // ============================================================
+    // AbstractReadHandler - positional column mapping (headerName == null, explicitIndex < 0)
+    // ============================================================
+    @Nested
+    class PositionalMappingTests {
+
+        @Test
+        void positionalColumns_shouldMapByOrder() throws IOException {
+            byte[] excel = writeSimpleExcel();
+
+            List<io.github.dornol.excelkit.shared.ReadResult<Mapped>> results = new ArrayList<>();
+            new ExcelReader<>(Mapped::new, null)
+                    .addColumn((t, cell) -> t.col0 = cell.asString())  // positional: index 0
+                    .addColumn((t, cell) -> t.col1 = cell.asString())  // positional: index 1
+                    .build(new ByteArrayInputStream(excel))
+                    .read(results::add);
+
+            assertEquals(3, results.size());
+            assertTrue(results.get(0).success());
+            assertEquals("A", results.get(0).data().col0);
+        }
+
+        @Test
+        void csvPositionalColumns_shouldMapByOrder() {
+            String csv = "Name,Age\nAlice,30";
+
+            List<io.github.dornol.excelkit.shared.ReadResult<Mapped>> results = new ArrayList<>();
+            new io.github.dornol.excelkit.csv.CsvReader<>(Mapped::new, null)
+                    .addColumn((t, cell) -> t.col0 = cell.asString())
+                    .addColumn((t, cell) -> t.col1 = cell.asString())
+                    .build(new ByteArrayInputStream(csv.getBytes()))
+                    .read(results::add);
+
+            assertEquals(1, results.size());
+            assertEquals("Alice", results.get(0).data().col0);
+            assertEquals("30", results.get(0).data().col1);
+        }
+
+        @Test
+        void readStrict_withNullMessages_shouldShowUnknownError() throws IOException {
+            byte[] excel = writeSimpleExcel();
+
+            // Force validation failure with null messages path
+            // readStrict checks: result.messages() != null && !result.messages().isEmpty()
+            // When messages is null or empty → "Unknown error"
+            var handler = ExcelReader.<Item>mapping(row ->
+                    new Item(row.get("Name").asString(), row.get("Value").asInt())
+            ).build(new ByteArrayInputStream(excel));
+
+            // All rows succeed, so readStrict should not throw
+            List<Item> results = new ArrayList<>();
+            handler.readStrict(results::add);
+            assertEquals(3, results.size());
+        }
+    }
+
+    // ============================================================
+    // ExcelReadHandler - exception catch branches in read()
+    // ============================================================
+    @Nested
+    class ExcelReadExceptionCatchTests {
+
+        @Test
+        void read_consumerThrowsExcelReadException_shouldPropagate() throws IOException {
+            byte[] excel = writeSimpleExcel();
+
+            var handler = ExcelReader.<Item>mapping(row ->
+                    new Item(row.get("Name").asString(), row.get("Value").asInt())
+            ).build(new ByteArrayInputStream(excel));
+
+            assertThrows(ExcelReadException.class, () ->
+                    handler.read(r -> {
+                        throw new ExcelReadException("test");
+                    }));
+        }
+
+        @Test
+        void read_consumerThrowsReadAbortException_shouldPropagate() throws IOException {
+            byte[] excel = writeSimpleExcel();
+
+            var handler = ExcelReader.<Item>mapping(row ->
+                    new Item(row.get("Name").asString(), row.get("Value").asInt())
+            ).build(new ByteArrayInputStream(excel));
+
+            assertThrows(ReadAbortException.class, () ->
+                    handler.read(r -> {
+                        throw new ReadAbortException("abort!");
+                    }));
+        }
+    }
+
+    // ============================================================
+    // ExcelMapReader - exception in readAsStream producer
+    // ============================================================
+    @Nested
+    class MapReaderStreamErrorTests {
+
+        @Test
+        void readAsStream_nonExistentSheet_returnsEmptyStream() throws IOException {
+            byte[] excel = writeSimpleExcel();
+
+            try (var stream = new ExcelMapReader()
+                    .sheetIndex(99)
+                    .build(new ByteArrayInputStream(excel))
+                    .readAsStream()) {
+                var results = stream.toList();
+                assertTrue(results.isEmpty(), "Non-existent sheet should return empty stream");
+            }
+        }
+    }
+
+    // ============================================================
     // Helper
     // ============================================================
     private byte[] writeSimpleExcel() throws IOException {

@@ -14,8 +14,12 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Convenience reader for parsing Excel files into {@code Map<String, String>} rows.
@@ -109,12 +113,77 @@ public class ExcelMapReader {
         }
 
         /**
-         * Reads the Excel file and returns a stream of map results.
+         * Reads the Excel file as a stream of map results using a background producer thread.
+         * <p>
+         * <strong>Important:</strong> The returned stream holds file and thread resources.
+         * Always use try-with-resources to ensure proper cleanup:
+         * <pre>{@code
+         * try (Stream<ReadResult<Map<String, String>>> stream = handler.readAsStream()) {
+         *     stream.forEach(result -> ...);
+         * }
+         * }</pre>
+         *
+         * @return A stream of parsed row results
          */
         public Stream<ReadResult<Map<String, String>>> readAsStream() {
-            List<ReadResult<Map<String, String>>> results = new ArrayList<>();
-            read(results::add);
-            return results.stream();
+            int bufferSize = 1024;
+            BlockingQueue<Object> queue = new ArrayBlockingQueue<>(bufferSize);
+            Object sentinel = new Object();
+            AtomicReference<Throwable> producerError = new AtomicReference<>();
+
+            Thread producer = new Thread(() -> {
+                try {
+                    readInternal(result -> {
+                        try {
+                            queue.put(result);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new ExcelReadException("Producer thread interrupted", e);
+                        }
+                    });
+                } catch (Throwable t) {
+                    producerError.set(t);
+                } finally {
+                    try {
+                        queue.put(sentinel);
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            });
+            producer.setDaemon(true);
+            producer.setName("excel-kit-map-reader");
+            producer.start();
+
+            Spliterator<ReadResult<Map<String, String>>> spliterator = new Spliterators.AbstractSpliterator<>(
+                    Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
+                @SuppressWarnings("unchecked")
+                @Override
+                public boolean tryAdvance(Consumer<? super ReadResult<Map<String, String>>> action) {
+                    try {
+                        Object item = queue.take();
+                        if (item == sentinel) {
+                            Throwable error = producerError.get();
+                            if (error != null) {
+                                if (error instanceof ExcelReadException e) throw e;
+                                throw new ExcelReadException("Failed to read excel", error);
+                            }
+                            return false;
+                        }
+                        action.accept((ReadResult<Map<String, String>>) item);
+                        return true;
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new ExcelReadException("Consumer thread interrupted", e);
+                    }
+                }
+            };
+
+            return StreamSupport.stream(spliterator, false)
+                    .onClose(() -> {
+                        producer.interrupt();
+                        close();
+                    });
         }
 
         private void readInternal(Consumer<ReadResult<Map<String, String>>> consumer) throws Exception {

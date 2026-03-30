@@ -166,6 +166,103 @@ class CsvReadHandlerEdgeCaseTest {
         // No exception means cleanup succeeded
     }
 
+    // ============================================================
+    // readAsStream with empty file (headerLine == null)
+    // ============================================================
+    @Test
+    void readAsStream_emptyFile_throwsCsvReadException() {
+        String csv = ""; // completely empty
+
+        var handler = CsvReader.<Person>mapping(row ->
+                new Person(row.get("Name").asString(), row.get("Age").asInt())
+        ).build(toInputStream(csv));
+
+        assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class,
+                handler::readAsStream);
+    }
+
+    // ============================================================
+    // setter mode read (not mapping mode) — covers rowMapper == null branch
+    // ============================================================
+    @Test
+    void read_setterMode_shouldWork() {
+        String csv = "Name,Age\nAlice,30\nBob,25";
+
+        List<ReadResult<MutablePerson>> results = new ArrayList<>();
+        new CsvReader<>(MutablePerson::new, null)
+                .addColumn("Name", (p, cell) -> p.name = cell.asString())
+                .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                .build(toInputStream(csv))
+                .read(results::add);
+
+        assertEquals(2, results.size());
+        assertTrue(results.get(0).success());
+        assertEquals("Alice", results.get(0).data().name);
+    }
+
+    @Test
+    void readAsStream_setterMode_shouldWork() {
+        String csv = "Name,Age\nAlice,30";
+
+        List<ReadResult<MutablePerson>> results;
+        try (var stream = new CsvReader<>(MutablePerson::new, null)
+                .addColumn("Name", (p, cell) -> p.name = cell.asString())
+                .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                .build(toInputStream(csv))
+                .readAsStream()) {
+            results = stream.toList();
+        }
+
+        assertEquals(1, results.size());
+        assertEquals("Alice", results.get(0).data().name);
+    }
+
+    // ============================================================
+    // Exception catch branches in read()
+    // ============================================================
+    @Test
+    void read_consumerThrowsCsvReadException_shouldPropagate() {
+        String csv = "Name,Age\nAlice,30";
+
+        var handler = CsvReader.<Person>mapping(row ->
+                new Person(row.get("Name").asString(), row.get("Age").asInt())
+        ).build(toInputStream(csv));
+
+        assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class, () ->
+                handler.read(r -> {
+                    throw new io.github.dornol.excelkit.csv.CsvReadException("test error");
+                }));
+    }
+
+    @Test
+    void read_consumerThrowsReadAbortException_shouldPropagate() {
+        String csv = "Name,Age\nAlice,30";
+
+        var handler = CsvReader.<Person>mapping(row ->
+                new Person(row.get("Name").asString(), row.get("Age").asInt())
+        ).build(toInputStream(csv));
+
+        assertThrows(io.github.dornol.excelkit.shared.ReadAbortException.class, () ->
+                handler.read(r -> {
+                    throw new io.github.dornol.excelkit.shared.ReadAbortException("abort!");
+                }));
+    }
+
+    @Test
+    void read_setterMode_withProgress_shouldFireCallback() {
+        String csv = "Name,Age\nA,1\nB,2\nC,3\nD,4";
+
+        AtomicLong lastProgress = new AtomicLong(0);
+        new CsvReader<>(MutablePerson::new, null)
+                .addColumn("Name", (p, cell) -> p.name = cell.asString())
+                .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                .onProgress(2, (count, cursor) -> lastProgress.set(count))
+                .build(toInputStream(csv))
+                .read(r -> {});
+
+        assertEquals(4, lastProgress.get());
+    }
+
     private InputStream toInputStream(String content) {
         return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
     }
