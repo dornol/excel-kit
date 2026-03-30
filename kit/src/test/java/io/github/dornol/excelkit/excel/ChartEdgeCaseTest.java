@@ -59,7 +59,7 @@ class ChartEdgeCaseTest {
     }
 
     @Test
-    void scatterChart_withoutAxisTitles() throws IOException {
+    void scatterChart_withoutAxisTitles_shouldHaveNoAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<Item>()
                 .addColumn("X", i -> i.value, c -> c.type(ExcelDataType.DOUBLE))
@@ -72,7 +72,13 @@ class ChartEdgeCaseTest {
                 .consumeOutputStream(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
-            assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
+            var chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
+            assertFalse(chart.getCTChart().getPlotArea().getScatterChartList().isEmpty(), "Should be scatter chart");
+            var valAxes = chart.getCTChart().getPlotArea().getValAxList();
+            assertFalse(valAxes.isEmpty());
+            for (var axis : valAxes) {
+                assertFalse(axis.isSetTitle(), "Axis should not have title");
+            }
         }
     }
 
@@ -102,7 +108,7 @@ class ChartEdgeCaseTest {
     }
 
     @Test
-    void areaChart_withoutAxisTitles() throws IOException {
+    void areaChart_withoutAxisTitles_shouldHaveNoAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<Item>()
                 .addColumn("Name", Item::name)
@@ -115,7 +121,11 @@ class ChartEdgeCaseTest {
                 .consumeOutputStream(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
-            assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
+            var chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
+            assertFalse(chart.getCTChart().getPlotArea().getAreaChartList().isEmpty(), "Should be area chart");
+            var catAxis = chart.getCTChart().getPlotArea().getCatAxList();
+            assertFalse(catAxis.isEmpty());
+            assertFalse(catAxis.get(0).isSetTitle(), "Category axis should not have title");
         }
     }
 
@@ -146,7 +156,7 @@ class ChartEdgeCaseTest {
     // Chart without title (title == null branch)
     // ============================================================
     @Test
-    void chart_withoutTitle_shouldBeCreated() throws IOException {
+    void chart_withoutTitle_shouldNotHaveTitle() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<Item>()
                 .addColumn("Name", Item::name)
@@ -160,7 +170,7 @@ class ChartEdgeCaseTest {
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
-            assertNotNull(chart);
+            assertFalse(chart.getCTChart().isSetTitle(), "Chart should not have a title");
         }
     }
 
@@ -329,7 +339,7 @@ class ChartEdgeCaseTest {
     }
 
     @Test
-    void lineChart_withoutAxisTitles() throws IOException {
+    void lineChart_withoutAxisTitles_shouldHaveNoAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<Item>()
                 .addColumn("Name", Item::name)
@@ -342,7 +352,12 @@ class ChartEdgeCaseTest {
                 .consumeOutputStream(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
-            assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
+            var chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
+            assertFalse(chart.getCTChart().getPlotArea().getLineChartList().isEmpty(), "Should be line chart");
+            var catAxis = chart.getCTChart().getPlotArea().getCatAxList();
+            assertFalse(catAxis.get(0).isSetTitle(), "Category axis should not have title");
+            var valAxis = chart.getCTChart().getPlotArea().getValAxList();
+            assertFalse(valAxis.get(0).isSetTitle(), "Value axis should not have title");
         }
     }
 

@@ -2,6 +2,8 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.ExcelKitException;
 import io.github.dornol.excelkit.shared.ReadResult;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -146,7 +148,7 @@ class MiscEdgeCaseTest {
     class ExcelSummaryTests {
 
         @Test
-        void allSummaryOps_shouldWork() throws IOException {
+        void allSummaryOps_shouldWriteFormulaRows() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .addColumn("Name", Item::name)
@@ -160,11 +162,21 @@ class MiscEdgeCaseTest {
                             .max("Value"))
                     .write(Stream.of(new Item("A", 10), new Item("B", 20)))
                     .consumeOutputStream(out);
-            assertTrue(out.size() > 0);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var sheet = wb.getSheetAt(0);
+                // Header(0) + 2 data rows(1,2) + 5 summary rows(3-7)
+                // Check SUM row has formula
+                var sumRow = sheet.getRow(3);
+                assertNotNull(sumRow, "SUM summary row should exist");
+                var sumCell = sumRow.getCell(1);
+                assertEquals(CellType.FORMULA, sumCell.getCellType(), "Summary cell should be formula");
+                assertTrue(sumCell.getCellFormula().startsWith("SUM("), "Should be SUM formula");
+            }
         }
 
         @Test
-        void summary_labelInColumn_shouldWork() throws IOException {
+        void summary_labelInColumn_shouldWriteLabelAndFormula() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .addColumn("Name", Item::name)
@@ -174,7 +186,14 @@ class MiscEdgeCaseTest {
                             .sum("Value"))
                     .write(Stream.of(new Item("A", 10), new Item("B", 20)))
                     .consumeOutputStream(out);
-            assertTrue(out.size() > 0);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var sheet = wb.getSheetAt(0);
+                var summaryRow = sheet.getRow(3);
+                assertNotNull(summaryRow);
+                assertEquals("Total:", summaryRow.getCell(0).getStringCellValue());
+                assertEquals(CellType.FORMULA, summaryRow.getCell(1).getCellType());
+            }
         }
     }
 
@@ -185,19 +204,27 @@ class MiscEdgeCaseTest {
     class ExcelWriterDefaultStyleTests {
 
         @Test
-        void defaultStyle_shouldApplyToAllColumns() throws IOException {
+        void defaultStyle_shouldApplyBoldToAllColumns() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .defaultStyle(d -> d.bold(true).fontSize(12).fontName("Arial"))
+                    .defaultStyle(d -> d.bold(true).fontSize(12))
                     .addColumn("Name", Item::name)
                     .addColumn("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
-            assertTrue(out.size() > 0);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var dataRow = wb.getSheetAt(0).getRow(1);
+                // Both columns should have bold font from defaultStyle
+                var font0 = wb.getFontAt(dataRow.getCell(0).getCellStyle().getFontIndex());
+                assertTrue(font0.getBold(), "Name column should be bold from default style");
+                var font1 = wb.getFontAt(dataRow.getCell(1).getCellStyle().getFontIndex());
+                assertTrue(font1.getBold(), "Value column should be bold from default style");
+            }
         }
 
         @Test
-        void defaultStyle_columnOverrides() throws IOException {
+        void defaultStyle_columnOverrides_shouldNotBeBold() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .defaultStyle(d -> d.bold(true))
@@ -205,7 +232,16 @@ class MiscEdgeCaseTest {
                     .addColumn("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
-            assertTrue(out.size() > 0);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var dataRow = wb.getSheetAt(0).getRow(1);
+                // Name column overrides bold=false
+                var font0 = wb.getFontAt(dataRow.getCell(0).getCellStyle().getFontIndex());
+                assertFalse(font0.getBold(), "Name column should override bold to false");
+                // Value column inherits bold=true from default
+                var font1 = wb.getFontAt(dataRow.getCell(1).getCellStyle().getFontIndex());
+                assertTrue(font1.getBold(), "Value column should inherit bold from default");
+            }
         }
     }
 
@@ -216,7 +252,7 @@ class MiscEdgeCaseTest {
     class ExcelWorkbookTests {
 
         @Test
-        void protectWorkbook_shouldWork() throws IOException {
+        void protectWorkbook_shouldSetWorkbookProtection() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try (ExcelWorkbook wb = new ExcelWorkbook()) {
                 wb.<Item>sheet("Data")
@@ -225,7 +261,11 @@ class MiscEdgeCaseTest {
                 wb.protectWorkbook("password123");
                 wb.finish().consumeOutputStream(out);
             }
-            assertTrue(out.size() > 0);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                assertTrue(wb.getCTWorkbook().isSetWorkbookProtection(),
+                        "Workbook protection should be set");
+            }
         }
     }
 
@@ -243,7 +283,15 @@ class MiscEdgeCaseTest {
                     .addColumn("Value", i -> i.value)
                     .write(Stream.empty())
                     .consumeOutputStream(out);
-            assertTrue(out.size() > 0);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var sheet = wb.getSheetAt(0);
+                // Header row exists
+                assertEquals("Name", sheet.getRow(0).getCell(0).getStringCellValue());
+                assertEquals("Value", sheet.getRow(0).getCell(1).getStringCellValue());
+                // No data rows
+                assertNull(sheet.getRow(1), "Should have no data rows");
+            }
         }
     }
 

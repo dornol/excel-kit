@@ -134,88 +134,101 @@ class ExcelTemplateWriterEdgeCaseTest {
     }
 
     // ============================================================
-    // setCellValue type dispatch
+    // setCellValue type dispatch — verify actual cell values
     // ============================================================
     @Test
-    void cell_withLocalTime_shouldWork() throws IOException {
-        byte[] template = createTemplate();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
-            writer.cell("B1", LocalTime.of(14, 30));
-            writer.finish().consumeOutputStream(out);
+    void cell_withString_shouldWriteStringValue() throws IOException {
+        byte[] result = writeTemplateCell("B4", "hello");
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertEquals("hello", wb.getSheetAt(0).getRow(3).getCell(1).getStringCellValue());
         }
-        assertTrue(out.size() > 0);
     }
 
     @Test
-    void cell_withLocalDateTime_shouldWork() throws IOException {
-        byte[] template = createTemplate();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
-            writer.cell("B1", LocalDateTime.of(2025, 1, 15, 10, 30));
-            writer.finish().consumeOutputStream(out);
+    void cell_withNumber_shouldWriteNumericValue() throws IOException {
+        byte[] result = writeTemplateCell("B4", 42.5);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertEquals(42.5, wb.getSheetAt(0).getRow(3).getCell(1).getNumericCellValue(), 0.001);
         }
-        assertTrue(out.size() > 0);
     }
 
     @Test
-    void cell_withLocalDate_shouldWork() throws IOException {
-        byte[] template = createTemplate();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
-            writer.cell("B1", LocalDate.of(2025, 6, 15));
-            writer.finish().consumeOutputStream(out);
+    void cell_withBoolean_shouldWriteBooleanValue() throws IOException {
+        byte[] result = writeTemplateCell("B4", true);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertTrue(wb.getSheetAt(0).getRow(3).getCell(1).getBooleanCellValue());
         }
-        assertTrue(out.size() > 0);
     }
 
     @Test
-    void cell_withBoolean_shouldWork() throws IOException {
-        byte[] template = createTemplate();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
-            writer.cell("B1", true);
-            writer.finish().consumeOutputStream(out);
+    void cell_withLocalDate_shouldWriteDateValue() throws IOException {
+        byte[] result = writeTemplateCell("B4", LocalDate.of(2025, 6, 15));
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            var cell = wb.getSheetAt(0).getRow(3).getCell(1);
+            LocalDate read = cell.getLocalDateTimeCellValue().toLocalDate();
+            assertEquals(LocalDate.of(2025, 6, 15), read);
         }
-        assertTrue(out.size() > 0);
     }
 
     @Test
-    void cell_withNull_shouldSetBlank() throws IOException {
-        byte[] template = createTemplate();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
-            writer.cell("B1", null);
-            writer.finish().consumeOutputStream(out);
+    void cell_withLocalDateTime_shouldWriteDateTimeValue() throws IOException {
+        LocalDateTime ldt = LocalDateTime.of(2025, 1, 15, 10, 30);
+        byte[] result = writeTemplateCell("B4", ldt);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            var cell = wb.getSheetAt(0).getRow(3).getCell(1);
+            assertEquals(ldt, cell.getLocalDateTimeCellValue());
         }
-        assertTrue(out.size() > 0);
     }
 
     @Test
-    void cell_withNumber_shouldWork() throws IOException {
-        byte[] template = createTemplate();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
-            writer.cell("B1", 42.5);
-            writer.finish().consumeOutputStream(out);
+    void cell_withLocalTime_shouldWriteAsEpochDate() throws IOException {
+        byte[] result = writeTemplateCell("B4", LocalTime.of(14, 30));
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            var cell = wb.getSheetAt(0).getRow(3).getCell(1);
+            // LocalTime is written as LocalTime.atDate(LocalDate.EPOCH)
+            LocalDateTime expected = LocalTime.of(14, 30).atDate(LocalDate.EPOCH);
+            assertEquals(expected, cell.getLocalDateTimeCellValue());
         }
-        assertTrue(out.size() > 0);
     }
 
     @Test
-    void cell_withUnknownType_shouldCallToString() throws IOException {
+    void cell_withNull_shouldSetBlankCell() throws IOException {
+        byte[] result = writeTemplateCell("B4", null);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            var cell = wb.getSheetAt(0).getRow(3).getCell(1);
+            assertEquals(org.apache.poi.ss.usermodel.CellType.BLANK, cell.getCellType());
+        }
+    }
+
+    @Test
+    void cell_withUnknownType_shouldWriteToStringValue() throws IOException {
+        byte[] result = writeTemplateCell("B4", new Object() {
+            @Override
+            public String toString() {
+                return "custom-value";
+            }
+        });
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertEquals("custom-value", wb.getSheetAt(0).getRow(3).getCell(1).getStringCellValue());
+        }
+    }
+
+    private byte[] writeTemplateCell(String cellRef, Object value) throws IOException {
         byte[] template = createTemplate();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
-            writer.cell("B1", new Object() {
-                @Override
-                public String toString() {
-                    return "custom-value";
-                }
-            });
+            writer.cell(cellRef, value);
             writer.finish().consumeOutputStream(out);
         }
-        assertTrue(out.size() > 0);
+        return out.toByteArray();
     }
 
     // ============================================================
