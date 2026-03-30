@@ -88,8 +88,7 @@ class MapReaderStreamTest {
         var stream = new ExcelMapReader()
                 .build(new ByteArrayInputStream(excel))
                 .readAsStream();
-        stream.close();
-        // Should not hang or throw
+        assertDoesNotThrow(stream::close, "Closing unconsumed stream should not hang or throw");
     }
 
     @Test

@@ -95,10 +95,9 @@ class BranchCoverageBoostTest {
                 results = stream.toList();
             }
 
-            assertFalse(results.isEmpty());
-            for (var r : results) {
-                assertFalse(r.success());
-            }
+            assertFalse(results.isEmpty(), "Should have results even when mapper fails");
+            assertTrue(results.stream().allMatch(r -> !r.success()),
+                    "All results should be failed when mapper throws");
         }
     }
 
@@ -209,6 +208,9 @@ class BranchCoverageBoostTest {
 
             assertEquals(1, results.size());
             assertEquals("x", results.get(0).data().a);
+            // Sparse cell B: either null or empty string depending on POI handling
+            assertTrue(results.get(0).data().b == null || results.get(0).data().b.isEmpty(),
+                    "Sparse cell B should be null or empty");
             assertEquals("z", results.get(0).data().c);
         }
     }
@@ -234,9 +236,11 @@ class BranchCoverageBoostTest {
 
             assertEquals(3, results.size());
             for (var r : results) {
-                assertFalse(r.success());
+                assertFalse(r.success(), "Row should fail when setter throws");
                 assertNotNull(r.messages());
+                assertEquals(1, r.messages().size(), "Should have exactly one error message");
                 assertTrue(r.messages().get(0).contains("setter broke!"));
+                assertTrue(r.messages().get(0).contains("Name"), "Error should mention column name");
             }
         }
 
@@ -253,6 +257,8 @@ class BranchCoverageBoostTest {
 
             assertEquals(3, results.size());
             assertTrue(results.get(0).success());
+            assertEquals("A", results.get(0).data().col0, "col0 should map to Name column (index 0)");
+            assertNotNull(results.get(0).data().col1, "col1 should map to Value column (index 1)");
         }
 
         @Test

@@ -89,6 +89,8 @@ class CsvReadHandlerEdgeCaseTest {
 
         assertEquals(1, results.size());
         assertTrue(results.get(0).success());
+        assertEquals("Alice", results.get(0).data().name, "BOM should be stripped, Name should be 'Alice'");
+        assertEquals(30, results.get(0).data().age);
     }
 
     @Test
@@ -162,8 +164,7 @@ class CsvReadHandlerEdgeCaseTest {
         var stream = CsvReader.<Person>mapping(row ->
                 new Person(row.get("Name").asString(), row.get("Age").asInt())
         ).build(toInputStream(csv)).readAsStream();
-        stream.close();
-        // No exception means cleanup succeeded
+        assertDoesNotThrow(stream::close, "Closing unconsumed stream should not throw");
     }
 
     // ============================================================

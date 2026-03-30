@@ -54,7 +54,7 @@ class ColumnStyleConfigApplyDefaultsTest {
         assertEquals(14, target.fontSize);
         assertEquals(ExcelBorderStyle.THICK, target.borderStyle);
         assertEquals(true, target.locked);
-        assertNotNull(target.rotation);
+        assertEquals(ColumnStyleConfig.toExcelRotation(45), target.rotation, "Rotation should be 45");
         assertEquals(ExcelBorderStyle.THIN, target.borderTop);
         assertEquals(ExcelBorderStyle.MEDIUM, target.borderBottom);
         assertEquals(ExcelBorderStyle.DASHED, target.borderLeft);
