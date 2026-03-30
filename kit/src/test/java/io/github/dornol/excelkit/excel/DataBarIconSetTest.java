@@ -151,7 +151,7 @@ class DataBarIconSetTest {
     // 2-color gradient data bar
     // ============================================================
     @Test
-    void dataBar_twoColor_shouldCreateDataBarRule() throws IOException {
+    void dataBar_twoColor_shouldSetGradientLengthsAndColor() throws IOException {
         CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
                 .dataBar(ExcelColor.RED, ExcelColor.GREEN));
 
@@ -161,10 +161,19 @@ class DataBarIconSetTest {
                 if (rule.getType() == STCfType.DATA_BAR) {
                     found = true;
                     var db = rule.getDataBar();
-                    assertNotNull(db.getColor());
-                    // minLength=0, maxLength=100 for gradient
-                    assertEquals(0, db.getMinLength());
-                    assertEquals(100, db.getMaxLength());
+
+                    // Color should be the minColor (RED)
+                    byte[] rgb = db.getColor().getRgb();
+                    assertEquals((byte) 0xFF, rgb[1], "Red component should be 255 for RED");
+                    assertEquals((byte) 0x00, rgb[2], "Green component should be 0 for RED");
+                    assertEquals((byte) 0x00, rgb[3], "Blue component should be 0 for RED");
+
+                    // Gradient: minLength=0, maxLength=100
+                    assertEquals(0, db.getMinLength(), "Gradient should set minLength=0");
+                    assertEquals(100, db.getMaxLength(), "Gradient should set maxLength=100");
+
+                    // 2 thresholds (min, max)
+                    assertEquals(2, db.sizeOfCfvoArray());
                 }
             }
         }
@@ -172,7 +181,7 @@ class DataBarIconSetTest {
     }
 
     @Test
-    void dataBar_singleColor_shouldNotSetGradientLengths() throws IOException {
+    void dataBar_singleColor_shouldNotOverrideLengths() throws IOException {
         CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
                 .dataBar(ExcelColor.BLUE));
 
@@ -180,12 +189,24 @@ class DataBarIconSetTest {
             for (var rule : cf.getCfRuleList()) {
                 if (rule.getType() == STCfType.DATA_BAR) {
                     var db = rule.getDataBar();
-                    // Single color: default lengths (10/90) should not be overridden to 0/100
-                    assertTrue(db.getMinLength() == 10 || !db.isSetMinLength(),
-                            "Single color should use default minLength");
+                    // Single color should NOT set 0/100 (that's the gradient marker)
+                    assertFalse(db.getMinLength() == 0 && db.getMaxLength() == 100,
+                            "Single color should not have gradient lengths (0/100)");
                 }
             }
         }
+    }
+
+    @Test
+    void dataBar_twoColor_sameColor_shouldStillWork() throws IOException {
+        // Degenerate case: same color for min and max
+        CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
+                .dataBar(ExcelColor.BLUE, ExcelColor.BLUE));
+
+        boolean found = ws.getConditionalFormattingList().stream()
+                .flatMap(cf -> cf.getCfRuleList().stream())
+                .anyMatch(r -> r.getType() == STCfType.DATA_BAR);
+        assertTrue(found);
     }
 
     // ============================================================
