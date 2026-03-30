@@ -9,4 +9,12 @@ allprojects {
     repositories {
         mavenCentral()
     }
+
+    plugins.withType<JavaPlugin> {
+        extensions.configure<JavaPluginExtension> {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
+    }
 }
