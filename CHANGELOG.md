@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.2] - 2026-03-30
+
+### Added
+- **Data bar conditional formatting** via `dataBar(ExcelColor)` — gradient bars
+  proportional to cell values. Supports single-color and 2-color gradient
+  (`dataBar(minColor, maxColor)`).
+- **Icon set conditional formatting** via `iconSet(IconSetType)` — 10 icon set
+  types including arrows, traffic lights, flags, signs, symbols, ratings, quarters.
+- **Timezone-aware date parsing** via `CellData.asZonedDateTime(ZoneId)` and
+  `CellData.asZonedDateTime(String format, ZoneId)`.
+- **CSV dialect presets** via `CsvDialect` enum — RFC4180, EXCEL, TSV, PIPE.
+  Apply with `CsvWriter.dialect()` and `CsvReader.dialect()`.
+- **CSV quoting strategies** via `CsvQuoting` enum — MINIMAL (default), ALL
+  (quote everything), NON_NUMERIC (quote strings, leave numbers unquoted).
+  Configure with `CsvWriter.quoting()`.
+- README: Supported Formats table, Notes section (JVM-global config warning,
+  readAsStream try-with-resources requirement).
+
+### Changed
+- **ExcelMapReader.readAsStream()**: Converted from List-collect approach to true
+  streaming via BlockingQueue + producer thread (same pattern as ExcelReadHandler).
+  Now memory-efficient for large datasets.
+
+### Improved
+- Branch test coverage: 84% → 89% (+82 new tests, +46 branches covered).
+- Test assertion quality: replaced `assertTrue(out.size() > 0)` patterns with
+  actual POI API content verification (validation rules, chart types, cell values,
+  font styles, formula content).
+
 ## [0.9.0] - 2026-03-19
 
 ### Added

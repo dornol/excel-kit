@@ -109,7 +109,7 @@ without requiring any additional architectural effort.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.dornol:excel-kit:0.9.1")
+    implementation("io.github.dornol:excel-kit:0.9.2")
 }
 ```
 
