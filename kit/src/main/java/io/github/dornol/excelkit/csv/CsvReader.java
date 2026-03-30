@@ -92,6 +92,22 @@ public class CsvReader<T> {
     }
 
     /**
+     * Applies a predefined CSV dialect configuration.
+     * <p>
+     * Sets the delimiter and charset in one call.
+     * Individual settings can be overridden after calling this method.
+     *
+     * @param dialect the dialect to apply
+     * @return This CsvReader instance for chaining
+     * @since 0.9.2
+     */
+    public CsvReader<T> dialect(CsvDialect dialect) {
+        this.delimiter = dialect.getDelimiter();
+        this.charset = dialect.getCharset();
+        return this;
+    }
+
+    /**
      * Sets the zero-based row index of the header row.
      * Rows before this index will be skipped during reading.
      * Defaults to 0 (the first row).

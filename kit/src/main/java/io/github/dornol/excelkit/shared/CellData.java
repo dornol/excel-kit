@@ -10,6 +10,8 @@ import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
@@ -370,6 +372,34 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             return null;
         }
         return LocalTime.parse(formattedValue, DateTimeFormatter.ofPattern(format));
+    }
+
+    /**
+     * Converts the value to {@link ZonedDateTime} by parsing as {@link LocalDateTime}
+     * and attaching the given time zone.
+     * Returns {@code null} if the value is empty or blank.
+     *
+     * @param zone the time zone to apply
+     * @return the zoned date-time, or {@code null} if blank
+     * @since 0.9.2
+     */
+    public @Nullable ZonedDateTime asZonedDateTime(ZoneId zone) {
+        LocalDateTime ldt = asLocalDateTime();
+        return ldt != null ? ldt.atZone(zone) : null;
+    }
+
+    /**
+     * Converts the value to {@link ZonedDateTime} using the specified format and time zone.
+     * Returns {@code null} if the value is empty or blank.
+     *
+     * @param format the date-time pattern
+     * @param zone   the time zone to apply
+     * @return the zoned date-time, or {@code null} if blank
+     * @since 0.9.2
+     */
+    public @Nullable ZonedDateTime asZonedDateTime(String format, ZoneId zone) {
+        LocalDateTime ldt = asLocalDateTime(format);
+        return ldt != null ? ldt.atZone(zone) : null;
     }
 
     /**

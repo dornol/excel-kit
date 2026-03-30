@@ -40,6 +40,8 @@ without requiring any additional architectural effort.
 - Per-side border control via `borderTop()`, `borderBottom()`, `borderLeft()`, `borderRight()`
 - Cell comments (notes) via `comment()` — conditional per-cell comments
 - Conditional formatting rules via `conditionalFormatting()` — greaterThan, lessThan, between, etc.
+- Data bar conditional formatting via `dataBar()` — gradient bars proportional to cell values
+- Icon set conditional formatting via `iconSet()` — arrows, traffic lights, flags, ratings, etc.
 - Sheet protection via `protectSheet()` with per-column `locked()` control
 - Image embedding via `ExcelDataType.IMAGE` with `ExcelImage.png()` / `ExcelImage.jpeg()`
 - Chart generation via `chart()` — BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT charts with XDDF API
@@ -62,6 +64,7 @@ without requiring any additional architectural effort.
 - List validation from cell range via `ExcelValidation.listFromRange()` — dropdown options from sheet/range reference
 - Custom cell conversion via `CellData.as(Function)` — ad-hoc type conversion (e.g., `UUID::fromString`)
 - Default value overloads — `asInt(defaultValue)`, `asLong(defaultValue)`, `asDouble(defaultValue)`, `asString(defaultValue)`, `as(Function, defaultValue)`
+- Timezone-aware date parsing via `asZonedDateTime(ZoneId)` — attach timezone to parsed dates
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -81,6 +84,7 @@ without requiring any additional architectural effort.
 - Proper escaping (quotes, commas, newlines)
 - UTF-8 BOM for Excel compatibility
 - Configurable delimiter and charset
+- CSV dialect presets via `dialect()` — RFC4180, EXCEL, TSV, PIPE
 - Progress callback via `onProgress()`
 - Configurable CSV injection defense via `csvInjectionDefense()` — toggle formula character prefixing
 
@@ -91,6 +95,7 @@ without requiring any additional architectural effort.
 - Header auto-detection with BOM removal
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
+- CSV dialect presets via `dialect()` — RFC4180, EXCEL, TSV, PIPE
 - Map-based writing via `CsvMapWriter`
 
 **Unified Schema**

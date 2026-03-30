@@ -45,6 +45,23 @@ public class CsvWriter<T> {
     private boolean csvInjectionDefense = true;
 
     /**
+     * Applies a predefined CSV dialect configuration.
+     * <p>
+     * Sets the delimiter, charset, and BOM settings in one call.
+     * Individual settings can be overridden after calling this method.
+     *
+     * @param dialect the dialect to apply
+     * @return This writer instance (for chaining)
+     * @since 0.9.2
+     */
+    public CsvWriter<T> dialect(CsvDialect dialect) {
+        this.delimiter = dialect.getDelimiter();
+        this.charset = dialect.getCharset();
+        this.bom = dialect.isBom();
+        return this;
+    }
+
+    /**
      * Sets the delimiter character used to separate fields.
      * Defaults to comma ({@code ','}).
      *
