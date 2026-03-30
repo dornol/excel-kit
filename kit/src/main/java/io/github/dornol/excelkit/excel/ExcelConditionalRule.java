@@ -8,7 +8,16 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.openxmlformats.schemas.spreadsheetml.x2006.main.*;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCfRule;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCfvo;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTColor;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTConditionalFormatting;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTDataBar;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTIconSet;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTWorksheet;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.STCfType;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.STCfvoType;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.STIconSetType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
