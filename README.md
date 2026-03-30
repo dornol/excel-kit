@@ -88,6 +88,7 @@ without requiring any additional architectural effort.
 - Progress callback via `onProgress()`
 - Quoting strategies via `quoting()` — MINIMAL, ALL, NON_NUMERIC
 - Configurable CSV injection defense via `csvInjectionDefense()` — toggle formula character prefixing
+- Map-based writing via `CsvMapWriter` — write `Map<String, Object>` without typed POJOs
 
 **CSV Reading** (OpenCSV-based)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -97,7 +98,6 @@ without requiring any additional architectural effort.
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
 - CSV dialect presets via `dialect()` — RFC4180, EXCEL, TSV, PIPE
-- Map-based writing via `CsvMapWriter`
 
 **Unified Schema**
 - `ExcelKitSchema` — define columns once for both reading and writing
@@ -118,7 +118,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.9.1</version>
+  <version>0.9.2</version>
 </dependency>
 ```
 
@@ -169,7 +169,7 @@ IMAGE columns now throw `ExcelWriteException` if the value is not an `ExcelImage
 
 ## Performance
 
-Pure write throughput measured on Apple M-series, JDK 21, excel-kit 0.8.2.
+Pure write throughput measured on Apple M-series, JDK 21, excel-kit 0.9.2.
 These numbers exclude data source (DB, API) latency — only the file generation step.
 
 | Scenario | Rows | Time | File Size | Throughput |
@@ -1888,7 +1888,7 @@ Call it once at application startup if needed; avoid calling it with different v
 
 ### `readAsStream()` requires try-with-resources
 
-`ExcelReadHandler.readAsStream()` and `CsvReadHandler.readAsStream()` hold file and thread resources.
+`ExcelReadHandler.readAsStream()`, `CsvReadHandler.readAsStream()`, and `ExcelMapReader.readAsStream()` hold file and thread resources.
 Always use try-with-resources to ensure proper cleanup:
 
 ```java
