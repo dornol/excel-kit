@@ -1862,6 +1862,37 @@ new CsvWriter<Row>()
 - **JDK 17+**
 - Apache POI 5.x for Excel operations
 
+## Supported Formats
+
+| Format | Read | Write | Notes |
+|--------|------|-------|-------|
+| `.xlsx` (Excel 2007+) | Yes | Yes | Primary format — streaming read (SAX) and write (SXSSF) |
+| `.csv` | Yes | Yes | Via OpenCSV, configurable delimiter/charset |
+| `.xls` (Excel 97-2003) | No | No | Legacy binary format not supported |
+| `.xlsm` (Macro-enabled) | No | No | Macros cannot be generated or preserved |
+| `.ods` (OpenDocument) | No | No | LibreOffice/Calc format not supported |
+
+## Notes
+
+### Large file configuration is JVM-global
+
+`ExcelReader.configureLargeFileSupport()` adjusts Apache POI's internal limits (`ZipSecureFile.setMaxFileCount`, `IOUtils.setByteArrayMaxOverride`).
+These are **JVM-global static settings** — calling this method affects all POI operations in the same process.
+Call it once at application startup if needed; avoid calling it with different values from multiple threads.
+
+### `readAsStream()` requires try-with-resources
+
+`ExcelReadHandler.readAsStream()` and `CsvReadHandler.readAsStream()` hold file and thread resources.
+Always use try-with-resources to ensure proper cleanup:
+
+```java
+try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
+    stream.filter(ReadResult::success)
+          .map(ReadResult::data)
+          .forEach(this::process);
+}
+```
+
 ## Build & Test
 
 ```bash
