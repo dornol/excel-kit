@@ -40,7 +40,7 @@ without requiring any additional architectural effort.
 - Per-side border control via `borderTop()`, `borderBottom()`, `borderLeft()`, `borderRight()`
 - Cell comments (notes) via `comment()` — conditional per-cell comments
 - Conditional formatting rules via `conditionalFormatting()` — greaterThan, lessThan, between, etc.
-- Data bar conditional formatting via `dataBar()` — gradient bars proportional to cell values
+- Data bar conditional formatting via `dataBar()` — gradient bars proportional to cell values (single color or 2-color gradient)
 - Icon set conditional formatting via `iconSet()` — arrows, traffic lights, flags, ratings, etc.
 - Sheet protection via `protectSheet()` with per-column `locked()` control
 - Image embedding via `ExcelDataType.IMAGE` with `ExcelImage.png()` / `ExcelImage.jpeg()`
@@ -86,6 +86,7 @@ without requiring any additional architectural effort.
 - Configurable delimiter and charset
 - CSV dialect presets via `dialect()` — RFC4180, EXCEL, TSV, PIPE
 - Progress callback via `onProgress()`
+- Quoting strategies via `quoting()` — MINIMAL, ALL, NON_NUMERIC
 - Configurable CSV injection defense via `csvInjectionDefense()` — toggle formula character prefixing
 
 **CSV Reading** (OpenCSV-based)

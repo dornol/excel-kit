@@ -43,6 +43,7 @@ public class CsvWriter<T> {
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private boolean csvInjectionDefense = true;
+    private CsvQuoting quoting = CsvQuoting.MINIMAL;
 
     /**
      * Applies a predefined CSV dialect configuration.
@@ -195,6 +196,20 @@ public class CsvWriter<T> {
     }
 
     /**
+     * Sets the quoting strategy for CSV field values.
+     * <p>
+     * Defaults to {@link CsvQuoting#MINIMAL} (quote only when necessary).
+     *
+     * @param quoting the quoting strategy
+     * @return This writer instance (for chaining)
+     * @since 0.9.2
+     */
+    public CsvWriter<T> quoting(CsvQuoting quoting) {
+        this.quoting = quoting;
+        return this;
+    }
+
+    /**
      * Enables or disables CSV injection defense.
      * <p>
      * When enabled (default), cell values starting with formula characters
@@ -315,17 +330,46 @@ public class CsvWriter<T> {
      */
     private String escapeCsv(@Nullable Object input) {
         if (input == null) {
-            return "";
+            return quoting == CsvQuoting.ALL ? "\"\"" : "";
         }
         String value = input.toString();
         // CSV Injection defense: prefix formula-triggering characters with a single quote
         if (csvInjectionDefense && !value.isEmpty() && isFormulaCharacter(value.charAt(0))) {
             value = "'" + value;
         }
-        if (value.contains(String.valueOf(this.delimiter)) || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
+        boolean needsQuote = value.contains(String.valueOf(this.delimiter))
+                || value.contains("\"") || value.contains("\n") || value.contains("\r");
+
+        if (quoting == CsvQuoting.ALL) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        if (quoting == CsvQuoting.NON_NUMERIC && !isNumeric(value)) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        if (needsQuote) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    private static boolean isNumeric(String value) {
+        if (value.isEmpty()) return false;
+        int start = 0;
+        if (value.charAt(0) == '-' || value.charAt(0) == '+') {
+            if (value.length() == 1) return false;
+            start = 1;
+        }
+        boolean hasDecimal = false;
+        for (int i = start; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '.') {
+                if (hasDecimal) return false;
+                hasDecimal = true;
+            } else if (!Character.isDigit(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void validateUniqueColumnNames() {

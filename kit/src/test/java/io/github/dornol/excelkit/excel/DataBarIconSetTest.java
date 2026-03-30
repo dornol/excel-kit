@@ -148,6 +148,47 @@ class DataBarIconSetTest {
     }
 
     // ============================================================
+    // 2-color gradient data bar
+    // ============================================================
+    @Test
+    void dataBar_twoColor_shouldCreateDataBarRule() throws IOException {
+        CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
+                .dataBar(ExcelColor.RED, ExcelColor.GREEN));
+
+        boolean found = false;
+        for (CTConditionalFormatting cf : ws.getConditionalFormattingList()) {
+            for (var rule : cf.getCfRuleList()) {
+                if (rule.getType() == STCfType.DATA_BAR) {
+                    found = true;
+                    var db = rule.getDataBar();
+                    assertNotNull(db.getColor());
+                    // minLength=0, maxLength=100 for gradient
+                    assertEquals(0, db.getMinLength());
+                    assertEquals(100, db.getMaxLength());
+                }
+            }
+        }
+        assertTrue(found, "Should have DATA_BAR rule");
+    }
+
+    @Test
+    void dataBar_singleColor_shouldNotSetGradientLengths() throws IOException {
+        CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
+                .dataBar(ExcelColor.BLUE));
+
+        for (CTConditionalFormatting cf : ws.getConditionalFormattingList()) {
+            for (var rule : cf.getCfRuleList()) {
+                if (rule.getType() == STCfType.DATA_BAR) {
+                    var db = rule.getDataBar();
+                    // Single color: default lengths (10/90) should not be overridden to 0/100
+                    assertTrue(db.getMinLength() == 10 || !db.isSetMinLength(),
+                            "Single color should use default minLength");
+                }
+            }
+        }
+    }
+
+    // ============================================================
     // Combined rules
     // ============================================================
     @Test
