@@ -188,67 +188,6 @@ class ExcelWriteSupport {
         if (rules == null) return;
         for (ExcelConditionalRule rule : rules) {
             rule.apply(sheet, headerRowIndex, columnCount, lastDataRow);
-
-            // Apply data bar and icon set via internal helper to isolate openxmlformats dependencies
-            var dataBarColor = rule.getDataBarColor();
-            var iconSetType = rule.getIconSetType();
-            if (dataBarColor != null || iconSetType != null) {
-                var xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
-                if (xssfSheet != null) {
-                    int dataStartRow = rule.getStartRow() >= 0 ? rule.getStartRow() : headerRowIndex + 1;
-                    int endRow = Math.max(dataStartRow, lastDataRow);
-                    int[] cols = rule.getColumnIndices() != null ? rule.getColumnIndices() : defaultColumnRange(columnCount);
-                    for (int colIdx : cols) {
-                        org.apache.poi.ss.util.CellRangeAddress[] ranges = {
-                                new org.apache.poi.ss.util.CellRangeAddress(dataStartRow, endRow, colIdx, colIdx)
-                        };
-                        if (dataBarColor != null) {
-                            applyDataBarViaHelper(xssfSheet, ranges, dataBarColor, rule.getDataBarMaxColor());
-                        }
-                        if (iconSetType != null) {
-                            applyIconSetViaHelper(xssfSheet, ranges, iconSetType);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static int[] defaultColumnRange(int columnCount) {
-        int[] result = new int[columnCount];
-        for (int i = 0; i < columnCount; i++) result[i] = i;
-        return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void applyDataBarViaHelper(org.apache.poi.xssf.usermodel.XSSFSheet xssfSheet,
-                                               org.apache.poi.ss.util.CellRangeAddress[] ranges,
-                                               ExcelColor color, @Nullable ExcelColor maxColor) {
-        try {
-            var clazz = Class.forName("io.github.dornol.excelkit.excel.internal.ConditionalFormattingHelper");
-            var method = clazz.getMethod("applyDataBar",
-                    org.apache.poi.xssf.usermodel.XSSFSheet.class,
-                    org.apache.poi.ss.util.CellRangeAddress[].class,
-                    ExcelColor.class, ExcelColor.class);
-            method.invoke(null, xssfSheet, ranges, color, maxColor);
-        } catch (Exception e) {
-            // Silently ignore — data bar is best-effort
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void applyIconSetViaHelper(org.apache.poi.xssf.usermodel.XSSFSheet xssfSheet,
-                                               org.apache.poi.ss.util.CellRangeAddress[] ranges,
-                                               ExcelConditionalRule.IconSetType iconSetType) {
-        try {
-            var clazz = Class.forName("io.github.dornol.excelkit.excel.internal.ConditionalFormattingHelper");
-            var method = clazz.getMethod("applyIconSet",
-                    org.apache.poi.xssf.usermodel.XSSFSheet.class,
-                    org.apache.poi.ss.util.CellRangeAddress[].class,
-                    ExcelConditionalRule.IconSetType.class);
-            method.invoke(null, xssfSheet, ranges, iconSetType);
-        } catch (Exception e) {
-            // Silently ignore — icon set is best-effort
         }
     }
 
