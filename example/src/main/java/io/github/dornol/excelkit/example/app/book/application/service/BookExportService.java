@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.example.app.book.application.service;
 import io.github.dornol.excelkit.example.app.book.application.port.in.ExportBookUseCase;
 import io.github.dornol.excelkit.example.app.book.application.port.out.BookQueryPort;
 import io.github.dornol.excelkit.example.app.book.application.port.out.FileExportPort;
-import io.github.dornol.excelkit.example.app.book.domain.StreamingContent;
+import io.github.dornol.excelkit.example.app.book.application.port.out.StreamingContent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

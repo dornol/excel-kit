@@ -2,10 +2,10 @@ package io.github.dornol.excelkit.example.app.book.adapter.out.file;
 
 import io.github.dornol.excelkit.example.app.book.application.port.out.FileExportPort;
 import io.github.dornol.excelkit.example.app.book.application.port.out.FileImportPort;
-import io.github.dornol.excelkit.example.app.book.domain.BookDto;
-import io.github.dornol.excelkit.example.app.book.domain.BookReadDto;
-import io.github.dornol.excelkit.example.app.book.domain.ImportResult;
-import io.github.dornol.excelkit.example.app.book.domain.StreamingContent;
+import io.github.dornol.excelkit.example.app.book.application.port.out.BookDto;
+import io.github.dornol.excelkit.example.app.book.application.port.out.BookReadDto;
+import io.github.dornol.excelkit.example.app.book.application.port.out.ImportResult;
+import io.github.dornol.excelkit.example.app.book.application.port.out.StreamingContent;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.excel.*;

@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.example.app.book.domain;
+package io.github.dornol.excelkit.example.app.book.application.port.out;
 
 import java.io.IOException;
 import java.io.OutputStream;

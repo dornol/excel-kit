@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.example.app.book.adapter.out.persistence;
 import io.github.dornol.excelkit.example.app.book.application.port.out.BookPersistencePort;
 import io.github.dornol.excelkit.example.app.book.application.port.out.BookQueryPort;
 import io.github.dornol.excelkit.example.app.book.domain.Book;
-import io.github.dornol.excelkit.example.app.book.domain.BookDto;
+import io.github.dornol.excelkit.example.app.book.application.port.out.BookDto;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 

@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.example.app.book.adapter.out.persistence;
 
 import io.github.dornol.excelkit.example.app.book.domain.Book;
-import io.github.dornol.excelkit.example.app.book.domain.BookDto;
+import io.github.dornol.excelkit.example.app.book.application.port.out.BookDto;
 import jakarta.persistence.QueryHint;
 import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.JpaRepository;
