@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.example.app.util.DownloadFileType;
 import io.github.dornol.excelkit.example.app.util.DownloadUtil;
+import io.github.dornol.excelkit.csv.CsvMapReader;
 import io.github.dornol.excelkit.csv.CsvMapWriter;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.*;
@@ -980,6 +981,29 @@ public class ShowcaseController {
                       .consumeOutputStream(out);
             }
         });
+    }
+
+    // ========================================================================
+    // 28. CSV Map Reader - read CSV into Map<String, String>
+    // ========================================================================
+    @PostMapping("/csv-map-reader")
+    @ResponseBody
+    public String readCsvMap(MultipartFile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            List<Map<String, String>> results = new ArrayList<>();
+            new CsvMapReader()
+                    .build(is)
+                    .read(r -> results.add(r.data()));
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("=== CSV Map-Based Read Result ===\n");
+            sb.append("Read %d rows\n\n".formatted(results.size()));
+            if (!results.isEmpty()) {
+                sb.append("Headers: %s\n\n".formatted(results.get(0).keySet()));
+            }
+            results.forEach(row -> sb.append(row).append("\n"));
+            return sb.toString();
+        }
     }
 
     private static ProductReadDto toReadDto(ProductDto p) {

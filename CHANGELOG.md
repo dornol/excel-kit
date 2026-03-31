@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **CsvMapReader** — read CSV files into `Map<String, String>` without typed POJOs,
+  matching the `ExcelMapReader` API. Supports `dialect()`, `delimiter()`, `charset()`,
+  `headerRowIndex()`, `onProgress()`, and `readAsStream()`.
+- README: Quick Reference table for all read/write classes.
+- Benchmark CI workflow — runs performance tests on every main-branch push.
+- Example app: CSV Map Reader upload endpoint.
+
+### Improved
+- Test coverage boost: 38 new targeted tests for CsvMapReader, CsvWriter quoting,
+  AbstractReadHandler validation, and TempResourceContainer edge cases.
+
+### Dependencies
+- poi-ooxml 5.4.1 → 5.5.1
+- junit-bom 5.10.0 → 6.0.3
+- actions/checkout v4 → v6
+- actions/upload-artifact v4 → v7
+- actions/setup-java v4 → v5
+- Dependabot configured for Gradle and GitHub Actions.
+
 ## [0.9.2] - 2026-03-30
 
 ### Added
