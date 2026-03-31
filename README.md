@@ -98,11 +98,31 @@ without requiring any additional architectural effort.
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
 - CSV dialect presets via `dialect()` — RFC4180, EXCEL, TSV, PIPE
+- Map-based reading via `CsvMapReader` — read into `Map<String, String>` without typed POJOs
 
 **Unified Schema**
 - `ExcelKitSchema` — define columns once for both reading and writing
 - Write configuration (type, format, style) embedded in schema
 - Schema-based readers automatically use name-based column matching
+
+## Quick Reference
+
+| Task | Class | Example |
+|------|-------|---------|
+| Write Excel (typed) | `ExcelWriter<T>` | `new ExcelWriter<T>().column("Name", T::getName).write(stream).consumeOutputStream(out)` |
+| Write Excel (map) | `ExcelMapWriter` | `new ExcelMapWriter("Name", "Age").write(stream).consumeOutputStream(out)` |
+| Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.sheet("Sheet1").column(...).write(stream)` |
+| Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
+| Read Excel (typed) | `ExcelReader<T>` | `new ExcelReader<>(T::new, null).addColumn("Name", T::setName).build(in).read(r -> ...)` |
+| Read Excel (map) | `ExcelMapReader` | `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))` |
+| Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).consumeOutputStream(out)` |
+| Write CSV (map) | `CsvMapWriter` | `new CsvMapWriter("Name", "Age").write(stream).consumeOutputStream(out)` |
+| Read CSV (typed) | `CsvReader<T>` | `new CsvReader<>(T::new, null).addColumn("Name", T::setName).build(in).read(r -> ...)` |
+| Read CSV (map) | `CsvMapReader` | `new CsvMapReader().build(in).read(r -> r.data().get("Name"))` |
+
+**Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`XxxMapReader`) for schema-less reading.
+
+**Output consumption:** `consumeOutputStream(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `withPassword("pw")` for encryption.
 
 ## Installation
 
@@ -1285,6 +1305,19 @@ new ExcelMapReader()
     });
 ```
 
+CSV equivalent:
+```java
+new CsvMapReader()
+    .delimiter(',')        // optional, defaults to ','
+    .headerRowIndex(0)     // optional, defaults to 0
+    .build(inputStream)
+    .read(result -> {
+        Map<String, String> row = result.data();
+        String name = row.get("Name");
+        String age = row.get("Age");
+    });
+```
+
 All columns from the header row are automatically mapped.
 
 ### Multi-Sheet Discovery
@@ -1888,7 +1921,7 @@ Call it once at application startup if needed; avoid calling it with different v
 
 ### `readAsStream()` requires try-with-resources
 
-`ExcelReadHandler.readAsStream()`, `CsvReadHandler.readAsStream()`, and `ExcelMapReader.readAsStream()` hold file and thread resources.
+`ExcelReadHandler.readAsStream()`, `CsvReadHandler.readAsStream()`, `ExcelMapReader.readAsStream()`, and `CsvMapReader.readAsStream()` hold file and thread resources.
 Always use try-with-resources to ensure proper cleanup:
 
 ```java
