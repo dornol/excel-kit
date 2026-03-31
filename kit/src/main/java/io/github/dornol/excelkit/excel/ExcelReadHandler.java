@@ -202,6 +202,9 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 }
             }
         });
+        // Daemon thread: if the caller abandons the stream without close(),
+        // the producer blocks forever on queue.put(). Daemon ensures JVM can still exit.
+        // Normal cleanup path is stream.onClose() → producer.interrupt().
         producer.setDaemon(true);
         producer.setName("excel-kit-reader");
         producer.start();
@@ -414,22 +417,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             return messages;
         }
 
-        /**
-         * Converts an Excel cell reference (e.g., "C5", "AA12") to a zero-based column index.
-         *
-         * @param cellReference The Excel cell reference (e.g., "C5", "AA10")
-         * @return The zero-based column index
-         */
         private int getColumnIndex(String cellReference) {
-            int colIdx = 0;
-            for (char c : cellReference.toCharArray()) {
-                if (!Character.isLetter(c)) break;
-                colIdx = colIdx * 26 + (Character.toUpperCase(c) - 'A' + 1);
-                if (colIdx > 16_384) { // Excel max column: XFD = 16,384
-                    throw new ExcelReadException("Column index exceeds Excel maximum (XFD): " + cellReference);
-                }
-            }
-            return colIdx - 1;
+            return ExcelReadSupport.getColumnIndex(cellReference);
         }
 
     }

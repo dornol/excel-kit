@@ -6,6 +6,8 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,14 +19,14 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Miscellaneous edge case tests for remaining uncovered branches:
- * - ExcelHandler (consume twice, password null)
+ * Edge case tests for:
+ * - ExcelHandler (consume twice, invalid password)
  * - ExcelReader (skipColumns negative, header not found)
  * - ExcelSummary (all Op types)
  * - ExcelWorkbook edge cases
  * - ExcelWriter defaultStyle with applyDefaults
  */
-class MiscEdgeCaseTest {
+class ExcelEdgeCaseTest {
 
     record Item(String name, int value) {}
 
@@ -41,43 +43,48 @@ class MiscEdgeCaseTest {
                     .addColumn("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             handler.consumeOutputStream(out1);
-            assertThrows(ExcelWriteException.class, () -> handler.consumeOutputStream(new ByteArrayOutputStream()));
+            var ex = assertThrows(ExcelWriteException.class,
+                    () -> handler.consumeOutputStream(new ByteArrayOutputStream()));
+            assertTrue(ex.getMessage().contains("Already consumed"),
+                    "Should indicate handler was already consumed");
         }
 
-        @Test
-        void consumeOutputStreamWithPassword_nullPassword_throws() throws IOException {
+        static Stream<Object[]> invalidStringPasswords() {
+            return Stream.of(
+                    new Object[]{null, "null"},
+                    new Object[]{"  ", "blank"}
+            );
+        }
+
+        @ParameterizedTest(name = "String password={1}")
+        @MethodSource("invalidStringPasswords")
+        void consumeOutputStreamWithPassword_invalidString_throws(String password, String label) throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
                     .addColumn("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
-            assertThrows(IllegalArgumentException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), (String) null));
+            var ex = assertThrows(IllegalArgumentException.class,
+                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), password));
+            assertTrue(ex.getMessage().toLowerCase().contains("password"),
+                    "Exception should mention password");
         }
 
-        @Test
-        void consumeOutputStreamWithPassword_blankPassword_throws() throws IOException {
+        static Stream<Object[]> invalidCharPasswords() {
+            return Stream.of(
+                    new Object[]{null, "null"},
+                    new Object[]{new char[0], "empty"}
+            );
+        }
+
+        @ParameterizedTest(name = "char[] password={1}")
+        @MethodSource("invalidCharPasswords")
+        void consumeOutputStreamWithPassword_invalidCharArray_throws(char[] password, String label) throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
                     .addColumn("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
-            assertThrows(IllegalArgumentException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), "  "));
-        }
-
-        @Test
-        void consumeOutputStreamWithPassword_charArray_nullPassword_throws() throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .write(Stream.of(new Item("A", 1)));
-            assertThrows(IllegalArgumentException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), (char[]) null));
-        }
-
-        @Test
-        void consumeOutputStreamWithPassword_charArray_emptyPassword_throws() throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .write(Stream.of(new Item("A", 1)));
-            assertThrows(IllegalArgumentException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), new char[0]));
+            var ex = assertThrows(IllegalArgumentException.class,
+                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), password));
+            assertTrue(ex.getMessage().toLowerCase().contains("password"),
+                    "Exception should mention password");
         }
     }
 
@@ -95,14 +102,18 @@ class MiscEdgeCaseTest {
         @Test
         void skipColumns_negative_throws() {
             ExcelReader<MutableItem> reader = new ExcelReader<>(MutableItem::new, null);
-            assertThrows(IllegalArgumentException.class, () -> reader.skipColumns(-1));
+            var ex = assertThrows(IllegalArgumentException.class, () -> reader.skipColumns(-1));
+            assertTrue(ex.getMessage().contains("negative"),
+                    "Should mention negative value: " + ex.getMessage());
         }
 
         @Test
         void onProgress_zeroInterval_throws() {
             ExcelReader<MutableItem> reader = new ExcelReader<>(MutableItem::new, null);
-            assertThrows(IllegalArgumentException.class,
+            var ex = assertThrows(IllegalArgumentException.class,
                     () -> reader.onProgress(0, (c, cur) -> {}));
+            assertTrue(ex.getMessage().contains("positive"),
+                    "Should mention positive requirement: " + ex.getMessage());
         }
 
         @Test

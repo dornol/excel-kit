@@ -13,6 +13,12 @@ import java.util.function.Function;
  * {@link ExcelSheetWriter.ColumnConfig} to eliminate duplicated field
  * declarations and setter methods.
  *
+ * <h3>Why not split into FontStyle, BorderStyle, LayoutConfig, etc.?</h3>
+ * This class is intentionally kept flat. Although it has many fields, it is a pure
+ * configuration holder with no logic — each field maps to one fluent setter.
+ * Splitting would force nested builders on callers (e.g. {@code column.font(f -> f.bold(true))})
+ * and complicate the 4 subclasses that inherit from this base, without reducing actual complexity.
+ *
  * @param <T>    the row data type
  * @param <SELF> the concrete subclass type, for fluent method chaining
  * @author dhkim

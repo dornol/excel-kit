@@ -151,6 +151,9 @@ public class ExcelMapReader {
                     }
                 }
             });
+            // Daemon thread: if the caller abandons the stream without close(),
+            // the producer blocks forever on queue.put(). Daemon ensures JVM can still exit.
+            // Normal cleanup path is stream.onClose() → producer.interrupt().
             producer.setDaemon(true);
             producer.setName("excel-kit-map-reader");
             producer.start();
@@ -255,12 +258,7 @@ public class ExcelMapReader {
             }
 
             private int getColumnIndex(String cellReference) {
-                int colIdx = 0;
-                for (char c : cellReference.toCharArray()) {
-                    if (!Character.isLetter(c)) break;
-                    colIdx = colIdx * 26 + (Character.toUpperCase(c) - 'A' + 1);
-                }
-                return colIdx - 1;
+                return ExcelReadSupport.getColumnIndex(cellReference);
             }
         }
     }

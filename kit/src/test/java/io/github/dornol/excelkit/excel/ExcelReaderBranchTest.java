@@ -23,13 +23,13 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Targeted tests to boost branch coverage for:
+ * Tests for edge-case branches in the read pipeline:
  * - ExcelReadHandler.Spliterator error paths
  * - ExcelReadHandler.SheetHandler mapping mode + headerRowIndex
  * - ExcelReader.HeaderExtractor gap columns
  * - AbstractReadHandler mapColumn exception, columnAt
  */
-class BranchCoverageBoostTest {
+class ExcelReaderBranchTest {
 
     @TempDir
     Path tempDir;
@@ -258,7 +258,7 @@ class BranchCoverageBoostTest {
             assertEquals(3, results.size());
             assertTrue(results.get(0).success());
             assertEquals("A", results.get(0).data().col0, "col0 should map to Name column (index 0)");
-            assertNotNull(results.get(0).data().col1, "col1 should map to Value column (index 1)");
+            assertEquals("10", results.get(0).data().col1, "col1 should map to Value column (index 1)");
         }
 
         @Test

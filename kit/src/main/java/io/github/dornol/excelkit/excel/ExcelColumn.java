@@ -74,10 +74,15 @@ public class ExcelColumn<T> {
 
     /**
      * Applies the column's function to extract a value from the row and cursor.
+     * <p>
+     * Intentionally catches exceptions and returns {@code null} (empty cell) instead of
+     * propagating. In bulk exports (100K+ rows), failing the entire export for one bad cell
+     * is worse than leaving it blank. Errors are logged with column name, row data, and cursor
+     * for debugging.
      *
      * @param rowData the current row
      * @param cursor  the current cursor (position)
-     * @return the cell value
+     * @return the cell value, or {@code null} if the function threw an exception
      */
     @Nullable Object applyFunction(T rowData, Cursor cursor) {
         try {

@@ -33,7 +33,7 @@ public class ExcelWriter<T> {
 
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final int maxRowsOfSheet;
+    private final int maxRows;
     private CellStyle headerStyle;
     private final XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
@@ -56,12 +56,12 @@ public class ExcelWriter<T> {
      * @param r                    Red component of the header color (0–255)
      * @param g                    Green component of the header color (0–255)
      * @param b                    Blue component of the header color (0–255)
-     * @param maxRowsOfSheet       Maximum number of rows allowed per sheet before creating a new one
+     * @param maxRows       Maximum number of rows allowed per sheet before creating a new one
      * @param rowAccessWindowSize  Number of rows kept in memory by SXSSFWorkbook (higher = more memory, lower = less memory)
      */
-    public ExcelWriter(int r, int g, int b, int maxRowsOfSheet, int rowAccessWindowSize) {
+    public ExcelWriter(int r, int g, int b, int maxRows, int rowAccessWindowSize) {
         this.wb = new SXSSFWorkbook(rowAccessWindowSize);
-        this.maxRowsOfSheet = maxRowsOfSheet;
+        this.maxRows = maxRows;
         this.headerColor = new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b});
         this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
     }
@@ -72,31 +72,31 @@ public class ExcelWriter<T> {
      * @param r               Red component of the header color (0–255)
      * @param g               Green component of the header color (0–255)
      * @param b               Blue component of the header color (0–255)
-     * @param maxRowsOfSheet  Maximum number of rows allowed per sheet before creating a new one
+     * @param maxRows  Maximum number of rows allowed per sheet before creating a new one
      */
-    public ExcelWriter(int r, int g, int b, int maxRowsOfSheet) {
-        this(r, g, b, maxRowsOfSheet, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
+    public ExcelWriter(int r, int g, int b, int maxRows) {
+        this(r, g, b, maxRows, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
     }
 
     /**
      * Constructs an ExcelWriter with a preset header color, maximum rows per sheet, and row access window size.
      *
      * @param color              Preset header color
-     * @param maxRowsOfSheet     Maximum number of rows allowed per sheet before creating a new one
+     * @param maxRows     Maximum number of rows allowed per sheet before creating a new one
      * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook
      */
-    public ExcelWriter(ExcelColor color, int maxRowsOfSheet, int rowAccessWindowSize) {
-        this(color.getR(), color.getG(), color.getB(), maxRowsOfSheet, rowAccessWindowSize);
+    public ExcelWriter(ExcelColor color, int maxRows, int rowAccessWindowSize) {
+        this(color.getR(), color.getG(), color.getB(), maxRows, rowAccessWindowSize);
     }
 
     /**
      * Constructs an ExcelWriter with a preset header color and maximum rows per sheet.
      *
      * @param color          Preset header color
-     * @param maxRowsOfSheet Maximum number of rows allowed per sheet before creating a new one
+     * @param maxRows Maximum number of rows allowed per sheet before creating a new one
      */
-    public ExcelWriter(ExcelColor color, int maxRowsOfSheet) {
-        this(color.getR(), color.getG(), color.getB(), maxRowsOfSheet);
+    public ExcelWriter(ExcelColor color, int maxRows) {
+        this(color.getR(), color.getG(), color.getB(), maxRows);
     }
 
     /**
@@ -111,10 +111,10 @@ public class ExcelWriter<T> {
     /**
      * Constructs an ExcelWriter with white header color and custom sheet row limit.
      *
-     * @param maxRowsOfSheet Maximum number of rows per sheet
+     * @param maxRows Maximum number of rows per sheet
      */
-    public ExcelWriter(int maxRowsOfSheet) {
-        this(255, 255, 255, maxRowsOfSheet);
+    public ExcelWriter(int maxRows) {
+        this(255, 255, 255, maxRows);
     }
 
     /**
@@ -675,7 +675,7 @@ public class ExcelWriter<T> {
      * @return true if a sheet needs to turn over; otherwise false
      */
     private boolean isOverMaxRows() {
-        return cursor.getCurrentTotal() >= maxRowsOfSheet && cursor.getCurrentTotal() % maxRowsOfSheet == 1;
+        return cursor.getCurrentTotal() >= maxRows && cursor.getCurrentTotal() % maxRows == 1;
     }
 
     /**

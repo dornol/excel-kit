@@ -435,12 +435,7 @@ public class ExcelReader<T> {
         @Override
         public void cell(String cellReference, String formattedValue, XSSFComment comment) {
             if (!done) {
-                int colIndex = 0;
-                for (char c : cellReference.toCharArray()) {
-                    if (!Character.isLetter(c)) break;
-                    colIndex = colIndex * 26 + (Character.toUpperCase(c) - 'A' + 1);
-                }
-                colIndex--;
+                int colIndex = ExcelReadSupport.getColumnIndex(cellReference);
                 while (currentRow.size() < colIndex) {
                     currentRow.add("");
                 }
