@@ -1,54 +1,83 @@
 package io.github.dornol.excelkit.excel;
 
 /**
- * Predefined color presets for Excel header backgrounds and cell styling.
+ * Represents an RGB color for Excel header backgrounds and cell styling.
  * <p>
- * Provides commonly used colors so that users do not need to look up RGB values manually.
- * Can be used with {@link ExcelWriter} constructors and
- * {@link ExcelColumn.ExcelColumnBuilder#backgroundColor(ExcelColor)}.
+ * Provides commonly used color presets as static constants, and supports
+ * custom RGB values via {@link #of(int, int, int)}.
+ *
+ * <pre>{@code
+ * // Using a preset
+ * new ExcelWriter<>(ExcelColor.STEEL_BLUE);
+ *
+ * // Using a custom RGB color
+ * new ExcelWriter<>(ExcelColor.of(180, 200, 220));
+ * }</pre>
  *
  * @author dhkim
  */
-public enum ExcelColor {
+public final class ExcelColor {
 
-    WHITE(255, 255, 255),
-    BLACK(0, 0, 0),
+    // White / Black
+    public static final ExcelColor WHITE = new ExcelColor(255, 255, 255);
+    public static final ExcelColor BLACK = new ExcelColor(0, 0, 0);
 
     // Gray
-    LIGHT_GRAY(217, 217, 217),
-    GRAY(128, 128, 128),
-    DARK_GRAY(64, 64, 64),
+    public static final ExcelColor LIGHT_GRAY = new ExcelColor(217, 217, 217);
+    public static final ExcelColor GRAY = new ExcelColor(128, 128, 128);
+    public static final ExcelColor DARK_GRAY = new ExcelColor(64, 64, 64);
 
     // Basic colors
-    RED(255, 0, 0),
-    GREEN(0, 128, 0),
-    BLUE(0, 0, 255),
-    YELLOW(255, 255, 0),
-    ORANGE(255, 165, 0),
+    public static final ExcelColor RED = new ExcelColor(255, 0, 0);
+    public static final ExcelColor GREEN = new ExcelColor(0, 128, 0);
+    public static final ExcelColor BLUE = new ExcelColor(0, 0, 255);
+    public static final ExcelColor YELLOW = new ExcelColor(255, 255, 0);
+    public static final ExcelColor ORANGE = new ExcelColor(255, 165, 0);
 
     // Light colors (for backgrounds)
-    LIGHT_RED(255, 199, 206),
-    LIGHT_GREEN(198, 239, 206),
-    LIGHT_BLUE(189, 215, 238),
-    LIGHT_YELLOW(255, 235, 156),
-    LIGHT_ORANGE(252, 228, 214),
-    LIGHT_PURPLE(228, 210, 245),
+    public static final ExcelColor LIGHT_RED = new ExcelColor(255, 199, 206);
+    public static final ExcelColor LIGHT_GREEN = new ExcelColor(198, 239, 206);
+    public static final ExcelColor LIGHT_BLUE = new ExcelColor(189, 215, 238);
+    public static final ExcelColor LIGHT_YELLOW = new ExcelColor(255, 235, 156);
+    public static final ExcelColor LIGHT_ORANGE = new ExcelColor(252, 228, 214);
+    public static final ExcelColor LIGHT_PURPLE = new ExcelColor(228, 210, 245);
+
+    // Additional basic colors
+    public static final ExcelColor PURPLE = new ExcelColor(128, 0, 128);
+    public static final ExcelColor PINK = new ExcelColor(255, 192, 203);
+    public static final ExcelColor TEAL = new ExcelColor(0, 128, 128);
+    public static final ExcelColor NAVY = new ExcelColor(0, 0, 128);
 
     // Commonly used colors
-    CORAL(255, 127, 80),
-    STEEL_BLUE(70, 130, 180),
-    FOREST_GREEN(34, 139, 34),
-    GOLD(255, 215, 0),
-    ;
+    public static final ExcelColor CORAL = new ExcelColor(255, 127, 80);
+    public static final ExcelColor STEEL_BLUE = new ExcelColor(70, 130, 180);
+    public static final ExcelColor FOREST_GREEN = new ExcelColor(34, 139, 34);
+    public static final ExcelColor GOLD = new ExcelColor(255, 215, 0);
 
     private final int r;
     private final int g;
     private final int b;
 
-    ExcelColor(int r, int g, int b) {
+    private ExcelColor(int r, int g, int b) {
+        if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+            throw new IllegalArgumentException(
+                    "RGB values must be between 0 and 255, got (" + r + ", " + g + ", " + b + ")");
+        }
         this.r = r;
         this.g = g;
         this.b = b;
+    }
+
+    /**
+     * Creates a custom color from RGB values.
+     *
+     * @param r Red component (0–255)
+     * @param g Green component (0–255)
+     * @param b Blue component (0–255)
+     * @return a new ExcelColor instance
+     */
+    public static ExcelColor of(int r, int g, int b) {
+        return new ExcelColor(r, g, b);
     }
 
     public int getR() {

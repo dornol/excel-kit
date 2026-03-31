@@ -156,7 +156,7 @@ class ExcelWriterTest {
     @Test
     void constructor_withRowAccessWindowSize_shouldCreateWriter() throws IOException {
         // Arrange: use a small buffer size
-        ExcelWriter<String> writer = new ExcelWriter<>(255, 255, 255, 1_000_000, 100);
+        ExcelWriter<String> writer = new ExcelWriter<>(ExcelColor.WHITE, 1_000_000, 100);
         Stream<String> data = Stream.of("a", "b", "c");
 
         // Act

@@ -51,61 +51,36 @@ public class ExcelWriter<T> {
 
 
     /**
-     * Constructs an ExcelWriter with a custom header color, maximum rows per sheet, and row access window size.
+     * Constructs an ExcelWriter with a header color, maximum rows per sheet, and row access window size.
      *
-     * @param r                    Red component of the header color (0–255)
-     * @param g                    Green component of the header color (0–255)
-     * @param b                    Blue component of the header color (0–255)
-     * @param maxRows       Maximum number of rows allowed per sheet before creating a new one
-     * @param rowAccessWindowSize  Number of rows kept in memory by SXSSFWorkbook (higher = more memory, lower = less memory)
+     * @param color              Header color (use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)})
+     * @param maxRows            Maximum number of rows allowed per sheet before creating a new one
+     * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook (higher = more memory, lower = less memory)
      */
-    public ExcelWriter(int r, int g, int b, int maxRows, int rowAccessWindowSize) {
+    public ExcelWriter(ExcelColor color, int maxRows, int rowAccessWindowSize) {
         this.wb = new SXSSFWorkbook(rowAccessWindowSize);
         this.maxRows = maxRows;
-        this.headerColor = new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b});
+        this.headerColor = new XSSFColor(new byte[]{(byte) color.getR(), (byte) color.getG(), (byte) color.getB()});
         this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
     }
 
     /**
-     * Constructs an ExcelWriter with a custom header color and maximum rows per sheet.
+     * Constructs an ExcelWriter with a header color and maximum rows per sheet.
      *
-     * @param r               Red component of the header color (0–255)
-     * @param g               Green component of the header color (0–255)
-     * @param b               Blue component of the header color (0–255)
+     * @param color    Header color
      * @param maxRows  Maximum number of rows allowed per sheet before creating a new one
      */
-    public ExcelWriter(int r, int g, int b, int maxRows) {
-        this(r, g, b, maxRows, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
-    }
-
-    /**
-     * Constructs an ExcelWriter with a preset header color, maximum rows per sheet, and row access window size.
-     *
-     * @param color              Preset header color
-     * @param maxRows     Maximum number of rows allowed per sheet before creating a new one
-     * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook
-     */
-    public ExcelWriter(ExcelColor color, int maxRows, int rowAccessWindowSize) {
-        this(color.getR(), color.getG(), color.getB(), maxRows, rowAccessWindowSize);
-    }
-
-    /**
-     * Constructs an ExcelWriter with a preset header color and maximum rows per sheet.
-     *
-     * @param color          Preset header color
-     * @param maxRows Maximum number of rows allowed per sheet before creating a new one
-     */
     public ExcelWriter(ExcelColor color, int maxRows) {
-        this(color.getR(), color.getG(), color.getB(), maxRows);
+        this(color, maxRows, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
     }
 
     /**
-     * Constructs an ExcelWriter with a preset header color and default max 1,000,000 rows per sheet.
+     * Constructs an ExcelWriter with a header color and default max 1,000,000 rows per sheet.
      *
-     * @param color Preset header color
+     * @param color Header color
      */
     public ExcelWriter(ExcelColor color) {
-        this(color.getR(), color.getG(), color.getB());
+        this(color, 1_000_000);
     }
 
     /**
@@ -114,25 +89,14 @@ public class ExcelWriter<T> {
      * @param maxRows Maximum number of rows per sheet
      */
     public ExcelWriter(int maxRows) {
-        this(255, 255, 255, maxRows);
-    }
-
-    /**
-     * Constructs an ExcelWriter with custom header color and default max 1,000,000 rows per sheet.
-     *
-     * @param r Red component of header color
-     * @param g Green component of header color
-     * @param b Blue component of header color
-     */
-    public ExcelWriter(int r, int g, int b) {
-        this(r, g, b, 1_000_000);
+        this(ExcelColor.WHITE, maxRows);
     }
 
     /**
      * Constructs an ExcelWriter with a default white header and default max 1,000,000 rows per sheet.
      */
     public ExcelWriter() {
-        this(255, 255, 255, 1_000_000);
+        this(ExcelColor.WHITE);
     }
 
     /**

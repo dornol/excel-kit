@@ -322,8 +322,8 @@ class ExcelWorkbookTest {
     }
 
     @Test
-    void rgbConstructor_createsWorkbook() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook(100, 150, 200)) {
+    void customColorConstructor_createsWorkbook() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.of(100, 150, 200))) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -334,8 +334,8 @@ class ExcelWorkbookTest {
     }
 
     @Test
-    void rgbWithWindowSizeConstructor_createsWorkbook() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook(100, 150, 200, 500)) {
+    void customColorWithWindowSizeConstructor_createsWorkbook() throws IOException {
+        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.of(100, 150, 200), 500)) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {

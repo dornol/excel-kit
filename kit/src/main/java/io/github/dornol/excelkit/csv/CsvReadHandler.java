@@ -230,7 +230,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
-        return new ReadResult<>(currentInstance, validationSuccess, messages);
+        return new ReadResult<>(currentInstance, validationSuccess, messages.isEmpty() ? null : messages);
     }
 
     private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap) {

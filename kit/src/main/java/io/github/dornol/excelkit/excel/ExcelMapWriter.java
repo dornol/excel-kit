@@ -56,6 +56,10 @@ public class ExcelMapWriter {
     @SafeVarargs
     public ExcelMapWriter(ExcelWriter<Map<String, Object>> writer, String[] columnNames,
                           Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>... configurers) {
+        if (configurers.length > columnNames.length) {
+            throw new IllegalArgumentException(
+                    "configurers length (" + configurers.length + ") exceeds columnNames length (" + columnNames.length + ")");
+        }
         this.writer = writer;
         for (int i = 0; i < columnNames.length; i++) {
             String name = columnNames[i];

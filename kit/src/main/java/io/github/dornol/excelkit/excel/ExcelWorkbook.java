@@ -57,51 +57,28 @@ public class ExcelWorkbook implements AutoCloseable {
      * Creates a workbook with a default white header color.
      */
     public ExcelWorkbook() {
-        this(255, 255, 255);
+        this(ExcelColor.WHITE);
     }
 
     /**
-     * Creates a workbook with a custom RGB header color.
+     * Creates a workbook with a header color.
      *
-     * @param r Red component (0–255)
-     * @param g Green component (0–255)
-     * @param b Blue component (0–255)
-     */
-    public ExcelWorkbook(int r, int g, int b) {
-        this(r, g, b, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
-    }
-
-    /**
-     * Creates a workbook with a custom RGB header color and row access window size.
-     *
-     * @param r                   Red component (0–255)
-     * @param g                   Green component (0–255)
-     * @param b                   Blue component (0–255)
-     * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook
-     */
-    public ExcelWorkbook(int r, int g, int b, int rowAccessWindowSize) {
-        this.wb = new SXSSFWorkbook(rowAccessWindowSize);
-        this.headerColor = new XSSFColor(new byte[]{(byte) r, (byte) g, (byte) b});
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
-    }
-
-    /**
-     * Creates a workbook with a preset header color.
-     *
-     * @param color Preset header color
+     * @param color Header color (use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)})
      */
     public ExcelWorkbook(ExcelColor color) {
-        this(color.getR(), color.getG(), color.getB());
+        this(color, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
     }
 
     /**
-     * Creates a workbook with a preset header color and row access window size.
+     * Creates a workbook with a header color and row access window size.
      *
-     * @param color               Preset header color
+     * @param color               Header color
      * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook
      */
     public ExcelWorkbook(ExcelColor color, int rowAccessWindowSize) {
-        this(color.getR(), color.getG(), color.getB(), rowAccessWindowSize);
+        this.wb = new SXSSFWorkbook(rowAccessWindowSize);
+        this.headerColor = new XSSFColor(new byte[]{(byte) color.getR(), (byte) color.getG(), (byte) color.getB()});
+        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
     }
 
     /**
