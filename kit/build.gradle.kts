@@ -34,6 +34,10 @@ tasks.test {
 }
 
 tasks.register<Test>("benchmark") {
+    group = "verification"
+    description = "Run performance benchmarks"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
     useJUnitPlatform {
         includeTags("benchmark")
     }
