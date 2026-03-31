@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * with optional support for Excel password encryption.
  * It ensures that the workbook is consumed only once.
  *
- * <h3>Why not AutoCloseable?</h3>
+ * <p><b>Why not AutoCloseable?</b>
  * The primary usage pattern is {@code ResponseEntity<StreamingResponseBody>},
  * where the handler is captured by a lambda and consumed asynchronously.
  * Implementing {@link AutoCloseable} would cause IDE "resource not closed" warnings
