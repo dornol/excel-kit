@@ -158,9 +158,8 @@ class TempFileCleanupIntegrationTest {
                     .column((r, cell) -> r.age = cell.asInt())
                     .build(is)
                     .read(result -> {
-                        if (result.success()) {
-                            names.add(result.data().name);
-                        }
+                        assertTrue(result.success(), "Row should succeed: " + result.messages());
+                        names.add(result.data().name);
                     });
         }
 
@@ -253,7 +252,7 @@ class TempFileCleanupIntegrationTest {
                 ))
                 .consumeOutputStream(baos);
 
-        assertTrue(baos.size() > 0);
+        assertTrue(baos.size() > 100, "Excel output should be non-trivial");
 
         // Read back
         List<TestRow> results = new ArrayList<>();
@@ -263,9 +262,8 @@ class TempFileCleanupIntegrationTest {
                     .column((r, cell) -> r.age = cell.asInt())
                     .build(is)
                     .read(result -> {
-                        if (result.success()) {
-                            results.add(result.data());
-                        }
+                        assertTrue(result.success(), "Row should succeed: " + result.messages());
+                        results.add(result.data());
                     });
         }
 
@@ -286,7 +284,7 @@ class TempFileCleanupIntegrationTest {
                 .consumeOutputStreamWithPassword(baos, "pass123");
 
         // Encrypted file should be different from unencrypted
-        assertTrue(baos.size() > 0);
+        assertTrue(baos.size() > 100, "Encrypted output should be non-trivial");
         // First bytes of encrypted file should be OLE2 magic (D0 CF 11 E0)
         byte[] bytes = baos.toByteArray();
         assertEquals((byte) 0xD0, bytes[0], "Encrypted file should start with OLE2 header");

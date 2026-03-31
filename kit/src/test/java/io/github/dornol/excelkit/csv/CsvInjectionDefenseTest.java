@@ -27,6 +27,11 @@ class CsvInjectionDefenseTest {
                 .column("Value", s -> s);
     }
 
+    private String dataLine(String csv) {
+        String[] lines = csv.split("\r?\n");
+        return lines.length > 1 ? lines[1].trim() : "";
+    }
+
     private CsvWriter<String> defenseDisabledWriter() {
         return new CsvWriter<String>()
                 .bom(false)
@@ -43,25 +48,26 @@ class CsvInjectionDefenseTest {
         @Test
         void prefixes_equalsSign() throws Exception {
             String csv = writeCsv(defaultWriter(), "=SUM(A1)");
-            assertTrue(csv.contains("'=SUM(A1)"), "Should prefix = with quote");
+            String dataLine = dataLine(csv);
+            assertEquals("'=SUM(A1)", dataLine, "Should prefix = with quote");
         }
 
         @Test
         void prefixes_plusSign() throws Exception {
             String csv = writeCsv(defaultWriter(), "+cmd");
-            assertTrue(csv.contains("'+cmd"), "Should prefix + with quote");
+            assertEquals("'+cmd", dataLine(csv), "Should prefix + with quote");
         }
 
         @Test
         void prefixes_minusSign() throws Exception {
             String csv = writeCsv(defaultWriter(), "-calc");
-            assertTrue(csv.contains("'-calc"), "Should prefix - with quote");
+            assertEquals("'-calc", dataLine(csv), "Should prefix - with quote");
         }
 
         @Test
         void prefixes_atSign() throws Exception {
             String csv = writeCsv(defaultWriter(), "@evil");
-            assertTrue(csv.contains("'@evil"), "Should prefix @ with quote");
+            assertEquals("'@evil", dataLine(csv), "Should prefix @ with quote");
         }
 
         @Test
@@ -79,44 +85,37 @@ class CsvInjectionDefenseTest {
         @Test
         void doesNotPrefix_normalValues() throws Exception {
             String csv = writeCsv(defaultWriter(), "hello", "world", "123");
-            assertTrue(csv.contains("hello"));
-            assertTrue(csv.contains("world"));
-            assertTrue(csv.contains("123"));
-            assertFalse(csv.contains("'hello"), "Normal values should not be prefixed");
-            assertFalse(csv.contains("'world"), "Normal values should not be prefixed");
-            assertFalse(csv.contains("'123"), "Normal values should not be prefixed");
+            String[] lines = csv.split("\r?\n");
+            assertEquals("hello", lines[1].trim());
+            assertEquals("world", lines[2].trim());
+            assertEquals("123", lines[3].trim());
         }
 
         @Test
         void handlesNullValues_gracefully() throws Exception {
-            // null extractor result should produce empty field, not NPE
             var writer = new CsvWriter<String>()
                     .bom(false)
                     .column("Value", s -> null);
             String csv = writeCsv(writer, "anything");
-            // Should not throw; null becomes empty string
-            assertNotNull(csv);
+            String dataLine = dataLine(csv);
+            assertEquals("", dataLine, "null should produce empty field");
         }
 
         @Test
         void handlesEmptyString() throws Exception {
             String csv = writeCsv(defaultWriter(), "");
-            // Empty string should not be prefixed
-            assertNotNull(csv);
-            assertFalse(csv.contains("'"), "Empty string should not get a quote prefix");
+            String dataLine = dataLine(csv);
+            assertEquals("", dataLine, "Empty string should produce empty field without prefix");
         }
 
         @Test
         void formulaCharNotAtStart_noPrefix() throws Exception {
             String csv = writeCsv(defaultWriter(), "a=b", "x+y", "hello@world", "a-b");
-            assertTrue(csv.contains("a=b"));
-            assertTrue(csv.contains("x+y"));
-            assertTrue(csv.contains("hello@world"));
-            assertTrue(csv.contains("a-b"));
-            assertFalse(csv.contains("'a=b"), "= not at start should not be prefixed");
-            assertFalse(csv.contains("'x+y"), "+ not at start should not be prefixed");
-            assertFalse(csv.contains("'hello@world"), "@ not at start should not be prefixed");
-            assertFalse(csv.contains("'a-b"), "- not at start should not be prefixed");
+            String[] lines = csv.split("\r?\n");
+            assertEquals("a=b", lines[1].trim());
+            assertEquals("x+y", lines[2].trim());
+            assertEquals("hello@world", lines[3].trim());
+            assertEquals("a-b", lines[4].trim());
         }
 
         @Test
@@ -144,36 +143,33 @@ class CsvInjectionDefenseTest {
         @Test
         void noPrefix_forEqualsSign() throws Exception {
             String csv = writeCsv(defenseDisabledWriter(), "=SUM(A1)");
-            assertTrue(csv.contains("=SUM(A1)"));
-            assertFalse(csv.contains("'=SUM(A1)"));
+            assertEquals("=SUM(A1)", dataLine(csv));
         }
 
         @Test
         void noPrefix_forPlusSign() throws Exception {
             String csv = writeCsv(defenseDisabledWriter(), "+cmd");
-            assertTrue(csv.contains("+cmd"));
-            assertFalse(csv.contains("'+cmd"));
+            assertEquals("+cmd", dataLine(csv));
         }
 
         @Test
         void noPrefix_forMinusSign() throws Exception {
             String csv = writeCsv(defenseDisabledWriter(), "-calc");
-            assertTrue(csv.contains("-calc"));
-            assertFalse(csv.contains("'-calc"));
+            assertEquals("-calc", dataLine(csv));
         }
 
         @Test
         void noPrefix_forAtSign() throws Exception {
             String csv = writeCsv(defenseDisabledWriter(), "@evil");
-            assertTrue(csv.contains("@evil"));
-            assertFalse(csv.contains("'@evil"));
+            assertEquals("@evil", dataLine(csv));
         }
 
         @Test
         void normalValues_unchanged() throws Exception {
             String csv = writeCsv(defenseDisabledWriter(), "hello", "123");
-            assertTrue(csv.contains("hello"));
-            assertTrue(csv.contains("123"));
+            String[] lines = csv.split("\r?\n");
+            assertEquals("hello", lines[1].trim());
+            assertEquals("123", lines[2].trim());
         }
 
         @Test

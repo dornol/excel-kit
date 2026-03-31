@@ -69,9 +69,8 @@ class ExcelReadHandlerTest {
         
         List<TestPerson> results = new ArrayList<>();
         Consumer<ReadResult<TestPerson>> consumer = result -> {
-            if (result.success()) {
-                results.add(result.data());
-            }
+            assertTrue(result.success(), "Row should succeed: " + result.messages());
+            results.add(result.data());
         };
         
         // Act
@@ -147,9 +146,8 @@ class ExcelReadHandlerTest {
 
         List<TestPerson> results = new ArrayList<>();
         Consumer<ReadResult<TestPerson>> consumer = result -> {
-            if (result.success()) {
-                results.add(result.data());
-            }
+            assertTrue(result.success(), "Row should succeed: " + result.messages());
+            results.add(result.data());
         };
 
         try (InputStream is = Files.newInputStream(multiSheetFile)) {
@@ -175,9 +173,8 @@ class ExcelReadHandlerTest {
 
         List<TestPerson> results = new ArrayList<>();
         Consumer<ReadResult<TestPerson>> consumer = result -> {
-            if (result.success()) {
-                results.add(result.data());
-            }
+            assertTrue(result.success(), "Row should succeed: " + result.messages());
+            results.add(result.data());
         };
 
         try (InputStream is = Files.newInputStream(multiSheetFile)) {
@@ -224,9 +221,8 @@ class ExcelReadHandlerTest {
 
         List<TestPerson> results = new ArrayList<>();
         Consumer<ReadResult<TestPerson>> consumer = result -> {
-            if (result.success()) {
-                results.add(result.data());
-            }
+            assertTrue(result.success(), "Row should succeed: " + result.messages());
+            results.add(result.data());
         };
 
         try (InputStream is = Files.newInputStream(file)) {

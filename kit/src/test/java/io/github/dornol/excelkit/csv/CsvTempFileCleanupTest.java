@@ -42,8 +42,12 @@ class CsvTempFileCleanupTest {
         handler.consumeOutputStream(baos);
 
         String csv = baos.toString();
-        assertTrue(csv.contains("Apple"));
-        assertTrue(csv.contains("Banana"));
+        String[] lines = csv.split("\r?\n");
+        assertTrue(lines.length >= 3, "Should have header + 2 data lines");
+        String headerLine = lines[0].replace("\uFEFF", "");
+        assertEquals("Name,Price", headerLine);
+        assertEquals("Apple,1000", lines[1].trim());
+        assertEquals("Banana,2000", lines[2].trim());
     }
 
     @Test

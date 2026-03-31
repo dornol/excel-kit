@@ -606,7 +606,7 @@ class NewFeaturesV08Test {
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
-                assertTrue(validations.size() > 0);
+                assertEquals(1, validations.size(), "Should have exactly 1 validation rule");
             }
         }
 
@@ -621,7 +621,7 @@ class NewFeaturesV08Test {
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
-                assertTrue(validations.size() > 0);
+                assertEquals(1, validations.size(), "Should have exactly 1 validation rule");
             }
         }
 
@@ -1473,11 +1473,11 @@ class NewFeaturesV08Test {
                 assertEquals(BorderStyle.THIN, style.getBorderBottom());
 
                 // Validation on second column
-                assertTrue(sheet.getDataValidations().size() > 0);
+                assertFalse(sheet.getDataValidations().isEmpty(), "Should have validation rules");
 
                 // Row grouping
-                assertTrue(sheet.getRow(1).getOutlineLevel() > 0);
-                assertTrue(sheet.getRow(2).getOutlineLevel() > 0);
+                assertEquals(1, sheet.getRow(1).getOutlineLevel(), "Grouped row should have outline level 1");
+                assertEquals(1, sheet.getRow(2).getOutlineLevel(), "Grouped row should have outline level 1");
             }
         }
     }

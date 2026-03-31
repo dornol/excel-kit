@@ -41,9 +41,8 @@ class CsvReadHandlerTest {
         List<TestPerson> results = new ArrayList<>();
 
         buildHandler(csv, validator).read(result -> {
-            if (result.success()) {
-                results.add(result.data());
-            }
+            assertTrue(result.success(), "All rows should succeed: " + result.messages());
+            results.add(result.data());
         });
 
         assertEquals(3, results.size());
@@ -81,9 +80,8 @@ class CsvReadHandlerTest {
         List<TestPerson> results = new ArrayList<>();
 
         buildHandler(csv, null).read(result -> {
-            if (result.success()) {
-                results.add(result.data());
-            }
+            assertTrue(result.success(), "Row should succeed: " + result.messages());
+            results.add(result.data());
         });
 
         assertEquals(1, results.size());
@@ -96,9 +94,8 @@ class CsvReadHandlerTest {
         List<TestPerson> results = new ArrayList<>();
 
         buildHandler(csv, null).read(result -> {
-            if (result.success()) {
-                results.add(result.data());
-            }
+            assertTrue(result.success(), "Row should succeed: " + result.messages());
+            results.add(result.data());
         });
 
         assertEquals(2, results.size());
@@ -140,9 +137,8 @@ class CsvReadHandlerTest {
                 .column((p, cell) -> p.age = cell.asInt())
                 .build(is)
                 .read(result -> {
-                    if (result.success()) {
-                        results.add(result.data());
-                    }
+                    assertTrue(result.success(), "Row should succeed: " + result.messages());
+                    results.add(result.data());
                 });
 
         assertEquals(2, results.size());
@@ -277,9 +273,8 @@ class CsvReadHandlerTest {
                 .column((p, cell) -> p.age = cell.asInt())
                 .build(is)
                 .read(result -> {
-                    if (result.success()) {
-                        results.add(result.data());
-                    }
+                    assertTrue(result.success(), "Row should succeed: " + result.messages());
+                    results.add(result.data());
                 });
 
         assertEquals(2, results.size());
@@ -322,9 +317,8 @@ class CsvReadHandlerTest {
                 .column((p, cell) -> p.age = cell.asInt())
                 .build(is)
                 .read(result -> {
-                    if (result.success()) {
-                        results.add(result.data());
-                    }
+                    assertTrue(result.success(), "Row should succeed: " + result.messages());
+                    results.add(result.data());
                 });
 
         assertEquals(2, results.size());
@@ -350,9 +344,8 @@ class CsvReadHandlerTest {
                 .column((p, cell) -> p.age = cell.asInt())
                 .build(is)
                 .read(result -> {
-                    if (result.success()) {
-                        results.add(result.data());
-                    }
+                    assertTrue(result.success(), "Row should succeed: " + result.messages());
+                    results.add(result.data());
                 });
 
         assertEquals(1, results.size());

@@ -175,7 +175,8 @@ class ExcelKitSchemaTest {
             schema.excelReader(TestPerson::new, null)
                     .build(is)
                     .read(result -> {
-                        if (result.success()) {
+                        assertTrue(result.success(), "Row should succeed: " + result.messages());
+                        {
                             results.add(result.data());
                         }
                     });
@@ -206,7 +207,8 @@ class ExcelKitSchemaTest {
                     .sheetIndex(0)
                     .build(is)
                     .read(result -> {
-                        if (result.success()) {
+                        assertTrue(result.success(), "Row should succeed: " + result.messages());
+                        {
                             results.add(result.data());
                         }
                     });
@@ -285,7 +287,8 @@ class ExcelKitSchemaTest {
             schema.excelReader(TestPerson::new, null)
                     .build(is)
                     .read(result -> {
-                        if (result.success()) {
+                        assertTrue(result.success(), "Row should succeed: " + result.messages());
+                        {
                             results.add(result.data());
                         }
                     });

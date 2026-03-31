@@ -75,8 +75,9 @@ class CsvDialectTest {
                 .consumeOutputStream(out);
 
         String content = out.toString(StandardCharsets.UTF_8);
-        assertTrue(content.contains("Name\tValue"), "Should use tab delimiter");
-        assertTrue(content.contains("Alice\t10"));
+        String[] lines = content.split("\r?\n");
+        assertEquals("Name\tValue", lines[0].trim());
+        assertEquals("Alice\t10", lines[1].trim());
     }
 
     @Test
@@ -124,7 +125,9 @@ class CsvDialectTest {
                 .consumeOutputStream(out);
 
         String content = out.toString(StandardCharsets.UTF_8);
-        assertTrue(content.contains("Name|Value"));
+        String[] lines = content.split("\r?\n");
+        assertEquals("Name|Value", lines[0].trim());
+        assertEquals("Alice|10", lines[1].trim());
     }
 
     // ============================================================
@@ -203,7 +206,8 @@ class CsvDialectTest {
                 .consumeOutputStream(out);
 
         String content = out.toString(StandardCharsets.UTF_8);
-        assertTrue(content.contains("Name"));
+        String[] lines = content.split("\r?\n");
+        assertEquals("Name", lines[0].trim());
         assertFalse(content.contains("\t"), "Tab should be overridden by semicolon");
     }
 }

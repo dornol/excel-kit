@@ -261,7 +261,7 @@ class ExcelTemplateWriterEdgeCaseTest {
             writer.cell("A10", "New Data"); // row 9, far beyond template
             writer.finish().consumeOutputStream(out);
         }
-        assertTrue(out.size() > 0);
+        assertTrue(out.size() > 100, "Output should contain valid Excel data, got " + out.size() + " bytes");
     }
 
     // ============================================================
