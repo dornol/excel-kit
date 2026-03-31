@@ -8,8 +8,13 @@ All notable changes to this project will be documented in this file.
 - **CsvMapReader** — read CSV files into `Map<String, String>` without typed POJOs,
   matching the `ExcelMapReader` API. Supports `dialect()`, `delimiter()`, `charset()`,
   `headerRowIndex()`, `onProgress()`, and `readAsStream()`.
+- **CsvMapWriter** — `dialect()`, `delimiter()`, `charset()`, `bom()` configuration
+  methods for symmetry with `CsvMapReader`.
 - README: Quick Reference table for all read/write classes.
 - Benchmark CI workflow — runs performance tests on every main-branch push.
+- Read benchmarks — Excel MapReader/typed 100K rows, CSV MapReader/typed 1M rows.
+- Multi-JDK CI — test matrix across JDK 17, 21, and 25.
+- Javadoc GitHub Pages workflow — auto-deploy API docs on release.
 - Example app: CSV Map Reader upload endpoint.
 
 ### Improved

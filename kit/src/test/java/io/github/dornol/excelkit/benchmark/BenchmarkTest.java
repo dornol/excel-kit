@@ -1,33 +1,40 @@
 package io.github.dornol.excelkit.benchmark;
 
+import io.github.dornol.excelkit.csv.CsvMapReader;
+import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelColor;
 import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.excel.ExcelHandler;
+import io.github.dornol.excelkit.excel.ExcelMapReader;
+import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWorkbook;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Performance benchmarks for excel-kit write operations.
+ * Performance benchmarks for excel-kit read and write operations.
  * <p>
  * These are not micro-benchmarks (no JMH); they measure end-to-end wall-clock time
  * and output size for representative workloads. Run with:
- * <pre>{@code ./gradlew :kit:test --tests '*WriteBenchmarkTest*'}</pre>
+ * <pre>{@code ./gradlew :kit:benchmark}</pre>
  */
 @Tag("benchmark")
-class WriteBenchmarkTest {
+class BenchmarkTest {
 
     @TempDir
     Path tempDir;
@@ -239,6 +246,137 @@ class WriteBenchmarkTest {
 
         printResult("CSV 1M rows × 5 cols", rows, elapsed, fileSize, peakMem);
         assertTrue(Files.exists(file));
+    }
+
+    // ============================================================
+    // Excel Reading
+    // ============================================================
+
+    @Test
+    void excelRead_100k_rows_mapReader() throws IOException {
+        int rows = 100_000;
+        Path file = tempDir.resolve("read_100k.xlsx");
+
+        // Write test file
+        try (OutputStream os = Files.newOutputStream(file)) {
+            new ExcelWriter<int[]>()
+                    .addColumn("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                    .addColumn("Name", r -> "User-" + r[0])
+                    .addColumn("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                    .write(generateRows(rows, 3))
+                    .consumeOutputStream(os);
+        }
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+
+        AtomicLong count = new AtomicLong();
+        new ExcelMapReader()
+                .build(new FileInputStream(file.toFile()))
+                .read(r -> count.incrementAndGet());
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        long peakMem = usedMemoryMB() - startMem;
+
+        printResult("Excel Read 100K rows (MapReader)", rows, elapsed, Files.size(file), peakMem);
+        assertEquals(rows, count.get());
+    }
+
+    @Test
+    void excelRead_100k_rows_typedReader() throws IOException {
+        int rows = 100_000;
+        Path file = tempDir.resolve("read_typed_100k.xlsx");
+
+        try (OutputStream os = Files.newOutputStream(file)) {
+            new ExcelWriter<int[]>()
+                    .addColumn("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                    .addColumn("Name", r -> "User-" + r[0])
+                    .addColumn("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                    .write(generateRows(rows, 3))
+                    .consumeOutputStream(os);
+        }
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+
+        AtomicLong count = new AtomicLong();
+        ExcelReader.<String[]>mapping(row -> new String[]{
+                row.get("ID").asString(),
+                row.get("Name").asString(),
+                row.get("Score").asString()
+        }).build(new FileInputStream(file.toFile()))
+                .read(r -> count.incrementAndGet());
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        long peakMem = usedMemoryMB() - startMem;
+
+        printResult("Excel Read 100K rows (typed)", rows, elapsed, Files.size(file), peakMem);
+        assertEquals(rows, count.get());
+    }
+
+    // ============================================================
+    // CSV Reading
+    // ============================================================
+
+    @Test
+    void csvRead_1m_rows_mapReader() throws IOException {
+        int rows = 1_000_000;
+        Path file = tempDir.resolve("read_1m.csv");
+
+        try (OutputStream os = Files.newOutputStream(file)) {
+            new CsvWriter<int[]>()
+                    .column("ID", r -> r[0])
+                    .column("Name", r -> "User-" + r[0])
+                    .column("Score", r -> r[1])
+                    .write(generateRows(rows, 3))
+                    .consumeOutputStream(os);
+        }
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+
+        AtomicLong count = new AtomicLong();
+        new CsvMapReader()
+                .build(new FileInputStream(file.toFile()))
+                .read(r -> count.incrementAndGet());
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        long peakMem = usedMemoryMB() - startMem;
+
+        printResult("CSV Read 1M rows (MapReader)", rows, elapsed, Files.size(file), peakMem);
+        assertEquals(rows, count.get());
+    }
+
+    @Test
+    void csvRead_1m_rows_typedReader() throws IOException {
+        int rows = 1_000_000;
+        Path file = tempDir.resolve("read_typed_1m.csv");
+
+        try (OutputStream os = Files.newOutputStream(file)) {
+            new CsvWriter<int[]>()
+                    .column("ID", r -> r[0])
+                    .column("Name", r -> "User-" + r[0])
+                    .column("Score", r -> r[1])
+                    .write(generateRows(rows, 3))
+                    .consumeOutputStream(os);
+        }
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+
+        AtomicLong count = new AtomicLong();
+        CsvReader.<String[]>mapping(row -> new String[]{
+                row.get("ID").asString(),
+                row.get("Name").asString(),
+                row.get("Score").asString()
+        }).build(new FileInputStream(file.toFile()))
+                .read(r -> count.incrementAndGet());
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        long peakMem = usedMemoryMB() - startMem;
+
+        printResult("CSV Read 1M rows (typed)", rows, elapsed, Files.size(file), peakMem);
+        assertEquals(rows, count.get());
     }
 
     // ============================================================

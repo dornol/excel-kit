@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -40,6 +41,54 @@ public class CsvMapWriter {
         for (String name : columnNames) {
             this.writer.column(name, map -> map.get(name));
         }
+    }
+
+    /**
+     * Applies a predefined CSV dialect configuration.
+     *
+     * @param dialect the dialect to apply
+     * @return this instance for chaining
+     * @since 0.9.3
+     */
+    public CsvMapWriter dialect(CsvDialect dialect) {
+        writer.dialect(dialect);
+        return this;
+    }
+
+    /**
+     * Sets the delimiter character.
+     *
+     * @param delimiter the delimiter character
+     * @return this instance for chaining
+     * @since 0.9.3
+     */
+    public CsvMapWriter delimiter(char delimiter) {
+        writer.delimiter(delimiter);
+        return this;
+    }
+
+    /**
+     * Sets the character encoding.
+     *
+     * @param charset the charset to use
+     * @return this instance for chaining
+     * @since 0.9.3
+     */
+    public CsvMapWriter charset(Charset charset) {
+        writer.charset(charset);
+        return this;
+    }
+
+    /**
+     * Sets whether to write a UTF-8 BOM.
+     *
+     * @param bom whether to write the BOM
+     * @return this instance for chaining
+     * @since 0.9.3
+     */
+    public CsvMapWriter bom(boolean bom) {
+        writer.bom(bom);
+        return this;
     }
 
     /**

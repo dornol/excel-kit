@@ -144,6 +144,49 @@ class MapWriterReaderTest {
     }
 
     @Test
+    void csvMapWriter_withDialect_TSV() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        new CsvMapWriter("Name", "Age")
+                .dialect(CsvDialect.TSV)
+                .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
+                .consumeOutputStream(out);
+
+        String tsv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
+        String[] lines = tsv.split("\r?\n");
+        assertEquals("Name\tAge", lines[0]);
+        assertEquals("Alice\t30", lines[1]);
+    }
+
+    @Test
+    void csvMapWriter_withDelimiter() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        new CsvMapWriter("A", "B")
+                .delimiter('|')
+                .write(Stream.of(Map.of("A", "x", "B", "y")))
+                .consumeOutputStream(out);
+
+        String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
+        String[] lines = csv.split("\r?\n");
+        assertEquals("A|B", lines[0]);
+        assertEquals("x|y", lines[1]);
+    }
+
+    @Test
+    void csvMapWriter_withBomDisabled() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        new CsvMapWriter("A")
+                .bom(false)
+                .write(Stream.of(Map.of("A", "val")))
+                .consumeOutputStream(out);
+
+        byte[] bytes = out.toByteArray();
+        assertFalse(bytes[0] == (byte) 0xEF && bytes[1] == (byte) 0xBB && bytes[2] == (byte) 0xBF,
+                "Should not start with BOM");
+        String csv = out.toString(StandardCharsets.UTF_8);
+        assertTrue(csv.startsWith("A"), "Should start directly with header");
+    }
+
+    @Test
     void csvMapWriter_writerAccessor() {
         CsvMapWriter writer = new CsvMapWriter("A");
         assertNotNull(writer.writer());
