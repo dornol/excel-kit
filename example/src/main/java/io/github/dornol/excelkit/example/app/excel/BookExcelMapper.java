@@ -28,7 +28,7 @@ public class BookExcelMapper {
      * @return ExcelHandler for outputting the file
      */
     public static ExcelHandler getHandler(Stream<BookDto> stream) {
-        return new ExcelWriter<BookDto>(0xCC, 0xFF, 0x99)
+        return new ExcelWriter<BookDto>(ExcelColor.of(0xCC, 0xFF, 0x99))
                 .tabColor(ExcelColor.STEEL_BLUE)
                 .column("no", (rowData, cursor) -> cursor.getCurrentTotal())
                     .type(ExcelDataType.LONG)

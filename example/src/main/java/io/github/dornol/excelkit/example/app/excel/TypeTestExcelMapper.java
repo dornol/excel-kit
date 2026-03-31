@@ -17,7 +17,7 @@ public class TypeTestExcelMapper {
 
     public static ExcelHandler getHandler(Stream<TypeTestDto> stream) {
         SecureRandom random = new SecureRandom();
-        return new ExcelWriter<TypeTestDto>(147, 252, 42, 1000000)
+        return new ExcelWriter<TypeTestDto>(ExcelColor.of(147, 252, 42), 1000000)
                 .column("no", (rowData, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
                 .column("string", TypeTestDto::aString)
                 .column("long", TypeTestDto::aLong).type(ExcelDataType.LONG)
