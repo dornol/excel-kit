@@ -2,6 +2,9 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.ExcelKitException;
 import io.github.dornol.excelkit.shared.ReadResult;
+import org.apache.poi.poifs.crypt.Decryptor;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Nested;
@@ -12,6 +15,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -83,6 +88,265 @@ class ExcelEdgeCaseTest {
                     .write(Stream.of(new Item("A", 1)));
             var ex = assertThrows(IllegalArgumentException.class,
                     () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), password));
+            assertTrue(ex.getMessage().toLowerCase().contains("password"),
+                    "Exception should mention password");
+        }
+    }
+
+    // ============================================================
+    // ExcelWriter.password() API tests
+    // ============================================================
+    @Nested
+    class ExcelWriterPasswordTests {
+
+        @Test
+        void password_shouldAutoEncryptAndBeDecryptableWithCorrectPassword() throws IOException, GeneralSecurityException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .password("secret123")
+                    .addColumn("Name", Item::name)
+                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .write(Stream.of(new Item("A", 1), new Item("B", 2)))
+                    .consumeOutputStream(out);
+
+            byte[] bytes = out.toByteArray();
+            // Verify OLE2 encrypted format
+            assertEquals((byte) 0xD0, bytes[0], "Should be OLE2 encrypted format");
+            assertEquals((byte) 0xCF, bytes[1], "Should be OLE2 encrypted format");
+
+            // Verify round-trip: decrypt and read actual content
+            try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(bytes))) {
+                EncryptionInfo info = new EncryptionInfo(fs);
+                Decryptor dec = Decryptor.getInstance(info);
+                assertTrue(dec.verifyPassword("secret123"), "Correct password should verify");
+
+                try (InputStream decStream = dec.getDataStream(fs);
+                     XSSFWorkbook wb = new XSSFWorkbook(decStream)) {
+                    var sheet = wb.getSheetAt(0);
+                    assertEquals("Name", sheet.getRow(0).getCell(0).getStringCellValue());
+                    assertEquals("Value", sheet.getRow(0).getCell(1).getStringCellValue());
+                    assertEquals("A", sheet.getRow(1).getCell(0).getStringCellValue());
+                    assertEquals(2, sheet.getRow(2).getCell(1).getNumericCellValue());
+                }
+            }
+        }
+
+        @Test
+        void password_shouldNotBeDecryptableWithWrongPassword() throws IOException, GeneralSecurityException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .password("correct")
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)))
+                    .consumeOutputStream(out);
+
+            try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(out.toByteArray()))) {
+                EncryptionInfo info = new EncryptionInfo(fs);
+                Decryptor dec = Decryptor.getInstance(info);
+                assertFalse(dec.verifyPassword("wrong"), "Wrong password should not verify");
+            }
+        }
+
+        @Test
+        void noPassword_shouldWriteUnencryptedOOXML() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)))
+                    .consumeOutputStream(out);
+
+            byte[] bytes = out.toByteArray();
+            // Unencrypted OOXML starts with ZIP magic bytes (0x504B)
+            assertEquals((byte) 0x50, bytes[0], "Should be ZIP/OOXML format");
+            assertEquals((byte) 0x4B, bytes[1], "Should be ZIP/OOXML format");
+        }
+
+        @Test
+        void password_consumeOutputStream_twice_shouldThrowAlreadyConsumed() throws IOException {
+            ExcelHandler handler = new ExcelWriter<Item>()
+                    .password("secret")
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)));
+
+            handler.consumeOutputStream(new ByteArrayOutputStream());
+
+            var ex = assertThrows(ExcelWriteException.class,
+                    () -> handler.consumeOutputStream(new ByteArrayOutputStream()));
+            assertTrue(ex.getMessage().contains("Already consumed"));
+        }
+
+        @Test
+        void password_combinedWithProtectSheetAndWorkbook() throws IOException, GeneralSecurityException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            new ExcelWriter<Item>()
+                    .password("filePass")
+                    .protectSheet("sheetPass")
+                    .protectWorkbook("wbPass")
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)))
+                    .consumeOutputStream(out);
+
+            // Decrypt with file password
+            try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(out.toByteArray()))) {
+                EncryptionInfo info = new EncryptionInfo(fs);
+                Decryptor dec = Decryptor.getInstance(info);
+                assertTrue(dec.verifyPassword("filePass"));
+
+                try (InputStream decStream = dec.getDataStream(fs);
+                     XSSFWorkbook wb = new XSSFWorkbook(decStream)) {
+                    // Sheet protection should be applied inside
+                    assertTrue(wb.getSheetAt(0).getProtect(), "Sheet should be protected");
+                    // Workbook structure protection should be applied
+                    assertTrue(wb.getCTWorkbook().isSetWorkbookProtection(),
+                            "Workbook protection should be set");
+                }
+            }
+        }
+
+        @Test
+        void password_nullValue_shouldThrow() {
+            var ex = assertThrows(IllegalArgumentException.class, () ->
+                    new ExcelWriter<Item>().password(null));
+            assertTrue(ex.getMessage().toLowerCase().contains("password"));
+        }
+
+        @Test
+        void password_blankValue_shouldThrow() {
+            var ex = assertThrows(IllegalArgumentException.class, () ->
+                    new ExcelWriter<Item>().password("   "));
+            assertTrue(ex.getMessage().toLowerCase().contains("password"));
+        }
+    }
+
+    // ============================================================
+    // ExcelWorkbook.password() API tests
+    // ============================================================
+    @Nested
+    class ExcelWorkbookPasswordTests {
+
+        @Test
+        void password_shouldAutoEncryptAndBeDecryptable() throws IOException, GeneralSecurityException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+                workbook.password("secret123");
+                workbook.<Item>sheet("Data")
+                        .column("Name", Item::name)
+                        .write(Stream.of(new Item("A", 1)));
+                workbook.finish().consumeOutputStream(out);
+            }
+
+            byte[] bytes = out.toByteArray();
+            assertEquals((byte) 0xD0, bytes[0], "Should be OLE2 encrypted format");
+
+            // Verify round-trip decryption
+            try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(bytes))) {
+                EncryptionInfo info = new EncryptionInfo(fs);
+                Decryptor dec = Decryptor.getInstance(info);
+                assertTrue(dec.verifyPassword("secret123"));
+
+                try (InputStream decStream = dec.getDataStream(fs);
+                     XSSFWorkbook wb = new XSSFWorkbook(decStream)) {
+                    assertEquals("Data", wb.getSheetName(0));
+                    assertEquals("A", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
+                }
+            }
+        }
+
+        @Test
+        void password_combinedWithProtectWorkbook() throws IOException, GeneralSecurityException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+                workbook.password("filePass");
+                workbook.protectWorkbook("structPass");
+                workbook.<Item>sheet("Data")
+                        .column("Name", Item::name)
+                        .write(Stream.of(new Item("A", 1)));
+                workbook.finish().consumeOutputStream(out);
+            }
+
+            try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(out.toByteArray()))) {
+                EncryptionInfo info = new EncryptionInfo(fs);
+                Decryptor dec = Decryptor.getInstance(info);
+                assertTrue(dec.verifyPassword("filePass"));
+
+                try (InputStream decStream = dec.getDataStream(fs);
+                     XSSFWorkbook wb = new XSSFWorkbook(decStream)) {
+                    assertTrue(wb.getCTWorkbook().isSetWorkbookProtection(),
+                            "Workbook structure protection should be set inside encrypted file");
+                }
+            }
+        }
+
+        @Test
+        void password_nullValue_shouldThrow() {
+            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+                var ex = assertThrows(IllegalArgumentException.class, () -> wb.password(null));
+                assertTrue(ex.getMessage().toLowerCase().contains("password"));
+            }
+        }
+
+        @Test
+        void password_blankValue_shouldThrow() {
+            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+                var ex = assertThrows(IllegalArgumentException.class, () -> wb.password("  "));
+                assertTrue(ex.getMessage().toLowerCase().contains("password"));
+            }
+        }
+    }
+
+    // ============================================================
+    // password() + consumeOutputStreamWithPassword() conflict
+    // ============================================================
+    @Nested
+    class PasswordConflictTests {
+
+        @Test
+        void passwordSet_thenConsumeWithPassword_shouldThrow() throws IOException {
+            ExcelHandler handler = new ExcelWriter<Item>()
+                    .password("first")
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)));
+
+            var ex = assertThrows(IllegalStateException.class,
+                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), "second"));
+            assertTrue(ex.getMessage().contains("already set"),
+                    "Should indicate password conflict");
+        }
+
+        @Test
+        void passwordSet_thenConsumeWithCharArrayPassword_shouldThrowAndZeroPassword() throws IOException {
+            ExcelHandler handler = new ExcelWriter<Item>()
+                    .password("first")
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)));
+
+            char[] charPassword = "second".toCharArray();
+            var ex = assertThrows(IllegalStateException.class,
+                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), charPassword));
+            assertTrue(ex.getMessage().contains("already set"),
+                    "Should indicate password conflict");
+
+            // char[] must be zeroed even when conflict exception is thrown
+            for (char c : charPassword) {
+                assertEquals('\0', c, "Password char array should be zeroed even on conflict exception");
+            }
+        }
+    }
+
+    // ============================================================
+    // char[] password blank validation
+    // ============================================================
+    @Nested
+    class CharArrayPasswordBlankTests {
+
+        @Test
+        void consumeOutputStreamWithPassword_blankCharArray_throws() throws IOException {
+            ExcelHandler handler = new ExcelWriter<Item>()
+                    .addColumn("Name", Item::name)
+                    .write(Stream.of(new Item("A", 1)));
+            char[] blankPassword = {' ', '\t', ' '};
+            var ex = assertThrows(IllegalArgumentException.class,
+                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), blankPassword));
             assertTrue(ex.getMessage().toLowerCase().contains("password"),
                     "Exception should mention password");
         }

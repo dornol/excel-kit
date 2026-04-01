@@ -2,9 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.9.4] - 2026-04-01
 
 ### Added
+- **`ExcelWriter.password(String)`** / **`ExcelWorkbook.password(String)`** — set encryption password
+  at the writer level. `consumeOutputStream()` automatically encrypts without needing
+  `consumeOutputStreamWithPassword()`. Consistent with `protectSheet()` / `protectWorkbook()` API pattern.
 - **CsvMapReader** — read CSV files into `Map<String, String>` without typed POJOs,
   matching the `ExcelMapReader` API. Supports `dialect()`, `delimiter()`, `charset()`,
   `headerRowIndex()`, `onProgress()`, and `readAsStream()`.
@@ -18,8 +21,21 @@ All notable changes to this project will be documented in this file.
 - Example app: CSV Map Reader upload endpoint.
 
 ### Improved
+- `ExcelHandler` internals refactored: `markConsumed()` and `writePlain()` extracted
+  to eliminate duplication between encrypted and plain-text write paths.
+- `char[]` password validation now rejects blank (whitespace-only) arrays,
+  consistent with `String` password validation.
+- Calling `consumeOutputStreamWithPassword()` when `password()` is already set throws
+  `IllegalStateException` with a descriptive message instead of silently using
+  the wrong password.
 - Test coverage boost: 38 new targeted tests for CsvMapReader, CsvWriter quoting,
   AbstractReadHandler validation, and TempResourceContainer edge cases.
+
+### Fixed
+- `ExcelHandler.consumeOutputStreamWithPassword(char[])`: char array is now zeroed
+  even when `IllegalStateException` is thrown due to password conflict.
+  Previously the array was left intact if the exception occurred before the
+  `try/finally` block.
 
 ### Dependencies
 - poi-ooxml 5.4.1 → 5.5.1

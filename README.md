@@ -122,7 +122,7 @@ without requiring any additional architectural effort.
 
 **Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`XxxMapReader`) for schema-less reading.
 
-**Output consumption:** `consumeOutputStream(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `withPassword("pw")` for encryption.
+**Output consumption:** `consumeOutputStream(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `consumeOutputStreamWithPassword(out, "pw")` for late-binding encryption.
 
 ## Installation
 
@@ -1475,11 +1475,38 @@ new ExcelWriter<>(ExcelColor.STEEL_BLUE, 100_000);
 
 ### Password-Encrypted Export
 
+Set the password on the writer — `consumeOutputStream()` automatically encrypts:
+
+```java
+ExcelHandler handler = new ExcelWriter<Product>(ExcelColor.STEEL_BLUE)
+    .password("P@ssw0rd!")
+    .addColumn("Name", Product::name)
+    .write(data);
+
+handler.consumeOutputStream(outputStream);
+```
+
+Works the same way with `ExcelWorkbook`:
+
+```java
+try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+    workbook.password("P@ssw0rd!");
+    workbook.<Product>sheet("Products").column("Name", Product::name).write(data);
+    workbook.finish().consumeOutputStream(outputStream);
+}
+```
+
+Can be combined with `protectSheet()` and `protectWorkbook()` — file encryption protects data, sheet/workbook protection controls editing.
+
+If the password is only known at output time (e.g., user-provided), use `consumeOutputStreamWithPassword()` instead:
+
 ```java
 try (var os = Files.newOutputStream(Path.of("secret.xlsx"))) {
     handler.consumeOutputStreamWithPassword(os, "P@ssw0rd!");
 }
 ```
+
+> **Note:** Setting `password()` on the writer and calling `consumeOutputStreamWithPassword()` on the same handler throws `IllegalStateException` — use one approach or the other.
 
 ### Explicit Multi-Sheet Workbook
 
@@ -1799,11 +1826,11 @@ public ResponseEntity<StreamingResponseBody> downloadCsv() {
     return CsvResponse.of(handler, "report");
 }
 
-// Password-encrypted download
+// Password-encrypted download — password set on writer
 @GetMapping("/download-encrypted")
 public ResponseEntity<StreamingResponseBody> downloadEncrypted() {
-    ExcelHandler handler = writer.write(dataStream);
-    return ExcelResponse.of(handler, "secret", "P@ssw0rd!");
+    ExcelHandler handler = writer.password("P@ssw0rd!").write(dataStream);
+    return ExcelResponse.of(handler, "secret");
 }
 ```
 
@@ -1874,10 +1901,13 @@ The library creates temporary files during read and write operations (e.g., SAX-
 ### Password Encryption
 
 - Uses Apache POI's **Agile encryption mode** (AES-256, modern Excel standard).
-- The `char[]` password overload zeroes the array after use to minimize password exposure in memory.
+- **Preferred API:** `ExcelWriter.password()` / `ExcelWorkbook.password()` — set once, `consumeOutputStream()` auto-encrypts.
+- **Late-binding API:** `consumeOutputStreamWithPassword()` — for cases where the password is only known at output time.
+- Using both on the same handler throws `IllegalStateException` to prevent ambiguity.
+- The `char[]` password overload zeroes the array after use (including on exception) to minimize password exposure in memory.
 - Encryption uses a two-stage write (workbook → temp file → encrypted output) to keep memory usage low.
 
-> **Note:** Excel sheet protection (`protectSheet()`) is a UI-level deterrent, not cryptographic security. It prevents casual editing but can be bypassed by tools. Use file-level password encryption (`consumeOutputStreamWithPassword`) for actual data protection.
+> **Note:** Excel sheet protection (`protectSheet()`) is a UI-level deterrent, not cryptographic security. It prevents casual editing but can be bypassed by tools. Use file-level password encryption (`password()` or `consumeOutputStreamWithPassword()`) for actual data protection.
 
 ### CSV Injection Defense
 

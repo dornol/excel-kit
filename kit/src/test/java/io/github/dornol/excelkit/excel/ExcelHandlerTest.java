@@ -148,6 +148,48 @@ class ExcelHandlerTest {
     }
 
     @Test
+    void consumeOutputStream_withPassword_shouldProduceOLE2Format() throws IOException {
+        // Arrange
+        SXSSFWorkbook pwWorkbook = new SXSSFWorkbook();
+        pwWorkbook.createSheet("Test").createRow(0).createCell(0).setCellValue("Test");
+        ExcelHandler pwHandler = new ExcelHandler(pwWorkbook, "test123");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        // Act
+        pwHandler.consumeOutputStream(out);
+
+        // Assert - verify OLE2 magic bytes (encrypted), not ZIP (unencrypted)
+        byte[] bytes = out.toByteArray();
+        assertEquals((byte) 0xD0, bytes[0], "Should be OLE2 encrypted format");
+        assertEquals((byte) 0xCF, bytes[1], "Should be OLE2 encrypted format");
+    }
+
+    @Test
+    void consumeOutputStream_withoutPassword_shouldProduceZipFormat() throws IOException {
+        // Arrange
+        createSampleWorkbookContent();
+
+        // Act
+        handler.consumeOutputStream(outputStream);
+
+        // Assert - verify ZIP magic bytes (unencrypted OOXML)
+        byte[] bytes = outputStream.toByteArray();
+        assertEquals((byte) 0x50, bytes[0], "Should be ZIP/OOXML format");
+        assertEquals((byte) 0x4B, bytes[1], "Should be ZIP/OOXML format");
+    }
+
+    @Test
+    void consumeOutputStreamWithPassword_charArray_blankPassword_shouldThrow() {
+        // Arrange
+        char[] blankPassword = {' ', ' ', ' '};
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            handler.consumeOutputStreamWithPassword(outputStream, blankPassword);
+        }, "consumeOutputStreamWithPassword should throw for blank char[] password");
+    }
+
+    @Test
     void consumeOutputStream_shouldCloseWorkbookAfterWriting() throws IOException {
         // Arrange
         SXSSFWorkbook testWorkbook = new SXSSFWorkbook();

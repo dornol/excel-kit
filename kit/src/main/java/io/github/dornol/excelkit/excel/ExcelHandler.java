@@ -6,6 +6,7 @@ import org.apache.poi.poifs.crypt.EncryptionMode;
 import org.apache.poi.poifs.crypt.Encryptor;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ExcelHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
     private final SXSSFWorkbook wb;
+    private final @Nullable String password;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -49,26 +51,40 @@ public class ExcelHandler {
      * @param wb The SXSSFWorkbook to be written
      */
     ExcelHandler(SXSSFWorkbook wb) {
+        this(wb, null);
+    }
+
+    /**
+     * Constructs an ExcelHandler wrapping the given workbook with an optional encryption password.
+     * <p>
+     * When a non-null password is provided, {@link #consumeOutputStream(OutputStream)} will
+     * automatically encrypt the output using the "agile" encryption mode.
+     *
+     * @param wb       The SXSSFWorkbook to be written
+     * @param password The password for file encryption, or null for no encryption
+     */
+    ExcelHandler(SXSSFWorkbook wb, @Nullable String password) {
         this.wb = wb;
+        this.password = password;
     }
 
     /**
      * Writes the workbook to the given OutputStream.
      * <p>
+     * If a password was set via {@link ExcelWriter#password(String)} or {@link ExcelWorkbook#password(String)},
+     * the output is automatically encrypted using the "agile" encryption mode.
+     * <p>
      * This method can only be called once; subsequent calls will throw an exception.
      *
      * @param outputStream The OutputStream to write the Excel file to
      * @throws IOException If an I/O error occurs during writing
-     * @throws IllegalStateException If this method has already been called
+     * @throws ExcelWriteException If this method has already been called
      */
     public void consumeOutputStream(OutputStream outputStream) throws IOException {
-        if (!consumed.compareAndSet(false, true)) {
-            throw new ExcelWriteException("Already consumed");
-        }
-        try {
-            wb.write(outputStream);
-        } finally {
-            wb.close();
+        if (password != null) {
+            encryptAndWrite(outputStream, password);
+        } else {
+            writePlain(outputStream);
         }
     }
 
@@ -76,16 +92,19 @@ public class ExcelHandler {
      * Writes the workbook to the given OutputStream with Excel-compatible password encryption.
      * <p>
      * This method encrypts the file using the "agile" encryption mode supported by modern Excel versions.
+     * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
+     * or {@link ExcelWorkbook#password(String)} — use {@link #consumeOutputStream(OutputStream)} instead.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
      * @throws IOException If an I/O or encryption error occurs during writing
-     * @throws IllegalStateException If this method has already been called
+     * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      */
     public void consumeOutputStreamWithPassword(OutputStream outputStream, String password) throws IOException {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
+        rejectIfPasswordAlreadySet();
         encryptAndWrite(outputStream, password);
     }
 
@@ -94,27 +113,60 @@ public class ExcelHandler {
      * <p>
      * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
      * The array is zeroed out after encryption completes (or on failure).
+     * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
+     * or {@link ExcelWorkbook#password(String)} — use {@link #consumeOutputStream(OutputStream)} instead.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password as a char array (will be zeroed after use)
      * @throws IOException If an I/O or encryption error occurs during writing
-     * @throws IllegalStateException If this method has already been called
+     * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      */
     public void consumeOutputStreamWithPassword(OutputStream outputStream, char[] password) throws IOException {
-        if (password == null || password.length == 0) {
+        if (password == null || password.length == 0 || isBlank(password)) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
         try {
+            rejectIfPasswordAlreadySet();
             encryptAndWrite(outputStream, new String(password));
         } finally {
             Arrays.fill(password, '\0');
         }
     }
 
-    private void encryptAndWrite(OutputStream outputStream, String password) throws IOException {
+    private void rejectIfPasswordAlreadySet() {
+        if (this.password != null) {
+            throw new IllegalStateException(
+                    "Password is already set via ExcelWriter.password() or ExcelWorkbook.password(). "
+                            + "Use consumeOutputStream() instead, or remove the password() call to use consumeOutputStreamWithPassword().");
+        }
+    }
+
+    private static boolean isBlank(char[] chars) {
+        for (char c : chars) {
+            if (!Character.isWhitespace(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void writePlain(OutputStream outputStream) throws IOException {
+        markConsumed();
+        try {
+            wb.write(outputStream);
+        } finally {
+            wb.close();
+        }
+    }
+
+    private void markConsumed() {
         if (!consumed.compareAndSet(false, true)) {
             throw new ExcelWriteException("Already consumed");
         }
+    }
+
+    private void encryptAndWrite(OutputStream outputStream, String password) throws IOException {
+        markConsumed();
 
         Path tempDir = TempResourceCreator.createTempDirectory();
         Path tempFile = TempResourceCreator.createTempFile(tempDir, "excel-enc", ".tmp");

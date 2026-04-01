@@ -49,6 +49,7 @@ public class ExcelWorkbook implements AutoCloseable {
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private final Set<String> usedSheetNames = new HashSet<>();
     private boolean finished = false;
+    private @Nullable String password;
     private @Nullable String workbookPassword;
     private @Nullable String headerFontName;
     private @Nullable Integer headerFontSize;
@@ -91,6 +92,24 @@ public class ExcelWorkbook implements AutoCloseable {
      */
     public ExcelWorkbook protectWorkbook(String password) {
         this.workbookPassword = password;
+        return this;
+    }
+
+    /**
+     * Sets the file encryption password.
+     * <p>
+     * When set, the resulting Excel file will be encrypted using the "agile" encryption mode,
+     * and {@link ExcelHandler#consumeOutputStream(java.io.OutputStream)} will automatically
+     * apply encryption — no need to call {@code consumeOutputStreamWithPassword()}.
+     *
+     * @param password the encryption password (must not be null or blank)
+     * @return this workbook for chaining
+     */
+    public ExcelWorkbook password(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
+        }
+        this.password = password;
         return this;
     }
 
@@ -149,7 +168,7 @@ public class ExcelWorkbook implements AutoCloseable {
     public ExcelHandler finish() {
         finished = true;
         ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
-        return new ExcelHandler(wb);
+        return new ExcelHandler(wb, password);
     }
 
     /**

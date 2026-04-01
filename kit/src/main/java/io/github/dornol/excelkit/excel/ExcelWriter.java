@@ -42,6 +42,7 @@ public class ExcelWriter<T> {
     private int sheetCount = 0;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private int headerRowIndex;
+    private @Nullable String password;
     private @Nullable String workbookPassword;
     private @Nullable String headerFontName;
     private @Nullable Integer headerFontSize;
@@ -346,6 +347,24 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Sets the file encryption password.
+     * <p>
+     * When set, the resulting Excel file will be encrypted using the "agile" encryption mode,
+     * and {@link ExcelHandler#consumeOutputStream(java.io.OutputStream)} will automatically
+     * apply encryption — no need to call {@code consumeOutputStreamWithPassword()}.
+     *
+     * @param password the encryption password (must not be null or blank)
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> password(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
+        }
+        this.password = password;
+        return this;
+    }
+
+    /**
      * Sets the header font name.
      *
      * @param fontName the font name (e.g., "Arial", "맑은 고딕")
@@ -566,7 +585,7 @@ public class ExcelWriter<T> {
             ExcelWriteSupport.applyChart(sheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
         }
 
-        return new ExcelHandler(this.wb);
+        return new ExcelHandler(this.wb, this.password);
     }
 
     /**

@@ -31,14 +31,14 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
 
     @Override
     public StreamingContent exportExcel(Stream<BookDto> data) {
-        var handler = createExcelHandler(data);
+        var handler = createExcelHandler(data, null);
         return handler::consumeOutputStream;
     }
 
     @Override
     public StreamingContent exportExcelWithPassword(Stream<BookDto> data, String password) {
-        var handler = createExcelHandler(data);
-        return out -> handler.consumeOutputStreamWithPassword(out, password);
+        var handler = createExcelHandler(data, password);
+        return handler::consumeOutputStream;
     }
 
     @Override
@@ -78,8 +78,8 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
                         consumer.accept(new ImportResult<>(result.data(), result.success(), result.messages())));
     }
 
-    private ExcelHandler createExcelHandler(Stream<BookDto> data) {
-        return new ExcelWriter<BookDto>(ExcelColor.of(0xCC, 0xFF, 0x99))
+    private ExcelHandler createExcelHandler(Stream<BookDto> data, String password) {
+        var writer = new ExcelWriter<BookDto>(ExcelColor.of(0xCC, 0xFF, 0x99))
                 .tabColor(ExcelColor.STEEL_BLUE)
                 .column("no", (rowData, cursor) -> cursor.getCurrentTotal())
                     .type(ExcelDataType.LONG)
@@ -107,8 +107,11 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
                         ctx.groupRows(1, ctx.getCurrentRow() - 1);
                     }
                     return ctx.getCurrentRow();
-                })
-                .write(data);
+                });
+        if (password != null) {
+            writer.password(password);
+        }
+        return writer.write(data);
     }
 
     private ExcelReadHandler<BookReadDto> createExcelReadHandler(InputStream is) {
