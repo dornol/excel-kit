@@ -12,7 +12,8 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 
 버전을 올릴 때 아래 항목을 모두 수행할 것:
 
-1. `build.gradle.kts` — `version` 변경
+1. GitHub PR 확인 — 미처리 PR (dependabot 등) 머지 또는 정리
+2. `build.gradle.kts` — `version` 변경
 2. `CHANGELOG.md` — `[x.y.z] - YYYY-MM-DD` 섹션 추가
 3. `README.md` 최신화:
    - Installation 섹션의 Maven/Gradle 버전 업데이트

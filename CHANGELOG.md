@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.6] - 2026-04-08
+
+### Added
+- **AI context documentation** in JAR (`META-INF/AI.md` + `META-INF/excel-kit/*.md`) —
+  structured documentation for AI agents to discover library usage when exploring dependencies.
+- **`llms.txt`** published to GitHub Pages for web-accessible AI context.
+- **`CLAUDE.md`** with release checklist and project conventions.
+
 ## [0.9.5] - 2026-04-08
 
 ### Added
