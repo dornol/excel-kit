@@ -68,6 +68,9 @@ class ColumnStyleConfigTest {
             assertSame(c, c.fontName("Arial"));
             assertSame(c, c.indentation(2));
             assertSame(c, c.validation(ExcelValidation.integerBetween(1, 10)));
+            assertSame(c, c.headerFontColor(255, 0, 0));
+            assertSame(c, c.headerFontColor(ExcelColor.RED));
+            assertSame(c, c.headerFontColor((ExcelColor) null));
         }
 
         @Test
@@ -234,6 +237,7 @@ class ColumnStyleConfigTest {
             assertNull(c.wrapText);
             assertNull(c.fontName);
             assertNull(c.indentation);
+            assertNull(c.headerFontColor);
         }
     }
 
@@ -323,6 +327,26 @@ class ColumnStyleConfigTest {
         void fontColor_preset() {
             var c = config().fontColor(ExcelColor.BLUE);
             assertArrayEquals(new int[]{0, 0, 255}, c.fontColor);
+        }
+
+        @Test
+        void headerFontColor_rgb() {
+            var c = config().headerFontColor(255, 0, 0);
+            assertArrayEquals(new int[]{255, 0, 0}, c.headerFontColor);
+        }
+
+        @Test
+        void headerFontColor_preset() {
+            var c = config().headerFontColor(ExcelColor.RED);
+            assertArrayEquals(new int[]{255, 0, 0}, c.headerFontColor);
+        }
+
+        @Test
+        void headerFontColor_null_clearsValue() {
+            var c = config().headerFontColor(ExcelColor.RED);
+            assertNotNull(c.headerFontColor);
+            c.headerFontColor((ExcelColor) null);
+            assertNull(c.headerFontColor);
         }
     }
 

@@ -567,7 +567,37 @@ public class WriteShowcaseController {
     }
 
     // ========================================================================
-    // 22. Default Style - defaultStyle with fontName, fontSize, alignment
+    // 22. Header Font Color - per-column header font color override
+    // ========================================================================
+    @GetMapping("/header-font-color")
+    public ResponseEntity<StreamingResponseBody> downloadHeaderFontColor() {
+        boolean hasStockAlert = true; // simulate condition
+
+        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+                .sheetName("Header Font Color Demo")
+                .headerFontName("Arial")
+                .headerFontSize(13)
+                .autoFilter(true)
+                .freezePane(1)
+                .addColumn("Name", ProductDto::name)
+                .addColumn("Category", ProductDto::category)
+                .addColumn("Price", p -> p.price(), c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .format("#,##0")
+                        .headerFontColor(ExcelColor.RED))
+                .addColumn("Quantity", p -> p.quantity(), c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .headerFontColor(hasStockAlert ? ExcelColor.RED : null))
+                .addColumn("Discount", p -> p.discount(), c -> c
+                        .type(ExcelDataType.DOUBLE_PERCENT))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("header-font-color-demo", DownloadFileType.EXCEL)
+                .body(handler::consumeOutputStream);
+    }
+
+    // ========================================================================
+    // 23. Default Style - defaultStyle with fontName, fontSize, alignment
     // ========================================================================
     @GetMapping("/default-style")
     public ResponseEntity<StreamingResponseBody> downloadDefaultStyle() {

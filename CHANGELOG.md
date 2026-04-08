@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.5] - 2026-04-08
+
+### Added
+- **Per-column header font color** via `headerFontColor(ExcelColor)` / `headerFontColor(int, int, int)` —
+  override the header font color for individual columns. Useful for conditionally highlighting
+  specific column headers (e.g., error indicators). Available on both `ExcelWriter` (builder chaining)
+  and `ExcelSheetWriter` (lambda config). Passes `null` to use the default header style.
+
 ## [0.9.4] - 2026-04-01
 
 ### Added

@@ -58,6 +58,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable Boolean wrapText;
     @Nullable String fontName;
     @Nullable Short indentation;
+    int @Nullable [] headerFontColor;
 
     // Return self for fluent chaining
     private SELF self() {
@@ -437,6 +438,34 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
             throw new IllegalArgumentException("indentation level must be between 0 and 250");
         }
         this.indentation = (short) level;
+        return self();
+    }
+
+    /**
+     * Sets the font color for this column's header cell using RGB values.
+     * <p>
+     * When set, overrides the default header font color for this column only.
+     * Other columns retain the global header style.
+     *
+     * @param r Red component (0-255)
+     * @param g Green component (0-255)
+     * @param b Blue component (0-255)
+     */
+    public SELF headerFontColor(int r, int g, int b) {
+        this.headerFontColor = new int[]{r, g, b};
+        return self();
+    }
+
+    /**
+     * Sets the font color for this column's header cell using a preset color.
+     * <p>
+     * When set, overrides the default header font color for this column only.
+     * Other columns retain the global header style.
+     *
+     * @param color Preset color, or {@code null} to use the default header style
+     */
+    public SELF headerFontColor(@Nullable ExcelColor color) {
+        this.headerFontColor = color != null ? color.toRgb() : null;
         return self();
     }
 

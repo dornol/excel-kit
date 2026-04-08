@@ -39,27 +39,61 @@ class ExcelWriteSupport {
      */
     static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
                                         List<ExcelColumn<T>> columns, CellStyle headerStyle) {
+        writeColumnHeaders(sheet, cursor, columns, headerStyle, null, null);
+    }
+
+    static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
+                                        List<ExcelColumn<T>> columns, CellStyle headerStyle,
+                                        @Nullable SXSSFWorkbook wb, @Nullable Map<String, CellStyle> headerStyleCache) {
         boolean hasGroups = columns.stream().anyMatch(c -> c.getGroupName() != null);
         if (hasGroups) {
-            writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle);
+            writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
         } else {
-            writeSingleHeaderRow(sheet, cursor, columns, headerStyle);
+            writeSingleHeaderRow(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
         }
     }
 
+    private static <T> CellStyle resolveHeaderStyle(ExcelColumn<T> col, CellStyle baseStyle,
+                                                     @Nullable SXSSFWorkbook wb,
+                                                     @Nullable Map<String, CellStyle> cache) {
+        int[] fontColor = col.getHeaderFontColor();
+        if (fontColor == null || wb == null || cache == null) {
+            return baseStyle;
+        }
+        String key = "hdr_" + baseStyle.getIndex() + "_" + fontColor[0] + "_" + fontColor[1] + "_" + fontColor[2];
+        return cache.computeIfAbsent(key, k -> {
+            CellStyle style = wb.createCellStyle();
+            style.cloneStyleFrom(baseStyle);
+            Font font = wb.createFont();
+            Font baseFont = wb.getFontAt(baseStyle.getFontIndex());
+            font.setBold(baseFont.getBold());
+            font.setFontHeight(baseFont.getFontHeight());
+            font.setFontName(baseFont.getFontName());
+            ((org.apache.poi.xssf.usermodel.XSSFFont) font).setColor(
+                    new XSSFColor(new byte[]{(byte) fontColor[0], (byte) fontColor[1], (byte) fontColor[2]}));
+            style.setFont(font);
+            return style;
+        });
+    }
+
     private static <T> void writeSingleHeaderRow(SXSSFSheet sheet, Cursor cursor,
-                                                  List<ExcelColumn<T>> columns, CellStyle headerStyle) {
+                                                  List<ExcelColumn<T>> columns, CellStyle headerStyle,
+                                                  @Nullable SXSSFWorkbook wb,
+                                                  @Nullable Map<String, CellStyle> headerStyleCache) {
         SXSSFRow headRow = sheet.createRow(cursor.getRowOfSheet());
         cursor.plusRow();
         for (int j = 0; j < columns.size(); j++) {
+            ExcelColumn<T> col = columns.get(j);
             SXSSFCell cell = headRow.createCell(j);
-            cell.setCellValue(columns.get(j).getName());
-            cell.setCellStyle(headerStyle);
+            cell.setCellValue(col.getName());
+            cell.setCellStyle(resolveHeaderStyle(col, headerStyle, wb, headerStyleCache));
         }
     }
 
     private static <T> void writeGroupAndColumnHeaders(SXSSFSheet sheet, Cursor cursor,
-                                                        List<ExcelColumn<T>> columns, CellStyle headerStyle) {
+                                                        List<ExcelColumn<T>> columns, CellStyle headerStyle,
+                                                        @Nullable SXSSFWorkbook wb,
+                                                        @Nullable Map<String, CellStyle> headerStyleCache) {
         int groupRowIdx = cursor.getRowOfSheet();
         SXSSFRow groupRow = sheet.createRow(groupRowIdx);
         cursor.plusRow();
@@ -70,15 +104,16 @@ class ExcelWriteSupport {
         for (int j = 0; j < columns.size(); j++) {
             ExcelColumn<T> col = columns.get(j);
             String group = col.getGroupName();
+            CellStyle colHeaderStyle = resolveHeaderStyle(col, headerStyle, wb, headerStyleCache);
 
             // Column header row (always written)
             SXSSFCell colCell = columnRow.createCell(j);
             colCell.setCellValue(col.getName());
-            colCell.setCellStyle(headerStyle);
+            colCell.setCellStyle(colHeaderStyle);
 
             // Group header row
             SXSSFCell grpCell = groupRow.createCell(j);
-            grpCell.setCellStyle(headerStyle);
+            grpCell.setCellStyle(colHeaderStyle);
 
             if (group != null) {
                 grpCell.setCellValue(group);

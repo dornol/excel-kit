@@ -41,6 +41,7 @@ public class ExcelSheetWriter<T> {
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final SheetConfig<T> cfg = new SheetConfig<>();
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
+    private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private int maxRows = Integer.MAX_VALUE;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
@@ -361,7 +362,7 @@ public class ExcelSheetWriter<T> {
         Cursor cursor = new Cursor(currentRow);
         int headerRowIndex = currentRow;
 
-        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
+        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
         int headerRowIdx = cursor.getRowOfSheet() - 1;
         ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
 
@@ -453,7 +454,8 @@ public class ExcelSheetWriter<T> {
         return new ExcelColumn<>(name, function, style, dataType.getSetter(),
                 c.minWidth, c.maxWidth, c.fixedWidth, c.dropdownOptions,
                 c.cellColorFunction, c.groupName, c.outlineLevel,
-                c.commentFunction, c.borderStyle, c.locked, c.hidden, c.validation);
+                c.commentFunction, c.borderStyle, c.locked, c.hidden, c.validation,
+                c.headerFontColor);
     }
 
     /**

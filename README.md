@@ -58,6 +58,7 @@ without requiring any additional architectural effort.
 - Cell indentation via `indentation()` — indent cell content by level (0–250)
 - Workbook protection via `protectWorkbook()` — prevent sheet add/delete/rename/reorder
 - Header font customization via `headerFontName()` and `headerFontSize()`
+- Per-column header font color via `headerFontColor()` — conditionally highlight specific column headers
 - Default column style via `defaultStyle()` — writer-level style defaults inherited by all columns
 - Summary/footer rows via `summary()` — fluent DSL for SUM, AVERAGE, COUNT, MIN, MAX formulas
 - Named ranges via `SheetContext.namedRange()` — create workbook-scoped named ranges in callbacks
@@ -948,6 +949,32 @@ try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 }
 ```
 
+### Per-Column Header Font Color
+
+Override the header font color for specific columns — useful for conditionally highlighting headers (e.g., error indicators):
+
+```java
+boolean hasError = checkSomething();
+
+// ExcelWriter (builder chaining)
+new ExcelWriter<Product>()
+    .column("Name", Product::name)
+    .column("Amount", Product::amount)
+        .headerFontColor(hasError ? ExcelColor.RED : null)
+    .column("Status", Product::status)
+    .write(data);
+
+// ExcelSheetWriter (lambda config)
+workbook.<Product>sheet("Products")
+    .column("Name", Product::name)
+    .column("Amount", Product::amount, cfg -> cfg
+        .headerFontColor(hasError ? ExcelColor.RED : null))
+    .write(data);
+```
+
+Accepts `ExcelColor` presets, `null` (use default), or RGB values via `headerFontColor(int r, int g, int b)`.
+The base header style (bold, font name, size) is preserved — only the font color is overridden.
+
 ### Default Column Style
 
 Set writer-level default styles that all columns inherit unless overridden per-column:
@@ -1532,7 +1559,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 ```
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
-- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`
+- Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`, `headerFontColor`
 - `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`, `tabColor()`, `defaultStyle()`, `summary()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
@@ -1747,7 +1774,7 @@ schema.excelReader(row -> new BookRecord(
 ), null).build(inputStream);
 ```
 
-The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`). Writer-level features like `defaultStyle`, `summary`, `protectWorkbook`, `headerFontName`, `headerFontSize` are available on `ExcelWriter` and `ExcelWorkbook`.
+The write configurer receives an `ExcelColumnBuilder` — use configuration methods only (`type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`, `headerFontColor`). Writer-level features like `defaultStyle`, `summary`, `protectWorkbook`, `headerFontName`, `headerFontSize` are available on `ExcelWriter` and `ExcelWorkbook`.
 
 ```java
 ExcelKitSchema.<Product>builder()

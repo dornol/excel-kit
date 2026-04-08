@@ -46,13 +46,14 @@ public class ExcelColumn<T> {
     private final @Nullable Boolean locked;
     private final boolean hidden;
     private final @Nullable ExcelValidation validation;
+    private final int @Nullable [] headerFontColor;
     private int columnWidth = 1;
 
     ExcelColumn(String name, ExcelRowFunction<T, @Nullable Object> function, CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
-                boolean hidden, @Nullable ExcelValidation validation) {
+                boolean hidden, @Nullable ExcelValidation validation, int @Nullable [] headerFontColor) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -69,6 +70,7 @@ public class ExcelColumn<T> {
         this.locked = locked;
         this.hidden = hidden;
         this.validation = validation;
+        this.headerFontColor = headerFontColor;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -192,6 +194,10 @@ public class ExcelColumn<T> {
         return validation;
     }
 
+    int @Nullable [] getHeaderFontColor() {
+        return headerFontColor;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -251,7 +257,8 @@ public class ExcelColumn<T> {
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
                     this.minWidth, this.maxWidth, this.fixedWidth, this.dropdownOptions,
                     this.cellColorFunction, this.groupName, this.outlineLevel,
-                    this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation);
+                    this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation,
+                    this.headerFontColor);
         }
 
         /**

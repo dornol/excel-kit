@@ -41,6 +41,7 @@ public class ExcelWriter<T> {
     private @Nullable AfterDataWriter afterAllWriter;
     private int sheetCount = 0;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
+    private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private int headerRowIndex;
     private @Nullable String password;
     private @Nullable String workbookPassword;
@@ -556,7 +557,7 @@ public class ExcelWriter<T> {
         this.cursor = new Cursor(headerStartRow);
         this.headerRowIndex = headerStartRow;
 
-        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
+        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
         applySheetOptions();
 
         try (stream) {
@@ -623,7 +624,7 @@ public class ExcelWriter<T> {
             }
             turnOverSheet();
             ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
-            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
+            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
             applySheetOptions();
         }
         ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg.rowHeightInPoints,
