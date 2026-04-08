@@ -38,6 +38,9 @@ jobs:
       - name: Generate Javadoc
         run: ./gradlew :kit:javadoc --no-daemon
 
+      - name: Copy llms.txt to Javadoc output
+        run: cp docs/llms.txt kit/build/docs/javadoc/llms.txt
+
       - name: Setup Pages
         uses: actions/configure-pages@v6
 
