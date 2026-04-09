@@ -25,7 +25,7 @@ Custom format: `.format("#,##0.00")` or use `ExcelDataFormat` presets.
 
 ## Column Styling Methods
 
-All methods available on both `ExcelColumnBuilder` (ExcelWriter) and `ColumnConfig` (ExcelSheetWriter):
+All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`, and `CsvWriter`:
 
 ### Layout
 | Method | Description |
@@ -80,22 +80,22 @@ All methods available on both `ExcelColumnBuilder` (ExcelWriter) and `ColumnConf
 
 ## Usage Examples
 
-### ExcelWriter (Builder Chaining)
+### ExcelWriter
 ```java
 new ExcelWriter<Product>(ExcelColor.STEEL_BLUE)
     .column("Name", Product::name)
-    .column("Price", Product::price)
+    .column("Price", Product::price, cfg -> cfg
         .type(ExcelDataType.INTEGER)
         .format("#,##0")
         .alignment(HorizontalAlignment.RIGHT)
-        .backgroundColor(ExcelColor.LIGHT_YELLOW)
-    .column("Status", Product::status)
+        .backgroundColor(ExcelColor.LIGHT_YELLOW))
+    .column("Status", Product::status, cfg -> cfg
         .dropdown("Active", "Inactive")
-        .fontColor(ExcelColor.RED)
+        .fontColor(ExcelColor.RED))
     .write(data);
 ```
 
-### ExcelSheetWriter (Lambda Config)
+### ExcelSheetWriter (multi-sheet)
 ```java
 workbook.<Product>sheet("Products")
     .column("Name", Product::name)
@@ -113,12 +113,7 @@ workbook.<Product>sheet("Products")
 ```java
 boolean hasError = checkSomething();
 
-// Builder chaining
-writer.column("Amount", Product::amount)
-    .headerFontColor(hasError ? ExcelColor.RED : null)
-
-// Lambda config
-.column("Amount", Product::amount, cfg -> cfg
+writer.column("Amount", Product::amount, cfg -> cfg
     .headerFontColor(hasError ? ExcelColor.RED : null))
 ```
 
@@ -127,8 +122,8 @@ writer.column("Amount", Product::amount)
 new ExcelWriter<Product>()
     .defaultStyle(d -> d.fontName("Arial").fontSize(10).alignment(HorizontalAlignment.LEFT))
     .column("Name", Product::name)           // inherits defaults
-    .column("Price", Product::price)
-        .alignment(HorizontalAlignment.RIGHT) // overrides default
+    .column("Price", Product::price, cfg -> cfg
+        .alignment(HorizontalAlignment.RIGHT)) // overrides default
     .write(data);
 ```
 
@@ -136,12 +131,12 @@ new ExcelWriter<Product>()
 ```java
 writer
     .rowColor(p -> p.isError() ? ExcelColor.LIGHT_RED : null)
-    .column("Amount", Product::amount)
+    .column("Amount", Product::amount, cfg -> cfg
         .cellColor((value, row) -> {
             double amt = ((Number) value).doubleValue();
             if (amt < 0) return ExcelColor.LIGHT_RED;
             return null;
-        })
+        }))
     .write(data);
 ```
 

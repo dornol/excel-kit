@@ -38,8 +38,8 @@ class ComprehensiveFeatureTest {
     void cellColor_withNullValue_shouldNotApplyColor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .column("Value", s -> null) // always null
-                    .cellColor((value, row) -> value != null ? ExcelColor.LIGHT_RED : null)
+                .column("Value", s -> null, c -> c // always null
+                    .cellColor((value, row) -> value != null ? ExcelColor.LIGHT_RED : null))
                 .write(Stream.of("a", "b"))
                 .consumeOutputStream(out);
 
@@ -56,12 +56,12 @@ class ComprehensiveFeatureTest {
     void cellColor_onMultipleColumns_shouldApplyIndependently() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<int[]>()
-                .column("A", r -> r[0])
+                .column("A", r -> r[0], c -> c
                     .type(ExcelDataType.INTEGER)
-                    .cellColor((v, r) -> ((Number) v).intValue() > 50 ? ExcelColor.LIGHT_GREEN : null)
-                .column("B", r -> r[1])
+                    .cellColor((v, r) -> ((Number) v).intValue() > 50 ? ExcelColor.LIGHT_GREEN : null))
+                .column("B", r -> r[1], c -> c
                     .type(ExcelDataType.INTEGER)
-                    .cellColor((v, r) -> ((Number) v).intValue() < 0 ? ExcelColor.LIGHT_RED : null)
+                    .cellColor((v, r) -> ((Number) v).intValue() < 0 ? ExcelColor.LIGHT_RED : null))
                 .write(Stream.of(new int[]{100, -5}))
                 .consumeOutputStream(out);
 
@@ -86,9 +86,9 @@ class ComprehensiveFeatureTest {
     void groupHeader_allColumnsSameGroup_shouldMergeEntireRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<int[]>()
-                .column("A", r -> r[0]).group("All")
-                .column("B", r -> r[1]).group("All")
-                .column("C", r -> r[2]).group("All")
+                .column("A", r -> r[0], c -> c.group("All"))
+                .column("B", r -> r[1], c -> c.group("All"))
+                .column("C", r -> r[2], c -> c.group("All"))
                 .write(Stream.of(new int[]{1, 2, 3}))
                 .consumeOutputStream(out);
 
@@ -106,10 +106,10 @@ class ComprehensiveFeatureTest {
     void groupHeader_multipleDistinctGroups_shouldMergeSeparately() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<int[]>()
-                .column("A", r -> r[0]).group("X")
-                .column("B", r -> r[1]).group("X")
-                .column("C", r -> r[2]).group("Y")
-                .column("D", r -> r[3]).group("Y")
+                .column("A", r -> r[0], c -> c.group("X"))
+                .column("B", r -> r[1], c -> c.group("X"))
+                .column("C", r -> r[2], c -> c.group("Y"))
+                .column("D", r -> r[3], c -> c.group("Y"))
                 .write(Stream.of(new int[]{1, 2, 3, 4}))
                 .consumeOutputStream(out);
 
@@ -130,7 +130,7 @@ class ComprehensiveFeatureTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
                 .column("A", s -> s)
-                .column("B", s -> s).group("Solo")
+                .column("B", s -> s, c -> c.group("Solo"))
                 .column("C", s -> s)
                 .write(Stream.of("test"))
                 .consumeOutputStream(out);
@@ -193,8 +193,8 @@ class ComprehensiveFeatureTest {
     @Test
     void duplicateColumnName_constColumn_shouldThrow() {
         var writer = new ExcelWriter<String>()
-                .addColumn("Name", s -> s);
-        writer.addColumn("Name", s -> s); // duplicate via constColumn path
+                .column("Name", s -> s);
+        writer.column("Name", s -> s); // duplicate via constColumn path
         assertThrows(ExcelWriteException.class, () -> writer.write(Stream.of("test")));
     }
 
@@ -316,7 +316,7 @@ class ComprehensiveFeatureTest {
     void outline_level7_shouldBeValid() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .column("A", s -> s).outline(7)
+                .column("A", s -> s, c -> c.outline(7))
                 .column("B", s -> s)
                 .write(Stream.of("test"))
                 .consumeOutputStream(out);
@@ -354,7 +354,7 @@ class ComprehensiveFeatureTest {
     void hyperlink_withSpecialCharsInUrl_shouldWork() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .column("Link", s -> s).type(ExcelDataType.HYPERLINK)
+                .column("Link", s -> s, c -> c.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of("https://example.com/search?q=hello+world&lang=ko#section"))
                 .consumeOutputStream(out);
 
@@ -374,7 +374,7 @@ class ComprehensiveFeatureTest {
         List<Integer> sheetRows = new ArrayList<>();
 
         new ExcelWriter<Integer>()
-                .column("V", i -> i).type(ExcelDataType.INTEGER)
+                .column("V", i -> i, c -> c.type(ExcelDataType.INTEGER))
                 .onProgress(3, (count, cursor) -> {
                     totals.add(count);
                     sheetRows.add(cursor.getRowOfSheet());

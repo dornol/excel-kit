@@ -66,6 +66,9 @@ without requiring any additional architectural effort.
 - Custom cell conversion via `CellData.as(Function)` — ad-hoc type conversion (e.g., `UUID::fromString`)
 - Default value overloads — `asInt(defaultValue)`, `asLong(defaultValue)`, `asDouble(defaultValue)`, `asString(defaultValue)`, `as(Function, defaultValue)`
 - Timezone-aware date parsing via `asZonedDateTime(ZoneId)` — attach timezone to parsed dates
+- Conditional columns via `columnIf()` — include/exclude columns based on a boolean flag
+- Constant columns via `constColumn()` with optional configurer — fixed-value columns with style options
+- Conditional constant columns via `constColumnIf()` — conditionally included fixed-value columns
 
 **Excel Reading** (SAX-based streaming)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -110,7 +113,7 @@ without requiring any additional architectural effort.
 
 | Task | Class | Example |
 |------|-------|---------|
-| Write Excel (typed) | `ExcelWriter<T>` | `new ExcelWriter<T>().column("Name", T::getName).write(stream).consumeOutputStream(out)` |
+| Write Excel (typed) | `ExcelWriter<T>` | `new ExcelWriter<T>().column("Name", T::getName, cfg -> cfg.type(...)).write(stream).consumeOutputStream(out)` |
 | Write Excel (map) | `ExcelMapWriter` | `new ExcelMapWriter("Name", "Age").write(stream).consumeOutputStream(out)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
@@ -130,7 +133,7 @@ without requiring any additional architectural effort.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.dornol:excel-kit:0.9.6")
+    implementation("io.github.dornol:excel-kit:0.10.0")
 }
 ```
 
@@ -139,7 +142,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.9.2</version>
+  <version>0.10.0</version>
 </dependency>
 ```
 
@@ -222,12 +225,12 @@ record Person(long id, String name, int age) {}
 var data = Stream.of(new Person(1, "Alice", 30), new Person(2, "Bob", 28));
 
 ExcelHandler handler = new ExcelWriter<Person>()
-        .column("ID", p -> p.id())
+        .column("ID", p -> p.id(), cfg -> cfg
             .type(ExcelDataType.LONG)
-            .alignment(HorizontalAlignment.RIGHT)
+            .alignment(HorizontalAlignment.RIGHT))
         .column("Name", p -> p.name())
-        .column("Age", p -> p.age())
-            .type(ExcelDataType.INTEGER)
+        .column("Age", p -> p.age(), cfg -> cfg
+            .type(ExcelDataType.INTEGER))
         .write(data);
 
 try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
@@ -462,13 +465,13 @@ Use `ExcelDataType.FORMULA` to write Excel formula cells:
 
 ```java
 writer
-    .column("Price", Product::price).type(ExcelDataType.INTEGER)
-    .column("Quantity", Product::quantity).type(ExcelDataType.INTEGER)
+    .column("Price", Product::price, cfg -> cfg.type(ExcelDataType.INTEGER))
+    .column("Quantity", Product::quantity, cfg -> cfg.type(ExcelDataType.INTEGER))
     // Formula: Price * Quantity (uses cursor to compute the correct row reference)
     .column("Subtotal", (row, cursor) ->
-            "D" + (cursor.getRowOfSheet() + 1) + "*E" + (cursor.getRowOfSheet() + 1))
-        .type(ExcelDataType.FORMULA)
-        .format(ExcelDataFormat.CURRENCY_KRW.getFormat())
+            "D" + (cursor.getRowOfSheet() + 1) + "*E" + (cursor.getRowOfSheet() + 1),
+        cfg -> cfg.type(ExcelDataType.FORMULA)
+            .format(ExcelDataFormat.CURRENCY_KRW.getFormat()))
     .write(data);
 ```
 
@@ -476,7 +479,7 @@ Use `SheetContext.columnLetter()` to build formula strings in callbacks:
 
 ```java
 writer
-    .column("Price", Product::price).type(ExcelDataType.INTEGER)
+    .column("Price", Product::price, cfg -> cfg.type(ExcelDataType.INTEGER))
     .afterData(ctx -> {
         var sheet = ctx.getSheet();
         int row = ctx.getCurrentRow();
@@ -500,14 +503,14 @@ Use `ExcelDataType.HYPERLINK` to create clickable URL links:
 ```java
 // Plain URL — displayed text is the URL itself
 writer
-    .column("Website", Product::url)
-        .type(ExcelDataType.HYPERLINK)
+    .column("Website", Product::url, cfg -> cfg
+        .type(ExcelDataType.HYPERLINK))
     .write(data);
 
 // Custom label — use ExcelHyperlink to separate display text from URL
 writer
-    .column("Link", p -> new ExcelHyperlink(p.url(), "View Details"))
-        .type(ExcelDataType.HYPERLINK)
+    .column("Link", p -> new ExcelHyperlink(p.url(), "View Details"), cfg -> cfg
+        .type(ExcelDataType.HYPERLINK))
     .write(data);
 ```
 
@@ -521,8 +524,8 @@ writer
             .text("Status: ")
             .bold("APPROVED")
             .text(" — reviewed by ")
-            .styled("admin", s -> s.color(ExcelColor.BLUE).italic(true)))
-        .type(ExcelDataType.RICH_TEXT)
+            .styled("admin", s -> s.color(ExcelColor.BLUE).italic(true)),
+        cfg -> cfg.type(ExcelDataType.RICH_TEXT))
     .write(data);
 ```
 
@@ -569,13 +572,13 @@ Available presets: `WHITE`, `BLACK`, `LIGHT_GRAY`, `GRAY`, `DARK_GRAY`, `RED`, `
 
 ```java
 writer
-    .column("Amount", p -> p.amount())
+    .column("Amount", p -> p.amount(), cfg -> cfg
         .type(ExcelDataType.DOUBLE)
         .format("#,##0.00")
         .alignment(HorizontalAlignment.RIGHT)
         .backgroundColor(ExcelColor.LIGHT_YELLOW)
         .bold(true)
-        .fontSize(12)
+        .fontSize(12))
     .column("Status", p -> p.status())
     .write(data);
 ```
@@ -587,8 +590,8 @@ Add a dropdown (data validation) to a column so users can only select from prede
 ```java
 writer
     .column("Name", p -> p.name())
-    .column("Status", p -> p.status())
-        .dropdown("Active", "Inactive", "Pending")
+    .column("Status", p -> p.status(), cfg -> cfg
+        .dropdown("Active", "Inactive", "Pending"))
     .write(data);
 ```
 
@@ -614,14 +617,14 @@ Apply per-cell background colors based on cell value and row data using `CellCol
 
 ```java
 writer
-    .column("Amount", p -> p.amount())
+    .column("Amount", p -> p.amount(), cfg -> cfg
         .type(ExcelDataType.DOUBLE)
         .cellColor((value, row) -> {
             double amt = ((Number) value).doubleValue();
             if (amt < 0) return ExcelColor.LIGHT_RED;
             if (amt > 10000) return ExcelColor.LIGHT_GREEN;
             return null;  // no override
-        })
+        }))
     .write(data);
 ```
 
@@ -644,9 +647,9 @@ Create multi-row headers with merged group labels using `.group()`:
 ```java
 writer
     .column("Name", p -> p.name())
-    .column("Price", p -> p.price()).type(ExcelDataType.INTEGER).group("Financial")
-    .column("Quantity", p -> p.qty()).type(ExcelDataType.INTEGER).group("Financial")
-    .column("Total", p -> p.total()).type(ExcelDataType.INTEGER).group("Financial")
+    .column("Price", p -> p.price(), cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
+    .column("Quantity", p -> p.qty(), cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
+    .column("Total", p -> p.total(), cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
     .column("Notes", p -> p.notes())
     .write(data);
 ```
@@ -674,9 +677,9 @@ Group columns so they can be collapsed/expanded in Excel:
 ```java
 writer
     .column("Name", p -> p.name())
-    .column("Detail1", p -> p.detail1()).outline(1)
-    .column("Detail2", p -> p.detail2()).outline(1)
-    .column("Detail3", p -> p.detail3()).outline(1)
+    .column("Detail1", p -> p.detail1(), cfg -> cfg.outline(1))
+    .column("Detail2", p -> p.detail2(), cfg -> cfg.outline(1))
+    .column("Detail3", p -> p.detail3(), cfg -> cfg.outline(1))
     .column("Summary", p -> p.summary())
     .write(data);
 ```
@@ -697,10 +700,10 @@ Hide columns in the Excel output while still writing data:
 
 ```java
 writer
-    .column("ID", p -> p.id())
-        .type(ExcelDataType.LONG)
-    .column("Internal Code", p -> p.code())
-        .hidden()                              // hidden in Excel but data is still written
+    .column("ID", p -> p.id(), cfg -> cfg
+        .type(ExcelDataType.LONG))
+    .column("Internal Code", p -> p.code(), cfg -> cfg
+        .hidden())                              // hidden in Excel but data is still written
     .column("Name", p -> p.name())
     .write(data);
 ```
@@ -719,13 +722,13 @@ Customize cell border styles per column (default: `THIN`):
 
 ```java
 writer
-    .column("Amount", p -> p.amount())
+    .column("Amount", p -> p.amount(), cfg -> cfg
         .type(ExcelDataType.DOUBLE)
-        .border(ExcelBorderStyle.MEDIUM)
-    .column("Notes", p -> p.notes())
-        .border(ExcelBorderStyle.DASHED)
-    .column("Raw", p -> p.raw())
-        .border(ExcelBorderStyle.NONE)        // no borders
+        .border(ExcelBorderStyle.MEDIUM))
+    .column("Notes", p -> p.notes(), cfg -> cfg
+        .border(ExcelBorderStyle.DASHED))
+    .column("Raw", p -> p.raw(), cfg -> cfg
+        .border(ExcelBorderStyle.NONE))        // no borders
     .write(data);
 ```
 
@@ -744,18 +747,18 @@ Set different border styles for each side individually. Per-side borders overrid
 
 ```java
 writer
-    .column("Mixed", p -> p.value())
+    .column("Mixed", p -> p.value(), cfg -> cfg
         .borderTop(ExcelBorderStyle.THICK)
         .borderBottom(ExcelBorderStyle.THIN)
         .borderLeft(ExcelBorderStyle.DASHED)
-        .borderRight(ExcelBorderStyle.DOTTED)
+        .borderRight(ExcelBorderStyle.DOTTED))
     .write(data);
 
 // Partial override: top=THICK, rest=MEDIUM
 writer
-    .column("Partial", p -> p.value())
+    .column("Partial", p -> p.value(), cfg -> cfg
         .border(ExcelBorderStyle.MEDIUM)
-        .borderTop(ExcelBorderStyle.THICK)
+        .borderTop(ExcelBorderStyle.THICK))
     .write(data);
 ```
 
@@ -774,12 +777,12 @@ Rotate cell text counter-clockwise (positive) or clockwise (negative), from -90 
 
 ```java
 writer
-    .column("Rotated", p -> p.label())
-        .rotation(45)       // 45° counter-clockwise
-    .column("Vertical", p -> p.code())
-        .rotation(90)       // straight up
-    .column("Clock", p -> p.note())
-        .rotation(-30)      // 30° clockwise
+    .column("Rotated", p -> p.label(), cfg -> cfg
+        .rotation(45))       // 45° counter-clockwise
+    .column("Vertical", p -> p.code(), cfg -> cfg
+        .rotation(90))       // straight up
+    .column("Clock", p -> p.note(), cfg -> cfg
+        .rotation(-30))      // 30° clockwise
     .write(data);
 ```
 
@@ -796,19 +799,19 @@ Customize font appearance per column:
 
 ```java
 writer
-    .column("Warning", p -> p.message())
-        .fontColor(255, 0, 0)                  // RGB red
-    .column("Info", p -> p.info())
-        .fontColor(ExcelColor.BLUE)            // preset color
-    .column("Deleted", p -> p.oldValue())
-        .strikethrough()                        // strike-through text
-    .column("Important", p -> p.key())
-        .underline()                            // single underline
-    .column("All Styles", p -> p.summary())
+    .column("Warning", p -> p.message(), cfg -> cfg
+        .fontColor(255, 0, 0))                  // RGB red
+    .column("Info", p -> p.info(), cfg -> cfg
+        .fontColor(ExcelColor.BLUE))            // preset color
+    .column("Deleted", p -> p.oldValue(), cfg -> cfg
+        .strikethrough())                        // strike-through text
+    .column("Important", p -> p.key(), cfg -> cfg
+        .underline())                            // single underline
+    .column("All Styles", p -> p.summary(), cfg -> cfg
         .fontColor(ExcelColor.RED)
         .bold(true)
         .underline()
-        .strikethrough()
+        .strikethrough())
     .write(data);
 ```
 
@@ -828,12 +831,12 @@ Set the vertical text alignment within cells (default: `CENTER`):
 
 ```java
 writer
-    .column("Top", p -> p.value())
-        .verticalAlignment(VerticalAlignment.TOP)
-    .column("Bottom", p -> p.other())
-        .verticalAlignment(VerticalAlignment.BOTTOM)
-    .column("Justify", p -> p.text())
-        .verticalAlignment(VerticalAlignment.JUSTIFY)
+    .column("Top", p -> p.value(), cfg -> cfg
+        .verticalAlignment(VerticalAlignment.TOP))
+    .column("Bottom", p -> p.other(), cfg -> cfg
+        .verticalAlignment(VerticalAlignment.BOTTOM))
+    .column("Justify", p -> p.text(), cfg -> cfg
+        .verticalAlignment(VerticalAlignment.JUSTIFY))
     .write(data);
 ```
 
@@ -850,10 +853,10 @@ Control per-column text wrapping (enabled by default). Disable to clip content a
 
 ```java
 writer
-    .column("Description", p -> p.desc())
-        .wrapText()                                 // explicitly enable (default)
-    .column("Code", p -> p.code())
-        .wrapText(false)                            // disable wrapping
+    .column("Description", p -> p.desc(), cfg -> cfg
+        .wrapText())                                 // explicitly enable (default)
+    .column("Code", p -> p.code(), cfg -> cfg
+        .wrapText(false))                            // disable wrapping
     .write(data);
 ```
 
@@ -870,12 +873,12 @@ Specify the font family for a column's cells:
 
 ```java
 writer
-    .column("Title", p -> p.title())
-        .fontName("Arial")
-    .column("한국어", p -> p.korean())
-        .fontName("맑은 고딕")
-    .column("Serif", p -> p.content())
-        .fontName("Times New Roman")
+    .column("Title", p -> p.title(), cfg -> cfg
+        .fontName("Arial"))
+    .column("한국어", p -> p.korean(), cfg -> cfg
+        .fontName("맑은 고딕"))
+    .column("Serif", p -> p.content(), cfg -> cfg
+        .fontName("Times New Roman"))
     .write(data);
 ```
 
@@ -893,9 +896,9 @@ Indent cell content by a specified level (0–250):
 ```java
 writer
     .column("Category", p -> p.category())
-    .column("Sub-item", p -> p.item())
+    .column("Sub-item", p -> p.item(), cfg -> cfg
         .indentation(2)
-        .alignment(HorizontalAlignment.LEFT)
+        .alignment(HorizontalAlignment.LEFT))
     .write(data);
 ```
 
@@ -913,7 +916,7 @@ Protect the workbook structure to prevent adding, deleting, renaming, or reorder
 ```java
 new ExcelWriter<Product>()
     .protectWorkbook("password123")
-    .addColumn("Name", Product::name)
+    .column("Name", Product::name)
     .write(data);
 ```
 
@@ -936,7 +939,7 @@ Customize the header row font name and size (default: bold, 11pt):
 new ExcelWriter<Product>()
     .headerFontName("Arial")
     .headerFontSize(14)
-    .addColumn("Name", Product::name)
+    .column("Name", Product::name)
     .write(data);
 ```
 
@@ -956,11 +959,11 @@ Override the header font color for specific columns — useful for conditionally
 ```java
 boolean hasError = checkSomething();
 
-// ExcelWriter (builder chaining)
+// ExcelWriter (lambda configurer)
 new ExcelWriter<Product>()
     .column("Name", Product::name)
-    .column("Amount", Product::amount)
-        .headerFontColor(hasError ? ExcelColor.RED : null)
+    .column("Amount", Product::amount, cfg -> cfg
+        .headerFontColor(hasError ? ExcelColor.RED : null))
     .column("Status", Product::status)
     .write(data);
 
@@ -987,10 +990,10 @@ new ExcelWriter<Product>()
         .alignment(HorizontalAlignment.LEFT)
         .bold(true))
     .column("Name", p -> p.name())                       // inherits all defaults
-    .column("Price", p -> p.price())
+    .column("Price", p -> p.price(), cfg -> cfg
         .type(ExcelDataType.INTEGER)
         .bold(false)                                       // override: not bold
-        .alignment(HorizontalAlignment.RIGHT)              // override: right-aligned
+        .alignment(HorizontalAlignment.RIGHT))             // override: right-aligned
     .write(data);
 ```
 
@@ -1009,9 +1012,9 @@ Add summary rows with formulas using a fluent DSL:
 
 ```java
 new ExcelWriter<Product>()
-    .addColumn("Name", Product::name)
-    .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
-    .addColumn("Qty", p -> p.qty(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Name", Product::name)
+    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Qty", p -> p.qty(), c -> c.type(ExcelDataType.INTEGER))
     .summary(s -> s
         .label("Total")
         .sum("Price")
@@ -1042,7 +1045,7 @@ Create workbook-scoped named ranges in lifecycle callbacks:
 
 ```java
 writer
-    .addColumn("Category", p -> p.category())
+    .column("Category", p -> p.category())
     .afterData(ctx -> {
         // By reference string
         ctx.namedRange("Categories", "Sheet1!$A$2:$A$100");
@@ -1063,8 +1066,8 @@ Create dropdown validations that reference a cell range instead of inline string
 
 ```java
 writer
-    .column("Status", p -> p.status())
-        .validation(ExcelValidation.listFromRange("Options!$A$1:$A$5"))
+    .column("Status", p -> p.status(), cfg -> cfg
+        .validation(ExcelValidation.listFromRange("Options!$A$1:$A$5")))
     .write(data);
 ```
 
@@ -1076,21 +1079,21 @@ Apply advanced data validation rules beyond dropdowns:
 
 ```java
 writer
-    .column("Age", p -> p.age())
+    .column("Age", p -> p.age(), cfg -> cfg
         .type(ExcelDataType.INTEGER)
-        .validation(ExcelValidation.integerBetween(0, 150))
-    .column("GPA", p -> p.gpa())
+        .validation(ExcelValidation.integerBetween(0, 150)))
+    .column("GPA", p -> p.gpa(), cfg -> cfg
         .type(ExcelDataType.DOUBLE)
-        .validation(ExcelValidation.decimalBetween(0.0, 4.0))
-    .column("Name", p -> p.name())
-        .validation(ExcelValidation.textLength(1, 100))
-    .column("Date", p -> p.date())
+        .validation(ExcelValidation.decimalBetween(0.0, 4.0)))
+    .column("Name", p -> p.name(), cfg -> cfg
+        .validation(ExcelValidation.textLength(1, 100)))
+    .column("Date", p -> p.date(), cfg -> cfg
         .type(ExcelDataType.DATE)
         .validation(ExcelValidation.dateRange(
             LocalDate.of(2024, 1, 1),
-            LocalDate.of(2024, 12, 31)))
-    .column("Custom", p -> p.value())
-        .validation(ExcelValidation.formula("AND(A2>0,A2<100)"))
+            LocalDate.of(2024, 12, 31))))
+    .column("Custom", p -> p.value(), cfg -> cfg
+        .validation(ExcelValidation.formula("AND(A2>0,A2<100)")))
     .write(data);
 ```
 
@@ -1118,7 +1121,7 @@ Group rows so they can be collapsed/expanded in Excel. Use in `afterData` or `af
 
 ```java
 writer
-    .addColumn("Data", p -> p.value())
+    .column("Data", p -> p.value())
     .afterData(ctx -> {
         ctx.groupRows(1, 5);                    // group rows 1-5
         ctx.groupRows(7, 10, true);             // group rows 7-10 and collapse
@@ -1139,12 +1142,12 @@ Colorize the sheet tab in the workbook:
 // ExcelWriter — applies to all sheets (including rollover)
 new ExcelWriter<Product>()
     .tabColor(255, 0, 0)                       // RGB red
-    .addColumn("Name", Product::name)
+    .column("Name", Product::name)
     .write(data);
 
 new ExcelWriter<Product>()
     .tabColor(ExcelColor.STEEL_BLUE)           // preset color
-    .addColumn("Name", Product::name)
+    .column("Name", Product::name)
     .write(data);
 ```
 
@@ -1167,9 +1170,9 @@ Add conditional cell comments (notes) to specific columns:
 
 ```java
 writer
-    .column("Score", p -> p.score())
+    .column("Score", p -> p.score(), cfg -> cfg
         .type(ExcelDataType.INTEGER)
-        .comment(p -> p.score() < 50 ? "Low score - needs review" : null)
+        .comment(p -> p.score() < 50 ? "Low score - needs review" : null))
     .write(data);
 ```
 
@@ -1181,8 +1184,8 @@ Apply Excel conditional formatting rules:
 
 ```java
 new ExcelWriter<Product>()
-    .addColumn("Name", Product::name)
-    .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Name", Product::name)
+    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
     .conditionalFormatting(cf -> cf
         .columns(1)                                    // apply to column 1 only
         .greaterThan("10000", ExcelColor.LIGHT_RED)    // highlight expensive
@@ -1201,8 +1204,8 @@ Protect sheets with a password and selectively unlock columns:
 
 ```java
 new ExcelWriter<Product>()
-    .addColumn("Name", Product::name, c -> c.locked(false))   // editable
-    .addColumn("Price", p -> p.price(), c -> c.locked(true))  // read-only
+    .column("Name", Product::name, c -> c.locked(false))   // editable
+    .column("Price", p -> p.price(), c -> c.locked(true))  // read-only
     .protectSheet("password123")
     .write(data);
 ```
@@ -1218,9 +1221,9 @@ Embed images in Excel cells using `ExcelDataType.IMAGE`:
 byte[] imageBytes = Files.readAllBytes(Path.of("logo.png"));
 
 new ExcelWriter<Product>()
-    .addColumn("Name", Product::name)
-    .addColumn("Photo", p -> ExcelImage.png(imageBytes))
-        .type(ExcelDataType.IMAGE)
+    .column("Name", Product::name)
+    .column("Photo", p -> ExcelImage.png(imageBytes), cfg -> cfg
+        .type(ExcelDataType.IMAGE))
     .write(data);
 ```
 
@@ -1232,9 +1235,9 @@ Add charts after data is written:
 
 ```java
 new ExcelWriter<Product>()
-    .addColumn("Name", Product::name)
-    .addColumn("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
-    .addColumn("Profit", p -> p.profit(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Name", Product::name)
+    .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Profit", p -> p.profit(), c -> c.type(ExcelDataType.INTEGER))
     .chart(chart -> chart
         .type(ExcelChartConfig.ChartType.BAR)       // BAR, LINE, PIE, SCATTER, AREA, or DOUGHNUT
         .title("Sales vs Profit")
@@ -1262,8 +1265,8 @@ Available chart options:
 **Scatter chart** — both axes are numeric (no category axis):
 ```java
 writer
-    .addColumn("X", p -> p.x(), c -> c.type(ExcelDataType.DOUBLE))
-    .addColumn("Y", p -> p.y(), c -> c.type(ExcelDataType.DOUBLE))
+    .column("X", p -> p.x(), c -> c.type(ExcelDataType.DOUBLE))
+    .column("Y", p -> p.y(), c -> c.type(ExcelDataType.DOUBLE))
     .chart(chart -> chart
         .type(ExcelChartConfig.ChartType.SCATTER)
         .categoryColumn(0)          // X-axis data
@@ -1276,8 +1279,8 @@ writer
 **Area chart** — like line chart but with filled regions:
 ```java
 writer
-    .addColumn("Month", Product::month)
-    .addColumn("Revenue", p -> p.revenue(), c -> c.type(ExcelDataType.DOUBLE))
+    .column("Month", Product::month)
+    .column("Revenue", p -> p.revenue(), c -> c.type(ExcelDataType.DOUBLE))
     .chart(chart -> chart
         .type(ExcelChartConfig.ChartType.AREA)
         .categoryColumn(0)
@@ -1288,8 +1291,8 @@ writer
 **Doughnut chart** — like pie chart with a hollow center:
 ```java
 writer
-    .addColumn("Category", Product::category)
-    .addColumn("Share", p -> p.share(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Category", Product::category)
+    .column("Share", p -> p.share(), c -> c.type(ExcelDataType.INTEGER))
     .chart(chart -> chart
         .type(ExcelChartConfig.ChartType.DOUGHNUT)
         .categoryColumn(0)
@@ -1397,12 +1400,42 @@ writer
     .write(data);
 ```
 
+With configurer:
+```java
+writer
+    .column("Name", p -> p.name())
+    .columnIf("Age", showAge, p -> p.age(), cfg -> cfg
+        .type(ExcelDataType.INTEGER))
+    .write(data);
+```
+
 ### Constant Columns
 
 ```java
 writer
     .column("Name", p -> p.name())
     .constColumn("Source", "SYSTEM")  // same value for every row
+    .write(data);
+```
+
+With configurer:
+```java
+writer
+    .column("Name", p -> p.name())
+    .constColumn("Source", "SYSTEM", cfg -> cfg
+        .fontColor(ExcelColor.GRAY))
+    .write(data);
+```
+
+Conditional constant columns:
+```java
+boolean showSource = true;
+
+writer
+    .column("Name", p -> p.name())
+    .constColumnIf("Source", showSource, "SYSTEM")  // only added when condition is true
+    .constColumnIf("Version", showSource, "v2", cfg -> cfg
+        .fontColor(ExcelColor.BLUE))                // with configurer
     .write(data);
 ```
 
@@ -1507,7 +1540,7 @@ Set the password on the writer — `consumeOutputStream()` automatically encrypt
 ```java
 ExcelHandler handler = new ExcelWriter<Product>(ExcelColor.STEEL_BLUE)
     .password("P@ssw0rd!")
-    .addColumn("Name", Product::name)
+    .column("Name", Product::name)
     .write(data);
 
 handler.consumeOutputStream(outputStream);
@@ -1560,7 +1593,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 
 Each `ExcelSheetWriter` supports the same features as `ExcelWriter`:
 - Column configuration via `Consumer<ColumnConfig>`: `type`, `format`, `alignment`, `verticalAlignment`, `backgroundColor`, `bold`, `fontSize`, `fontName`, `width`, `minWidth`, `maxWidth`, `dropdown`, `cellColor`, `group`, `outline`, `comment`, `border`, `borderTop`, `borderBottom`, `borderLeft`, `borderRight`, `locked`, `hidden`, `rotation`, `fontColor`, `strikethrough`, `underline`, `wrapText`, `indentation`, `validation`, `headerFontColor`
-- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`, `tabColor()`, `defaultStyle()`, `summary()`
+- `beforeHeader()`, `afterData()`, `autoFilter()`, `freezePane()`, `rowColor()`, `constColumn()`, `columnIf()`, `constColumnIf()`, `onProgress()`, `protectSheet()`, `conditionalFormatting()`, `chart()` (with full chart options: axis titles, legend position, bar direction, bar grouping, data labels), `printSetup()`, `tabColor()`, `defaultStyle()`, `summary()`
 
 **Sheet auto-rollover** — `ExcelSheetWriter` can also auto-split sheets via `maxRows()`:
 
@@ -1582,8 +1615,8 @@ The `Cursor` provides positional information during streaming. Use `ExcelRowFunc
 
 ```java
 writer
-    .column("No.", (row, cursor) -> cursor.getCurrentTotal())  // row number
-        .type(ExcelDataType.LONG)
+    .column("No.", (row, cursor) -> cursor.getCurrentTotal(), cfg -> cfg
+        .type(ExcelDataType.LONG))                              // row number
     .column("Name", (row, cursor) -> row.name())
     .write(data);
 ```

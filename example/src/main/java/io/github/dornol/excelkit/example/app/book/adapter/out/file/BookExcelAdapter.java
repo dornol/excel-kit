@@ -81,27 +81,27 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
     private ExcelHandler createExcelHandler(Stream<BookDto> data, String password) {
         var writer = new ExcelWriter<BookDto>(ExcelColor.of(0xCC, 0xFF, 0x99))
                 .tabColor(ExcelColor.STEEL_BLUE)
-                .column("no", (rowData, cursor) -> cursor.getCurrentTotal())
+                .column("no", (rowData, cursor) -> cursor.getCurrentTotal(), cfg -> cfg
                     .type(ExcelDataType.LONG)
-                    .fontColor(ExcelColor.GRAY)
-                .column("id", BookDto::id)
-                    .type(ExcelDataType.LONG)
-                .column("title", BookDto::title)
+                    .fontColor(ExcelColor.GRAY))
+                .column("id", BookDto::id, cfg -> cfg
+                    .type(ExcelDataType.LONG))
+                .column("title", BookDto::title, cfg -> cfg
                     .bold(true)
                     .fontColor(ExcelColor.BLUE)
-                    .underline()
+                    .underline())
                 .column("subtitle", BookDto::subtitle)
-                .column("author", BookDto::author)
+                .column("author", BookDto::author, cfg -> cfg
                     .rotation(0)
-                    .borderBottom(ExcelBorderStyle.MEDIUM)
+                    .borderBottom(ExcelBorderStyle.MEDIUM))
                 .column("publisher", BookDto::publisher)
-                .column("isbn", BookDto::isbn)
+                .column("isbn", BookDto::isbn, cfg -> cfg
                     .validation(ExcelValidation.textLength(10, 13)
                             .errorTitle("Invalid ISBN")
-                            .errorMessage("ISBN must be 10–13 characters"))
-                .column("description", BookDto::description)
+                            .errorMessage("ISBN must be 10–13 characters")))
+                .column("description", BookDto::description, cfg -> cfg
                     .fontColor(ExcelColor.GRAY)
-                    .strikethrough(false)
+                    .strikethrough(false))
                 .afterData(ctx -> {
                     if (ctx.getCurrentRow() > 2) {
                         ctx.groupRows(1, ctx.getCurrentRow() - 1);

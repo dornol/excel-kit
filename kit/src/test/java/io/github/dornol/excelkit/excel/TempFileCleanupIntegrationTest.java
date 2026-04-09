@@ -244,8 +244,8 @@ class TempFileCleanupIntegrationTest {
         // Write
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ExcelWriter<TestRow>()
-                .column("Name", r -> r.name).type(ExcelDataType.STRING)
-                .column("Age", r -> r.age).type(ExcelDataType.INTEGER)
+                .column("Name", r -> r.name, c -> c.type(ExcelDataType.STRING))
+                .column("Age", r -> r.age, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(
                         new TestRow("Alice", 30),
                         new TestRow("Bob", 25)
@@ -278,8 +278,8 @@ class TempFileCleanupIntegrationTest {
     void encryptedWriteAndVerify_roundtrip() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ExcelWriter<TestRow>()
-                .column("Name", r -> r.name).type(ExcelDataType.STRING)
-                .column("Age", r -> r.age).type(ExcelDataType.INTEGER)
+                .column("Name", r -> r.name, c -> c.type(ExcelDataType.STRING))
+                .column("Age", r -> r.age, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new TestRow("Secret", 99)))
                 .consumeOutputStreamWithPassword(baos, "pass123");
 

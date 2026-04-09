@@ -53,11 +53,11 @@ class BenchmarkTest {
         long startTime = System.currentTimeMillis();
 
         ExcelHandler handler = new ExcelWriter<int[]>()
-                .addColumn("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
-                .addColumn("Name", r -> "User-" + r[0])
-                .addColumn("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
-                .addColumn("Active", r -> r[2] % 2 == 0 ? "Y" : "N")
-                .addColumn("Note", r -> "This is a sample note for row " + r[0])
+                .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", r -> "User-" + r[0])
+                .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                .column("Active", r -> r[2] % 2 == 0 ? "Y" : "N")
+                .column("Note", r -> "This is a sample note for row " + r[0])
                 .write(generateRows(rows, cols));
 
         try (OutputStream os = Files.newOutputStream(file)) {
@@ -81,11 +81,11 @@ class BenchmarkTest {
         long startTime = System.currentTimeMillis();
 
         ExcelHandler handler = new ExcelWriter<int[]>()
-                .addColumn("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
-                .addColumn("Name", r -> "User-" + r[0])
-                .addColumn("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
-                .addColumn("Active", r -> r[2] % 2 == 0 ? "Y" : "N")
-                .addColumn("Note", r -> "Note-" + r[0])
+                .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", r -> "User-" + r[0])
+                .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                .column("Active", r -> r[2] % 2 == 0 ? "Y" : "N")
+                .column("Note", r -> "Note-" + r[0])
                 .write(generateRows(rows, 5));
 
         try (OutputStream os = Files.newOutputStream(file)) {
@@ -112,7 +112,7 @@ class BenchmarkTest {
         ExcelWriter<int[]> writer = new ExcelWriter<>();
         for (int i = 0; i < cols; i++) {
             final int idx = i;
-            writer.addColumn("Col" + i, r -> r[idx % r.length], c -> c.type(ExcelDataType.INTEGER));
+            writer.column("Col" + i, r -> r[idx % r.length], c -> c.type(ExcelDataType.INTEGER));
         }
         ExcelHandler handler = writer.write(generateRows(rows, cols));
 
@@ -138,9 +138,9 @@ class BenchmarkTest {
         long startTime = System.currentTimeMillis();
 
         ExcelHandler handler = new ExcelWriter<int[]>(rowsPerSheet)
-                .addColumn("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
-                .addColumn("Name", r -> "User-" + r[0])
-                .addColumn("Value", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", r -> "User-" + r[0])
+                .column("Value", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
                 .write(generateRows(totalRows, 5));
 
         try (OutputStream os = Files.newOutputStream(file)) {
@@ -260,9 +260,9 @@ class BenchmarkTest {
         // Write test file
         try (OutputStream os = Files.newOutputStream(file)) {
             new ExcelWriter<int[]>()
-                    .addColumn("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
-                    .addColumn("Name", r -> "User-" + r[0])
-                    .addColumn("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                    .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", r -> "User-" + r[0])
+                    .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
                     .write(generateRows(rows, 3))
                     .consumeOutputStream(os);
         }
@@ -289,9 +289,9 @@ class BenchmarkTest {
 
         try (OutputStream os = Files.newOutputStream(file)) {
             new ExcelWriter<int[]>()
-                    .addColumn("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
-                    .addColumn("Name", r -> "User-" + r[0])
-                    .addColumn("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                    .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", r -> "User-" + r[0])
+                    .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
                     .write(generateRows(rows, 3))
                     .consumeOutputStream(os);
         }

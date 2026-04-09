@@ -41,17 +41,16 @@ public class WriteShowcaseController {
                 .sheetName("Formula Demo")
                 .autoFilter(true)
                 .freezePane(1)
-                .column("No.", (row, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
+                .column("No.", (row, cursor) -> cursor.getCurrentTotal(), cfg -> cfg.type(ExcelDataType.LONG))
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
-                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format("#,##0")
-                .column("Quantity", ProductDto::quantity).type(ExcelDataType.INTEGER)
+                .column("Price", ProductDto::price, cfg -> cfg.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .column("Subtotal", (row, cursor) ->
                         "%s%d*%s%d".formatted(
                                 SheetContext.columnLetter(3), cursor.getRowOfSheet() + 1,
-                                SheetContext.columnLetter(4), cursor.getRowOfSheet() + 1))
-                    .type(ExcelDataType.FORMULA)
-                    .format("#,##0")
+                                SheetContext.columnLetter(4), cursor.getRowOfSheet() + 1),
+                        cfg -> cfg.type(ExcelDataType.FORMULA).format("#,##0"))
                 .afterData(ctx -> {
                     var sheet = ctx.getSheet();
                     int row = ctx.getCurrentRow();
@@ -88,10 +87,10 @@ public class WriteShowcaseController {
                 .sheetName("Hyperlinks")
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
-                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER).format("#,##0")
-                .column("URL", ProductDto::url).type(ExcelDataType.HYPERLINK)
-                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "Details"))
-                    .type(ExcelDataType.HYPERLINK)
+                .column("Price", ProductDto::price, cfg -> cfg.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("URL", ProductDto::url, cfg -> cfg.type(ExcelDataType.HYPERLINK))
+                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "Details"),
+                        cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("hyperlink-demo", DownloadFileType.EXCEL)
@@ -153,7 +152,7 @@ public class WriteShowcaseController {
                 .autoFilter(true)
                 .freezePane(1)
                 .column("Name", ProductDto::name)
-                .column("Price", ProductDto::price)
+                .column("Price", ProductDto::price, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .format("#,##0")
                     .cellColor((value, row) -> {
@@ -161,17 +160,17 @@ public class WriteShowcaseController {
                         if (price >= 30000) return ExcelColor.LIGHT_GREEN;
                         if (price <= 5000) return ExcelColor.LIGHT_RED;
                         return null;
-                    })
-                .column("Quantity", ProductDto::quantity)
+                    }))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .cellColor((value, row) -> {
                         int qty = ((Number) value).intValue();
                         return qty <= 10 ? ExcelColor.LIGHT_ORANGE : null;
-                    })
-                .column("Discount", ProductDto::discount)
+                    }))
+                .column("Discount", ProductDto::discount, cfg -> cfg
                     .type(ExcelDataType.DOUBLE_PERCENT)
                     .cellColor((value, row) ->
-                        ((Number) value).doubleValue() >= 0.2 ? ExcelColor.LIGHT_PURPLE : null)
+                        ((Number) value).doubleValue() >= 0.2 ? ExcelColor.LIGHT_PURPLE : null))
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("cell-color-demo", DownloadFileType.EXCEL)
@@ -187,25 +186,24 @@ public class WriteShowcaseController {
                 .sheetName("Group Header")
                 .autoFilter(true)
                 .freezePane(1)
-                .column("No.", (row, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
+                .column("No.", (row, cursor) -> cursor.getCurrentTotal(), cfg -> cfg.type(ExcelDataType.LONG))
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
-                .column("Price", ProductDto::price)
+                .column("Price", ProductDto::price, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .format("#,##0")
-                    .group("Financial")
-                .column("Quantity", ProductDto::quantity)
+                    .group("Financial"))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
-                    .group("Financial")
-                .column("Discount", ProductDto::discount)
+                    .group("Financial"))
+                .column("Discount", ProductDto::discount, cfg -> cfg
                     .type(ExcelDataType.DOUBLE_PERCENT)
-                    .group("Financial")
-                .column("URL", ProductDto::url)
+                    .group("Financial"))
+                .column("URL", ProductDto::url, cfg -> cfg
                     .type(ExcelDataType.HYPERLINK)
-                    .group("Link")
-                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "View"))
-                    .type(ExcelDataType.HYPERLINK)
-                    .group("Link")
+                    .group("Link"))
+                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "View"),
+                        cfg -> cfg.type(ExcelDataType.HYPERLINK).group("Link"))
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("group-header-demo", DownloadFileType.EXCEL)
@@ -248,11 +246,10 @@ public class WriteShowcaseController {
                 .freezePane(1)
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
-                .column("Price", ProductDto::price).type(ExcelDataType.INTEGER)
-                    .format("#,##0").outline(1)
-                .column("Quantity", ProductDto::quantity).type(ExcelDataType.INTEGER).outline(1)
-                .column("Discount", ProductDto::discount).type(ExcelDataType.DOUBLE_PERCENT).outline(1)
-                .column("URL", ProductDto::url).type(ExcelDataType.HYPERLINK).outline(2)
+                .column("Price", ProductDto::price, cfg -> cfg.type(ExcelDataType.INTEGER).format("#,##0").outline(1))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg.type(ExcelDataType.INTEGER).outline(1))
+                .column("Discount", ProductDto::discount, cfg -> cfg.type(ExcelDataType.DOUBLE_PERCENT).outline(1))
+                .column("URL", ProductDto::url, cfg -> cfg.type(ExcelDataType.HYPERLINK).outline(2))
                 .column("Summary", p -> "%s (%s)".formatted(p.name(), p.category()))
                 .write(sampleProducts().stream());
 
@@ -281,40 +278,36 @@ public class WriteShowcaseController {
                     if (p.discount() >= 0.2) return ExcelColor.LIGHT_GREEN;
                     return null;
                 })
-                .column("No.", (row, cursor) -> cursor.getCurrentTotal()).type(ExcelDataType.LONG)
-                .column("Name", ProductDto::name).bold(true)
-                .column("Category", ProductDto::category)
-                    .dropdown("Electronics", "Accessories", "Office", "Peripherals")
-                .column("Price", ProductDto::price)
+                .column("No.", (row, cursor) -> cursor.getCurrentTotal(), cfg -> cfg.type(ExcelDataType.LONG))
+                .column("Name", ProductDto::name, cfg -> cfg.bold(true))
+                .column("Category", ProductDto::category, cfg -> cfg
+                    .dropdown("Electronics", "Accessories", "Office", "Peripherals"))
+                .column("Price", ProductDto::price, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .format("#,##0")
                     .group("Financial")
                     .cellColor((value, row) -> {
                         int price = ((Number) value).intValue();
                         return price >= 30000 ? ExcelColor.LIGHT_GREEN : null;
-                    })
-                .column("Quantity", ProductDto::quantity)
+                    }))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .group("Financial")
                     .cellColor((value, row) ->
-                        ((Number) value).intValue() <= 10 ? ExcelColor.LIGHT_ORANGE : null)
-                .column("Discount", ProductDto::discount)
+                        ((Number) value).intValue() <= 10 ? ExcelColor.LIGHT_ORANGE : null))
+                .column("Discount", ProductDto::discount, cfg -> cfg
                     .type(ExcelDataType.DOUBLE_PERCENT)
-                    .group("Financial")
+                    .group("Financial"))
                 .column("Subtotal", (row, cursor) -> {
                     int r = cursor.getRowOfSheet() + 1;
                     return "%s%d*%s%d".formatted(priceCol, r, qtyCol, r);
-                })
-                    .type(ExcelDataType.FORMULA)
-                    .format("#,##0")
+                }, cfg -> cfg.type(ExcelDataType.FORMULA).format("#,##0"))
                 .column("After Discount", (row, cursor) -> {
                     int r = cursor.getRowOfSheet() + 1;
                     return "%s%d*(1-%s%d)".formatted(subtotalCol, r, discountCol, r);
-                })
-                    .type(ExcelDataType.FORMULA)
-                    .format("#,##0")
-                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "View"))
-                    .type(ExcelDataType.HYPERLINK)
+                }, cfg -> cfg.type(ExcelDataType.FORMULA).format("#,##0"))
+                .column("Link", (ProductDto p) -> new ExcelHyperlink(p.url(), "View"),
+                        cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .beforeHeader(ctx -> {
                     var titleRow = ctx.getSheet().createRow(0);
                     var cell = titleRow.createCell(0);
@@ -365,16 +358,16 @@ public class WriteShowcaseController {
     public ResponseEntity<StreamingResponseBody> downloadBorderStyle() {
         var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
                 .sheetName("Border Styles")
-                .column("Name", ProductDto::name).border(ExcelBorderStyle.MEDIUM)
-                .column("Category", ProductDto::category).border(ExcelBorderStyle.DASHED)
-                .column("Price", ProductDto::price)
+                .column("Name", ProductDto::name, cfg -> cfg.border(ExcelBorderStyle.MEDIUM))
+                .column("Category", ProductDto::category, cfg -> cfg.border(ExcelBorderStyle.DASHED))
+                .column("Price", ProductDto::price, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .format("#,##0")
-                    .border(ExcelBorderStyle.THICK)
-                .column("Quantity", ProductDto::quantity)
+                    .border(ExcelBorderStyle.THICK))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
-                    .border(ExcelBorderStyle.DOTTED)
-                .column("No Border", p -> "text").border(ExcelBorderStyle.NONE)
+                    .border(ExcelBorderStyle.DOTTED))
+                .column("No Border", p -> "text", cfg -> cfg.border(ExcelBorderStyle.NONE))
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("border-style-demo", DownloadFileType.EXCEL)
@@ -389,17 +382,17 @@ public class WriteShowcaseController {
         var handler = new ExcelWriter<ProductDto>(ExcelColor.FOREST_GREEN)
                 .sheetName("Cell Comments")
                 .autoFilter(true)
-                .column("Name", ProductDto::name)
-                    .comment(p -> "Product: " + p.name() + " (" + p.category() + ")")
-                .column("Price", ProductDto::price)
+                .column("Name", ProductDto::name, cfg -> cfg
+                    .comment(p -> "Product: " + p.name() + " (" + p.category() + ")"))
+                .column("Price", ProductDto::price, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .format("#,##0")
-                    .comment(p -> p.price() > 30000 ? "⚠ High price!" : null)
-                .column("Quantity", ProductDto::quantity)
+                    .comment(p -> p.price() > 30000 ? "⚠ High price!" : null))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
-                    .comment(p -> p.quantity() <= 10 ? "⚠ Low stock alert" : null)
-                .column("Discount", ProductDto::discount)
-                    .type(ExcelDataType.DOUBLE_PERCENT)
+                    .comment(p -> p.quantity() <= 10 ? "⚠ Low stock alert" : null))
+                .column("Discount", ProductDto::discount, cfg -> cfg
+                    .type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("cell-comment-demo", DownloadFileType.EXCEL)
@@ -415,10 +408,10 @@ public class WriteShowcaseController {
                 .sheetName("Conditional Formatting")
                 .autoFilter(true)
                 .freezePane(1)
-                .addColumn("Name", ProductDto::name)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
-                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
-                .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .column("Name", ProductDto::name)
+                .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .column("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .conditionalFormatting(cf -> cf
                         .columns(1)  // Price column
                         .greaterThan("30000", ExcelColor.LIGHT_RED)
@@ -443,18 +436,18 @@ public class WriteShowcaseController {
         var handler = new ExcelWriter<ProductDto>(ExcelColor.CORAL)
                 .sheetName("Protected Sheet")
                 .autoFilter(true)
-                .addColumn("Name (locked)", ProductDto::name, c -> c.locked(true))
-                .addColumn("Category (locked)", ProductDto::category, c -> c.locked(true))
-                .addColumn("Price (editable)", p -> p.price(), c -> c
+                .column("Name (locked)", ProductDto::name, c -> c.locked(true))
+                .column("Category (locked)", ProductDto::category, c -> c.locked(true))
+                .column("Price (editable)", p -> p.price(), c -> c
                         .type(ExcelDataType.INTEGER)
                         .format("#,##0")
                         .locked(false)
                         .backgroundColor(ExcelColor.LIGHT_GREEN))
-                .addColumn("Quantity (editable)", p -> p.quantity(), c -> c
+                .column("Quantity (editable)", p -> p.quantity(), c -> c
                         .type(ExcelDataType.INTEGER)
                         .locked(false)
                         .backgroundColor(ExcelColor.LIGHT_GREEN))
-                .addColumn("Discount (locked)", p -> p.discount(), c -> c
+                .column("Discount (locked)", p -> p.discount(), c -> c
                         .type(ExcelDataType.DOUBLE_PERCENT)
                         .locked(true))
                 .protectSheet("1234")
@@ -471,9 +464,9 @@ public class WriteShowcaseController {
     public ResponseEntity<StreamingResponseBody> downloadChart() {
         var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
                 .sheetName("Chart Demo")
-                .addColumn("Name", ProductDto::name)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
-                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", ProductDto::name)
+                .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
                         .type(ExcelChartConfig.ChartType.BAR)
                         .title("Product Price vs Quantity")
@@ -555,11 +548,11 @@ public class WriteShowcaseController {
                 .headerFontSize(14)
                 .autoFilter(true)
                 .freezePane(1)
-                .addColumn("Name", ProductDto::name)
-                .addColumn("Category", ProductDto::category)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
-                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
-                .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .column("Name", ProductDto::name)
+                .column("Category", ProductDto::category)
+                .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .column("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("header-font-demo", DownloadFileType.EXCEL)
@@ -579,16 +572,16 @@ public class WriteShowcaseController {
                 .headerFontSize(13)
                 .autoFilter(true)
                 .freezePane(1)
-                .addColumn("Name", ProductDto::name)
-                .addColumn("Category", ProductDto::category)
-                .addColumn("Price", p -> p.price(), c -> c
+                .column("Name", ProductDto::name)
+                .column("Category", ProductDto::category)
+                .column("Price", p -> p.price(), c -> c
                         .type(ExcelDataType.INTEGER)
                         .format("#,##0")
                         .headerFontColor(ExcelColor.RED))
-                .addColumn("Quantity", p -> p.quantity(), c -> c
+                .column("Quantity", p -> p.quantity(), c -> c
                         .type(ExcelDataType.INTEGER)
                         .headerFontColor(hasStockAlert ? ExcelColor.RED : null))
-                .addColumn("Discount", p -> p.discount(), c -> c
+                .column("Discount", p -> p.discount(), c -> c
                         .type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
@@ -609,16 +602,16 @@ public class WriteShowcaseController {
                         .fontName("Arial")
                         .fontSize(10)
                         .alignment(HorizontalAlignment.LEFT))
-                .addColumn("Name", ProductDto::name)
-                .addColumn("Category", ProductDto::category)
-                .addColumn("Price", p -> p.price(), c -> c
+                .column("Name", ProductDto::name)
+                .column("Category", ProductDto::category)
+                .column("Price", p -> p.price(), c -> c
                         .type(ExcelDataType.INTEGER)
                         .format("#,##0")
                         .alignment(HorizontalAlignment.RIGHT))
-                .addColumn("Quantity", p -> p.quantity(), c -> c
+                .column("Quantity", p -> p.quantity(), c -> c
                         .type(ExcelDataType.INTEGER)
                         .alignment(HorizontalAlignment.RIGHT))
-                .addColumn("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .column("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("default-style-demo", DownloadFileType.EXCEL)
@@ -634,9 +627,9 @@ public class WriteShowcaseController {
                 .sheetName("Summary Demo")
                 .autoFilter(true)
                 .freezePane(1)
-                .addColumn("Name", ProductDto::name)
-                .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
-                .addColumn("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", ProductDto::name)
+                .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
                 .summary(s -> s
                         .label("Total")
                         .sum("Price").sum("Quantity")
@@ -688,10 +681,10 @@ public class WriteShowcaseController {
                 .sheetName("Data Bar Demo")
                 .autoFilter(true)
                 .freezePane(1);
-        writer.addColumn("Name", ProductDto::name);
-        writer.addColumn("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
-        writer.addColumn("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER));
-        writer.addColumn("Discount", ProductDto::discount, c -> c.type(ExcelDataType.DOUBLE_PERCENT));
+        writer.column("Name", ProductDto::name);
+        writer.column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
+        writer.column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER));
+        writer.column("Discount", ProductDto::discount, c -> c.type(ExcelDataType.DOUBLE_PERCENT));
         var handler = writer
                 .conditionalFormatting(cf -> cf.columns(1).dataBar(ExcelColor.BLUE))
                 .conditionalFormatting(cf -> cf.columns(2).dataBar(ExcelColor.RED, ExcelColor.GREEN))

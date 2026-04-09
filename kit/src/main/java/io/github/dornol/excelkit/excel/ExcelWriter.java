@@ -428,39 +428,6 @@ public class ExcelWriter<T> {
     }
 
     /**
-     * Begins building a new column using a custom row function with cursor.
-     *
-     * @param name     Column header name
-     * @param function Function to extract cell value from row with cursor
-     * @return Column builder
-     */
-    public ExcelColumn.ExcelColumnBuilder<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
-        return new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
-    }
-
-    /**
-     * Begins building a new column using a basic row-mapping function.
-     *
-     * @param name     Column header name
-     * @param function Function to extract cell value from row
-     * @return Column builder
-     */
-    public ExcelColumn.ExcelColumnBuilder<T> column(String name, Function<T, @Nullable Object> function) {
-        return new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
-    }
-
-    /**
-     * Begins building a new column with constant value for all rows.
-     *
-     * @param name  Column header name
-     * @param value Constant value to be used in all rows
-     * @return Column builder
-     */
-    public ExcelColumn.ExcelColumnBuilder<T> constColumn(String name, @Nullable Object value) {
-        return new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> value);
-    }
-
-    /**
      * Adds a column with default STRING type using a simple Function.
      * Useful for schema-based column registration.
      *
@@ -468,7 +435,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, Function<T, @Nullable Object> function) {
+    public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
         this.columns.add(builder.build());
@@ -482,7 +449,7 @@ public class ExcelWriter<T> {
      * column properties such as type, format, alignment, width, etc.
      *
      * <pre>{@code
-     * writer.addColumn("Price", Book::getPrice, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
+     * writer.column("Price", Book::getPrice, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
      * }</pre>
      *
      * @param name        Column header name
@@ -490,8 +457,8 @@ public class ExcelWriter<T> {
      * @param configurer  Consumer to configure column properties
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, Function<T, @Nullable Object> function,
-                                     Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+    public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function,
+                                  Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
         if (configurer != null) {
@@ -509,7 +476,7 @@ public class ExcelWriter<T> {
      * @param function Function to extract cell value from row with cursor access
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, @Nullable Object> function) {
+    public ExcelWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
         this.columns.add(builder.build());
@@ -524,14 +491,122 @@ public class ExcelWriter<T> {
      * @param configurer  Consumer to configure column properties
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> addColumn(String name, ExcelRowFunction<T, @Nullable Object> function,
-                                     Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+    public ExcelWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function,
+                                  Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
         if (configurer != null) {
             configurer.accept(builder);
         }
         this.columns.add(builder.build());
+        return this;
+    }
+
+    /**
+     * Conditionally adds a column with default STRING type using a simple Function.
+     * If condition is false, the column is not added.
+     *
+     * @param name      Column header name
+     * @param condition Whether to include this column
+     * @param function  Function to extract cell value from row
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
+        if (condition) {
+            column(name, function);
+        }
+        return this;
+    }
+
+    /**
+     * Conditionally adds a column with additional configuration.
+     * If condition is false, the column is not added.
+     *
+     * @param name        Column header name
+     * @param condition   Whether to include this column
+     * @param function    Function to extract cell value from row
+     * @param configurer  Consumer to configure column properties
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function,
+                                    Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+        if (condition) {
+            column(name, function, configurer);
+        }
+        return this;
+    }
+
+    /**
+     * Conditionally adds a column with cursor access using an ExcelRowFunction.
+     * If condition is false, the column is not added.
+     *
+     * @param name      Column header name
+     * @param condition Whether to include this column
+     * @param function  Function to extract cell value from row with cursor access
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> columnIf(String name, boolean condition, ExcelRowFunction<T, @Nullable Object> function) {
+        if (condition) {
+            column(name, function);
+        }
+        return this;
+    }
+
+    /**
+     * Conditionally adds a column with cursor access and additional configuration.
+     * If condition is false, the column is not added.
+     *
+     * @param name        Column header name
+     * @param condition   Whether to include this column
+     * @param function    Function to extract cell value from row with cursor access
+     * @param configurer  Consumer to configure column properties
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> columnIf(String name, boolean condition, ExcelRowFunction<T, @Nullable Object> function,
+                                    Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+        if (condition) {
+            column(name, function, configurer);
+        }
+        return this;
+    }
+
+    /**
+     * Adds a column with a constant value for all rows.
+     *
+     * @param name  Column header name
+     * @param value Constant value to be used in all rows
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> constColumn(String name, @Nullable Object value) {
+        return column(name, (ExcelRowFunction<T, Object>) (r, c) -> value);
+    }
+
+    /**
+     * Adds a column with a constant value for all rows, with additional configuration.
+     *
+     * @param name       Column header name
+     * @param value      Constant value to be used in all rows
+     * @param configurer Consumer to configure column properties
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> constColumn(String name, @Nullable Object value,
+                                       Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+        return column(name, (ExcelRowFunction<T, Object>) (r, c) -> value, configurer);
+    }
+
+    /**
+     * Conditionally adds a column with a constant value for all rows.
+     * If condition is false, the column is not added.
+     *
+     * @param name      Column header name
+     * @param condition Whether to include this column
+     * @param value     Constant value to be used in all rows
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> constColumnIf(String name, boolean condition, @Nullable Object value) {
+        if (condition) {
+            constColumn(name, value);
+        }
         return this;
     }
 

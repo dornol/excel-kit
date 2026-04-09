@@ -151,10 +151,8 @@ class ExcelColorTest {
         Stream<String> data = Stream.of("a", "b");
 
         ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .backgroundColor(ExcelColor.LIGHT_YELLOW)
-                .column("B", (row, c) -> row.length())
-                .backgroundColor(ExcelColor.LIGHT_RED)
+                .column("A", (row, c) -> row, cfg -> cfg.backgroundColor(ExcelColor.LIGHT_YELLOW))
+                .column("B", (row, c) -> row.length(), cfg -> cfg.backgroundColor(ExcelColor.LIGHT_RED))
                 .write(data);
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {

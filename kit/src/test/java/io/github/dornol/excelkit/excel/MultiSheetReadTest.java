@@ -40,9 +40,9 @@ class MultiSheetReadTest {
     void getSheetHeaders_shouldReturnHeaderNames() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("First", s -> s)
-                .addColumn("Second", s -> s)
-                .addColumn("Third", s -> s)
+                .column("First", s -> s)
+                .column("Second", s -> s)
+                .column("Third", s -> s)
                 .write(Stream.of("data"))
                 .consumeOutputStream(out);
 
@@ -81,7 +81,7 @@ class MultiSheetReadTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
                 .sheetName("Data")
-                .addColumn("Name", s -> s)
+                .column("Name", s -> s)
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 
@@ -102,8 +102,8 @@ class MultiSheetReadTest {
                     row.createCell(0).setCellValue("Title Row");
                     return 1;
                 })
-                .addColumn("Name", s -> s)
-                .addColumn("Age", s -> "30")
+                .column("Name", s -> s)
+                .column("Age", s -> "30")
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 

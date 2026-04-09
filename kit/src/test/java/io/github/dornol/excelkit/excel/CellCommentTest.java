@@ -16,7 +16,7 @@ class CellCommentTest {
     void comment_shouldAddCommentToCell() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s, c -> c.comment(s -> "Note: " + s))
+                .column("Name", s -> s, c -> c.comment(s -> "Note: " + s))
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 
@@ -32,7 +32,7 @@ class CellCommentTest {
     void comment_nullReturn_shouldNotAddComment() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s, c -> c.comment(s -> null))
+                .column("Name", s -> s, c -> c.comment(s -> null))
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 
@@ -46,7 +46,7 @@ class CellCommentTest {
     void comment_conditionalComment() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s, c -> c.comment(s -> s.startsWith("A") ? "Starts with A" : null))
+                .column("Name", s -> s, c -> c.comment(s -> s.startsWith("A") ? "Starts with A" : null))
                 .write(Stream.of("Alice", "Bob"))
                 .consumeOutputStream(out);
 

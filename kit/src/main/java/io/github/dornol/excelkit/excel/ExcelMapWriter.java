@@ -42,7 +42,7 @@ public class ExcelMapWriter {
     public ExcelMapWriter(ExcelWriter<Map<String, Object>> writer, String... columnNames) {
         this.writer = writer;
         for (String name : columnNames) {
-            this.writer.addColumn(name, map -> map.get(name));
+            this.writer.column(name, map -> map.get(name));
         }
     }
 
@@ -65,7 +65,7 @@ public class ExcelMapWriter {
             String name = columnNames[i];
             Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>> cfg =
                     (i < configurers.length) ? configurers[i] : null;
-            this.writer.addColumn(name, map -> map.get(name), cfg);
+            this.writer.column(name, map -> map.get(name), cfg);
         }
     }
 

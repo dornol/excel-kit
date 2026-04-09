@@ -32,8 +32,8 @@ class NewFeaturesV07Test {
         void hidden_noArgs_columnIsHidden() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Visible", s -> s)
-                    .addColumn("Secret", s -> "hidden-value", c -> c.hidden())
+                    .column("Visible", s -> s)
+                    .column("Secret", s -> "hidden-value", c -> c.hidden())
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
 
@@ -48,7 +48,7 @@ class NewFeaturesV07Test {
         void hidden_true_columnIsHidden() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s, c -> c.hidden(true))
+                    .column("Col", s -> s, c -> c.hidden(true))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
 
@@ -62,7 +62,7 @@ class NewFeaturesV07Test {
         void hidden_false_columnIsNotHidden() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s, c -> c.hidden(false))
+                    .column("Col", s -> s, c -> c.hidden(false))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
 
@@ -76,11 +76,11 @@ class NewFeaturesV07Test {
         void hidden_mixedColumns_someHiddenSomeNot() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("A", s -> s)
-                    .addColumn("B", s -> s, c -> c.hidden(true))
-                    .addColumn("C", s -> s)
-                    .addColumn("D", s -> s, c -> c.hidden())
-                    .addColumn("E", s -> s, c -> c.hidden(false))
+                    .column("A", s -> s)
+                    .column("B", s -> s, c -> c.hidden(true))
+                    .column("C", s -> s)
+                    .column("D", s -> s, c -> c.hidden())
+                    .column("E", s -> s, c -> c.hidden(false))
                     .write(Stream.of("row1"))
                     .consumeOutputStream(out);
 
@@ -116,8 +116,8 @@ class NewFeaturesV07Test {
         void hidden_columnStillHasData() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Name", s -> s)
-                    .addColumn("Secret", s -> "hidden-" + s, c -> c.hidden())
+                    .column("Name", s -> s)
+                    .column("Secret", s -> "hidden-" + s, c -> c.hidden())
                     .write(Stream.of("Alice"))
                     .consumeOutputStream(out);
 
@@ -158,7 +158,7 @@ class NewFeaturesV07Test {
         void hidden_combinedWithOtherStyling() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Styled Hidden", s -> s, c -> c
+                    .column("Styled Hidden", s -> s, c -> c
                             .hidden()
                             .bold(true)
                             .backgroundColor(ExcelColor.LIGHT_BLUE))
@@ -185,7 +185,7 @@ class NewFeaturesV07Test {
         void richText_plainText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> new ExcelRichText().text("Hello World"),
+                    .column("Col", s -> new ExcelRichText().text("Hello World"),
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
                     .consumeOutputStream(out);
@@ -201,7 +201,7 @@ class NewFeaturesV07Test {
         void richText_boldText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> new ExcelRichText().text("Normal ").bold("Bold"),
+                    .column("Col", s -> new ExcelRichText().text("Normal ").bold("Bold"),
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
                     .consumeOutputStream(out);
@@ -217,7 +217,7 @@ class NewFeaturesV07Test {
         void richText_italicText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> new ExcelRichText().text("Normal ").italic("Italic"),
+                    .column("Col", s -> new ExcelRichText().text("Normal ").italic("Italic"),
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
                     .consumeOutputStream(out);
@@ -233,7 +233,7 @@ class NewFeaturesV07Test {
         void richText_styledWithMultipleOptions() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> new ExcelRichText()
+                    .column("Col", s -> new ExcelRichText()
                                     .text("Normal ")
                                     .styled("Fancy", style -> style
                                             .color(255, 0, 0)
@@ -255,7 +255,7 @@ class NewFeaturesV07Test {
         void richText_multipleSegments() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> new ExcelRichText()
+                    .column("Col", s -> new ExcelRichText()
                                     .text("Hello ")
                                     .bold("World")
                                     .text(" - ")
@@ -292,7 +292,7 @@ class NewFeaturesV07Test {
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> rt, c -> c.type(ExcelDataType.RICH_TEXT))
+                    .column("Col", s -> rt, c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
                     .consumeOutputStream(out);
 
@@ -308,7 +308,7 @@ class NewFeaturesV07Test {
         void richText_fallbackWhenNotExcelRichText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> "plain string value",
+                    .column("Col", s -> "plain string value",
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
                     .consumeOutputStream(out);
@@ -324,7 +324,7 @@ class NewFeaturesV07Test {
         void richText_withExcelColorPreset() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> new ExcelRichText()
+                    .column("Col", s -> new ExcelRichText()
                                     .styled("Red text", style -> style.color(ExcelColor.RED))
                                     .styled("Blue text", style -> style.color(ExcelColor.BLUE)),
                             c -> c.type(ExcelDataType.RICH_TEXT))
@@ -362,7 +362,7 @@ class NewFeaturesV07Test {
         void richText_emptySegments() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> new ExcelRichText()
+                    .column("Col", s -> new ExcelRichText()
                                     .text("")
                                     .bold("")
                                     .text("Actual"),
@@ -388,7 +388,7 @@ class NewFeaturesV07Test {
         void printSetup_landscapeOrientation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.orientation(ExcelPrintSetup.Orientation.LANDSCAPE))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -403,7 +403,7 @@ class NewFeaturesV07Test {
         void printSetup_portraitOrientation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.orientation(ExcelPrintSetup.Orientation.PORTRAIT))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -418,7 +418,7 @@ class NewFeaturesV07Test {
         void printSetup_paperSizeA4() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.paperSize(ExcelPrintSetup.PaperSize.A4))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -434,7 +434,7 @@ class NewFeaturesV07Test {
         void printSetup_allMargins() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.margins(0.5, 0.6, 0.7, 0.8))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -456,7 +456,7 @@ class NewFeaturesV07Test {
         void printSetup_individualMargins() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps
                             .leftMargin(1.0)
                             .rightMargin(1.5)
@@ -482,7 +482,7 @@ class NewFeaturesV07Test {
         void printSetup_headerCenterAndFooterCenter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps
                             .headerCenter("My Report")
                             .footerCenter("Page &P of &N"))
@@ -502,7 +502,7 @@ class NewFeaturesV07Test {
         void printSetup_allHeaderFooterSections() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps
                             .headerLeft("HL")
                             .headerCenter("HC")
@@ -528,7 +528,7 @@ class NewFeaturesV07Test {
         void printSetup_repeatHeaderRows() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.repeatHeaderRows())
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -546,7 +546,7 @@ class NewFeaturesV07Test {
         void printSetup_repeatCustomRows() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.repeatRows(0, 1))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -564,7 +564,7 @@ class NewFeaturesV07Test {
         void printSetup_fitToPageWidth() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.fitToPageWidth())
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -584,7 +584,7 @@ class NewFeaturesV07Test {
         void printSetup_fitToPageCustom() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s)
+                    .column("Col", s -> s)
                     .printSetup(ps -> ps.fitToPage(2, 3))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -665,8 +665,8 @@ class NewFeaturesV07Test {
         void printSetup_combinedWithAutoFilterAndFreezePane() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("A", s -> s)
-                    .addColumn("B", s -> s.toUpperCase())
+                    .column("A", s -> s)
+                    .column("B", s -> s.toUpperCase())
                     .autoFilter(true)
                     .freezePane(1)
                     .printSetup(ps -> ps

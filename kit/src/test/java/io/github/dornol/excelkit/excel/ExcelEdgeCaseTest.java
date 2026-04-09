@@ -45,7 +45,7 @@ class ExcelEdgeCaseTest {
         void consumeOutputStream_twice_throws() throws IOException {
             ByteArrayOutputStream out1 = new ByteArrayOutputStream();
             ExcelHandler handler = new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             handler.consumeOutputStream(out1);
             var ex = assertThrows(ExcelWriteException.class,
@@ -65,7 +65,7 @@ class ExcelEdgeCaseTest {
         @MethodSource("invalidStringPasswords")
         void consumeOutputStreamWithPassword_invalidString_throws(String password, String label) throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             var ex = assertThrows(IllegalArgumentException.class,
                     () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), password));
@@ -84,7 +84,7 @@ class ExcelEdgeCaseTest {
         @MethodSource("invalidCharPasswords")
         void consumeOutputStreamWithPassword_invalidCharArray_throws(char[] password, String label) throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             var ex = assertThrows(IllegalArgumentException.class,
                     () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), password));
@@ -104,8 +104,8 @@ class ExcelEdgeCaseTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .password("secret123")
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new Item("A", 1), new Item("B", 2)))
                     .consumeOutputStream(out);
 
@@ -136,7 +136,7 @@ class ExcelEdgeCaseTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .password("correct")
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -151,7 +151,7 @@ class ExcelEdgeCaseTest {
         void noPassword_shouldWriteUnencryptedOOXML() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -165,7 +165,7 @@ class ExcelEdgeCaseTest {
         void password_consumeOutputStream_twice_shouldThrowAlreadyConsumed() throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
                     .password("secret")
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
 
             handler.consumeOutputStream(new ByteArrayOutputStream());
@@ -182,7 +182,7 @@ class ExcelEdgeCaseTest {
                     .password("filePass")
                     .protectSheet("sheetPass")
                     .protectWorkbook("wbPass")
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -304,7 +304,7 @@ class ExcelEdgeCaseTest {
         void passwordSet_thenConsumeWithPassword_shouldThrow() throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
                     .password("first")
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
 
             var ex = assertThrows(IllegalStateException.class,
@@ -317,7 +317,7 @@ class ExcelEdgeCaseTest {
         void passwordSet_thenConsumeWithCharArrayPassword_shouldThrowAndZeroPassword() throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
                     .password("first")
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
 
             char[] charPassword = "second".toCharArray();
@@ -342,7 +342,7 @@ class ExcelEdgeCaseTest {
         @Test
         void consumeOutputStreamWithPassword_blankCharArray_throws() throws IOException {
             ExcelHandler handler = new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             char[] blankPassword = {' ', '\t', ' '};
             var ex = assertThrows(IllegalArgumentException.class,
@@ -384,8 +384,8 @@ class ExcelEdgeCaseTest {
         void headerNotFound_throws() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value)
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -402,8 +402,8 @@ class ExcelEdgeCaseTest {
         void getSheetHeaders_withHeaderRowIndex() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value)
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -426,8 +426,8 @@ class ExcelEdgeCaseTest {
         void allSummaryOps_shouldWriteFormulaRows() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
                             .label("Summary")
                             .sum("Value")
@@ -454,8 +454,8 @@ class ExcelEdgeCaseTest {
         void summary_singleOp_withLabel_shouldUseLabelText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
                             .label("Total")
                             .sum("Value"))
@@ -473,8 +473,8 @@ class ExcelEdgeCaseTest {
         void summary_labelInNonExistentColumn_shouldFallbackToFirstColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
                             .label("NonExistent", "Total:")
                             .sum("Value"))
@@ -492,8 +492,8 @@ class ExcelEdgeCaseTest {
         void summary_labelInColumn_shouldWriteLabelAndFormula() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
                             .label("Name", "Total:")
                             .sum("Value"))
@@ -521,8 +521,8 @@ class ExcelEdgeCaseTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .defaultStyle(d -> d.bold(true).fontSize(12))
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value)
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -541,8 +541,8 @@ class ExcelEdgeCaseTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .defaultStyle(d -> d.bold(true))
-                    .addColumn("Name", Item::name, c -> c.bold(false))
-                    .addColumn("Value", i -> i.value)
+                    .column("Name", Item::name, c -> c.bold(false))
+                    .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -593,8 +593,8 @@ class ExcelEdgeCaseTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .headerFontName("Arial")
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value)
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -610,7 +610,7 @@ class ExcelEdgeCaseTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
                     .headerFontSize(16)
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -627,7 +627,7 @@ class ExcelEdgeCaseTest {
             new ExcelWriter<Item>()
                     .headerFontName("Times New Roman")
                     .headerFontSize(14)
-                    .addColumn("Name", Item::name)
+                    .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
                     .consumeOutputStream(out);
 
@@ -650,8 +650,8 @@ class ExcelEdgeCaseTest {
         void write_emptyStream_shouldCreateHeaderOnly() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value)
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value)
                     .write(Stream.empty())
                     .consumeOutputStream(out);
 
@@ -676,8 +676,8 @@ class ExcelEdgeCaseTest {
         void readStrict_emptyMessages_shouldShowUnknownError() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Item>()
-                    .addColumn("Name", Item::name)
-                    .addColumn("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Item::name)
+                    .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new Item("A", 10)))
                     .consumeOutputStream(out);
 

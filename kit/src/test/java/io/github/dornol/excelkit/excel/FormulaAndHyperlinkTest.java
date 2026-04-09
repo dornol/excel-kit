@@ -23,10 +23,8 @@ class FormulaAndHyperlinkTest {
     void formula_shouldWriteFormulaCells() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<TestRow>()
-                .column("Value", TestRow::getValue)
-                    .type(ExcelDataType.INTEGER)
-                .column("Formula", TestRow::getFormula)
-                    .type(ExcelDataType.FORMULA)
+                .column("Value", TestRow::getValue, cfg -> cfg.type(ExcelDataType.INTEGER))
+                .column("Formula", TestRow::getFormula, cfg -> cfg.type(ExcelDataType.FORMULA))
                 .write(Stream.of(
                         new TestRow(100, "A2*2"),
                         new TestRow(200, "A3*2")
@@ -54,8 +52,7 @@ class FormulaAndHyperlinkTest {
     void formula_inAfterData_shouldWriteSummaryRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<TestRow>()
-                .column("Value", TestRow::getValue)
-                    .type(ExcelDataType.INTEGER)
+                .column("Value", TestRow::getValue, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .afterData(ctx -> {
                     var sheet = ctx.getSheet();
                     var row = sheet.createRow(ctx.getCurrentRow());
@@ -83,8 +80,7 @@ class FormulaAndHyperlinkTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<TestLink>()
                 .column("Name", TestLink::getName)
-                .column("URL", TestLink::getUrl)
-                    .type(ExcelDataType.HYPERLINK)
+                .column("URL", TestLink::getUrl, cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of(
                         new TestLink("Google", "https://google.com"),
                         new TestLink("GitHub", "https://github.com")
@@ -113,8 +109,7 @@ class FormulaAndHyperlinkTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<TestLink>()
                 .column("Name", TestLink::getName)
-                .column("Link", t -> new ExcelHyperlink(t.getUrl(), "Click Here"))
-                    .type(ExcelDataType.HYPERLINK)
+                .column("Link", t -> new ExcelHyperlink(t.getUrl(), "Click Here"), cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of(new TestLink("Google", "https://google.com")))
                 .consumeOutputStream(out);
 

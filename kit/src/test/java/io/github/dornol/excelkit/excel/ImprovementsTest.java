@@ -24,8 +24,8 @@ class ImprovementsTest {
     @Test
     void duplicateColumnName_shouldThrowInExcelWriter() {
         var writer = new ExcelWriter<String>()
-                .addColumn("Name", s -> s)
-                .addColumn("Name", s -> s);
+                .column("Name", s -> s)
+                .column("Name", s -> s);
         assertThrows(ExcelWriteException.class, () -> writer.write(Stream.of("test")));
     }
 
@@ -43,8 +43,8 @@ class ImprovementsTest {
     void uniqueColumnNames_shouldNotThrow() {
         assertDoesNotThrow(() ->
                 new ExcelWriter<String>()
-                        .addColumn("Name", s -> s)
-                        .addColumn("Age", s -> s)
+                        .column("Name", s -> s)
+                        .column("Age", s -> s)
                         .write(Stream.of("test")));
     }
 

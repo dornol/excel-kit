@@ -154,6 +154,143 @@ class ExcelWriterTest {
     }
 
     @Test
+    void columnIf_trueCondition_withExcelRowFunction_shouldAddColumn() {
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .columnIf("B", true, (ExcelRowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
+                .write(Stream.of("x"));
+
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals(2, sheet.getRow(0).getLastCellNum());
+        assertEquals("B", sheet.getRow(0).getCell(1).getStringCellValue());
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void columnIf_falseCondition_withExcelRowFunction_shouldNotAddColumn() {
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .columnIf("B", false, (ExcelRowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
+                .write(Stream.of("x"));
+
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals(1, sheet.getRow(0).getLastCellNum());
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void columnIf_withConfigurer_shouldApplyConfig() {
+        ExcelWriter<Integer> writer = new ExcelWriter<>();
+        ExcelHandler handler = writer
+                .column("A", i -> i)
+                .columnIf("B", true, i -> i * 2,
+                        cfg -> cfg.type(ExcelDataType.INTEGER))
+                .columnIf("C", false, i -> i * 3,
+                        cfg -> cfg.type(ExcelDataType.INTEGER))
+                .write(Stream.of(5));
+
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals(2, sheet.getRow(0).getLastCellNum(), "Only A and B should exist");
+        assertEquals("B", sheet.getRow(0).getCell(1).getStringCellValue());
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void columnIf_withExcelRowFunctionAndConfigurer_shouldApplyConfig() {
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .columnIf("B", true, (ExcelRowFunction<String, Object>) (row, c) -> c.getCurrentTotal(),
+                        cfg -> cfg.type(ExcelDataType.LONG))
+                .columnIf("C", false, (ExcelRowFunction<String, Object>) (row, c) -> row,
+                        cfg -> cfg.type(ExcelDataType.STRING))
+                .write(Stream.of("x"));
+
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals(2, sheet.getRow(0).getLastCellNum(), "Only A and B should exist");
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void constColumn_withConfigurer_shouldApplyConfig() {
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .constColumn("Const", 42, cfg -> cfg.type(ExcelDataType.INTEGER))
+                .write(Stream.of("x"));
+
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals("Const", sheet.getRow(0).getCell(1).getStringCellValue());
+        assertEquals(42.0, sheet.getRow(1).getCell(1).getNumericCellValue());
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void constColumnIf_trueCondition_shouldAddColumn() {
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .constColumnIf("Const", true, "YES")
+                .write(Stream.of("x"));
+
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals(2, sheet.getRow(0).getLastCellNum());
+        assertEquals("Const", sheet.getRow(0).getCell(1).getStringCellValue());
+        assertEquals("YES", sheet.getRow(1).getCell(1).getStringCellValue());
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void constColumnIf_falseCondition_shouldNotAddColumn() {
+        ExcelWriter<String> writer = new ExcelWriter<>();
+        ExcelHandler handler = writer
+                .column("A", (row, c) -> row)
+                .constColumnIf("Const", false, "NO")
+                .write(Stream.of("x"));
+
+        SXSSFSheet sheet = writer.getWb().getSheetAt(0);
+        assertEquals(1, sheet.getRow(0).getLastCellNum());
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            handler.consumeOutputStream(bos);
+        } catch (IOException e) {
+            fail(e);
+        }
+    }
+
+    @Test
     void constructor_withRowAccessWindowSize_shouldCreateWriter() throws IOException {
         // Arrange: use a small buffer size
         ExcelWriter<String> writer = new ExcelWriter<>(ExcelColor.WHITE, 1_000_000, 100);
@@ -514,8 +651,7 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .width(5000)
+                .column("A", (row, c) -> row, c -> c.width(5000))
                 .write(data);
 
         // Assert: column width should be exactly 5000 regardless of content
@@ -538,8 +674,7 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .minWidth(10000)
+                .column("A", (row, c) -> row, c -> c.minWidth(10000))
                 .write(data);
 
         // Assert: column width should be at least 10000
@@ -563,8 +698,7 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .maxWidth(3000)
+                .column("A", (row, c) -> row, c -> c.maxWidth(3000))
                 .write(data);
 
         // Assert: column width should not exceed 3000
@@ -705,8 +839,7 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .column("Status", (row, c) -> row)
-                .dropdown("Active", "Inactive", "Pending")
+                .column("Status", (row, c) -> row, c -> c.dropdown("Active", "Inactive", "Pending"))
                 .write(data);
 
         // Assert
@@ -734,8 +867,7 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .column("Name", (row, c) -> row)
-                .column("Status", (row, c) -> row)
-                .dropdown("Active", "Inactive")
+                .column("Status", (row, c) -> row, c -> c.dropdown("Active", "Inactive"))
                 .write(data);
 
         // Assert: only the Status column (index 1) should have validation
@@ -798,8 +930,7 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .rowColor(row -> ExcelColor.LIGHT_YELLOW)
-                .column("Col", (row, c) -> row)
-                .backgroundColor(ExcelColor.LIGHT_BLUE) // column bg
+                .column("Col", (row, c) -> row, c -> c.backgroundColor(ExcelColor.LIGHT_BLUE)) // column bg
                 .write(data);
 
         // Assert: row color should override column bg

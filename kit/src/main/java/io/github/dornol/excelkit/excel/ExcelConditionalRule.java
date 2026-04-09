@@ -24,7 +24,7 @@ import java.util.List;
  *
  * <pre>{@code
  * new ExcelWriter<Product>()
- *     .addColumn("Price", Product::getPrice, c -> c.type(ExcelDataType.INTEGER))
+ *     .column("Price", Product::getPrice, c -> c.type(ExcelDataType.INTEGER))
  *     .conditionalFormatting(cf -> cf
  *         .columns(1)
  *         .greaterThan("1000", ExcelColor.LIGHT_RED)

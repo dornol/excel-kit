@@ -35,8 +35,8 @@ class OutlineAndColumnAtTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String[]>()
                 .column("Name", r -> r[0])
-                .column("Detail1", r -> r[1]).outline(1)
-                .column("Detail2", r -> r[2]).outline(1)
+                .column("Detail1", r -> r[1], c -> c.outline(1))
+                .column("Detail2", r -> r[2], c -> c.outline(1))
                 .column("Summary", r -> r[3])
                 .write(Stream.<String[]>of(new String[]{"A", "d1", "d2", "S"}))
                 .consumeOutputStream(out);
@@ -78,9 +78,9 @@ class OutlineAndColumnAtTest {
     @Test
     void outline_invalidLevel_shouldThrow() {
         assertThrows(IllegalArgumentException.class, () ->
-                new ExcelWriter<String>().column("A", s -> s).outline(8));
+                new ExcelWriter<String>().column("A", s -> s, c -> c.outline(8)));
         assertThrows(IllegalArgumentException.class, () ->
-                new ExcelWriter<String>().column("A", s -> s).outline(-1));
+                new ExcelWriter<String>().column("A", s -> s, c -> c.outline(-1)));
     }
 
     // ========================================================================

@@ -17,7 +17,7 @@ class BorderStyleTest {
     void border_shouldApplyConfiguredBorderStyle() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s, c -> c.border(ExcelBorderStyle.MEDIUM))
+                .column("Name", s -> s, c -> c.border(ExcelBorderStyle.MEDIUM))
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 
@@ -34,7 +34,7 @@ class BorderStyleTest {
     void border_none_shouldRemoveBorders() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s, c -> c.border(ExcelBorderStyle.NONE))
+                .column("Name", s -> s, c -> c.border(ExcelBorderStyle.NONE))
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 
@@ -48,7 +48,7 @@ class BorderStyleTest {
     void border_thick_shouldApply() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s, c -> c.border(ExcelBorderStyle.THICK))
+                .column("Name", s -> s, c -> c.border(ExcelBorderStyle.THICK))
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 
@@ -62,7 +62,7 @@ class BorderStyleTest {
     void border_dashed_shouldApply() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s, c -> c.border(ExcelBorderStyle.DASHED))
+                .column("Name", s -> s, c -> c.border(ExcelBorderStyle.DASHED))
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 
@@ -76,7 +76,7 @@ class BorderStyleTest {
     void defaultBorder_shouldBeThin() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("Name", s -> s)
+                .column("Name", s -> s)
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 

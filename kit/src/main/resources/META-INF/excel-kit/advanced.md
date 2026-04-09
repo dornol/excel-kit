@@ -58,11 +58,11 @@ writer
 
 ```java
 writer
-    .column("Price", Product::price).type(ExcelDataType.INTEGER)
-    .column("Qty", Product::qty).type(ExcelDataType.INTEGER)
+    .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
+    .column("Qty", Product::qty, c -> c.type(ExcelDataType.INTEGER))
     .column("Total", (row, cursor) ->
-        "B" + (cursor.getRowOfSheet() + 1) + "*C" + (cursor.getRowOfSheet() + 1))
-        .type(ExcelDataType.FORMULA)
+        "B" + (cursor.getRowOfSheet() + 1) + "*C" + (cursor.getRowOfSheet() + 1),
+        c -> c.type(ExcelDataType.FORMULA))
     .write(data);
 ```
 
@@ -70,10 +70,10 @@ writer
 
 ```java
 // Plain URL
-.column("Website", Product::url).type(ExcelDataType.HYPERLINK)
+.column("Website", Product::url, c -> c.type(ExcelDataType.HYPERLINK))
 
 // Custom label
-.column("Link", p -> new ExcelHyperlink(p.url(), "View")).type(ExcelDataType.HYPERLINK)
+.column("Link", p -> new ExcelHyperlink(p.url(), "View"), c -> c.type(ExcelDataType.HYPERLINK))
 ```
 
 ## Rich Text
@@ -95,7 +95,7 @@ writer
 
 ```java
 writer
-    .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
     .conditionalFormatting(cf -> cf
         .columns(1)
         .greaterThan("10000", ExcelColor.LIGHT_RED)
@@ -112,7 +112,7 @@ Also: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights.
 
 ```java
 // Dropdown
-.column("Status", p -> p.status()).dropdown("Active", "Inactive", "Pending")
+.column("Status", p -> p.status(), c -> c.dropdown("Active", "Inactive", "Pending"))
 
 // Advanced validations
 .validation(ExcelValidation.integerBetween(0, 150))
@@ -130,8 +130,8 @@ ExcelValidation.integerBetween(1, 100).errorTitle("Invalid").errorMessage("Enter
 
 ```java
 writer
-    .column("Name", p -> p.name()).locked(false)   // editable
-    .column("Price", p -> p.price()).locked(true)   // read-only
+    .column("Name", p -> p.name(), c -> c.locked(false))   // editable
+    .column("Price", p -> p.price(), c -> c.locked(true))   // read-only
     .protectSheet("password123")
     .write(data);
 ```
@@ -153,8 +153,8 @@ new ExcelWriter<>().password("secret").column(...).write(data).consumeOutputStre
 
 ```java
 writer
-    .addColumn("Name", Product::name)
-    .addColumn("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Name", Product::name)
+    .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
     .chart(chart -> chart
         .type(ExcelChartConfig.ChartType.BAR)  // BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT
         .title("Sales Report")
@@ -168,8 +168,8 @@ writer
 
 ```java
 writer
-    .addColumn("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
-    .addColumn("Qty", p -> p.qty(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
+    .column("Qty", p -> p.qty(), c -> c.type(ExcelDataType.INTEGER))
     .summary(s -> s.label("Total").sum("Price").sum("Qty").average("Price"))
     .write(data);
 ```

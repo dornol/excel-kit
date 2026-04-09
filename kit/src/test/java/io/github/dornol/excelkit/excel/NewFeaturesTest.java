@@ -30,7 +30,7 @@ class NewFeaturesTest {
         List<Long> progressCounts = new ArrayList<>();
 
         new ExcelWriter<Integer>()
-                .column("Value", i -> i).type(ExcelDataType.INTEGER)
+                .column("Value", i -> i, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .onProgress(3, (count, cursor) -> progressCounts.add(count))
                 .write(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
 
@@ -43,7 +43,7 @@ class NewFeaturesTest {
         List<Long> progressCounts = new ArrayList<>();
 
         new ExcelWriter<Integer>()
-                .column("Value", i -> i).type(ExcelDataType.INTEGER)
+                .column("Value", i -> i, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .onProgress(100, (count, cursor) -> progressCounts.add(count))
                 .write(Stream.of(1, 2, 3));
 
@@ -85,14 +85,14 @@ class NewFeaturesTest {
     void cellColor_shouldApplyPerCellColor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<Integer>()
-                .column("Value", i -> i)
+                .column("Value", i -> i, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .cellColor((value, row) -> {
                         int v = ((Number) value).intValue();
                         if (v < 0) return ExcelColor.LIGHT_RED;
                         if (v > 100) return ExcelColor.LIGHT_GREEN;
                         return null;
-                    })
+                    }))
                 .write(Stream.of(-5, 50, 200))
                 .consumeOutputStream(out);
 
@@ -116,12 +116,12 @@ class NewFeaturesTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<Integer>()
                 .rowColor(i -> ExcelColor.LIGHT_YELLOW) // all rows yellow
-                .column("Value", i -> i)
+                .column("Value", i -> i, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .cellColor((value, row) -> {
                         int v = ((Number) value).intValue();
                         return v < 0 ? ExcelColor.LIGHT_RED : null; // negative → red, else fall through to row color
-                    })
+                    }))
                 .write(Stream.of(-5, 50))
                 .consumeOutputStream(out);
 
@@ -256,9 +256,9 @@ class NewFeaturesTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<int[]>()
                 .column("Name", r -> "Item")
-                .column("Price", r -> r[0]).type(ExcelDataType.INTEGER).group("Financial")
-                .column("Qty", r -> r[1]).type(ExcelDataType.INTEGER).group("Financial")
-                .column("Total", r -> r[0] * r[1]).type(ExcelDataType.INTEGER).group("Financial")
+                .column("Price", r -> r[0], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
+                .column("Qty", r -> r[1], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
+                .column("Total", r -> r[0] * r[1], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
                 .column("Notes", r -> "note")
                 .write(Stream.of(new int[]{100, 5}))
                 .consumeOutputStream(out);

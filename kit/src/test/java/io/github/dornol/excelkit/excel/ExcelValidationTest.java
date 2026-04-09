@@ -136,7 +136,7 @@ class ExcelValidationTest {
         @Test
         void integerBetween_appliedViaColumn_doesNotThrow() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            writer.addColumn("Value", s -> s, c -> c
+            writer.column("Value", s -> s, c -> c
                     .validation(ExcelValidation.integerBetween(1, 150)));
             assertNotNull(writer);
         }
@@ -144,7 +144,7 @@ class ExcelValidationTest {
         @Test
         void decimalBetween_appliedViaColumn_doesNotThrow() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            writer.addColumn("Price", s -> s, c -> c
+            writer.column("Price", s -> s, c -> c
                     .validation(ExcelValidation.decimalBetween(0, 9999.99)));
             assertNotNull(writer);
         }
@@ -152,7 +152,7 @@ class ExcelValidationTest {
         @Test
         void textLength_appliedViaColumn_doesNotThrow() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            writer.addColumn("Name", s -> s, c -> c
+            writer.column("Name", s -> s, c -> c
                     .validation(ExcelValidation.textLength(1, 50)));
             assertNotNull(writer);
         }
@@ -160,7 +160,7 @@ class ExcelValidationTest {
         @Test
         void dateRange_appliedViaColumn_doesNotThrow() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            writer.addColumn("Date", s -> s, c -> c
+            writer.column("Date", s -> s, c -> c
                     .validation(ExcelValidation.dateRange(
                             LocalDate.of(2020, 1, 1), LocalDate.of(2030, 12, 31))));
             assertNotNull(writer);
@@ -169,7 +169,7 @@ class ExcelValidationTest {
         @Test
         void formula_appliedViaColumn_doesNotThrow() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            writer.addColumn("Custom", s -> s, c -> c
+            writer.column("Custom", s -> s, c -> c
                     .validation(ExcelValidation.formula("LEN(A2)>0")));
             assertNotNull(writer);
         }
@@ -177,7 +177,7 @@ class ExcelValidationTest {
         @Test
         void listFromRange_appliedViaColumn_doesNotThrow() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            writer.addColumn("Category", s -> s, c -> c
+            writer.column("Category", s -> s, c -> c
                     .validation(ExcelValidation.listFromRange("Lists!$A$1:$A$5")));
             assertNotNull(writer);
         }
@@ -185,7 +185,7 @@ class ExcelValidationTest {
         @Test
         void validationWithErrorInfo_appliedViaColumn_doesNotThrow() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            writer.addColumn("Age", s -> s, c -> c
+            writer.column("Age", s -> s, c -> c
                     .validation(ExcelValidation.integerBetween(0, 150)
                             .errorTitle("Invalid Age")
                             .errorMessage("Age must be between 0 and 150")));

@@ -42,16 +42,16 @@ class RoundTripIntegrationTest {
         void shouldPreserveVerticalAlignmentWrapTextFontNameAndIndentation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<StyledRow>()
-                    .column("Label", StyledRow::label)
+                    .column("Label", StyledRow::label, c -> c
                         .verticalAlignment(VerticalAlignment.TOP)
                         .wrapText(false)
                         .fontName("Arial")
-                        .indentation(2)
-                    .column("Description", StyledRow::description)
+                        .indentation(2))
+                    .column("Description", StyledRow::description, c -> c
                         .verticalAlignment(VerticalAlignment.BOTTOM)
                         .wrapText(true)
                         .fontName("Courier New")
-                        .indentation(0)
+                        .indentation(0))
                     .write(Stream.of(
                             new StyledRow("Item A", "First description"),
                             new StyledRow("Item B", "Second description")))
@@ -122,7 +122,7 @@ class RoundTripIntegrationTest {
                     .headerFontName("Courier New")
                     .headerFontSize(16)
                     .column("Name", DataRow::name)
-                    .column("Qty", d -> d.qty()).type(ExcelDataType.INTEGER)
+                    .column("Qty", d -> d.qty(), c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new DataRow("Widget", 10)))
                     .consumeOutputStream(out);
 
@@ -156,8 +156,8 @@ class RoundTripIntegrationTest {
                             .bold(true)
                             .alignment(org.apache.poi.ss.usermodel.HorizontalAlignment.LEFT))
                     .column("Col1", TwoCol::col1)
-                    .column("Col2", TwoCol::col2)
-                        .bold(false)
+                    .column("Col2", TwoCol::col2, c -> c
+                        .bold(false))
                     .write(Stream.of(new TwoCol("A", "B")))
                     .consumeOutputStream(out);
 
@@ -195,9 +195,9 @@ class RoundTripIntegrationTest {
         void shouldWriteSummaryRowsWithFormulas() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<SaleRow>()
-                    .addColumn("Item", SaleRow::item)
-                    .addColumn("Price", s -> s.price(), c -> c.type(ExcelDataType.INTEGER))
-                    .addColumn("Qty", s -> s.qty(), c -> c.type(ExcelDataType.INTEGER))
+                    .column("Item", SaleRow::item)
+                    .column("Price", s -> s.price(), c -> c.type(ExcelDataType.INTEGER))
+                    .column("Qty", s -> s.qty(), c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s.label("Total").sum("Price").sum("Qty"))
                     .write(Stream.of(
                             new SaleRow("Apple", 100, 5),
@@ -337,8 +337,8 @@ class RoundTripIntegrationTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<TypedRow>()
                     .column("Name", TypedRow::name)
-                    .column("Price", r -> r.price()).type(ExcelDataType.INTEGER)
-                    .column("Weight", r -> r.weight()).type(ExcelDataType.DOUBLE)
+                    .column("Price", r -> r.price(), c -> c.type(ExcelDataType.INTEGER))
+                    .column("Weight", r -> r.weight(), c -> c.type(ExcelDataType.DOUBLE))
                     .column("Id", r -> r.id().toString())
                     .write(Stream.of(
                             new TypedRow("Alpha", 1500, 2.75, id1),
@@ -385,8 +385,8 @@ class RoundTripIntegrationTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<SparseRow>()
                     .column("Name", SparseRow::name)
-                    .column("Qty", r -> r.qty() == 0 ? null : r.qty()).type(ExcelDataType.INTEGER)
-                    .column("Price", r -> r.price() == 0.0 ? null : r.price()).type(ExcelDataType.DOUBLE)
+                    .column("Qty", r -> r.qty() == 0 ? null : r.qty(), c -> c.type(ExcelDataType.INTEGER))
+                    .column("Price", r -> r.price() == 0.0 ? null : r.price(), c -> c.type(ExcelDataType.DOUBLE))
                     .write(Stream.of(
                             new SparseRow("Full", 10, 99.99),
                             new SparseRow("", 0, 0.0),

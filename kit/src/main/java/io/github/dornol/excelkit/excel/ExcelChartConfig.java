@@ -20,8 +20,8 @@ import java.util.List;
  *
  * <pre>{@code
  * new ExcelWriter<Product>()
- *     .addColumn("Name", Product::getName)
- *     .addColumn("Sales", Product::getSales, c -> c.type(ExcelDataType.INTEGER))
+ *     .column("Name", Product::getName)
+ *     .column("Sales", Product::getSales, c -> c.type(ExcelDataType.INTEGER))
  *     .chart(chart -> chart
  *         .type(ExcelChartConfig.ChartType.BAR)
  *         .title("Sales by Product")

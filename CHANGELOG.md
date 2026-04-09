@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2026-04-09
+
+### Changed (Breaking)
+- **Unified column API** — `ExcelWriter` now uses the same `.column()` / `.columnIf()` / `.constColumn()`
+  pattern as `ExcelSheetWriter` and `CsvWriter`. All column methods return `ExcelWriter<T>` for chaining.
+  Column configuration is done via lambda configurer: `.column("Name", fn, cfg -> cfg.type(...).bold(true))`.
+- **Removed builder-chaining style** — The old `ExcelColumnBuilder` navigation methods (`column()`,
+  `columnIf()`, `constColumn()`, `write()`, `beforeHeader()`, `afterData()`, `onProgress()`) are removed.
+  `ExcelColumnBuilder` is now only used internally for column configuration.
+- **Renamed `addColumn` → `column`** on `ExcelWriter` for consistency across all writer APIs.
+
+### Added
+- **`columnIf` on `ExcelWriter`** — conditional column with all 4 overloads
+  (Function, Function+Consumer, ExcelRowFunction, ExcelRowFunction+Consumer).
+- **`constColumn` with configurer** — `.constColumn("name", value, cfg -> cfg.type(...))`.
+- **`constColumnIf`** — conditional constant column.
+
+### Migration Guide
+```java
+// Before (0.9.x)
+writer.column("Price", Product::price).type(ExcelDataType.INTEGER).format("#,##0")
+writer.addColumn("Price", Product::price, cfg -> cfg.type(ExcelDataType.INTEGER))
+
+// After (0.10.0)
+writer.column("Price", Product::price, cfg -> cfg.type(ExcelDataType.INTEGER).format("#,##0"))
+```
+
 ## [0.9.6] - 2026-04-08
 
 ### Added

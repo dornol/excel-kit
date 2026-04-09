@@ -12,7 +12,7 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 
 ## Quick Reference
 
-- Write Excel (typed): `new ExcelWriter<T>().column("Name", T::getName).write(stream).consumeOutputStream(out)`
+- Write Excel (typed): `new ExcelWriter<T>().column("Name", T::getName).column("Age", T::getAge, c -> c.type(ExcelDataType.INTEGER)).write(stream).consumeOutputStream(out)`
 - Write Excel (multi-sheet): `new ExcelWorkbook().sheet("Sheet1").column(...).write(stream)`
 - Write Excel (map): `new ExcelMapWriter("Name", "Age").write(stream)`
 - Read Excel (setter): `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
@@ -23,7 +23,7 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 
 ## Core Classes
 
-- ExcelWriter<T> — single-type Excel writer with builder chaining and auto-rollover
+- ExcelWriter<T> — single-type Excel writer with lambda config and auto-rollover
 - ExcelWorkbook — multi-sheet workbook with different data types per sheet
 - ExcelSheetWriter<T> — per-sheet writer within ExcelWorkbook (lambda config style)
 - ExcelMapWriter — write Map<String, Object> without typed POJOs
@@ -38,7 +38,7 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 
 ## Column Configuration
 
-All column config methods (available on ExcelColumnBuilder and ColumnConfig):
+All column config methods (available via lambda configurer on ExcelWriter, ExcelSheetWriter, CsvWriter):
 
 Data: type(ExcelDataType), format(String), dropdown(String...), validation(ExcelValidation)
 Layout: width(int), minWidth(int), maxWidth(int), alignment(HorizontalAlignment), verticalAlignment(VerticalAlignment), wrapText(), rotation(int), indentation(int)

@@ -16,7 +16,7 @@ import java.time.LocalDate;
  * Use the static factory methods to create validation instances.
  *
  * <pre>{@code
- * writer.addColumn("Age", Person::getAge, c -> c
+ * writer.column("Age", Person::getAge, c -> c
  *     .validation(ExcelValidation.integerBetween(1, 150)));
  * }</pre>
  *

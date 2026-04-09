@@ -456,8 +456,7 @@ class CoverageBoostTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         new ExcelWriter<LocalTime>()
-                .column("Time", t -> t)
-                    .type(ExcelDataType.TIME)
+                .column("Time", t -> t, cfg -> cfg.type(ExcelDataType.TIME))
                 .write(Stream.of(LocalTime.of(14, 30, 15)))
                 .consumeOutputStream(out);
 
@@ -476,8 +475,7 @@ class CoverageBoostTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         new ExcelWriter<Float>()
-                .column("Float", f -> f)
-                    .type(ExcelDataType.FLOAT)
+                .column("Float", f -> f, cfg -> cfg.type(ExcelDataType.FLOAT))
                 .write(Stream.of(3.14f))
                 .consumeOutputStream(out);
 
@@ -496,8 +494,7 @@ class CoverageBoostTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         new ExcelWriter<Float>()
-                .column("Pct", f -> f)
-                    .type(ExcelDataType.FLOAT_PERCENT)
+                .column("Pct", f -> f, cfg -> cfg.type(ExcelDataType.FLOAT_PERCENT))
                 .write(Stream.of(0.25f))
                 .consumeOutputStream(out);
 
@@ -516,8 +513,7 @@ class CoverageBoostTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         new ExcelWriter<BigDecimal>()
-                .column("BD", bd -> bd)
-                    .type(ExcelDataType.BIG_DECIMAL_TO_DOUBLE)
+                .column("BD", bd -> bd, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_DOUBLE))
                 .write(Stream.of(new BigDecimal("123.45")))
                 .consumeOutputStream(out);
 
@@ -536,8 +532,7 @@ class CoverageBoostTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         new ExcelWriter<BigDecimal>()
-                .column("BD", bd -> bd)
-                    .type(ExcelDataType.BIG_DECIMAL_TO_LONG)
+                .column("BD", bd -> bd, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_LONG))
                 .write(Stream.of(new BigDecimal("99999")))
                 .consumeOutputStream(out);
 
@@ -556,8 +551,7 @@ class CoverageBoostTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         new ExcelWriter<Boolean>()
-                .column("Flag", b -> b)
-                    .type(ExcelDataType.BOOLEAN_TO_YN)
+                .column("Flag", b -> b, cfg -> cfg.type(ExcelDataType.BOOLEAN_TO_YN))
                 .write(Stream.of(true, false))
                 .consumeOutputStream(out);
 
@@ -591,8 +585,7 @@ class CoverageBoostTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         new ExcelWriter<String>()
-                .column("Link", url -> new ExcelHyperlink(url))
-                    .type(ExcelDataType.HYPERLINK)
+                .column("Link", url -> new ExcelHyperlink(url), cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of("https://example.com"))
                 .consumeOutputStream(out);
 

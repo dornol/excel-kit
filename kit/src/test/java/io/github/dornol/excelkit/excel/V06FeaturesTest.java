@@ -41,7 +41,7 @@ class V06FeaturesTest {
             for (ExcelBorderStyle style : ExcelBorderStyle.values()) {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 new ExcelWriter<String>()
-                        .addColumn("Col", s -> s, c -> c.border(style))
+                        .column("Col", s -> s, c -> c.border(style))
                         .write(Stream.of("data"))
                         .consumeOutputStream(out);
 
@@ -57,9 +57,9 @@ class V06FeaturesTest {
         void border_mixedStyles_perColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Thin", s -> s, c -> c.border(ExcelBorderStyle.THIN))
-                    .addColumn("Thick", s -> s, c -> c.border(ExcelBorderStyle.THICK))
-                    .addColumn("None", s -> s, c -> c.border(ExcelBorderStyle.NONE))
+                    .column("Thin", s -> s, c -> c.border(ExcelBorderStyle.THIN))
+                    .column("Thick", s -> s, c -> c.border(ExcelBorderStyle.THICK))
+                    .column("None", s -> s, c -> c.border(ExcelBorderStyle.NONE))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
 
@@ -75,7 +75,7 @@ class V06FeaturesTest {
         void border_withOtherStyling_shouldCombine() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Col", s -> s, c -> c
+                    .column("Col", s -> s, c -> c
                             .border(ExcelBorderStyle.MEDIUM)
                             .bold(true)
                             .fontSize(14)
@@ -100,7 +100,7 @@ class V06FeaturesTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>(3)
                     .sheetName("Data")
-                    .addColumn("Name", s -> s)
+                    .column("Name", s -> s)
                     .write(Stream.of("A", "B", "C", "D", "E", "F", "G", "H", "I"))
                     .consumeOutputStream(out);
 
@@ -113,8 +113,8 @@ class V06FeaturesTest {
         void getSheetHeaders_emptySheet() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("A", s -> s)
-                    .addColumn("B", s -> s)
+                    .column("A", s -> s)
+                    .column("B", s -> s)
                     .write(Stream.empty())
                     .consumeOutputStream(out);
 
@@ -285,7 +285,7 @@ class V06FeaturesTest {
                         ctx.getSheet().createRow(0).createCell(0).setCellValue("Title");
                         return 1;
                     })
-                    .addColumn("Name", s -> s)
+                    .column("Name", s -> s)
                     .write(Stream.of("Alice"))
                     .consumeOutputStream(out);
 
@@ -347,8 +347,8 @@ class V06FeaturesTest {
         void comment_multipleColumns() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("A", s -> s, c -> c.comment(s -> "Comment for A: " + s))
-                    .addColumn("B", s -> s.toUpperCase(), c -> c.comment(s -> "Comment for B: " + s))
+                    .column("A", s -> s, c -> c.comment(s -> "Comment for A: " + s))
+                    .column("B", s -> s.toUpperCase(), c -> c.comment(s -> "Comment for B: " + s))
                     .write(Stream.of("hello"))
                     .consumeOutputStream(out);
 
@@ -367,7 +367,7 @@ class V06FeaturesTest {
         void comment_emptyString() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("A", s -> s, c -> c.comment(s -> ""))
+                    .column("A", s -> s, c -> c.comment(s -> ""))
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
 
@@ -381,7 +381,7 @@ class V06FeaturesTest {
         void comment_multipleRows() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Name", s -> s, c -> c.comment(s -> "Hi " + s))
+                    .column("Name", s -> s, c -> c.comment(s -> "Hi " + s))
                     .write(Stream.of("Alice", "Bob", "Charlie"))
                     .consumeOutputStream(out);
 
@@ -402,7 +402,7 @@ class V06FeaturesTest {
         void conditionalFormatting_noRules_shouldNotFail() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Name", s -> s)
+                    .column("Name", s -> s)
                     .conditionalFormatting(cf -> {})  // no rules added
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -417,8 +417,8 @@ class V06FeaturesTest {
         void conditionalFormatting_allColumnsByDefault() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("A", s -> s)
-                    .addColumn("B", s -> s)
+                    .column("A", s -> s)
+                    .column("B", s -> s)
                     .conditionalFormatting(cf -> cf
                             .equalTo("\"test\"", ExcelColor.LIGHT_RED))
                     .write(Stream.of("test"))
@@ -435,7 +435,7 @@ class V06FeaturesTest {
         void conditionalFormatting_multipleRulesSets() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Val", s -> s)
+                    .column("Val", s -> s)
                     .conditionalFormatting(cf -> cf
                             .columns(0)
                             .greaterThan("100", ExcelColor.RED))
@@ -461,8 +461,8 @@ class V06FeaturesTest {
         void protectSheet_allColumnsLockedByDefault() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("A", s -> s)
-                    .addColumn("B", s -> s)
+                    .column("A", s -> s)
+                    .column("B", s -> s)
                     .protectSheet("pass")
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -476,7 +476,7 @@ class V06FeaturesTest {
         void protectSheet_withRollover() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>(3)
-                    .addColumn("Name", s -> s)
+                    .column("Name", s -> s)
                     .protectSheet("pass")
                     .write(Stream.of("A", "B", "C", "D", "E", "F", "G"))
                     .consumeOutputStream(out);
@@ -492,8 +492,8 @@ class V06FeaturesTest {
         void locked_withDifferentStyles() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Editable", s -> s, c -> c.locked(false).backgroundColor(ExcelColor.LIGHT_GREEN))
-                    .addColumn("ReadOnly", s -> s, c -> c.locked(true).bold(true))
+                    .column("Editable", s -> s, c -> c.locked(false).backgroundColor(ExcelColor.LIGHT_GREEN))
+                    .column("ReadOnly", s -> s, c -> c.locked(true).bold(true))
                     .protectSheet("pass")
                     .write(Stream.of("data"))
                     .consumeOutputStream(out);
@@ -529,8 +529,8 @@ class V06FeaturesTest {
         void image_multipleImages() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Name", s -> s)
-                    .addColumn("Pic", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
+                    .column("Name", s -> s)
+                    .column("Pic", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
                     .write(Stream.of("A", "B", "C"))
                     .consumeOutputStream(out);
 
@@ -543,10 +543,10 @@ class V06FeaturesTest {
         void image_withTextColumns() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("ID", s -> s)
-                    .addColumn("Name", s -> "Item-" + s)
-                    .addColumn("Photo", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
-                    .addColumn("Notes", s -> "Note-" + s)
+                    .column("ID", s -> s)
+                    .column("Name", s -> "Item-" + s)
+                    .column("Photo", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
+                    .column("Notes", s -> "Note-" + s)
                     .write(Stream.of("1"))
                     .consumeOutputStream(out);
 
@@ -578,8 +578,8 @@ class V06FeaturesTest {
         void chart_withNoTitle() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Data>()
-                    .addColumn("Name", Data::name)
-                    .addColumn("Value", d -> d.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Data::name)
+                    .column("Value", d -> d.value, c -> c.type(ExcelDataType.INTEGER))
                     .chart(ch -> ch
                             .type(ExcelChartConfig.ChartType.BAR)
                             .categoryColumn(0)
@@ -596,8 +596,8 @@ class V06FeaturesTest {
         void chart_defaultPosition() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Data>()
-                    .addColumn("Name", Data::name)
-                    .addColumn("Value", d -> d.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Data::name)
+                    .column("Value", d -> d.value, c -> c.type(ExcelDataType.INTEGER))
                     .chart(ch -> ch
                             .type(ExcelChartConfig.ChartType.LINE)
                             .title("Auto Position")
@@ -615,9 +615,9 @@ class V06FeaturesTest {
         void chart_nonZeroCategoryColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<Data>()
-                    .addColumn("ID", d -> d.value, c -> c.type(ExcelDataType.INTEGER))
-                    .addColumn("Name", Data::name)
-                    .addColumn("Value", d -> d.extra, c -> c.type(ExcelDataType.INTEGER))
+                    .column("ID", d -> d.value, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", Data::name)
+                    .column("Value", d -> d.extra, c -> c.type(ExcelDataType.INTEGER))
                     .chart(ch -> ch
                             .type(ExcelChartConfig.ChartType.PIE)
                             .categoryColumn(1)  // use Name as category
@@ -651,11 +651,11 @@ class V06FeaturesTest {
         void allFeatures_combined() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelWriter<String>()
-                    .addColumn("Name", s -> s, c -> c
+                    .column("Name", s -> s, c -> c
                             .border(ExcelBorderStyle.MEDIUM)
                             .comment(s -> "Note: " + s)
                             .locked(false))
-                    .addColumn("Value", s -> "100", c -> c
+                    .column("Value", s -> "100", c -> c
                             .type(ExcelDataType.INTEGER)
                             .border(ExcelBorderStyle.THICK))
                     .protectSheet("pass")

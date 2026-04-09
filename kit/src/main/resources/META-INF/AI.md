@@ -41,7 +41,7 @@ The following files are located in `META-INF/excel-kit/` within this JAR:
 ```java
 new ExcelWriter<Person>()
     .column("Name", Person::name)
-    .column("Age", Person::age).type(ExcelDataType.INTEGER)
+    .column("Age", Person::age, cfg -> cfg.type(ExcelDataType.INTEGER))
     .write(stream)
     .consumeOutputStream(out);
 ```
@@ -55,4 +55,4 @@ try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 }
 ```
 
-`ExcelWriter` uses builder chaining (`.column().type().bold()`), while `ExcelSheetWriter` uses lambda config (`.column("Name", fn, cfg -> cfg.type().bold())`). Both share the same column configuration options.
+All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.column("Name", fn, cfg -> cfg.type().bold())` pattern.

@@ -477,9 +477,9 @@ class ExcelMappingReadTest {
         // Write
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<PersonRecord>()
-                .addColumn("Name", PersonRecord::name)
-                .addColumn("Age", p -> p.age())
-                .addColumn("City", PersonRecord::city)
+                .column("Name", PersonRecord::name)
+                .column("Age", p -> p.age())
+                .column("City", PersonRecord::city)
                 .write(Stream.of(
                         new PersonRecord("Alice", 30, "Seoul"),
                         new PersonRecord("Bob", 25, "Busan")))

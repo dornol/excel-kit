@@ -19,9 +19,9 @@ class AddColumnRowFunctionTest {
     void addColumn_withRowFunction_shouldProvideCursorAccess() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("No.", (ExcelRowFunction<String, Object>) (row, cursor) -> cursor.getCurrentTotal(),
+                .column("No.", (ExcelRowFunction<String, Object>) (row, cursor) -> cursor.getCurrentTotal(),
                         c -> c.type(ExcelDataType.LONG))
-                .addColumn("Name", s -> s)
+                .column("Name", s -> s)
                 .write(Stream.of("Alice", "Bob", "Charlie"))
                 .consumeOutputStream(out);
 
@@ -38,9 +38,9 @@ class AddColumnRowFunctionTest {
     void addColumn_withRowFunctionAndConfigurer_shouldApplyType() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new ExcelWriter<String>()
-                .addColumn("No.", (row, cursor) -> cursor.getCurrentTotal(),
+                .column("No.", (row, cursor) -> cursor.getCurrentTotal(),
                         c -> c.type(ExcelDataType.LONG))
-                .addColumn("Name", s -> s)
+                .column("Name", s -> s)
                 .write(Stream.of("Alice"))
                 .consumeOutputStream(out);
 

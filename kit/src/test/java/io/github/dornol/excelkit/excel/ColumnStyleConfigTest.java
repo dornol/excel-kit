@@ -516,9 +516,9 @@ class ColumnStyleConfigTest {
     class InheritanceTests {
 
         @Test
-        void excelColumnBuilder_inheritsAllMethods() {
+        void excelWriter_addColumn_withAllConfigMethods() {
             ExcelWriter<String> writer = new ExcelWriter<>();
-            var builder = writer.column("Col", s -> s)
+            var result = writer.column("Col", s -> s, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .format("#,##0")
                     .alignment(HorizontalAlignment.RIGHT)
@@ -534,10 +534,10 @@ class ColumnStyleConfigTest {
                     .locked(true)
                     .hidden()
                     .validation(ExcelValidation.integerBetween(1, 100))
-                    .dropdown("A", "B");
+                    .dropdown("A", "B"));
 
-            // Verify it's still an ExcelColumnBuilder (not ColumnConfig)
-            assertInstanceOf(ExcelColumn.ExcelColumnBuilder.class, builder);
+            // Verify it returns ExcelWriter (not ExcelColumnBuilder)
+            assertInstanceOf(ExcelWriter.class, result);
         }
 
         @Test
