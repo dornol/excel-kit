@@ -73,6 +73,78 @@ public class ExcelWriter<T> {
         return new Builder<>();
     }
 
+    /**
+     * Creates an ExcelWriter pre-configured to write rows of {@code Map<String, Object>},
+     * with one column per given column name. Each column reads its value from the map
+     * by using the column name as the key.
+     * <p>
+     * Use this when your data is already in map form and you don't need per-column
+     * customization beyond the header labels. The returned writer is a regular
+     * {@link ExcelWriter}, so all of its fluent configuration methods (row height,
+     * auto filter, freeze pane, sheet name, password, etc.) are available.
+     *
+     * <pre>{@code
+     * ExcelWriter.forMap("Name", "Age", "Email")
+     *     .rowHeight(22)
+     *     .autoFilter(true)
+     *     .write(stream)
+     *     .write(out);
+     * }</pre>
+     *
+     * @param columnNames the column names (used as both header labels and map keys)
+     * @return a new ExcelWriter with the columns registered
+     * @since 0.11.0
+     */
+    public static ExcelWriter<Map<String, Object>> forMap(String... columnNames) {
+        ExcelWriter<Map<String, Object>> writer = ExcelWriter.<Map<String, Object>>builder().build();
+        for (String name : columnNames) {
+            writer.column(name, map -> map.get(name));
+        }
+        return writer;
+    }
+
+    /**
+     * Creates an ExcelWriter pre-configured for {@code Map<String, Object>} rows, with
+     * per-column configurers that can adjust type, format, styling, etc.
+     * <p>
+     * Each configurer applies to the column at the matching index. Extra column names
+     * beyond the {@code configurers} array get no configurer (plain column).
+     *
+     * <pre>{@code
+     * ExcelWriter.forMap(
+     *         new String[]{"Name", "Price", "Date"},
+     *         cfg -> cfg.bold(true),
+     *         cfg -> cfg.type(ExcelDataType.INTEGER),
+     *         cfg -> cfg.type(ExcelDataType.DATE))
+     *     .write(stream)
+     *     .write(out);
+     * }</pre>
+     *
+     * @param columnNames the column names
+     * @param configurers per-column configurers (length must not exceed {@code columnNames.length})
+     * @return a new ExcelWriter with the columns registered
+     * @throws IllegalArgumentException if {@code configurers.length > columnNames.length}
+     * @since 0.11.0
+     */
+    @SafeVarargs
+    public static ExcelWriter<Map<String, Object>> forMap(
+            String[] columnNames,
+            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>... configurers) {
+        if (configurers.length > columnNames.length) {
+            throw new IllegalArgumentException(
+                    "configurers length (" + configurers.length
+                            + ") exceeds columnNames length (" + columnNames.length + ")");
+        }
+        ExcelWriter<Map<String, Object>> writer = ExcelWriter.<Map<String, Object>>builder().build();
+        for (int i = 0; i < columnNames.length; i++) {
+            String name = columnNames[i];
+            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>> cfg =
+                    (i < configurers.length) ? configurers[i] : null;
+            writer.column(name, map -> map.get(name), cfg);
+        }
+        return writer;
+    }
+
     private ExcelWriter(Builder<T> builder) {
         this.wb = new SXSSFWorkbook(builder.rowAccessWindowSize);
         this.maxRows = builder.maxRows;

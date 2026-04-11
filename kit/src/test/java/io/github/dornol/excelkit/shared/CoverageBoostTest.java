@@ -2,13 +2,11 @@ package io.github.dornol.excelkit.shared;
 
 import io.github.dornol.excelkit.csv.CsvDialect;
 import io.github.dornol.excelkit.csv.CsvMapReader;
-import io.github.dornol.excelkit.csv.CsvMapWriter;
 import io.github.dornol.excelkit.csv.CsvReadException;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.csv.CsvQuoting;
 import io.github.dornol.excelkit.excel.ExcelMapReader;
-import io.github.dornol.excelkit.excel.ExcelMapWriter;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelReadException;
 import io.github.dornol.excelkit.excel.ExcelWriter;
@@ -361,7 +359,7 @@ class CoverageBoostTest {
         @Test
         void readAsStream_tryWithResources_multipleColumns() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelMapWriter("Name", "Age", "City").write(Stream.of(
+            ExcelWriter.forMap("Name", "Age", "City").write(Stream.of(
                     Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
                     Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")
             )).write(out);
@@ -380,7 +378,7 @@ class CoverageBoostTest {
         @Test
         void readAsStream_withHeaderRowIndex() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelMapWriter("Name").write(Stream.of(
+            ExcelWriter.forMap("Name").write(Stream.of(
                     Map.of("Name", "Alice")
             )).write(out);
 

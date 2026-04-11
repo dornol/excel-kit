@@ -496,7 +496,7 @@ public class WriteShowcaseController {
                     return m;
                 });
 
-        var handler = new ExcelMapWriter("Name", "Category", "Price", "Quantity", "Discount")
+        var handler = ExcelWriter.forMap("Name", "Category", "Price", "Quantity", "Discount")
                 .write(maps);
 
         return DownloadUtil.builder("map-writer-demo", DownloadFileType.EXCEL)

@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.csv.CsvMapWriter;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.shared.ReadResult;
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -177,8 +176,7 @@ class V06FeaturesTest {
         void excelMapWriter_withConfigurers() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             @SuppressWarnings("unchecked")
-            var writer = new ExcelMapWriter(
-                    ExcelWriter.<Map<String, Object>>builder().build(),
+            var writer = ExcelWriter.forMap(
                     new String[]{"Name", "Price"},
                     c -> c.bold(true),
                     c -> c.type(ExcelDataType.INTEGER)
@@ -195,7 +193,7 @@ class V06FeaturesTest {
         @Test
         void excelMapWriter_emptyStream() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelMapWriter("A", "B")
+            ExcelWriter.forMap("A", "B")
                     .write(Stream.empty())
                     .write(out);
 
@@ -212,7 +210,7 @@ class V06FeaturesTest {
             row.put("Name", null);
             row.put("Age", null);
 
-            new ExcelMapWriter("Name", "Age")
+            ExcelWriter.forMap("Name", "Age")
                     .write(Stream.of(row))
                     .write(out);
 
@@ -225,7 +223,7 @@ class V06FeaturesTest {
         @Test
         void excelMapWriter_extraKeysIgnored() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelMapWriter("Name")
+            ExcelWriter.forMap("Name")
                     .write(Stream.of(Map.of("Name", "Alice", "Extra", "ignored")))
                     .write(out);
 
@@ -237,7 +235,7 @@ class V06FeaturesTest {
         @Test
         void excelMapReader_emptyDataRows() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelMapWriter("Name", "Age")
+            ExcelWriter.forMap("Name", "Age")
                     .write(Stream.empty())
                     .write(out);
 
@@ -262,7 +260,7 @@ class V06FeaturesTest {
             sparseRow.put("B", null);
             sparseRow.put("C", null);
 
-            new ExcelMapWriter("A", "B", "C")
+            ExcelWriter.forMap("A", "B", "C")
                     .write(Stream.of(fullRow, sparseRow))
                     .write(out);
 
@@ -302,7 +300,7 @@ class V06FeaturesTest {
         @Test
         void csvMapWriter_specialCharacters() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvMapWriter("Name", "Desc")
+            CsvWriter.forMap("Name", "Desc")
                     .write(Stream.of(Map.of("Name", "Alice, Jr.", "Desc", "She said \"hi\"")))
                     .write(out);
 
@@ -311,11 +309,10 @@ class V06FeaturesTest {
         }
 
         @Test
-        void csvMapWriter_withCustomWriter() throws IOException {
+        void csvMapWriter_withDelimiter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            var csvWriter = new CsvWriter<Map<String, Object>>();
-            csvWriter.delimiter('\t');
-            new CsvMapWriter(csvWriter, "A", "B")
+            CsvWriter.forMap("A", "B")
+                    .delimiter('\t')
                     .write(Stream.of(Map.of("A", "1", "B", "2")))
                     .write(out);
 
@@ -330,7 +327,7 @@ class V06FeaturesTest {
             row.put("Name", "Alice");
             row.put("Value", null);
 
-            new CsvMapWriter("Name", "Value")
+            CsvWriter.forMap("Name", "Value")
                     .write(Stream.of(row))
                     .write(out);
 
@@ -685,8 +682,8 @@ class V06FeaturesTest {
         @Test
         void mapWriter_withProtection() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            var writer = new ExcelMapWriter("Name", "Age");
-            writer.writer().protectSheet("secret");
+            var writer = ExcelWriter.forMap("Name", "Age")
+                    .protectSheet("secret");
             writer.write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
                     .write(out);
 

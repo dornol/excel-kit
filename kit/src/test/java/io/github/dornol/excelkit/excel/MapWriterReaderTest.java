@@ -2,8 +2,8 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.csv.CsvDialect;
 import io.github.dornol.excelkit.csv.CsvMapReader;
-import io.github.dornol.excelkit.csv.CsvMapWriter;
 import io.github.dornol.excelkit.csv.CsvReadException;
+import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.shared.ReadResult;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class MapWriterReaderTest {
     @Test
     void excelMapWriter_shouldWriteMapData() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelMapWriter writer = new ExcelMapWriter("Name", "Age");
+        var writer = ExcelWriter.forMap("Name", "Age");
         writer.write(Stream.of(
                 Map.of("Name", "Alice", "Age", 30),
                 Map.of("Name", "Bob", "Age", 25)
@@ -43,31 +43,9 @@ class MapWriterReaderTest {
     }
 
     @Test
-    void excelMapWriter_withCustomWriter() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelMapWriter writer = new ExcelMapWriter(
-                ExcelWriter.<Map<String, Object>>builder().color(ExcelColor.LIGHT_BLUE).build(),
-                "Name", "Score"
-        );
-        writer.write(Stream.of(
-                Map.of("Name", "Alice", "Score", 95)
-        )).write(out);
-
-        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
-            assertEquals("Alice", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
-        }
-    }
-
-    @Test
-    void excelMapWriter_writerAccessor() {
-        ExcelMapWriter writer = new ExcelMapWriter("A", "B");
-        assertNotNull(writer.writer());
-    }
-
-    @Test
     void excelMapReader_shouldReadAllColumns() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelMapWriter("Name", "City").write(Stream.of(
+        ExcelWriter.forMap("Name", "City").write(Stream.of(
                 Map.of("Name", "Alice", "City", "Seoul"),
                 Map.of("Name", "Bob", "City", "Tokyo")
         )).write(out);
@@ -87,7 +65,7 @@ class MapWriterReaderTest {
     @Test
     void excelMapReader_readAsStream() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelMapWriter("Name").write(Stream.of(
+        ExcelWriter.forMap("Name").write(Stream.of(
                 Map.of("Name", "Alice"),
                 Map.of("Name", "Bob")
         )).write(out);
@@ -127,7 +105,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapWriter_shouldWriteMapData() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        CsvMapWriter writer = new CsvMapWriter("Name", "Age");
+        var writer = CsvWriter.forMap("Name", "Age");
         writer.write(Stream.of(
                 Map.of("Name", "Alice", "Age", 30)
         )).write(out);
@@ -146,7 +124,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapWriter_withDialect_TSV() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvMapWriter("Name", "Age")
+        CsvWriter.forMap("Name", "Age")
                 .dialect(CsvDialect.TSV)
                 .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
                 .write(out);
@@ -160,7 +138,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapWriter_withDelimiter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvMapWriter("A", "B")
+        CsvWriter.forMap("A", "B")
                 .delimiter('|')
                 .write(Stream.of(Map.of("A", "x", "B", "y")))
                 .write(out);
@@ -174,7 +152,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapWriter_withBomDisabled() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvMapWriter("A")
+        CsvWriter.forMap("A")
                 .bom(false)
                 .write(Stream.of(Map.of("A", "val")))
                 .write(out);
@@ -187,15 +165,9 @@ class MapWriterReaderTest {
     }
 
     @Test
-    void csvMapWriter_writerAccessor() {
-        CsvMapWriter writer = new CsvMapWriter("A");
-        assertNotNull(writer.writer());
-    }
-
-    @Test
     void csvMapReader_shouldReadAllColumns() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvMapWriter("Name", "City").write(Stream.of(
+        CsvWriter.forMap("Name", "City").write(Stream.of(
                 Map.of("Name", "Alice", "City", "Seoul"),
                 Map.of("Name", "Bob", "City", "Tokyo")
         )).write(out);
@@ -226,7 +198,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapReader_readAsStream() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvMapWriter("Name", "Score").write(Stream.of(
+        CsvWriter.forMap("Name", "Score").write(Stream.of(
                 Map.of("Name", "Alice", "Score", 95),
                 Map.of("Name", "Bob", "Score", 80)
         )).write(out);
@@ -310,7 +282,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapReader_withProgress() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvMapWriter("Name").write(Stream.of(
+        CsvWriter.forMap("Name").write(Stream.of(
                 Map.of("Name", "A"),
                 Map.of("Name", "B"),
                 Map.of("Name", "C"),
@@ -336,7 +308,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapReader_roundTripWithCsvMapWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvMapWriter("Name", "Age", "Email").write(Stream.of(
+        CsvWriter.forMap("Name", "Age", "Email").write(Stream.of(
                 Map.of("Name", "Alice", "Age", 30, "Email", "alice@test.com"),
                 Map.of("Name", "Bob", "Age", 25, "Email", "bob@test.com")
         )).write(out);
@@ -452,7 +424,7 @@ class MapWriterReaderTest {
         row.put("Name", "Alice");
         // "Age" key is missing
 
-        new ExcelMapWriter("Name", "Age")
+        ExcelWriter.forMap("Name", "Age")
                 .write(Stream.of(row))
                 .write(out);
 

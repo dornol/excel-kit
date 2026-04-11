@@ -18,6 +18,7 @@ import io.github.dornol.excelkit.shared.ProgressCallback;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,6 +45,35 @@ public class CsvWriter<T> {
     private int progressInterval;
     private boolean csvInjectionDefense = true;
     private CsvQuoting quoting = CsvQuoting.MINIMAL;
+
+    /**
+     * Creates a CsvWriter pre-configured to write rows of {@code Map<String, Object>},
+     * with one column per given column name. Each column reads its value from the map
+     * by using the column name as the key.
+     * <p>
+     * The returned writer is a regular {@link CsvWriter}, so all of its fluent
+     * configuration methods (dialect, delimiter, charset, BOM, quoting, CSV
+     * injection defense, afterData, etc.) are available.
+     *
+     * <pre>{@code
+     * CsvWriter.forMap("Name", "Age", "Email")
+     *     .dialect(CsvDialect.EXCEL)
+     *     .bom(true)
+     *     .write(stream)
+     *     .write(out);
+     * }</pre>
+     *
+     * @param columnNames the column names (used as both header labels and map keys)
+     * @return a new CsvWriter with the columns registered
+     * @since 0.11.0
+     */
+    public static CsvWriter<Map<String, Object>> forMap(String... columnNames) {
+        CsvWriter<Map<String, Object>> writer = new CsvWriter<>();
+        for (String name : columnNames) {
+            writer.column(name, map -> map.get(name));
+        }
+        return writer;
+    }
 
     /**
      * Applies a predefined CSV dialect configuration.
