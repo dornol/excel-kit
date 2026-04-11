@@ -2,6 +2,83 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0] - 2026-04-12
+
+v0.11.0 is an **API cleanup release**. It removes a handful of parallel or
+stale entry points that accumulated through v0.9.x–v0.10.0 and lands the
+Reader-side half of the "unified column API" work that started in v0.10.0.
+No new features.
+
+### Changed (Breaking)
+
+- **`ExcelWriter` constructors removed** — all 5 public constructors
+  (`ExcelWriter()`, `ExcelWriter(maxRows)`, `ExcelWriter(color)`,
+  `ExcelWriter(color, maxRows)`, `ExcelWriter(color, maxRows, windowSize)`)
+  are deleted. Use `ExcelWriter.<T>builder()` instead.
+- **`FileHandler` interface + `write()` rename** — `ExcelHandler` and
+  `CsvHandler` now implement `shared.FileHandler` and expose
+  `write(OutputStream)` instead of `consumeOutputStream(OutputStream)`.
+  Both handler classes are now `final`. `ExcelHandler`'s
+  `consumeOutputStreamWithPassword` Excel-only overloads are unchanged.
+- **Reader column API unified** — `ExcelReader` / `CsvReader` no longer have
+  `addColumn`, `columnAtBuilder`, `ExcelReadColumnBuilder`, or
+  `CsvReadColumnBuilder`. `column(setter)` and `column(name, setter)` now
+  return the reader itself (previously returned a chain-continuation
+  builder). `columnAt(int, setter)` is unchanged.
+- **`ExcelMapWriter` and `CsvMapWriter` deleted** — replaced by
+  `ExcelWriter.forMap(...)` and `CsvWriter.forMap(...)` static factories
+  that return the underlying writer. Use the writer's full fluent API
+  directly instead of reaching through `.writer()` or a limited set of
+  shortcut methods.
+
+### Migration Guide
+
+```java
+// ─── ExcelWriter construction ───
+// Before
+new ExcelWriter<User>()
+new ExcelWriter<User>(ExcelColor.STEEL_BLUE)
+new ExcelWriter<User>(ExcelColor.STEEL_BLUE, 500_000, 500)
+// After
+ExcelWriter.<User>builder().build()
+ExcelWriter.<User>builder().color(ExcelColor.STEEL_BLUE).build()
+ExcelWriter.<User>builder()
+    .color(ExcelColor.STEEL_BLUE).maxRows(500_000).rowAccessWindowSize(500).build()
+
+// ─── Writing the output ───
+// Before
+handler.consumeOutputStream(out)
+// After
+handler.write(out)
+
+// ─── Reader column binding ───
+// Before
+reader.addColumn(User::setName)
+reader.addColumn("Name", User::setName)
+reader.column(User::setName)          // (returned a builder)
+reader.columnAtBuilder(2, User::setAge)
+// After
+reader.column(User::setName)          // now returns Reader<T>
+reader.column("Name", User::setName)
+reader.columnAt(2, User::setAge)
+
+// ─── Map writers ───
+// Before
+new ExcelMapWriter("Name", "Age").write(stream).consumeOutputStream(out)
+new CsvMapWriter("Name", "Age").dialect(CsvDialect.EXCEL).write(stream).consumeOutputStream(out)
+// After
+ExcelWriter.forMap("Name", "Age").write(stream).write(out)
+CsvWriter.forMap("Name", "Age").dialect(CsvDialect.EXCEL).write(stream).write(out)
+```
+
+### Deferred to v0.12.0
+
+- Map Reader absorption — `ExcelMapReader` and `CsvMapReader` remain as
+  standalone classes. Their header-auto-detect logic is woven into the
+  SAX-style row callbacks, so folding them into `ExcelReader.forMap()` /
+  `CsvReader.forMap()` needs a separate refactor and is scheduled for
+  v0.12.0.
+
 ## [0.10.0] - 2026-04-09
 
 ### Changed (Breaking)

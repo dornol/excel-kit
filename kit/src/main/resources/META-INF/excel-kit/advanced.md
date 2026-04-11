@@ -28,7 +28,7 @@ try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
 
 ```java
 // ExcelWriter: auto-split at 500K rows
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .maxRows(500_000)
     .column("Name", Product::name)
     .write(millionRows);  // creates "Sheet", "Sheet (2)", etc.
@@ -145,7 +145,7 @@ writer.protectWorkbook("password123");  // prevent add/delete/rename sheets
 ## Password Encryption
 
 ```java
-new ExcelWriter<>().password("secret").column(...).write(data).write(out);
+ExcelWriter.<>builder().build().password("secret").column(...).write(data).write(out);
 // Or: handler.consumeOutputStreamWithPassword(out, "secret");
 ```
 

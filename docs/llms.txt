@@ -12,9 +12,9 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 
 ## Quick Reference
 
-- Write Excel (typed): `new ExcelWriter<T>().column("Name", T::getName).column("Age", T::getAge, c -> c.type(ExcelDataType.INTEGER)).write(stream).write(out)`
+- Write Excel (typed): `ExcelWriter.<T>builder().build().column("Name", T::getName).column("Age", T::getAge, c -> c.type(ExcelDataType.INTEGER)).write(stream).write(out)`
 - Write Excel (multi-sheet): `new ExcelWorkbook().sheet("Sheet1").column(...).write(stream)`
-- Write Excel (map): `new ExcelMapWriter("Name", "Age").write(stream)`
+- Write Excel (map): `ExcelWriter.forMap("Name", "Age").write(stream)`
 - Read Excel (setter): `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
 - Read Excel (mapping): `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).build(in)`
 - Read Excel (map): `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))`
@@ -26,13 +26,13 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 - ExcelWriter<T> — single-type Excel writer with lambda config and auto-rollover
 - ExcelWorkbook — multi-sheet workbook with different data types per sheet
 - ExcelSheetWriter<T> — per-sheet writer within ExcelWorkbook (lambda config style)
-- ExcelMapWriter — write Map<String, Object> without typed POJOs
+- ExcelWriter.forMap(...) — write Map<String, Object> without typed POJOs (static factory on ExcelWriter)
 - ExcelTemplateWriter — write into existing Excel template files
 - ExcelReader<T> — streaming Excel reader (SAX-based)
 - ExcelMapReader — read Excel into Map<String, String>
-- CsvWriter<T> — streaming CSV writer
+- CsvWriter<T> — streaming CSV writer (CsvWriter.forMap(...) for map-based writing)
 - CsvReader<T> — CSV reader (OpenCSV-based)
-- CsvMapWriter / CsvMapReader — map-based CSV read/write
+- CsvMapReader — map-based CSV reading
 - ExcelKitSchema<T> — unified schema for both reading and writing
 - ExcelHandler / CsvHandler — consume-once output wrappers
 

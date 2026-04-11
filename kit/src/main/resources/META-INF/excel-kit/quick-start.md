@@ -9,7 +9,7 @@ record Person(long id, String name, int age) {}
 
 var data = Stream.of(new Person(1, "Alice", 30), new Person(2, "Bob", 28));
 
-ExcelHandler handler = new ExcelWriter<Person>()
+ExcelHandler handler = ExcelWriter.<Person>builder().build()
         .column("ID", p -> p.id())
             .type(ExcelDataType.LONG)
             .alignment(HorizontalAlignment.RIGHT)
@@ -108,7 +108,7 @@ Output is consume-once via `ExcelHandler` / `CsvHandler`.
 
 ```java
 // Write
-new ExcelMapWriter("Name", "Age").write(Stream.of(
+ExcelWriter.forMap("Name", "Age").write(Stream.of(
     Map.of("Name", "Alice", "Age", 30)
 )).write(out);
 

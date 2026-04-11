@@ -45,7 +45,7 @@ without requiring any additional architectural effort.
 - Sheet protection via `protectSheet()` with per-column `locked()` control
 - Image embedding via `ExcelDataType.IMAGE` with `ExcelImage.png()` / `ExcelImage.jpeg()`
 - Chart generation via `chart()` — BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT charts with XDDF API
-- Map-based writing via `ExcelMapWriter` — write `Map<String, Object>` without typed POJOs
+- Map-based writing via `ExcelWriter.forMap(...)` — write `Map<String, Object>` without typed POJOs
 - Text rotation via `rotation()` — rotate cell text from -90 to 90 degrees
 - Font color via `fontColor()` — RGB or preset color for cell text
 - Strikethrough via `strikethrough()` and underline via `underline()` for font styling
@@ -92,7 +92,7 @@ without requiring any additional architectural effort.
 - Progress callback via `onProgress()`
 - Quoting strategies via `quoting()` — MINIMAL, ALL, NON_NUMERIC
 - Configurable CSV injection defense via `csvInjectionDefense()` — toggle formula character prefixing
-- Map-based writing via `CsvMapWriter` — write `Map<String, Object>` without typed POJOs
+- Map-based writing via `CsvWriter.forMap(...)` — write `Map<String, Object>` without typed POJOs
 
 **CSV Reading** (OpenCSV-based)
 - Header name-based column mapping — columns matched by header name, order-independent
@@ -113,18 +113,18 @@ without requiring any additional architectural effort.
 
 | Task | Class | Example |
 |------|-------|---------|
-| Write Excel (typed) | `ExcelWriter<T>` | `new ExcelWriter<T>().column("Name", T::getName, cfg -> cfg.type(...)).write(stream).write(out)` |
-| Write Excel (map) | `ExcelMapWriter` | `new ExcelMapWriter("Name", "Age").write(stream).write(out)` |
+| Write Excel (typed) | `ExcelWriter<T>` | `ExcelWriter.<T>builder().build().column("Name", T::getName, cfg -> cfg.type(...)).write(stream).write(out)` |
+| Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).write(out)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
-| Read Excel (typed) | `ExcelReader<T>` | `new ExcelReader<>(T::new, null).addColumn("Name", T::setName).build(in).read(r -> ...)` |
+| Read Excel (typed) | `ExcelReader<T>` | `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelMapReader` | `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))` |
 | Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)` |
-| Write CSV (map) | `CsvMapWriter` | `new CsvMapWriter("Name", "Age").write(stream).write(out)` |
-| Read CSV (typed) | `CsvReader<T>` | `new CsvReader<>(T::new, null).addColumn("Name", T::setName).build(in).read(r -> ...)` |
+| Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).write(out)` |
+| Read CSV (typed) | `CsvReader<T>` | `new CsvReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvMapReader` | `new CsvMapReader().build(in).read(r -> r.data().get("Name"))` |
 
-**Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`XxxMapReader`) for schema-less reading.
+**Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`new ExcelMapReader()` / `new CsvMapReader()`) for schema-less reading.
 
 **Output consumption:** `write(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `consumeOutputStreamWithPassword(out, "pw")` for late-binding encryption.
 
@@ -133,7 +133,7 @@ without requiring any additional architectural effort.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.dornol:excel-kit:0.10.0")
+    implementation("io.github.dornol:excel-kit:0.11.0")
 }
 ```
 
@@ -142,7 +142,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.10.0</version>
+  <version>0.11.0</version>
 </dependency>
 ```
 
@@ -224,7 +224,7 @@ record Person(long id, String name, int age) {}
 
 var data = Stream.of(new Person(1, "Alice", 30), new Person(2, "Bob", 28));
 
-ExcelHandler handler = new ExcelWriter<Person>()
+ExcelHandler handler = ExcelWriter.<Person>builder().build()
         .column("ID", p -> p.id(), cfg -> cfg
             .type(ExcelDataType.LONG)
             .alignment(HorizontalAlignment.RIGHT))
@@ -336,12 +336,12 @@ new ExcelReader<>(User::new, null)
         .build(inputStream);
 ```
 
-The `addColumn(String headerName, BiConsumer)` method also supports name-based mapping:
+The `column(String headerName, BiConsumer)` overload also supports name-based mapping:
 
 ```java
 new ExcelReader<>(User::new, null)
-        .addColumn("Name", (u, cell) -> u.name = cell.asString())
-        .addColumn("Age", (u, cell) -> u.age = cell.asInt())
+        .column("Name", (u, cell) -> u.name = cell.asString())
+        .column("Age", (u, cell) -> u.age = cell.asInt())
         .build(inputStream);
 ```
 
@@ -536,12 +536,12 @@ Available FontStyle options: `bold(boolean)`, `italic(boolean)`, `underline(bool
 Column widths are auto-calculated from the first N data rows. Configurable via `autoWidthSampleRows()`:
 
 ```java
-new ExcelWriter<Person>()
+ExcelWriter.<Person>builder().build()
         .autoWidthSampleRows(200)           // sample 200 rows (default: 100)
         .column("Name", p -> p.name())
         .write(data);
 
-new ExcelWriter<Person>()
+ExcelWriter.<Person>builder().build()
         .autoWidthSampleRows(0)             // disable auto-width
         .column("Name", p -> p.name())
         .write(data);
@@ -550,7 +550,7 @@ new ExcelWriter<Person>()
 ### Row Height
 
 ```java
-new ExcelWriter<Person>()
+ExcelWriter.<Person>builder().build()
         .rowHeight(25)                      // data row height (default: 20pt)
         .column("Name", p -> p.name())
         .write(data);
@@ -560,10 +560,10 @@ new ExcelWriter<Person>()
 
 ```java
 // RGB values
-new ExcelWriter<>(91, 155, 213, 1_000_000);
+ExcelWriter.<>builder().color(91).maxRows(155).rowAccessWindowSize(213, 1_000_000).build();
 
 // Preset color
-new ExcelWriter<>(ExcelColor.STEEL_BLUE);
+ExcelWriter.<>builder().color(ExcelColor.STEEL_BLUE).build();
 ```
 
 Available presets: `WHITE`, `BLACK`, `LIGHT_GRAY`, `GRAY`, `DARK_GRAY`, `RED`, `GREEN`, `BLUE`, `YELLOW`, `ORANGE`, `LIGHT_RED`, `LIGHT_GREEN`, `LIGHT_BLUE`, `LIGHT_YELLOW`, `LIGHT_ORANGE`, `LIGHT_PURPLE`, `CORAL`, `STEEL_BLUE`, `FOREST_GREEN`, `GOLD`
@@ -914,7 +914,7 @@ workbook.<Item>sheet("Data")
 Protect the workbook structure to prevent adding, deleting, renaming, or reordering sheets:
 
 ```java
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .protectWorkbook("password123")
     .column("Name", Product::name)
     .write(data);
@@ -936,7 +936,7 @@ Can be combined with `protectSheet()` — workbook protection prevents structura
 Customize the header row font name and size (default: bold, 11pt):
 
 ```java
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .headerFontName("Arial")
     .headerFontSize(14)
     .column("Name", Product::name)
@@ -960,7 +960,7 @@ Override the header font color for specific columns — useful for conditionally
 boolean hasError = checkSomething();
 
 // ExcelWriter (lambda configurer)
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .column("Name", Product::name)
     .column("Amount", Product::amount, cfg -> cfg
         .headerFontColor(hasError ? ExcelColor.RED : null))
@@ -983,7 +983,7 @@ The base header style (bold, font name, size) is preserved — only the font col
 Set writer-level default styles that all columns inherit unless overridden per-column:
 
 ```java
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .defaultStyle(d -> d
         .fontName("Arial")
         .fontSize(10)
@@ -1011,7 +1011,7 @@ workbook.<Item>sheet("Data")
 Add summary rows with formulas using a fluent DSL:
 
 ```java
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .column("Name", Product::name)
     .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
     .column("Qty", p -> p.qty(), c -> c.type(ExcelDataType.INTEGER))
@@ -1140,12 +1140,12 @@ Colorize the sheet tab in the workbook:
 
 ```java
 // ExcelWriter — applies to all sheets (including rollover)
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .tabColor(255, 0, 0)                       // RGB red
     .column("Name", Product::name)
     .write(data);
 
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .tabColor(ExcelColor.STEEL_BLUE)           // preset color
     .column("Name", Product::name)
     .write(data);
@@ -1183,7 +1183,7 @@ The comment function receives the row data and returns a comment string, or `nul
 Apply Excel conditional formatting rules:
 
 ```java
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .column("Name", Product::name)
     .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER))
     .conditionalFormatting(cf -> cf
@@ -1203,7 +1203,7 @@ If `columns()` is not set, rules apply to all columns.
 Protect sheets with a password and selectively unlock columns:
 
 ```java
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .column("Name", Product::name, c -> c.locked(false))   // editable
     .column("Price", p -> p.price(), c -> c.locked(true))  // read-only
     .protectSheet("password123")
@@ -1220,7 +1220,7 @@ Embed images in Excel cells using `ExcelDataType.IMAGE`:
 // From byte array
 byte[] imageBytes = Files.readAllBytes(Path.of("logo.png"));
 
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .column("Name", Product::name)
     .column("Photo", p -> ExcelImage.png(imageBytes), cfg -> cfg
         .type(ExcelDataType.IMAGE))
@@ -1234,7 +1234,7 @@ Factory methods: `ExcelImage.png(byte[])`, `ExcelImage.jpeg(byte[])`, or `new Ex
 Add charts after data is written:
 
 ```java
-new ExcelWriter<Product>()
+ExcelWriter.<Product>builder().build()
     .column("Name", Product::name)
     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
     .column("Profit", p -> p.profit(), c -> c.type(ExcelDataType.INTEGER))
@@ -1306,17 +1306,18 @@ writer
 Write `Map<String, Object>` data without defining typed POJOs:
 
 ```java
-ExcelMapWriter writer = new ExcelMapWriter("Name", "Age", "City");
-writer.write(Stream.of(
-    Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
-    Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")
-)).write(outputStream);
+ExcelWriter.forMap("Name", "Age", "City")
+    .write(Stream.of(
+        Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
+        Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")))
+    .write(outputStream);
 ```
 
 CSV equivalent:
 ```java
-CsvMapWriter csvWriter = new CsvMapWriter("Name", "Age");
-csvWriter.write(stream).write(outputStream);
+CsvWriter.forMap("Name", "Age")
+    .write(stream)
+    .write(outputStream);
 ```
 
 ### Map-Based Reading
@@ -1530,7 +1531,7 @@ When the configured maximum rows per sheet is reached, a new sheet is automatica
 
 ```java
 // split every 100,000 rows
-new ExcelWriter<>(ExcelColor.STEEL_BLUE, 100_000);
+ExcelWriter.<>builder().color(ExcelColor.STEEL_BLUE).maxRows(100_000).build();
 ```
 
 ### Password-Encrypted Export
@@ -1538,7 +1539,7 @@ new ExcelWriter<>(ExcelColor.STEEL_BLUE, 100_000);
 Set the password on the writer — `write()` automatically encrypts:
 
 ```java
-ExcelHandler handler = new ExcelWriter<Product>(ExcelColor.STEEL_BLUE)
+ExcelHandler handler = ExcelWriter.<Product>builder().color(ExcelColor.STEEL_BLUE).build()
     .password("P@ssw0rd!")
     .column("Name", Product::name)
     .write(data);
@@ -1844,7 +1845,7 @@ new CsvReader<>(Row::new, null)
 Configure print layout for Excel sheets:
 
 ```java
-new ExcelWriter<Invoice>()
+ExcelWriter.<Invoice>builder().build()
     .printSetup(ps -> ps
         .orientation(ExcelPrintSetup.Orientation.LANDSCAPE)
         .paperSize(ExcelPrintSetup.PaperSize.A4)

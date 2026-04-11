@@ -95,7 +95,7 @@ new CsvReader<>(Product::new, null)
 ## CSV Map Writer
 
 ```java
-CsvMapWriter writer = new CsvMapWriter("Name", "Age", "City");
+CsvMapWriter writer = CsvWriter.forMap("Name", "Age", "City");
 writer.delimiter('\t')
       .charset(StandardCharsets.UTF_8)
       .bom(true)
