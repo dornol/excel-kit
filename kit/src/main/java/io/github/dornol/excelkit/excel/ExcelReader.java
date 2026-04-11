@@ -173,37 +173,37 @@ public class ExcelReader<T> {
     }
 
     /**
-     * Adds a column mapping using a setter function.
-     * Useful for schema-based column registration.
+     * Registers a positional column mapping. Columns are matched to the spreadsheet in
+     * the order they are registered (after {@link #headerRowIndex(int)} is accounted for).
      *
-     * @param setter A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return This ExcelReader instance for chaining
+     * @param setter a {@code BiConsumer} that writes a cell value into the row object
+     * @return this reader for chaining
      */
-    public ExcelReader<T> addColumn(BiConsumer<T, CellData> setter) {
+    public ExcelReader<T> column(BiConsumer<T, CellData> setter) {
         columns.add(new ExcelReadColumn<>(setter));
         return this;
     }
 
     /**
-     * Adds a name-based column mapping using a setter function.
-     * The column is matched by header name instead of positional index.
+     * Registers a name-based column mapping. The column is matched to the spreadsheet
+     * column whose header cell equals {@code headerName} in the header row.
      *
-     * @param headerName The header name to match in the Excel file
-     * @param setter     A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return This ExcelReader instance for chaining
+     * @param headerName the header name to match
+     * @param setter     a {@code BiConsumer} that writes a cell value into the row object
+     * @return this reader for chaining
      */
-    public ExcelReader<T> addColumn(String headerName, BiConsumer<T, CellData> setter) {
+    public ExcelReader<T> column(String headerName, BiConsumer<T, CellData> setter) {
         columns.add(new ExcelReadColumn<>(headerName, setter));
         return this;
     }
 
     /**
-     * Adds an index-based column mapping.
-     * The column is matched by explicit 0-based column index.
+     * Registers an index-based column mapping. The column is matched to the spreadsheet
+     * column at the given 0-based index, regardless of header or registration order.
      *
      * @param columnIndex 0-based column index in the Excel file
-     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return This ExcelReader instance for chaining
+     * @param setter      a {@code BiConsumer} that writes a cell value into the row object
+     * @return this reader for chaining
      */
     public ExcelReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
         columns.add(new ExcelReadColumn<>(null, columnIndex, setter));
@@ -211,20 +211,10 @@ public class ExcelReader<T> {
     }
 
     /**
-     * Begins a new index-based column mapping using a setter function.
+     * Skips one column during reading by registering a no-op mapping at the next
+     * positional slot.
      *
-     * @param columnIndex 0-based column index in the Excel file
-     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return A builder for further column configuration
-     */
-    public ExcelReadColumn.ExcelReadColumnBuilder<T> columnAtBuilder(int columnIndex, BiConsumer<T, CellData> setter) {
-        return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, columnIndex, setter);
-    }
-
-    /**
-     * Skips one column during reading by adding a no-op column mapping.
-     *
-     * @return This ExcelReader instance for chaining
+     * @return this reader for chaining
      */
     public ExcelReader<T> skipColumn() {
         columns.add(new ExcelReadColumn<>((instance, cellData) -> {}));
@@ -232,11 +222,11 @@ public class ExcelReader<T> {
     }
 
     /**
-     * Skips the specified number of columns during reading by adding no-op column mappings.
+     * Skips the specified number of positional columns.
      *
-     * @param count The number of columns to skip (must be non-negative)
-     * @return This ExcelReader instance for chaining
-     * @throws IllegalArgumentException if count is negative
+     * @param count the number of columns to skip (must be non-negative)
+     * @return this reader for chaining
+     * @throws IllegalArgumentException if {@code count} is negative
      */
     public ExcelReader<T> skipColumns(int count) {
         if (count < 0) {
@@ -246,28 +236,6 @@ public class ExcelReader<T> {
             columns.add(new ExcelReadColumn<>((instance, cellData) -> {}));
         }
         return this;
-    }
-
-    /**
-     * Begins a new positional column mapping using a setter function.
-     *
-     * @param setter A {@code BiConsumer} that sets a value from {@link io.github.dornol.excelkit.shared.CellData} to the row object
-     * @return A builder for further column configuration
-     */
-    public ExcelReadColumn.ExcelReadColumnBuilder<T> column(BiConsumer<T, CellData> setter) {
-        return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, setter);
-    }
-
-    /**
-     * Begins a new name-based column mapping using a setter function.
-     * The column is matched by header name instead of positional index.
-     *
-     * @param headerName The header name to match in the Excel file
-     * @param setter     A {@code BiConsumer} that sets a value from {@link io.github.dornol.excelkit.shared.CellData} to the row object
-     * @return A builder for further column configuration
-     */
-    public ExcelReadColumn.ExcelReadColumnBuilder<T> column(String headerName, BiConsumer<T, CellData> setter) {
-        return new ExcelReadColumn.ExcelReadColumnBuilder<>(this, headerName, setter);
     }
 
     /**

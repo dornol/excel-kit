@@ -69,7 +69,7 @@ class MultiSheetReadTest {
         var results = new java.util.ArrayList<String>();
         new ExcelReader<>(Holder::new, null)
                 .sheetIndex(1)
-                .addColumn((h, c) -> h.value = c.asString())
+                .column((h, c) -> h.value = c.asString())
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(r -> results.add(r.data().value));
 

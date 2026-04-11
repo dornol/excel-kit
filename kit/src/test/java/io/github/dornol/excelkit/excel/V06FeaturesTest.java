@@ -156,7 +156,7 @@ class V06FeaturesTest {
                 List<String> values = new ArrayList<>();
                 new ExcelReader<>(Holder::new, null)
                         .sheetIndex(info.index())
-                        .addColumn((h, c) -> h.value = c.asString())
+                        .column((h, c) -> h.value = c.asString())
                         .build(new ByteArrayInputStream(data))
                         .read(r -> values.add(r.data().value));
                 allData.put(info.name(), values);

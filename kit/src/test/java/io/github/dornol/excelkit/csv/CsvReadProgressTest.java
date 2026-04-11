@@ -21,7 +21,7 @@ class CsvReadProgressTest {
 
         List<Long> counts = new ArrayList<>();
         new CsvReader<>(Holder::new, null)
-                .addColumn((h, c) -> h.value = c.asString())
+                .column((h, c) -> h.value = c.asString())
                 .onProgress(3, (count, cursor) -> counts.add(count))
                 .build(is)
                 .read(r -> {});
@@ -36,7 +36,7 @@ class CsvReadProgressTest {
 
         List<Long> counts = new ArrayList<>();
         new CsvReader<>(Holder::new, null)
-                .addColumn((h, c) -> h.value = c.asString())
+                .column((h, c) -> h.value = c.asString())
                 .onProgress(100, (count, cursor) -> counts.add(count))
                 .build(is)
                 .read(r -> {});
@@ -51,7 +51,7 @@ class CsvReadProgressTest {
 
         List<Long> counts = new ArrayList<>();
         new CsvReader<>(Holder::new, null)
-                .addColumn((h, c) -> h.value = c.asString())
+                .column((h, c) -> h.value = c.asString())
                 .onProgress(2, (count, cursor) -> counts.add(count))
                 .build(is)
                 .readAsStream()

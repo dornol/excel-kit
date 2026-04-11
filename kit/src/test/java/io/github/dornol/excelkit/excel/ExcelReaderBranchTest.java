@@ -199,9 +199,9 @@ class ExcelReaderBranchTest {
             List<ReadResult<ThreeFields>> results = new ArrayList<>();
             try (InputStream is = Files.newInputStream(file)) {
                 new ExcelReader<>(ThreeFields::new, null)
-                        .addColumn("A", (t, cell) -> t.a = cell.asString())
-                        .addColumn("B", (t, cell) -> t.b = cell.asString())
-                        .addColumn("C", (t, cell) -> t.c = cell.asString())
+                        .column("A", (t, cell) -> t.a = cell.asString())
+                        .column("B", (t, cell) -> t.b = cell.asString())
+                        .column("C", (t, cell) -> t.c = cell.asString())
                         .build(is)
                         .read(results::add);
             }
@@ -227,10 +227,10 @@ class ExcelReaderBranchTest {
 
             List<ReadResult<Broken>> results = new ArrayList<>();
             new ExcelReader<>(Broken::new, null)
-                    .addColumn("Name", (t, cell) -> {
+                    .column("Name", (t, cell) -> {
                         throw new RuntimeException("setter broke!");
                     })
-                    .addColumn("Value", (t, cell) -> t.value = cell.asInt())
+                    .column("Value", (t, cell) -> t.value = cell.asInt())
                     .build(new ByteArrayInputStream(excel))
                     .read(results::add);
 
@@ -266,10 +266,10 @@ class ExcelReaderBranchTest {
             byte[] excel = writeSimpleExcel();
 
             var handler = new ExcelReader<>(StrictTarget::new, null)
-                    .addColumn("Name", (t, cell) -> {
+                    .column("Name", (t, cell) -> {
                         throw new RuntimeException("fail");
                     })
-                    .addColumn("Value", (t, cell) -> {})
+                    .column("Value", (t, cell) -> {})
                     .build(new ByteArrayInputStream(excel));
 
             var ex = assertThrows(ReadAbortException.class, () -> handler.readStrict(r -> {}));
@@ -395,8 +395,8 @@ class ExcelReaderBranchTest {
             String csv = "Name,Value\nAlice,10\nBob,bad";
 
             var handler = new io.github.dornol.excelkit.csv.CsvReader<>(CsvItem::new, null)
-                    .addColumn("Name", (t, cell) -> t.name = cell.asString())
-                    .addColumn("Value", (t, cell) -> t.value = cell.asInt())
+                    .column("Name", (t, cell) -> t.name = cell.asString())
+                    .column("Value", (t, cell) -> t.value = cell.asInt())
                     .build(new ByteArrayInputStream(csv.getBytes()));
 
             assertThrows(ReadAbortException.class, () -> handler.readStrict(r -> {}));
@@ -426,8 +426,8 @@ class ExcelReaderBranchTest {
 
             List<io.github.dornol.excelkit.shared.ReadResult<Mapped>> results = new ArrayList<>();
             new ExcelReader<>(Mapped::new, null)
-                    .addColumn((t, cell) -> t.col0 = cell.asString())  // positional: index 0
-                    .addColumn((t, cell) -> t.col1 = cell.asString())  // positional: index 1
+                    .column((t, cell) -> t.col0 = cell.asString())  // positional: index 0
+                    .column((t, cell) -> t.col1 = cell.asString())  // positional: index 1
                     .build(new ByteArrayInputStream(excel))
                     .read(results::add);
 
@@ -442,8 +442,8 @@ class ExcelReaderBranchTest {
 
             List<io.github.dornol.excelkit.shared.ReadResult<Mapped>> results = new ArrayList<>();
             new io.github.dornol.excelkit.csv.CsvReader<>(Mapped::new, null)
-                    .addColumn((t, cell) -> t.col0 = cell.asString())
-                    .addColumn((t, cell) -> t.col1 = cell.asString())
+                    .column((t, cell) -> t.col0 = cell.asString())
+                    .column((t, cell) -> t.col1 = cell.asString())
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .read(results::add);
 

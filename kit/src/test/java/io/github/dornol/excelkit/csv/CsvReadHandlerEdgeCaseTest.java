@@ -82,8 +82,8 @@ class CsvReadHandlerEdgeCaseTest {
 
         List<ReadResult<MutablePerson>> results = new ArrayList<>();
         new CsvReader<>(MutablePerson::new, null)
-                .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                .column("Name", (p, cell) -> p.name = cell.asString())
+                .column("Age", (p, cell) -> p.age = cell.asInt())
                 .build(new ByteArrayInputStream(combined))
                 .read(results::add);
 
@@ -125,9 +125,9 @@ class CsvReadHandlerEdgeCaseTest {
 
         List<ReadResult<String[]>> results = new ArrayList<>();
         new CsvReader<>(() -> new String[3], null)
-                .addColumn("Name", (arr, cell) -> arr[0] = cell.asString())
-                .addColumn("Age", (arr, cell) -> arr[1] = cell.asString())
-                .addColumn("City", (arr, cell) -> arr[2] = cell.asString())
+                .column("Name", (arr, cell) -> arr[0] = cell.asString())
+                .column("Age", (arr, cell) -> arr[1] = cell.asString())
+                .column("City", (arr, cell) -> arr[2] = cell.asString())
                 .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
                 .read(results::add);
 
@@ -191,8 +191,8 @@ class CsvReadHandlerEdgeCaseTest {
 
         List<ReadResult<MutablePerson>> results = new ArrayList<>();
         new CsvReader<>(MutablePerson::new, null)
-                .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                .column("Name", (p, cell) -> p.name = cell.asString())
+                .column("Age", (p, cell) -> p.age = cell.asInt())
                 .build(toInputStream(csv))
                 .read(results::add);
 
@@ -207,8 +207,8 @@ class CsvReadHandlerEdgeCaseTest {
 
         List<ReadResult<MutablePerson>> results;
         try (var stream = new CsvReader<>(MutablePerson::new, null)
-                .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                .column("Name", (p, cell) -> p.name = cell.asString())
+                .column("Age", (p, cell) -> p.age = cell.asInt())
                 .build(toInputStream(csv))
                 .readAsStream()) {
             results = stream.toList();
@@ -255,8 +255,8 @@ class CsvReadHandlerEdgeCaseTest {
 
         AtomicLong lastProgress = new AtomicLong(0);
         new CsvReader<>(MutablePerson::new, null)
-                .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                .column("Name", (p, cell) -> p.name = cell.asString())
+                .column("Age", (p, cell) -> p.age = cell.asInt())
                 .onProgress(2, (count, cursor) -> lastProgress.set(count))
                 .build(toInputStream(csv))
                 .read(r -> {});

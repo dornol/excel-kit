@@ -390,8 +390,8 @@ class ExcelEdgeCaseTest {
                     .write(out);
 
             ExcelReader<MutableItem> reader = new ExcelReader<>(MutableItem::new, null);
-            reader.addColumn("Name", (item, cell) -> {});
-            reader.addColumn("NonExistentHeader", (item, cell) -> {});
+            reader.column("Name", (item, cell) -> {});
+            reader.column("NonExistentHeader", (item, cell) -> {});
 
             assertThrows(ExcelKitException.class,
                     () -> reader.build(new ByteArrayInputStream(out.toByteArray()))

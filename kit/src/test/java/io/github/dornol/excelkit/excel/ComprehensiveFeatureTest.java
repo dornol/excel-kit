@@ -248,7 +248,7 @@ class ComprehensiveFeatureTest {
 
         // "name" (lowercase) should not match "Name" (title case)
         var handler = new CsvReader<>(TestPerson::new, null)
-                .addColumn("name", (p, cell) -> p.name = cell.asString())
+                .column("name", (p, cell) -> p.name = cell.asString())
                 .build(is);
 
         assertThrows(Exception.class, () -> handler.read(r -> {}));
@@ -260,7 +260,7 @@ class ComprehensiveFeatureTest {
         InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
         List<String> names = new CsvReader<>(TestPerson::new, null)
-                .addColumn("Name", (p, cell) -> p.name = cell.asString())
+                .column("Name", (p, cell) -> p.name = cell.asString())
                 .build(is)
                 .readAsStream()
                 .map(r -> r.data().name)

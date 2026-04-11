@@ -149,8 +149,8 @@ class ExcelReadHandlerEdgeCaseTest {
         // Read back with setter mode - should work normally
         List<ReadResult<MutableItem>> results = new ArrayList<>();
         new ExcelReader<>(MutableItem::new, null)
-                .addColumn("Name", (t, cell) -> t.name = cell.asString())
-                .addColumn("Value", (t, cell) -> t.value = cell.asInt())
+                .column("Name", (t, cell) -> t.name = cell.asString())
+                .column("Value", (t, cell) -> t.value = cell.asInt())
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(results::add);
 

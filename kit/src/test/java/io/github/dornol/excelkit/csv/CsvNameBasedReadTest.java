@@ -94,8 +94,8 @@ class CsvNameBasedReadTest {
 
         List<TestPerson> results = new ArrayList<>();
         new CsvReader<>(TestPerson::new, null)
-                .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                .addColumn("City", (p, cell) -> p.city = cell.asString())
+                .column("Name", (p, cell) -> p.name = cell.asString())
+                .column("City", (p, cell) -> p.city = cell.asString())
                 .build(is)
                 .read(r -> results.add(r.data()));
 
@@ -110,7 +110,7 @@ class CsvNameBasedReadTest {
         InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
         List<String> names = new CsvReader<>(TestPerson::new, null)
-                .addColumn("Name", (p, cell) -> p.name = cell.asString())
+                .column("Name", (p, cell) -> p.name = cell.asString())
                 .build(is)
                 .readAsStream()
                 .map(r -> r.data().name)

@@ -154,37 +154,37 @@ public class CsvReader<T> {
     }
 
     /**
-     * Adds a column mapping using a setter function.
-     * Useful for schema-based column registration.
+     * Registers a positional column mapping. Columns are matched to the CSV in the order
+     * they are registered (after {@link #headerRowIndex(int)} is accounted for).
      *
-     * @param setter A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return This CsvReader instance for chaining
+     * @param setter a {@code BiConsumer} that writes a cell value into the row object
+     * @return this reader for chaining
      */
-    public CsvReader<T> addColumn(BiConsumer<T, CellData> setter) {
+    public CsvReader<T> column(BiConsumer<T, CellData> setter) {
         columns.add(new CsvReadColumn<>(setter));
         return this;
     }
 
     /**
-     * Adds a name-based column mapping using a setter function.
-     * The column is matched by header name instead of positional index.
+     * Registers a name-based column mapping. The column is matched to the CSV column
+     * whose header equals {@code headerName}.
      *
-     * @param headerName The header name to match in the CSV file
-     * @param setter     A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return This CsvReader instance for chaining
+     * @param headerName the header name to match
+     * @param setter     a {@code BiConsumer} that writes a cell value into the row object
+     * @return this reader for chaining
      */
-    public CsvReader<T> addColumn(String headerName, BiConsumer<T, CellData> setter) {
+    public CsvReader<T> column(String headerName, BiConsumer<T, CellData> setter) {
         columns.add(new CsvReadColumn<>(headerName, setter));
         return this;
     }
 
     /**
-     * Adds an index-based column mapping.
-     * The column is matched by explicit 0-based column index.
+     * Registers an index-based column mapping. The column is matched to the CSV column
+     * at the given 0-based index.
      *
-     * @param columnIndex 0-based column index in the CSV file
-     * @param setter      A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return This CsvReader instance for chaining
+     * @param columnIndex 0-based column index
+     * @param setter      a {@code BiConsumer} that writes a cell value into the row object
+     * @return this reader for chaining
      */
     public CsvReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
         columns.add(new CsvReadColumn<>(null, columnIndex, setter));
@@ -192,9 +192,9 @@ public class CsvReader<T> {
     }
 
     /**
-     * Skips one column during reading by adding a no-op column mapping.
+     * Skips one column during reading by registering a no-op mapping.
      *
-     * @return This CsvReader instance for chaining
+     * @return this reader for chaining
      */
     public CsvReader<T> skipColumn() {
         columns.add(new CsvReadColumn<>((instance, cellData) -> {}));
@@ -202,11 +202,11 @@ public class CsvReader<T> {
     }
 
     /**
-     * Skips the specified number of columns during reading by adding no-op column mappings.
+     * Skips the specified number of positional columns.
      *
-     * @param count The number of columns to skip (must be non-negative)
-     * @return This CsvReader instance for chaining
-     * @throws IllegalArgumentException if count is negative
+     * @param count the number of columns to skip (must be non-negative)
+     * @return this reader for chaining
+     * @throws IllegalArgumentException if {@code count} is negative
      */
     public CsvReader<T> skipColumns(int count) {
         if (count < 0) {
@@ -216,28 +216,6 @@ public class CsvReader<T> {
             columns.add(new CsvReadColumn<>((instance, cellData) -> {}));
         }
         return this;
-    }
-
-    /**
-     * Begins a new positional column mapping using a setter function.
-     *
-     * @param setter A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return A builder for further column configuration
-     */
-    public CsvReadColumn.CsvReadColumnBuilder<T> column(BiConsumer<T, CellData> setter) {
-        return new CsvReadColumn.CsvReadColumnBuilder<>(this, setter);
-    }
-
-    /**
-     * Begins a new name-based column mapping using a setter function.
-     * The column is matched by header name instead of positional index.
-     *
-     * @param headerName The header name to match in the CSV file
-     * @param setter     A {@code BiConsumer} that sets a value from {@link CellData} to the row object
-     * @return A builder for further column configuration
-     */
-    public CsvReadColumn.CsvReadColumnBuilder<T> column(String headerName, BiConsumer<T, CellData> setter) {
-        return new CsvReadColumn.CsvReadColumnBuilder<>(this, headerName, setter);
     }
 
     /**

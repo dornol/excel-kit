@@ -104,7 +104,7 @@ public class ExcelKitSchema<T> {
     public ExcelReader<T> excelReader(Supplier<T> supplier, @Nullable Validator validator) {
         ExcelReader<T> reader = new ExcelReader<>(supplier, validator);
         for (SchemaColumn<T> col : columns) {
-            reader.addColumn(col.name(), col.readSetter());
+            reader.column(col.name(), col.readSetter());
         }
         return reader;
     }
@@ -137,7 +137,7 @@ public class ExcelKitSchema<T> {
     public CsvReader<T> csvReader(Supplier<T> supplier, @Nullable Validator validator) {
         CsvReader<T> reader = new CsvReader<>(supplier, validator);
         for (SchemaColumn<T> col : columns) {
-            reader.addColumn(col.name(), col.readSetter());
+            reader.column(col.name(), col.readSetter());
         }
         return reader;
     }

@@ -44,14 +44,14 @@ class CoverageBoostTest {
         @Test
         void excelReader_nullInputStream_throwsIllegalArgument() {
             var reader = new ExcelReader<>(Object::new, null)
-                    .addColumn("A", (t, cell) -> {});
+                    .column("A", (t, cell) -> {});
             assertThrows(IllegalArgumentException.class, () -> reader.build(null));
         }
 
         @Test
         void csvReader_nullInputStream_throwsIllegalArgument() {
             var reader = new CsvReader<>(Object::new, null)
-                    .addColumn("A", (t, cell) -> {});
+                    .column("A", (t, cell) -> {});
             assertThrows(IllegalArgumentException.class, () -> reader.build(null));
         }
 
@@ -410,9 +410,9 @@ class CoverageBoostTest {
             String csv = "Name,Skip,Age\nAlice,ignored,30\n";
             List<ReadResult<Person>> results = new ArrayList<>();
             new CsvReader<>(Person::new, null)
-                    .addColumn((p, cell) -> p.name = cell.asString())
+                    .column((p, cell) -> p.name = cell.asString())
                     .skipColumn()
-                    .addColumn((p, cell) -> p.age = cell.asInt())
+                    .column((p, cell) -> p.age = cell.asInt())
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .read(results::add);
 
@@ -428,7 +428,7 @@ class CoverageBoostTest {
             List<ReadResult<Person>> results = new ArrayList<>();
             new CsvReader<>(Person::new, null)
                     .skipColumns(3)
-                    .addColumn((p, cell) -> p.name = cell.asString())
+                    .column((p, cell) -> p.name = cell.asString())
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .read(results::add);
 
@@ -448,8 +448,8 @@ class CoverageBoostTest {
             List<ReadResult<Person>> results = new ArrayList<>();
             new CsvReader<>(Person::new, null)
                     .dialect(CsvDialect.PIPE)
-                    .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                    .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                    .column("Name", (p, cell) -> p.name = cell.asString())
+                    .column("Age", (p, cell) -> p.age = cell.asInt())
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .read(results::add);
 
@@ -462,7 +462,7 @@ class CoverageBoostTest {
         void csvReader_headerNotFound_throwsException() {
             String csv = "Name,Age\nAlice,30\n";
             var reader = new CsvReader<>(Person::new, null)
-                    .addColumn("NonExistent", (p, cell) -> p.name = cell.asString());
+                    .column("NonExistent", (p, cell) -> p.name = cell.asString());
 
             assertThrows(ExcelKitException.class, () ->
                     reader.build(new ByteArrayInputStream(csv.getBytes()))
@@ -472,7 +472,7 @@ class CoverageBoostTest {
         @Test
         void csvReader_emptyFile_throwsCsvReadException() {
             var reader = new CsvReader<>(Person::new, null)
-                    .addColumn("Name", (p, cell) -> p.name = cell.asString());
+                    .column("Name", (p, cell) -> p.name = cell.asString());
 
             assertThrows(CsvReadException.class, () ->
                     reader.build(new ByteArrayInputStream(new byte[0]))
@@ -483,8 +483,8 @@ class CoverageBoostTest {
         void csvReader_readAsStream_errorInRow_throwsCsvReadException() {
             String csv = "Name,Age\nAlice,notANumber\n";
             var handler = new CsvReader<>(Person::new, null)
-                    .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                    .addColumn("Age", (p, cell) -> p.age = cell.asInt())
+                    .column("Name", (p, cell) -> p.name = cell.asString())
+                    .column("Age", (p, cell) -> p.age = cell.asInt())
                     .build(new ByteArrayInputStream(csv.getBytes()));
 
             // Setter error results in failed ReadResult, not exception

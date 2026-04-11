@@ -179,9 +179,10 @@ class ExcelReadHandlerTest {
 
         try (InputStream is = Files.newInputStream(multiSheetFile)) {
             new ExcelReader<>(TestPerson::new, validator)
+                    .sheetIndex(1)
                     .column(createNameSetter())
                     .column(createAgeSetter())
-                    .build(is, 1)
+                    .build(is)
                     .read(consumer);
         }
 

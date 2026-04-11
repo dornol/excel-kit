@@ -131,8 +131,8 @@ class NameBasedReadTest {
         List<TestPerson> results = new ArrayList<>();
         try (InputStream is = Files.newInputStream(file)) {
             new ExcelReader<>(TestPerson::new, null)
-                    .addColumn("Name", (p, cell) -> p.name = cell.asString())
-                    .addColumn("City", (p, cell) -> p.city = cell.asString())
+                    .column("Name", (p, cell) -> p.name = cell.asString())
+                    .column("City", (p, cell) -> p.city = cell.asString())
                     .build(is)
                     .read(r -> results.add(r.data()));
         }

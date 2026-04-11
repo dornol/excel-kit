@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests to boost coverage for CsvReadColumn.CsvReadColumnBuilder, ExcelSheetWriter.ColumnConfig,
+ * Tests to boost coverage for CsvReader, ExcelSheetWriter.ColumnConfig,
  * CellData, ExcelDataType, and ExcelHyperlink.
  */
 class CoverageBoostTest {
@@ -39,7 +39,7 @@ class CoverageBoostTest {
     }
 
     // -----------------------------------------------------------------------
-    // 1. CsvReadColumn.CsvReadColumnBuilder — skipColumn, skipColumns, columnAt
+    // 1. CsvReader — skipColumn, skipColumns, columnAt
     // -----------------------------------------------------------------------
 
     @Test
