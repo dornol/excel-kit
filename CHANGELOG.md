@@ -20,6 +20,10 @@ No new features.
   `write(OutputStream)` instead of `consumeOutputStream(OutputStream)`.
   Both handler classes are now `final`. `ExcelHandler`'s
   `consumeOutputStreamWithPassword` Excel-only overloads are unchanged.
+  `FileHandler` is a plain `interface` rather than `sealed` because
+  excel-kit ships as an automatic module (no `module-info.java`); the
+  `final` implementations preserve the closed-hierarchy intent and
+  third-party implementations remain unsupported.
 - **Reader column API unified** — `ExcelReader` / `CsvReader` no longer have
   `addColumn`, `columnAtBuilder`, `ExcelReadColumnBuilder`, or
   `CsvReadColumnBuilder`. `column(setter)` and `column(name, setter)` now
