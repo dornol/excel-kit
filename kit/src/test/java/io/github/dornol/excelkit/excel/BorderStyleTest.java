@@ -19,7 +19,7 @@ class BorderStyleTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.MEDIUM))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -36,7 +36,7 @@ class BorderStyleTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.NONE))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -50,7 +50,7 @@ class BorderStyleTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.THICK))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -64,7 +64,7 @@ class BorderStyleTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.DASHED))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -78,7 +78,7 @@ class BorderStyleTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s)
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -93,7 +93,7 @@ class BorderStyleTest {
             workbook.<String>sheet("Sheet1")
                     .column("Name", s -> s, c -> c.border(ExcelBorderStyle.DOUBLE))
                     .write(Stream.of("Alice"));
-            workbook.finish().consumeOutputStream(out);
+            workbook.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

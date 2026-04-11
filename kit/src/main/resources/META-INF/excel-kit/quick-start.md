@@ -19,7 +19,7 @@ ExcelHandler handler = new ExcelWriter<Person>()
         .write(data);
 
 try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
-    handler.consumeOutputStream(os);
+    handler.write(os);
 }
 ```
 
@@ -37,7 +37,7 @@ try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
         .column("Total", Order::getTotal, cfg -> cfg.type(ExcelDataType.INTEGER).format("#,##0"))
         .write(orderStream);
 
-    wb.finish().consumeOutputStream(outputStream);
+    wb.finish().write(outputStream);
 }
 ```
 
@@ -82,7 +82,7 @@ CsvWriter<Row> csv = new CsvWriter<>();
 csv.column("ID", r -> r.id())
    .column("Name", r -> r.name())
    .write(rows)
-   .consumeOutputStream(outputStream);
+   .write(outputStream);
 ```
 
 ## CSV Reading
@@ -97,7 +97,7 @@ new CsvReader<>(Product::new, null)
 
 ## Output Consumption
 
-- `consumeOutputStream(out)` — stream directly to OutputStream
+- `write(out)` — stream directly to OutputStream
 - `consumeFile(path)` — write to file
 - `password("pw")` on writer — automatic encryption
 - `consumeOutputStreamWithPassword(out, "pw")` — late-binding encryption
@@ -110,7 +110,7 @@ Output is consume-once via `ExcelHandler` / `CsvHandler`.
 // Write
 new ExcelMapWriter("Name", "Age").write(Stream.of(
     Map.of("Name", "Alice", "Age", 30)
-)).consumeOutputStream(out);
+)).write(out);
 
 // Read
 new ExcelMapReader().build(inputStream).read(result -> {

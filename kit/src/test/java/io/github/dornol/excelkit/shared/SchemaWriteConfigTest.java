@@ -37,7 +37,7 @@ class SchemaWriteConfigTest {
                         new TestProduct("Widget", 1000, 0.15),
                         new TestProduct("Gadget", 2500, 0.25)
                 ))
-                .consumeOutputStream(out);
+                .write(out);
 
         assertTrue(out.toByteArray().length > 0);
 
@@ -68,7 +68,7 @@ class SchemaWriteConfigTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         schema.excelWriter()
                 .write(Stream.of(new TestProduct("Widget", 1000, 0.0)))
-                .consumeOutputStream(out);
+                .write(out);
 
         assertTrue(out.toByteArray().length > 0);
     }
@@ -88,7 +88,7 @@ class SchemaWriteConfigTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         schema.excelWriter()
                 .write(Stream.of(new TestProduct("Widget", 1000, 0.15)))
-                .consumeOutputStream(out);
+                .write(out);
 
         // Read back - schema reader uses name-based matching
         List<TestProduct> results = new ArrayList<>();

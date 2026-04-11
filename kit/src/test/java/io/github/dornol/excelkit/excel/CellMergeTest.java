@@ -27,7 +27,7 @@ class CellMergeTest {
                 .column("Age", (row, c) -> row.length())
                 .column("City", (row, c) -> row.toUpperCase())
                 .write(Stream.of("Alice", "Bob"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -55,7 +55,7 @@ class CellMergeTest {
                     return row + 1;
                 })
                 .write(Stream.of("Alice", "Bob"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -84,7 +84,7 @@ class CellMergeTest {
                 .column("B", (row, c) -> row)
                 .column("C", (row, c) -> row)
                 .write(Stream.of("x"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -105,7 +105,7 @@ class CellMergeTest {
                     return row + 1;
                 })
                 .write(Stream.of("Alice", "Bob"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -138,7 +138,7 @@ class CellMergeTest {
                         return row + 1;
                     })
                     .write(Stream.of("Alice", "Bob"));
-            workbook.finish().consumeOutputStream(out);
+            workbook.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -173,7 +173,7 @@ class CellMergeTest {
                 .column("B", (row, c) -> row)
                 .column("C", (row, c) -> row)
                 .write(Stream.of("x"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -196,7 +196,7 @@ class CellMergeTest {
                 .column("Name", (row, c) -> row)
                 .column("Value", (row, c) -> row.length())
                 .write(IntStream.rangeClosed(1, 6).mapToObj(i -> "Item" + i))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getNumberOfSheets() >= 2, "Should have at least 2 sheets after rollover");

@@ -11,7 +11,7 @@ CsvHandler handler = csv
     .column("Price", Product::price)
     .write(productStream);
 
-handler.consumeOutputStream(outputStream);
+handler.write(outputStream);
 ```
 
 ## CSV Writing Configuration
@@ -101,7 +101,7 @@ writer.delimiter('\t')
       .bom(true)
       .write(Stream.of(
           Map.of("Name", "Alice", "Age", "30", "City", "Seoul")
-      )).consumeOutputStream(out);
+      )).write(out);
 ```
 
 ## CSV Injection Defense

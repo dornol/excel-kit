@@ -68,7 +68,7 @@ class CsvWriterTest {
         // Act
         CsvHandler handler = writer.write(dataList.stream());
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
         
         // Assert
         String csvContent = outputStream.toString();
@@ -96,7 +96,7 @@ class CsvWriterTest {
         // Act
         CsvHandler handler = writer.write(dataList.stream());
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
         
         // Assert
         String csvContent = outputStream.toString();
@@ -110,7 +110,7 @@ class CsvWriterTest {
     }
     
     @Test
-    void consumeOutputStream_shouldThrowExceptionWhenCalledTwice() {
+    void write_shouldThrowExceptionWhenCalledTwice() {
         // Arrange
         CsvWriter<TestData> writer = new CsvWriter<>();
         writer.column("Name", data -> data.name);
@@ -122,11 +122,11 @@ class CsvWriterTest {
         ByteArrayOutputStream outputStream2 = new ByteArrayOutputStream();
         
         // Act & Assert
-        handler.consumeOutputStream(outputStream1); // First call should succeed
+        handler.write(outputStream1); // First call should succeed
         
         assertThrows(CsvWriteException.class, () -> {
-            handler.consumeOutputStream(outputStream2); // Second call should throw exception
-        }, "Second call to consumeOutputStream should throw CsvWriteException");
+            handler.write(outputStream2); // Second call should throw exception
+        }, "Second call to write should throw CsvWriteException");
     }
     
     @Test
@@ -157,7 +157,7 @@ class CsvWriterTest {
         // Act
         CsvHandler handler = writer.write(dataList.stream());
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String csvContent = outputStream.toString();
@@ -181,7 +181,7 @@ class CsvWriterTest {
         // Act
         CsvHandler handler = writer.write(Stream.of(new TestData("Test", 30)));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String csvContent = outputStream.toString();
@@ -200,7 +200,7 @@ class CsvWriterTest {
         // Act
         CsvHandler handler = writer.write(Stream.of(new TestData("Alice", 30)));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String csvContent = outputStream.toString();
@@ -219,7 +219,7 @@ class CsvWriterTest {
         // Act
         CsvHandler handler = writer.write(Stream.of(new TestData("Alice", 30)));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String csvContent = outputStream.toString();
@@ -237,7 +237,7 @@ class CsvWriterTest {
         // Act — name contains a tab character
         CsvHandler handler = writer.write(Stream.of(new TestData("Alice\tSmith", 30)));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String csvContent = outputStream.toString();
@@ -261,7 +261,7 @@ class CsvWriterTest {
         // Act
         CsvHandler handler = writer.write(dataList.stream());
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String csvContent = outputStream.toString();
@@ -283,7 +283,7 @@ class CsvWriterTest {
         // Act — no afterData set
         CsvHandler handler = writer.write(Stream.of(new TestData("Alice", 30)));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String csvContent = outputStream.toString();

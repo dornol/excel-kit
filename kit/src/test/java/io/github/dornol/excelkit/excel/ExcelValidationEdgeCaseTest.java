@@ -26,7 +26,7 @@ class ExcelValidationEdgeCaseTest {
         new ExcelWriter<String>()
                 .column("Val", s -> s, c -> c.validation(validation))
                 .write(Stream.of("test"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             return wb.getSheetAt(0).getDataValidations();

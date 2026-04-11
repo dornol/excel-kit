@@ -37,7 +37,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Alice"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 assertTrue(wb.isStructureLocked(),
@@ -53,7 +53,7 @@ class NewFeaturesV072Test {
                 workbook.<String>sheet("Sheet1")
                         .column("Name", s -> s)
                         .write(Stream.of("Bob"));
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
@@ -69,7 +69,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Alice"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 assertFalse(wb.isStructureLocked(),
@@ -86,7 +86,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Data"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 assertTrue(wb.isStructureLocked(),
@@ -111,7 +111,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Alice"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -128,7 +128,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Alice"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -146,7 +146,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Alice"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -164,7 +164,7 @@ class NewFeaturesV072Test {
                 workbook.<String>sheet("Sheet1")
                         .column("Name", s -> s)
                         .write(Stream.of("Bob"));
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
@@ -182,7 +182,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Alice"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -216,7 +216,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("data"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerRow = wb.getSheetAt(0).getRow(0);
@@ -246,7 +246,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("data"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerRow = wb.getSheetAt(0).getRow(0);
@@ -278,7 +278,7 @@ class NewFeaturesV072Test {
                         .column("Normal", s -> s)
                         .column("Alert", s -> s, cfg -> cfg.headerFontColor(ExcelColor.RED))
                         .write(Stream.of("data"));
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
@@ -304,7 +304,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("data"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerRow = wb.getSheetAt(0).getRow(0);
@@ -323,7 +323,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("data"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -348,7 +348,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("data"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -371,7 +371,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("data"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerRow = wb.getSheetAt(0).getRow(0);
@@ -410,7 +410,7 @@ class NewFeaturesV072Test {
                                 .group("Status")
                                 .headerFontColor(ExcelColor.RED))
                         .write(Stream.of("data"));
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
@@ -435,7 +435,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("1000"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -463,7 +463,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Test"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var row = wb.getSheetAt(0).getRow(1); // data row
@@ -488,7 +488,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Test"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var cell = wb.getSheetAt(0).getRow(1).getCell(0);
@@ -507,7 +507,7 @@ class NewFeaturesV072Test {
                         .defaultStyle(d -> d.fontName("Courier New"))
                         .column("Name", s -> s)
                         .write(Stream.of("Test"));
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
@@ -529,7 +529,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Test"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var cell = wb.getSheetAt(0).getRow(1).getCell(0);
@@ -548,7 +548,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Test"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var cell = wb.getSheetAt(0).getRow(1).getCell(0);
@@ -643,7 +643,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of(new Item("A", 100, 5), new Item("B", 200, 3)));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -668,7 +668,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of(new Data("x", 1, 2, 3), new Data("y", 4, 5, 6)));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var summaryRow = wb.getSheetAt(0).getRow(3);
@@ -688,7 +688,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of(new Item("A", 100, 5)));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -712,7 +712,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of(new Item("A", 10, 1), new Item("B", 20, 2), new Item("C", 30, 3)));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -740,7 +740,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of(new Item("A", 100, 5)));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var summaryRow = wb.getSheetAt(0).getRow(2);
@@ -759,7 +759,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of(new Item("A", 100, 5)));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var summaryRow = wb.getSheetAt(0).getRow(2);
@@ -778,7 +778,7 @@ class NewFeaturesV072Test {
                         .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
                         .summary(s -> s.label("Total").sum("Price"))
                         .write(Stream.of(new Item("X", 50, 1), new Item("Y", 75, 2)));
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
@@ -805,7 +805,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of(new Item("A", 100, 5), new Item("B", 200, 3)));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -828,7 +828,7 @@ class NewFeaturesV072Test {
                     .write(Stream.empty());
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -859,7 +859,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("A", "B", "C"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var name = wb.getName("Categories");
@@ -880,7 +880,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("X", "Y", "Z"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var name = wb.getName("ItemList");
@@ -903,7 +903,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("A", "B", "C"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 assertNotNull(wb.getName("Range1"), "Range1 should exist");
@@ -935,7 +935,7 @@ class NewFeaturesV072Test {
                         })
                         .write(Stream.of("Prod1", "Prod2"));
 
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
@@ -964,7 +964,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Test"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -984,7 +984,7 @@ class NewFeaturesV072Test {
                     .write(Stream.of("Active"));
 
             var baos = new ByteArrayOutputStream();
-            handler.consumeOutputStream(baos);
+            handler.write(baos);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -1009,7 +1009,7 @@ class NewFeaturesV072Test {
                         .column("Type", s -> s, c -> c
                                 .validation(ExcelValidation.listFromRange("Lookup!$A$1:$A$5")))
                         .write(Stream.of("Item1"));
-                workbook.finish().consumeOutputStream(baos);
+                workbook.finish().write(baos);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {

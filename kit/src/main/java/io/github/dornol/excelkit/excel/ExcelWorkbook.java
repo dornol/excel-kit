@@ -32,7 +32,7 @@ import java.util.Set;
  *         .write(orderStream);
  *
  *     ExcelHandler handler = workbook.finish();
- *     handler.consumeOutputStream(outputStream);
+ *     handler.write(outputStream);
  * }
  * }</pre>
  *
@@ -99,7 +99,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * Sets the file encryption password.
      * <p>
      * When set, the resulting Excel file will be encrypted using the "agile" encryption mode,
-     * and {@link ExcelHandler#consumeOutputStream(java.io.OutputStream)} will automatically
+     * and {@link ExcelHandler#write(java.io.OutputStream)} will automatically
      * apply encryption — no need to call {@code consumeOutputStreamWithPassword()}.
      *
      * @param password the encryption password (must not be null or blank)

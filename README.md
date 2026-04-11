@@ -113,20 +113,20 @@ without requiring any additional architectural effort.
 
 | Task | Class | Example |
 |------|-------|---------|
-| Write Excel (typed) | `ExcelWriter<T>` | `new ExcelWriter<T>().column("Name", T::getName, cfg -> cfg.type(...)).write(stream).consumeOutputStream(out)` |
-| Write Excel (map) | `ExcelMapWriter` | `new ExcelMapWriter("Name", "Age").write(stream).consumeOutputStream(out)` |
+| Write Excel (typed) | `ExcelWriter<T>` | `new ExcelWriter<T>().column("Name", T::getName, cfg -> cfg.type(...)).write(stream).write(out)` |
+| Write Excel (map) | `ExcelMapWriter` | `new ExcelMapWriter("Name", "Age").write(stream).write(out)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
 | Read Excel (typed) | `ExcelReader<T>` | `new ExcelReader<>(T::new, null).addColumn("Name", T::setName).build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelMapReader` | `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))` |
-| Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).consumeOutputStream(out)` |
-| Write CSV (map) | `CsvMapWriter` | `new CsvMapWriter("Name", "Age").write(stream).consumeOutputStream(out)` |
+| Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)` |
+| Write CSV (map) | `CsvMapWriter` | `new CsvMapWriter("Name", "Age").write(stream).write(out)` |
 | Read CSV (typed) | `CsvReader<T>` | `new CsvReader<>(T::new, null).addColumn("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvMapReader` | `new CsvMapReader().build(in).read(r -> r.data().get("Name"))` |
 
 **Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`XxxMapReader`) for schema-less reading.
 
-**Output consumption:** `consumeOutputStream(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `consumeOutputStreamWithPassword(out, "pw")` for late-binding encryption.
+**Output consumption:** `write(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `consumeOutputStreamWithPassword(out, "pw")` for late-binding encryption.
 
 ## Installation
 
@@ -234,7 +234,7 @@ ExcelHandler handler = new ExcelWriter<Person>()
         .write(data);
 
 try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
-    handler.consumeOutputStream(os);
+    handler.write(os);
 }
 ```
 
@@ -277,7 +277,7 @@ CsvHandler ch = csv
         .write(rows);
 
 try (var os = Files.newOutputStream(Path.of("rows.csv"))) {
-    ch.consumeOutputStream(os);
+    ch.write(os);
 }
 ```
 
@@ -925,7 +925,7 @@ For `ExcelWorkbook`:
 try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
     workbook.protectWorkbook("password123");
     workbook.<User>sheet("Users").column("Name", User::getName).write(userStream);
-    workbook.finish().consumeOutputStream(outputStream);
+    workbook.finish().write(outputStream);
 }
 ```
 
@@ -948,7 +948,7 @@ For `ExcelWorkbook`:
 try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
     workbook.headerFontName("맑은 고딕").headerFontSize(12);
     workbook.<User>sheet("Users").column("Name", User::getName).write(userStream);
-    workbook.finish().consumeOutputStream(outputStream);
+    workbook.finish().write(outputStream);
 }
 ```
 
@@ -1310,13 +1310,13 @@ ExcelMapWriter writer = new ExcelMapWriter("Name", "Age", "City");
 writer.write(Stream.of(
     Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
     Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")
-)).consumeOutputStream(outputStream);
+)).write(outputStream);
 ```
 
 CSV equivalent:
 ```java
 CsvMapWriter csvWriter = new CsvMapWriter("Name", "Age");
-csvWriter.write(stream).consumeOutputStream(outputStream);
+csvWriter.write(stream).write(outputStream);
 ```
 
 ### Map-Based Reading
@@ -1535,7 +1535,7 @@ new ExcelWriter<>(ExcelColor.STEEL_BLUE, 100_000);
 
 ### Password-Encrypted Export
 
-Set the password on the writer — `consumeOutputStream()` automatically encrypts:
+Set the password on the writer — `write()` automatically encrypts:
 
 ```java
 ExcelHandler handler = new ExcelWriter<Product>(ExcelColor.STEEL_BLUE)
@@ -1543,7 +1543,7 @@ ExcelHandler handler = new ExcelWriter<Product>(ExcelColor.STEEL_BLUE)
     .column("Name", Product::name)
     .write(data);
 
-handler.consumeOutputStream(outputStream);
+handler.write(outputStream);
 ```
 
 Works the same way with `ExcelWorkbook`:
@@ -1552,7 +1552,7 @@ Works the same way with `ExcelWorkbook`:
 try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
     workbook.password("P@ssw0rd!");
     workbook.<Product>sheet("Products").column("Name", Product::name).write(data);
-    workbook.finish().consumeOutputStream(outputStream);
+    workbook.finish().write(outputStream);
 }
 ```
 
@@ -1587,7 +1587,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
         .write(orderStream);
 
     ExcelHandler handler = workbook.finish();
-    handler.consumeOutputStream(outputStream);
+    handler.write(outputStream);
 }
 ```
 
@@ -1912,7 +1912,7 @@ public Mono<Void> download(ServerHttpResponse response) {
             PipedOutputStream pos = new PipedOutputStream(pis);
             Schedulers.boundedElastic().schedule(() -> {
                 try {
-                    writer.write(dataStream).consumeOutputStream(pos);
+                    writer.write(dataStream).write(pos);
                     pos.close();
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -1944,7 +1944,7 @@ ExcelHandler handler = writer.write(flux.toStream());
 | `CsvReadException` | CSV read/parse errors |
 
 - Column mapping exceptions are safely logged and fall back to string conversion (Excel writing).
-- Calling `consumeOutputStream` on an already-consumed handler throws the corresponding `WriteException`.
+- Calling `write` on an already-consumed handler throws the corresponding `WriteException`.
 - Empty password on encrypted export throws `IllegalArgumentException`.
 
 ## Security & Resource Management
@@ -1961,7 +1961,7 @@ The library creates temporary files during read and write operations (e.g., SAX-
 ### Password Encryption
 
 - Uses Apache POI's **Agile encryption mode** (AES-256, modern Excel standard).
-- **Preferred API:** `ExcelWriter.password()` / `ExcelWorkbook.password()` — set once, `consumeOutputStream()` auto-encrypts.
+- **Preferred API:** `ExcelWriter.password()` / `ExcelWorkbook.password()` — set once, `write()` auto-encrypts.
 - **Late-binding API:** `consumeOutputStreamWithPassword()` — for cases where the password is only known at output time.
 - Using both on the same handler throws `IllegalStateException` to prevent ambiguity.
 - The `char[]` password overload zeroes the array after use (including on exception) to minimize password exposure in memory.

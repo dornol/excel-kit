@@ -49,7 +49,7 @@ writer.column("Price", Product::price, cfg -> cfg.type(ExcelDataType.INTEGER).fo
 
 ### Added
 - **`ExcelWriter.password(String)`** / **`ExcelWorkbook.password(String)`** — set encryption password
-  at the writer level. `consumeOutputStream()` automatically encrypts without needing
+  at the writer level. `write()` automatically encrypts without needing
   `consumeOutputStreamWithPassword()`. Consistent with `protectSheet()` / `protectWorkbook()` API pattern.
 - **CsvMapReader** — read CSV files into `Map<String, String>` without typed POJOs,
   matching the `ExcelMapReader` API. Supports `dialect()`, `delimiter()`, `charset()`,

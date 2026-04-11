@@ -35,7 +35,7 @@ import java.util.List;
  *         .showDataLabels(true)
  *         .position(3, 0, 20, 8))
  *     .write(stream)
- *     .consumeOutputStream(out);
+ *     .write(out);
  * }</pre>
  *
  * @author dhkim

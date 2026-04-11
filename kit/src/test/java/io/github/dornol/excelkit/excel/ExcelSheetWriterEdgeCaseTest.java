@@ -28,7 +28,7 @@ class ExcelSheetWriterEdgeCaseTest {
                     .column("Name", Item::name)
                     .columnIf("Value", false, i -> i.value)
                     .write(Stream.of(new Item("A", 1)));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -46,7 +46,7 @@ class ExcelSheetWriterEdgeCaseTest {
                     .column("Name", Item::name)
                     .columnIf("Value", true, i -> i.value)
                     .write(Stream.of(new Item("A", 1)));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -65,7 +65,7 @@ class ExcelSheetWriterEdgeCaseTest {
                     .columnIf("Value", false, i -> i.value,
                             c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new Item("A", 1)));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -83,7 +83,7 @@ class ExcelSheetWriterEdgeCaseTest {
                     .columnIf("Value", true, i -> i.value,
                             c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new Item("A", 1)));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -128,7 +128,7 @@ class ExcelSheetWriterEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -180,7 +180,7 @@ class ExcelSheetWriterEdgeCaseTest {
                     .column("Name", Item::name)
                     .autoWidthSampleRows(0)
                     .write(Stream.of(new Item("A", 1)));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

@@ -48,7 +48,7 @@ import java.util.Map;
  *           })
  *           .write(itemStream);
  *
- *     writer.finish().consumeOutputStream(outputStream);
+ *     writer.finish().write(outputStream);
  * }
  * }</pre>
  *

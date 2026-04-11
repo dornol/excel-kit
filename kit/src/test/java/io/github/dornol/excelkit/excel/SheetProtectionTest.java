@@ -33,7 +33,7 @@ class SheetProtectionTest {
                 .column("Name", s -> s)
                 .protectSheet("password123")
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(isProtected(wb.getSheetAt(0)));
@@ -48,7 +48,7 @@ class SheetProtectionTest {
                 .column("Unlocked", s -> s, c -> c.locked(false))
                 .protectSheet("password")
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -64,7 +64,7 @@ class SheetProtectionTest {
         new ExcelWriter<String>()
                 .column("Col", s -> s, c -> c.locked(false))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertFalse(isProtected(wb.getSheetAt(0)));
@@ -80,7 +80,7 @@ class SheetProtectionTest {
                     .column("Name", s -> s)
                     .protectSheet("pass")
                     .write(Stream.of("Alice"));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -95,7 +95,7 @@ class SheetProtectionTest {
                 .column("Name", s -> s)
                 .protectSheet("password")
                 .write(Stream.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             for (int i = 0; i < wb.getNumberOfSheets(); i++) {

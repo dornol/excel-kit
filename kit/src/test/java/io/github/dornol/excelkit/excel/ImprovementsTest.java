@@ -59,7 +59,7 @@ class ImprovementsTest {
                     .autoFilter(true)
                     .column("Name", s -> s)
                     .write(Stream.of("A", "B"));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
         assertTrue(out.toByteArray().length > 0);
     }
@@ -72,7 +72,7 @@ class ImprovementsTest {
                     .autoFilter(false)
                     .column("Name", s -> s)
                     .write(Stream.of("A"));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
         assertTrue(out.toByteArray().length > 0);
     }
@@ -88,7 +88,7 @@ class ImprovementsTest {
                     .column("Name", s -> s)
                     .columnIf("Age", true, s -> "30")
                     .write(Stream.of("Alice"));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var xwb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -104,7 +104,7 @@ class ImprovementsTest {
                     .column("Name", s -> s)
                     .columnIf("Age", false, s -> "30")
                     .write(Stream.of("Alice"));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var xwb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -151,7 +151,7 @@ class ImprovementsTest {
                     return ctx.getCurrentRow();
                 })
                 .write(Stream.empty())
-                .consumeOutputStream(out);
+                .write(out);
 
         assertTrue(called[0], "afterData should be called even with empty stream");
     }
@@ -167,7 +167,7 @@ class ImprovementsTest {
                     return ctx.getCurrentRow();
                 })
                 .write(Stream.empty())
-                .consumeOutputStream(out);
+                .write(out);
 
         assertTrue(called[0], "beforeHeader should be called even with empty stream");
     }
@@ -183,7 +183,7 @@ class ImprovementsTest {
                     .maxRows(2)
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4, 5));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var xwb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -211,7 +211,7 @@ class ImprovementsTest {
                     })
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4, 5));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         // 3 sheets: beforeHeader on each, afterData on each (including rollover + final)
@@ -229,7 +229,7 @@ class ImprovementsTest {
                     .maxRows(5)
                     .column("Value", i -> i)
                     .write(Stream.empty());
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var xwb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

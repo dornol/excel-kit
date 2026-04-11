@@ -35,7 +35,7 @@ class ImageTest {
                 .column("Name", s -> s)
                 .column("Photo", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var pictures = wb.getAllPictures();
@@ -66,7 +66,7 @@ class ImageTest {
         new ExcelWriter<String>()
                 .column("Data", s -> s, c -> c.type(ExcelDataType.IMAGE))
                 .write(Stream.of("not-an-image"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertEquals("not-an-image", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());

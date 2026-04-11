@@ -39,7 +39,7 @@ class OutlineAndColumnAtTest {
                 .column("Detail2", r -> r[2], c -> c.outline(1))
                 .column("Summary", r -> r[3])
                 .write(Stream.<String[]>of(new String[]{"A", "d1", "d2", "S"}))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -64,7 +64,7 @@ class OutlineAndColumnAtTest {
                     .column("C", r -> r[2], c -> c.outline(1))
                     .column("D", r -> r[3])
                     .write(Stream.<String[]>of(new String[]{"a", "b", "c", "d"}));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

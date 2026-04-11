@@ -23,7 +23,7 @@ class AddColumnRowFunctionTest {
                         c -> c.type(ExcelDataType.LONG))
                 .column("Name", s -> s)
                 .write(Stream.of("Alice", "Bob", "Charlie"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -42,7 +42,7 @@ class AddColumnRowFunctionTest {
                         c -> c.type(ExcelDataType.LONG))
                 .column("Name", s -> s)
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);

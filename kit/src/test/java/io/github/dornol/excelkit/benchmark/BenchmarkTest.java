@@ -61,7 +61,7 @@ class BenchmarkTest {
                 .write(generateRows(rows, cols));
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            handler.consumeOutputStream(os);
+            handler.write(os);
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
@@ -89,7 +89,7 @@ class BenchmarkTest {
                 .write(generateRows(rows, 5));
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            handler.consumeOutputStream(os);
+            handler.write(os);
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
@@ -117,7 +117,7 @@ class BenchmarkTest {
         ExcelHandler handler = writer.write(generateRows(rows, cols));
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            handler.consumeOutputStream(os);
+            handler.write(os);
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
@@ -144,7 +144,7 @@ class BenchmarkTest {
                 .write(generateRows(totalRows, 5));
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            handler.consumeOutputStream(os);
+            handler.write(os);
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
@@ -176,7 +176,7 @@ class BenchmarkTest {
 
             ExcelHandler handler = wb.finish();
             try (OutputStream os = Files.newOutputStream(file)) {
-                handler.consumeOutputStream(os);
+                handler.write(os);
             }
         }
 
@@ -209,7 +209,7 @@ class BenchmarkTest {
                 .write(generateRows(rows, 5));
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            handler.consumeOutputStream(os);
+            handler.write(os);
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
@@ -237,7 +237,7 @@ class BenchmarkTest {
                 .write(generateRows(rows, 5));
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            handler.consumeOutputStream(os);
+            handler.write(os);
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
@@ -264,7 +264,7 @@ class BenchmarkTest {
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
                     .write(generateRows(rows, 3))
-                    .consumeOutputStream(os);
+                    .write(os);
         }
 
         long startMem = usedMemoryMB();
@@ -293,7 +293,7 @@ class BenchmarkTest {
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
                     .write(generateRows(rows, 3))
-                    .consumeOutputStream(os);
+                    .write(os);
         }
 
         long startMem = usedMemoryMB();
@@ -329,7 +329,7 @@ class BenchmarkTest {
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1])
                     .write(generateRows(rows, 3))
-                    .consumeOutputStream(os);
+                    .write(os);
         }
 
         long startMem = usedMemoryMB();
@@ -358,7 +358,7 @@ class BenchmarkTest {
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1])
                     .write(generateRows(rows, 3))
-                    .consumeOutputStream(os);
+                    .write(os);
         }
 
         long startMem = usedMemoryMB();

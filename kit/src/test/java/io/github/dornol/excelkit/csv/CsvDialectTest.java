@@ -72,7 +72,7 @@ class CsvDialectTest {
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
                 .write(Stream.of(new Item("Alice", 10)))
-                .consumeOutputStream(out);
+                .write(out);
 
         String content = out.toString(StandardCharsets.UTF_8);
         String[] lines = content.split("\r?\n");
@@ -87,7 +87,7 @@ class CsvDialectTest {
                 .dialect(CsvDialect.RFC4180)
                 .column("Name", Item::name)
                 .write(Stream.of(new Item("A", 1)))
-                .consumeOutputStream(out);
+                .write(out);
 
         byte[] bytes = out.toByteArray();
         // Should NOT start with BOM
@@ -104,7 +104,7 @@ class CsvDialectTest {
                 .dialect(CsvDialect.EXCEL)
                 .column("Name", Item::name)
                 .write(Stream.of(new Item("A", 1)))
-                .consumeOutputStream(out);
+                .write(out);
 
         byte[] bytes = out.toByteArray();
         // Should start with BOM
@@ -122,7 +122,7 @@ class CsvDialectTest {
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
                 .write(Stream.of(new Item("Alice", 10)))
-                .consumeOutputStream(out);
+                .write(out);
 
         String content = out.toString(StandardCharsets.UTF_8);
         String[] lines = content.split("\r?\n");
@@ -178,7 +178,7 @@ class CsvDialectTest {
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
                 .write(Stream.of(new Item("Alice", 10), new Item("Bob", 20)))
-                .consumeOutputStream(out);
+                .write(out);
 
         List<Item> results = new ArrayList<>();
         CsvReader.<Item>mapping(row ->
@@ -203,7 +203,7 @@ class CsvDialectTest {
                 .delimiter(';')                 // override to semicolon
                 .column("Name", Item::name)
                 .write(Stream.of(new Item("A", 1)))
-                .consumeOutputStream(out);
+                .write(out);
 
         String content = out.toString(StandardCharsets.UTF_8);
         String[] lines = content.split("\r?\n");

@@ -45,7 +45,7 @@ public class ReadShowcaseController {
                 .write(ShowcaseData.sampleProducts().stream().map(ShowcaseData::toReadDto));
 
         return DownloadUtil.builder("schema-excel-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================

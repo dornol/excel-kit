@@ -13,14 +13,14 @@ Not annotation-based — columns are defined programmatically via builder chains
 
 | Task | Class | Pattern |
 |------|-------|---------|
-| Write Excel (typed) | `ExcelWriter<T>` | `.column("Name", T::getName).write(stream).consumeOutputStream(out)` |
+| Write Excel (typed) | `ExcelWriter<T>` | `.column("Name", T::getName).write(stream).write(out)` |
 | Write Excel (map) | `ExcelMapWriter` | `new ExcelMapWriter("Name", "Age").write(stream)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list(...).write(stream, out)` |
 | Read Excel (typed) | `ExcelReader<T>` | `.column("Name", T::setName).build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelMapReader` | `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))` |
 | Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString()))` |
-| Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).consumeOutputStream(out)` |
+| Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).write(out)` |
 | Write CSV (map) | `CsvMapWriter` | `new CsvMapWriter("Name", "Age").write(stream)` |
 | Read CSV | `CsvReader<T>` | `.column("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvMapReader` | `new CsvMapReader().build(in).read(r -> r.data().get("Name"))` |
@@ -43,7 +43,7 @@ new ExcelWriter<Person>()
     .column("Name", Person::name)
     .column("Age", Person::age, cfg -> cfg.type(ExcelDataType.INTEGER))
     .write(stream)
-    .consumeOutputStream(out);
+    .write(out);
 ```
 
 `ExcelWorkbook` (multi-sheet, different types per sheet):
@@ -51,7 +51,7 @@ new ExcelWriter<Person>()
 try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
     wb.<User>sheet("Users").column("Name", User::getName).write(userStream);
     wb.<Order>sheet("Orders").column("ID", Order::getId).write(orderStream);
-    wb.finish().consumeOutputStream(out);
+    wb.finish().write(out);
 }
 ```
 

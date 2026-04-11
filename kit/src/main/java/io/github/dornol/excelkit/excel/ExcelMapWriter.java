@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  * writer.write(Stream.of(
  *     Map.of("Name", "Alice", "Age", 30, "Email", "alice@example.com"),
  *     Map.of("Name", "Bob", "Age", 25, "Email", "bob@example.com")
- * )).consumeOutputStream(out);
+ * )).write(out);
  * }</pre>
  *
  * @author dhkim

@@ -11,7 +11,7 @@ import java.util.stream.Stream;
  * CsvMapWriter writer = new CsvMapWriter("Name", "Age", "Email");
  * writer.write(Stream.of(
  *     Map.of("Name", "Alice", "Age", 30, "Email", "alice@example.com")
- * )).consumeOutputStream(out);
+ * )).write(out);
  * }</pre>
  *
  * @author dhkim

@@ -75,7 +75,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("formula-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -94,7 +94,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("hyperlink-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -138,7 +138,7 @@ public class WriteShowcaseController {
 
             var handler = wb.finish();
             return DownloadUtil.builder("multi-sheet-demo", DownloadFileType.EXCEL)
-                    .body(handler::consumeOutputStream);
+                    .body(handler::write);
         }
     }
 
@@ -174,7 +174,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("cell-color-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -207,7 +207,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("group-header-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -231,7 +231,7 @@ public class WriteShowcaseController {
 
             var handler = wb.finish();
             return DownloadUtil.builder("rollover-demo", DownloadFileType.EXCEL)
-                    .body(handler::consumeOutputStream);
+                    .body(handler::write);
         }
     }
 
@@ -254,7 +254,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("outline-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -348,7 +348,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("full-showcase", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -371,7 +371,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("border-style-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -396,7 +396,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("cell-comment-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -425,7 +425,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("conditional-format-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -454,7 +454,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("sheet-protection-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -476,7 +476,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream().limit(10));
 
         return DownloadUtil.builder("chart-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -500,7 +500,7 @@ public class WriteShowcaseController {
                 .write(maps);
 
         return DownloadUtil.builder("map-writer-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -533,7 +533,7 @@ public class WriteShowcaseController {
 
             var handler = wb.finish();
             return DownloadUtil.builder("workbook-protection-demo", DownloadFileType.EXCEL)
-                    .body(handler::consumeOutputStream);
+                    .body(handler::write);
         }
     }
 
@@ -556,7 +556,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("header-font-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -586,7 +586,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("header-font-color-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -615,7 +615,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("default-style-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -637,7 +637,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("summary-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
     // ========================================================================
@@ -668,7 +668,7 @@ public class WriteShowcaseController {
 
             var handler = wb.finish();
             return DownloadUtil.builder("named-range-demo", DownloadFileType.EXCEL)
-                    .body(handler::consumeOutputStream);
+                    .body(handler::write);
         }
     }
 
@@ -692,7 +692,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("data-bar-demo", DownloadFileType.EXCEL)
-                .body(handler::consumeOutputStream);
+                .body(handler::write);
     }
 
 }

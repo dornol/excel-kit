@@ -20,7 +20,7 @@ try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
         .tabColor(ExcelColor.GREEN)
         .write(orderStream);
 
-    wb.finish().consumeOutputStream(out);
+    wb.finish().write(out);
 }
 ```
 
@@ -145,7 +145,7 @@ writer.protectWorkbook("password123");  // prevent add/delete/rename sheets
 ## Password Encryption
 
 ```java
-new ExcelWriter<>().password("secret").column(...).write(data).consumeOutputStream(out);
+new ExcelWriter<>().password("secret").column(...).write(data).write(out);
 // Or: handler.consumeOutputStreamWithPassword(out, "secret");
 ```
 
@@ -244,7 +244,7 @@ var schema = ExcelKitSchema.<Product>builder()
     .build();
 
 // Write
-schema.excelWriter().write(data).consumeOutputStream(out);
+schema.excelWriter().write(data).write(out);
 
 // Read
 schema.excelReader(Product::new, null).build(in).read(consumer);

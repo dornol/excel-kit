@@ -29,7 +29,7 @@ class CsvQuotingTest {
                 .column("Value", i -> i.value)
                 .column("Price", i -> i.price)
                 .write(Stream.of(items))
-                .consumeOutputStream(out);
+                .write(out);
         return out.toString(StandardCharsets.UTF_8);
     }
 
@@ -55,7 +55,7 @@ class CsvQuotingTest {
                 .column("Value", i -> i.value)
                 .column("Price", i -> i.price)
                 .write(Stream.of(new Item("Alice", 10, 9.99)))
-                .consumeOutputStream(out);
+                .write(out);
         String[] data = dataLines(out.toString(StandardCharsets.UTF_8));
 
         // Default = MINIMAL: plain values not quoted
@@ -117,7 +117,7 @@ class CsvQuotingTest {
                 .column("A", s -> null)
                 .column("B", s -> "x")
                 .write(Stream.of("test"))
-                .consumeOutputStream(out);
+                .write(out);
         String[] data = dataLines(out.toString(StandardCharsets.UTF_8));
 
         assertEquals("\"\",\"x\"", data[0]);
@@ -154,7 +154,7 @@ class CsvQuotingTest {
                 .csvInjectionDefense(false)
                 .column("Val", s -> s)
                 .write(Stream.of("-42.5"))
-                .consumeOutputStream(out);
+                .write(out);
 
         String[] data = dataLines(out.toString(StandardCharsets.UTF_8));
         assertEquals("-42.5", data[0], "Negative number should not be quoted");
@@ -169,7 +169,7 @@ class CsvQuotingTest {
                 .csvInjectionDefense(false)
                 .column("Val", s -> s)
                 .write(Stream.of("+3.14"))
-                .consumeOutputStream(out);
+                .write(out);
 
         String[] data = dataLines(out.toString(StandardCharsets.UTF_8));
         assertEquals("+3.14", data[0], "Positive sign number should not be quoted");
@@ -183,7 +183,7 @@ class CsvQuotingTest {
                 .bom(false)
                 .column("Val", s -> s)
                 .write(Stream.of("10abc"))
-                .consumeOutputStream(out);
+                .write(out);
 
         String[] data = dataLines(out.toString(StandardCharsets.UTF_8));
         assertEquals("\"10abc\"", data[0], "Non-numeric text should be quoted");
@@ -197,7 +197,7 @@ class CsvQuotingTest {
                 .bom(false)
                 .column("Val", s -> "")
                 .write(Stream.of("x"))
-                .consumeOutputStream(out);
+                .write(out);
 
         String[] data = dataLines(out.toString(StandardCharsets.UTF_8));
         assertEquals("\"\"", data[0], "Empty string is non-numeric → should be quoted");
@@ -217,7 +217,7 @@ class CsvQuotingTest {
                 .csvInjectionDefense(true)
                 .column("Val", s -> s)
                 .write(Stream.of("-42"))
-                .consumeOutputStream(out);
+                .write(out);
 
         String[] data = dataLines(out.toString(StandardCharsets.UTF_8));
         // '-42' → injection defense adds ' prefix → "'-42" which is non-numeric → quoted
@@ -237,7 +237,7 @@ class CsvQuotingTest {
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
                 .write(Stream.of(new Item("Alice", 10, 9.99), new Item("Bob", 20, 1.5)))
-                .consumeOutputStream(out);
+                .write(out);
 
         List<ReadResult<Item>> results = new ArrayList<>();
         CsvReader.<Item>mapping(row ->
@@ -262,7 +262,7 @@ class CsvQuotingTest {
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
                 .write(Stream.of(new Item("Alice", 10, 9.99)))
-                .consumeOutputStream(out);
+                .write(out);
 
         List<ReadResult<Item>> results = new ArrayList<>();
         CsvReader.<Item>mapping(row ->

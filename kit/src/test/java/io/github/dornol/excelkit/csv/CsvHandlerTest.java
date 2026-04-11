@@ -34,7 +34,7 @@ class CsvHandlerTest {
     }
 
     @Test
-    void consumeOutputStream_shouldWriteContentToOutputStream() throws IOException {
+    void write_shouldWriteContentToOutputStream() throws IOException {
         // Arrange
         Path tempFile = Files.createFile(tempDir.resolve("test.csv"));
         String testContent = "test,content\nrow1,data1";
@@ -44,7 +44,7 @@ class CsvHandlerTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         // Act
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         String result = outputStream.toString(StandardCharsets.UTF_8);
@@ -52,7 +52,7 @@ class CsvHandlerTest {
     }
 
     @Test
-    void consumeOutputStream_shouldThrowExceptionWhenCalledTwice() throws IOException {
+    void write_shouldThrowExceptionWhenCalledTwice() throws IOException {
         // Arrange
         Path tempFile = Files.createFile(tempDir.resolve("test.csv"));
         String testContent = "test,content\nrow1,data1";
@@ -63,15 +63,15 @@ class CsvHandlerTest {
         ByteArrayOutputStream outputStream2 = new ByteArrayOutputStream();
 
         // Act & Assert
-        handler.consumeOutputStream(outputStream1); // First call should succeed
+        handler.write(outputStream1); // First call should succeed
         
         assertThrows(CsvWriteException.class, () -> {
-            handler.consumeOutputStream(outputStream2); // Second call should throw exception
-        }, "Second call to consumeOutputStream should throw CsvWriteException");
+            handler.write(outputStream2); // Second call should throw exception
+        }, "Second call to write should throw CsvWriteException");
     }
 
     @Test
-    void consumeOutputStream_shouldDeleteTempFileAfterConsumption() throws IOException {
+    void write_shouldDeleteTempFileAfterConsumption() throws IOException {
         // Arrange
         Path tempFile = Files.createFile(tempDir.resolve("test.csv"));
         String testContent = "test,content\nrow1,data1";
@@ -81,7 +81,7 @@ class CsvHandlerTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         // Act
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         assertFalse(Files.exists(tempFile), "Temp file should be deleted after consumption");

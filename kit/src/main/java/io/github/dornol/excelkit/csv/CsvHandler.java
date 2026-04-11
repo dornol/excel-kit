@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.shared.FileHandler;
 import io.github.dornol.excelkit.shared.TempResourceContainer;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author dhkim
  * @since 2025-07-19
  */
-public class CsvHandler extends TempResourceContainer {
+public final class CsvHandler extends TempResourceContainer implements FileHandler {
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -35,14 +36,19 @@ public class CsvHandler extends TempResourceContainer {
     /**
      * Writes the content of the CSV file to the given OutputStream.
      * <p>
-     * This method can be called only once. Subsequent calls will throw {@link IllegalStateException}.
+     * This method can be called only once. Subsequent calls will throw {@link CsvWriteException}.
      * <p>
      * The temporary file and directory will be deleted automatically after writing.
+     * <p>
+     * This implementation wraps {@link IOException} as {@link CsvWriteException} internally
+     * and never actually throws {@code IOException}, even though the {@link FileHandler}
+     * contract declares it.
      *
      * @param outputStream The stream to which the CSV content will be written
-     * @throws IllegalStateException If this method has already been called
+     * @throws CsvWriteException If this method has already been called or if an I/O error occurs
      */
-    public void consumeOutputStream(OutputStream outputStream) {
+    @Override
+    public void write(OutputStream outputStream) {
         if (!consumed.compareAndSet(false, true)) {
             throw new CsvWriteException("Already consumed");
         }

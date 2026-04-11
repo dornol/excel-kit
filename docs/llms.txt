@@ -12,13 +12,13 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 
 ## Quick Reference
 
-- Write Excel (typed): `new ExcelWriter<T>().column("Name", T::getName).column("Age", T::getAge, c -> c.type(ExcelDataType.INTEGER)).write(stream).consumeOutputStream(out)`
+- Write Excel (typed): `new ExcelWriter<T>().column("Name", T::getName).column("Age", T::getAge, c -> c.type(ExcelDataType.INTEGER)).write(stream).write(out)`
 - Write Excel (multi-sheet): `new ExcelWorkbook().sheet("Sheet1").column(...).write(stream)`
 - Write Excel (map): `new ExcelMapWriter("Name", "Age").write(stream)`
 - Read Excel (setter): `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
 - Read Excel (mapping): `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).build(in)`
 - Read Excel (map): `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))`
-- Write CSV: `new CsvWriter<T>().column("Name", T::getName).write(stream).consumeOutputStream(out)`
+- Write CSV: `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)`
 - Read CSV: `new CsvReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
 
 ## Core Classes

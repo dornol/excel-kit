@@ -43,7 +43,7 @@ class V06FeaturesTest {
                 new ExcelWriter<String>()
                         .column("Col", s -> s, c -> c.border(style))
                         .write(Stream.of("data"))
-                        .consumeOutputStream(out);
+                        .write(out);
 
                 try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                     var cellStyle = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -61,7 +61,7 @@ class V06FeaturesTest {
                     .column("Thick", s -> s, c -> c.border(ExcelBorderStyle.THICK))
                     .column("None", s -> s, c -> c.border(ExcelBorderStyle.NONE))
                     .write(Stream.of("data"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var row = wb.getSheetAt(0).getRow(1);
@@ -81,7 +81,7 @@ class V06FeaturesTest {
                             .fontSize(14)
                             .backgroundColor(ExcelColor.LIGHT_BLUE))
                     .write(Stream.of("data"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -102,7 +102,7 @@ class V06FeaturesTest {
                     .sheetName("Data")
                     .column("Name", s -> s)
                     .write(Stream.of("A", "B", "C", "D", "E", "F", "G", "H", "I"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             var sheets = ExcelReader.getSheetNames(new ByteArrayInputStream(out.toByteArray()));
             assertTrue(sheets.size() >= 3, "Should have multiple sheets");
@@ -116,7 +116,7 @@ class V06FeaturesTest {
                     .column("A", s -> s)
                     .column("B", s -> s)
                     .write(Stream.empty())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             var headers = ExcelReader.getSheetHeaders(
                     new ByteArrayInputStream(out.toByteArray()), 0, 0);
@@ -145,7 +145,7 @@ class V06FeaturesTest {
                 wb.<String>sheet("Items")
                         .column("Item", s -> s)
                         .write(Stream.of("Widget"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             byte[] data = out.toByteArray();
@@ -185,7 +185,7 @@ class V06FeaturesTest {
             );
             writer.write(Stream.of(
                     Map.of("Name", "Item", "Price", 100)
-            )).consumeOutputStream(out);
+            )).write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals("Item", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
@@ -197,7 +197,7 @@ class V06FeaturesTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelMapWriter("A", "B")
                     .write(Stream.empty())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals("A", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue());
@@ -214,7 +214,7 @@ class V06FeaturesTest {
 
             new ExcelMapWriter("Name", "Age")
                     .write(Stream.of(row))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 // null values should result in empty cells
@@ -227,7 +227,7 @@ class V06FeaturesTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelMapWriter("Name")
                     .write(Stream.of(Map.of("Name", "Alice", "Extra", "ignored")))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals(1, wb.getSheetAt(0).getRow(0).getLastCellNum()); // only 1 column
@@ -239,7 +239,7 @@ class V06FeaturesTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new ExcelMapWriter("Name", "Age")
                     .write(Stream.empty())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             List<Map<String, String>> results = new ArrayList<>();
             new ExcelMapReader()
@@ -264,7 +264,7 @@ class V06FeaturesTest {
 
             new ExcelMapWriter("A", "B", "C")
                     .write(Stream.of(fullRow, sparseRow))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             List<Map<String, String>> results = new ArrayList<>();
             new ExcelMapReader()
@@ -287,7 +287,7 @@ class V06FeaturesTest {
                     })
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             List<Map<String, String>> results = new ArrayList<>();
             new ExcelMapReader()
@@ -304,7 +304,7 @@ class V06FeaturesTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             new CsvMapWriter("Name", "Desc")
                     .write(Stream.of(Map.of("Name", "Alice, Jr.", "Desc", "She said \"hi\"")))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             String csv = out.toString(StandardCharsets.UTF_8);
             assertTrue(csv.contains("Alice, Jr.") || csv.contains("\"Alice, Jr.\""));
@@ -317,7 +317,7 @@ class V06FeaturesTest {
             csvWriter.delimiter('\t');
             new CsvMapWriter(csvWriter, "A", "B")
                     .write(Stream.of(Map.of("A", "1", "B", "2")))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             String csv = out.toString(StandardCharsets.UTF_8);
             assertTrue(csv.contains("A\tB"));
@@ -332,7 +332,7 @@ class V06FeaturesTest {
 
             new CsvMapWriter("Name", "Value")
                     .write(Stream.of(row))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             assertFalse(out.toByteArray().length == 0);
         }
@@ -350,7 +350,7 @@ class V06FeaturesTest {
                     .column("A", s -> s, c -> c.comment(s -> "Comment for A: " + s))
                     .column("B", s -> s.toUpperCase(), c -> c.comment(s -> "Comment for B: " + s))
                     .write(Stream.of("hello"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var row = wb.getSheetAt(0).getRow(1);
@@ -369,7 +369,7 @@ class V06FeaturesTest {
             new ExcelWriter<String>()
                     .column("A", s -> s, c -> c.comment(s -> ""))
                     .write(Stream.of("data"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 // Empty string comment should still be added
@@ -383,7 +383,7 @@ class V06FeaturesTest {
             new ExcelWriter<String>()
                     .column("Name", s -> s, c -> c.comment(s -> "Hi " + s))
                     .write(Stream.of("Alice", "Bob", "Charlie"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 for (int i = 1; i <= 3; i++) {
@@ -405,7 +405,7 @@ class V06FeaturesTest {
                     .column("Name", s -> s)
                     .conditionalFormatting(cf -> {})  // no rules added
                     .write(Stream.of("data"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals(0, wb.getSheetAt(0).getSheetConditionalFormatting()
@@ -422,7 +422,7 @@ class V06FeaturesTest {
                     .conditionalFormatting(cf -> cf
                             .equalTo("\"test\"", ExcelColor.LIGHT_RED))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 // Rules applied to all columns
@@ -443,7 +443,7 @@ class V06FeaturesTest {
                             .columns(0)
                             .lessThan("0", ExcelColor.BLUE))
                     .write(Stream.of("50"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertTrue(wb.getSheetAt(0).getSheetConditionalFormatting()
@@ -465,7 +465,7 @@ class V06FeaturesTest {
                     .column("B", s -> s)
                     .protectSheet("pass")
                     .write(Stream.of("data"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertNotNull(wb.getSheetAt(0).getCTWorksheet().getSheetProtection());
@@ -479,7 +479,7 @@ class V06FeaturesTest {
                     .column("Name", s -> s)
                     .protectSheet("pass")
                     .write(Stream.of("A", "B", "C", "D", "E", "F", "G"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 for (int i = 0; i < wb.getNumberOfSheets(); i++) {
@@ -496,7 +496,7 @@ class V06FeaturesTest {
                     .column("ReadOnly", s -> s, c -> c.locked(true).bold(true))
                     .protectSheet("pass")
                     .write(Stream.of("data"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var row = wb.getSheetAt(0).getRow(1);
@@ -532,7 +532,7 @@ class V06FeaturesTest {
                     .column("Name", s -> s)
                     .column("Pic", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
                     .write(Stream.of("A", "B", "C"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals(3, wb.getAllPictures().size());
@@ -548,7 +548,7 @@ class V06FeaturesTest {
                     .column("Photo", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
                     .column("Notes", s -> "Note-" + s)
                     .write(Stream.of("1"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals("1", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
@@ -585,7 +585,7 @@ class V06FeaturesTest {
                             .categoryColumn(0)
                             .valueColumn(1, "Values"))
                     .write(Stream.of(new Data("A", 10, 0)))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -604,7 +604,7 @@ class V06FeaturesTest {
                             .categoryColumn(0)
                             .valueColumn(1, "Values"))
                     .write(Stream.of(new Data("A", 10, 0), new Data("B", 20, 0)))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -623,7 +623,7 @@ class V06FeaturesTest {
                             .categoryColumn(1)  // use Name as category
                             .valueColumn(2, "Values"))
                     .write(Stream.of(new Data("A", 1, 60), new Data("B", 2, 40)))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -663,7 +663,7 @@ class V06FeaturesTest {
                             .columns(1)
                             .greaterThan("50", ExcelColor.LIGHT_GREEN))
                     .write(Stream.of("Alice", "Bob"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -688,7 +688,7 @@ class V06FeaturesTest {
             var writer = new ExcelMapWriter("Name", "Age");
             writer.writer().protectSheet("secret");
             writer.write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertNotNull(wb.getSheetAt(0).getCTWorksheet().getSheetProtection());
@@ -708,7 +708,7 @@ class V06FeaturesTest {
                         .conditionalFormatting(cf -> cf
                                 .equalTo("\"Alice\"", ExcelColor.LIGHT_GREEN))
                         .write(Stream.of("Alice"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

@@ -18,7 +18,7 @@ class CellCommentTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s, c -> c.comment(s -> "Note: " + s))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var cell = wb.getSheetAt(0).getRow(1).getCell(0);
@@ -34,7 +34,7 @@ class CellCommentTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s, c -> c.comment(s -> null))
                 .write(Stream.of("Alice"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var cell = wb.getSheetAt(0).getRow(1).getCell(0);
@@ -48,7 +48,7 @@ class CellCommentTest {
         new ExcelWriter<String>()
                 .column("Name", s -> s, c -> c.comment(s -> s.startsWith("A") ? "Starts with A" : null))
                 .write(Stream.of("Alice", "Bob"))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -65,7 +65,7 @@ class CellCommentTest {
             wb.<String>sheet("Sheet1")
                     .column("Name", s -> s, c -> c.comment(s -> "Hi " + s))
                     .write(Stream.of("Alice"));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

@@ -77,7 +77,7 @@ class ExcelTemplateWriterTest {
         void cell_writesStringValue() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell("B3", "Acme Corp").finish().consumeOutputStream(bos);
+                w.cell("B3", "Acme Corp").finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("Acme Corp", wb.getSheetAt(0).getRow(2).getCell(1).getStringCellValue());
@@ -88,7 +88,7 @@ class ExcelTemplateWriterTest {
         void cell_writesNumberValue() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell("C3", 42).finish().consumeOutputStream(bos);
+                w.cell("C3", 42).finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals(42.0, wb.getSheetAt(0).getRow(2).getCell(2).getNumericCellValue());
@@ -99,7 +99,7 @@ class ExcelTemplateWriterTest {
         void cell_writesBooleanValue() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell("C3", true).finish().consumeOutputStream(bos);
+                w.cell("C3", true).finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertTrue(wb.getSheetAt(0).getRow(2).getCell(2).getBooleanCellValue());
@@ -110,7 +110,7 @@ class ExcelTemplateWriterTest {
         void cell_writesLocalDateValue() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell("B4", LocalDate.of(2026, 3, 19)).finish().consumeOutputStream(bos);
+                w.cell("B4", LocalDate.of(2026, 3, 19)).finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFCell cell = wb.getSheetAt(0).getRow(3).getCell(1);
@@ -123,7 +123,7 @@ class ExcelTemplateWriterTest {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
                 w.cell("B4", LocalDateTime.of(2026, 3, 19, 14, 30))
-                        .finish().consumeOutputStream(bos);
+                        .finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertNotNull(wb.getSheetAt(0).getRow(3).getCell(1));
@@ -134,7 +134,7 @@ class ExcelTemplateWriterTest {
         void cell_writesNullAsBlank() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell("B3", null).finish().consumeOutputStream(bos);
+                w.cell("B3", null).finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFCell cell = wb.getSheetAt(0).getRow(2).getCell(1);
@@ -146,7 +146,7 @@ class ExcelTemplateWriterTest {
         void cell_byRowCol_works() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell(2, 1, "TestValue").finish().consumeOutputStream(bos);
+                w.cell(2, 1, "TestValue").finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("TestValue", wb.getSheetAt(0).getRow(2).getCell(1).getStringCellValue());
@@ -159,7 +159,7 @@ class ExcelTemplateWriterTest {
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
                 w.cell("B3", "Client A")
                         .cell("B4", "2026-03-19")
-                        .finish().consumeOutputStream(bos);
+                        .finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("Client A", wb.getSheetAt(0).getRow(2).getCell(1).getStringCellValue());
@@ -188,7 +188,7 @@ class ExcelTemplateWriterTest {
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
                 w.cell("A3", "col1")
                         .cell("B3", "col2")
-                        .finish().consumeOutputStream(bos);
+                        .finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("col1", wb.getSheetAt(0).getRow(2).getCell(0).getStringCellValue());
@@ -212,7 +212,7 @@ class ExcelTemplateWriterTest {
                         .column("Qty", s -> s.length())
                         .column("Amount", s -> s.length() * 100)
                         .write(Stream.of("Widget", "Gadget"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFSheet sheet = wb.getSheetAt(0);
@@ -229,7 +229,7 @@ class ExcelTemplateWriterTest {
                         .column("Product", s -> s)
                         .column("Count", s -> s.length())
                         .writeWithHeaders(Stream.of("A", "B"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFSheet sheet = wb.getSheetAt(0);
@@ -251,7 +251,7 @@ class ExcelTemplateWriterTest {
                             return ctx.getCurrentRow() + 1;
                         })
                         .write(Stream.of("A", "B"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFSheet sheet = wb.getSheetAt(0);
@@ -275,7 +275,7 @@ class ExcelTemplateWriterTest {
                         .column("ID", i -> i)
                         .column("Value", i -> i * 10)
                         .write(IntStream.range(0, 10_000).boxed());
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertNotNull(wb.getSheetAt(0).getRow(10004));
@@ -301,7 +301,7 @@ class ExcelTemplateWriterTest {
                         .column("Qty", s -> s.length())
                         .write(Stream.of("ItemA", "ItemB"));
 
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFSheet sheet = wb.getSheetAt(0);
@@ -328,7 +328,7 @@ class ExcelTemplateWriterTest {
                 // Write cell after list (row 10, well after data ends at row 7)
                 w.cell("A10", "Footer note");
 
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFSheet sheet = wb.getSheetAt(0);
@@ -351,7 +351,7 @@ class ExcelTemplateWriterTest {
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createMultiSheetTemplate())) {
                 w.sheet(0).cell("A2", "Alice");
                 w.sheet(1).cell("A2", "ORD-001");
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("Alice", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
@@ -364,7 +364,7 @@ class ExcelTemplateWriterTest {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createMultiSheetTemplate())) {
                 w.sheet("Orders").cell("A2", "ORD-100");
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("ORD-100", wb.getSheetAt(1).getRow(1).getCell(0).getStringCellValue());
@@ -396,7 +396,7 @@ class ExcelTemplateWriterTest {
         void existingContent_preserved() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell("B3", "NewClient").finish().consumeOutputStream(bos);
+                w.cell("B3", "NewClient").finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFSheet sheet = wb.getSheetAt(0);
@@ -426,7 +426,7 @@ class ExcelTemplateWriterTest {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(
                     new ByteArrayInputStream(templateBos.toByteArray()))) {
-                w.cell("A3", "value").finish().consumeOutputStream(bos);
+                w.cell("A3", "value").finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals(1, wb.getSheetAt(0).getNumMergedRegions());
@@ -448,7 +448,7 @@ class ExcelTemplateWriterTest {
                         .column("Name", s -> s)
                         .rowHeight(25)
                         .write(Stream.of("A"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             assertTrue(bos.toByteArray().length > 0);
         }
@@ -461,7 +461,7 @@ class ExcelTemplateWriterTest {
                         .column("Name", s -> s)
                         .rowColor(s -> "error".equals(s) ? ExcelColor.LIGHT_RED : null)
                         .write(Stream.of("ok", "error"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             assertTrue(bos.toByteArray().length > 0);
         }
@@ -475,7 +475,7 @@ class ExcelTemplateWriterTest {
                         .column("Qty", i -> i, c -> c.type(ExcelDataType.INTEGER))
                         .summary(s -> s.label("Total").sum("Qty"))
                         .write(Stream.of(10, 20, 30));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 XSSFSheet sheet = wb.getSheetAt(0);
@@ -494,7 +494,7 @@ class ExcelTemplateWriterTest {
                         .column("Name", s -> s)
                         .defaultStyle(ds -> ds.bold(true))
                         .write(Stream.of("Bold"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             assertTrue(bos.toByteArray().length > 0);
         }
@@ -528,7 +528,7 @@ class ExcelTemplateWriterTest {
                         .column("Name", s -> s)
                         .autoWidthSampleRows(50)
                         .write(Stream.of("A"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             assertTrue(bos.toByteArray().length > 0);
         }
@@ -549,7 +549,7 @@ class ExcelTemplateWriterTest {
                         .column("No", (ExcelRowFunction<String, Object>) (s, cursor) -> cursor.getCurrentTotal())
                         .column("Name", s -> s)
                         .write(Stream.of("A", "B", "C"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 // Row numbers: 1, 2, 3
@@ -564,7 +564,7 @@ class ExcelTemplateWriterTest {
                 w.<String>list(5)
                         .column("Name", s -> s, c -> c.bold(true).fontSize(14))
                         .write(Stream.of("Styled"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             assertTrue(bos.toByteArray().length > 0);
         }
@@ -577,7 +577,7 @@ class ExcelTemplateWriterTest {
                         .column("No", (ExcelRowFunction<String, Object>) (s, c) -> c.getCurrentTotal(),
                                 cfg -> cfg.type(ExcelDataType.INTEGER))
                         .write(Stream.of("A"));
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             assertTrue(bos.toByteArray().length > 0);
         }
@@ -598,7 +598,7 @@ class ExcelTemplateWriterTest {
                     public String toString() {
                         return "custom-object";
                     }
-                }).finish().consumeOutputStream(bos);
+                }).finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("custom-object", wb.getSheetAt(0).getRow(2).getCell(1).getStringCellValue());
@@ -612,7 +612,7 @@ class ExcelTemplateWriterTest {
                 w.<String>list(5)
                         .column("Name", s -> s)
                         .write(Stream.empty());
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 // Row 5 should not exist (no data written)
@@ -624,7 +624,7 @@ class ExcelTemplateWriterTest {
         void cell_writesToNewRowBeyondTemplate() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.cell("A100", "far away").finish().consumeOutputStream(bos);
+                w.cell("A100", "far away").finish().write(bos);
             }
             try (XSSFWorkbook wb = readOutput(bos)) {
                 assertEquals("far away", wb.getSheetAt(0).getRow(99).getCell(0).getStringCellValue());
@@ -672,7 +672,7 @@ class ExcelTemplateWriterTest {
         void finish_producesNonEmptyOutput() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.finish().consumeOutputStream(bos);
+                w.finish().write(bos);
             }
             assertTrue(bos.toByteArray().length > 0);
         }

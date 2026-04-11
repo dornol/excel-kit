@@ -29,7 +29,7 @@ class ChartTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Sales"))
                 .write(Stream.of(new Product("A", 100), new Product("B", 200)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFDrawing drawing = wb.getSheetAt(0).getDrawingPatriarch();
@@ -50,7 +50,7 @@ class ChartTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Sales"))
                 .write(Stream.of(new Product("Q1", 100), new Product("Q2", 150)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -69,7 +69,7 @@ class ChartTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Sales"))
                 .write(Stream.of(new Product("A", 60), new Product("B", 40)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -88,7 +88,7 @@ class ChartTest {
                         .valueColumn(1, "Sales")
                         .position(3, 5, 12, 20))
                 .write(Stream.of(new Product("A", 100)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -111,7 +111,7 @@ class ChartTest {
                         .valueColumn(1, "Sales")
                         .valueColumn(2, "Profit"))
                 .write(Stream.of(new Data("A", 100, 30), new Data("B", 200, 50)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -130,7 +130,7 @@ class ChartTest {
                             .categoryColumn(0)
                             .valueColumn(1, "Sales"))
                     .write(Stream.of(new Product("A", 100)));
-            wb.finish().consumeOutputStream(out);
+            wb.finish().write(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -152,7 +152,7 @@ class ChartTest {
                         .categoryAxisTitle("Product")
                         .valueAxisTitle("Amount"))
                 .write(Stream.of(new Product("A", 100), new Product("B", 200)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFDrawing drawing = wb.getSheetAt(0).getDrawingPatriarch();
@@ -187,7 +187,7 @@ class ChartTest {
                         .categoryAxisTitle("Quarter")
                         .valueAxisTitle("Revenue"))
                 .write(Stream.of(new Product("Q1", 100), new Product("Q2", 150)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -217,7 +217,7 @@ class ChartTest {
                         .valueColumn(1, "Sales")
                         .legendPosition(ExcelChartConfig.LegendPosition.BOTTOM))
                 .write(Stream.of(new Product("A", 100), new Product("B", 200)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -246,7 +246,7 @@ class ChartTest {
                         .valueColumn(1, "Sales")
                         .barDirection(ExcelChartConfig.BarDirection.HORIZONTAL))
                 .write(Stream.of(new Product("A", 100), new Product("B", 200)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -277,7 +277,7 @@ class ChartTest {
                         .valueColumn(2, "Profit")
                         .barGrouping(ExcelChartConfig.BarGrouping.STACKED))
                 .write(Stream.of(new Data("A", 100, 30), new Data("B", 200, 50)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -300,7 +300,7 @@ class ChartTest {
                         .type(ExcelChartConfig.ChartType.BAR)
                         .categoryColumn(0))
                 .write(Stream.of(new Product("A", 100)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertNull(wb.getSheetAt(0).getDrawingPatriarch());

@@ -483,7 +483,7 @@ class ExcelMappingReadTest {
                 .write(Stream.of(
                         new PersonRecord("Alice", 30, "Seoul"),
                         new PersonRecord("Bob", 25, "Busan")))
-                .consumeOutputStream(out);
+                .write(out);
 
         // Read back with mapping
         List<PersonRecord> results = new ArrayList<>();

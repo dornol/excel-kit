@@ -74,7 +74,7 @@ class TempFileCleanupIntegrationTest {
         SXSSFWorkbook wb = new SXSSFWorkbook();
         ExcelHandler handler = new ExcelHandler(wb);
 
-        handler.consumeOutputStream(new ByteArrayOutputStream());
+        handler.write(new ByteArrayOutputStream());
 
         assertThrows(ExcelWriteException.class, () ->
                 handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), "pw"));
@@ -250,7 +250,7 @@ class TempFileCleanupIntegrationTest {
                         new TestRow("Alice", 30),
                         new TestRow("Bob", 25)
                 ))
-                .consumeOutputStream(baos);
+                .write(baos);
 
         assertTrue(baos.size() > 100, "Excel output should be non-trivial");
 

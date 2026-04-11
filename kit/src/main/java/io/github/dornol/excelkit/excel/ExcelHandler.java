@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.FileHandler;
 import io.github.dornol.excelkit.shared.TempResourceCreator;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.crypt.EncryptionMode;
@@ -32,14 +33,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Implementing {@link AutoCloseable} would cause IDE "resource not closed" warnings
  * in this pattern, requiring {@code @SuppressWarnings("resource")} on every call site.
  * <p>
- * The workbook is always closed inside {@code consumeOutputStream()} / {@code consumeOutputStreamWithPassword()},
+ * The workbook is always closed inside {@code write()} / {@code consumeOutputStreamWithPassword()},
  * and there is no realistic code path where the handler is obtained but never consumed,
  * since callers either invoke it immediately or pass it to a {@code StreamingResponseBody} lambda.
  *
  * @author dhkim
  * @since 2025-07-19
  */
-public class ExcelHandler {
+public final class ExcelHandler implements FileHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
     private final SXSSFWorkbook wb;
     private final @Nullable String password;
@@ -57,7 +58,7 @@ public class ExcelHandler {
     /**
      * Constructs an ExcelHandler wrapping the given workbook with an optional encryption password.
      * <p>
-     * When a non-null password is provided, {@link #consumeOutputStream(OutputStream)} will
+     * When a non-null password is provided, {@link #write(OutputStream)} will
      * automatically encrypt the output using the "agile" encryption mode.
      *
      * @param wb       The SXSSFWorkbook to be written
@@ -80,7 +81,8 @@ public class ExcelHandler {
      * @throws IOException If an I/O error occurs during writing
      * @throws ExcelWriteException If this method has already been called
      */
-    public void consumeOutputStream(OutputStream outputStream) throws IOException {
+    @Override
+    public void write(OutputStream outputStream) throws IOException {
         if (password != null) {
             encryptAndWrite(outputStream, password);
         } else {
@@ -93,7 +95,7 @@ public class ExcelHandler {
      * <p>
      * This method encrypts the file using the "agile" encryption mode supported by modern Excel versions.
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
-     * or {@link ExcelWorkbook#password(String)} — use {@link #consumeOutputStream(OutputStream)} instead.
+     * or {@link ExcelWorkbook#password(String)} — use {@link #write(OutputStream)} instead.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
@@ -114,7 +116,7 @@ public class ExcelHandler {
      * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
      * The array is zeroed out after encryption completes (or on failure).
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
-     * or {@link ExcelWorkbook#password(String)} — use {@link #consumeOutputStream(OutputStream)} instead.
+     * or {@link ExcelWorkbook#password(String)} — use {@link #write(OutputStream)} instead.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password as a char array (will be zeroed after use)
@@ -137,7 +139,7 @@ public class ExcelHandler {
         if (this.password != null) {
             throw new IllegalStateException(
                     "Password is already set via ExcelWriter.password() or ExcelWorkbook.password(). "
-                            + "Use consumeOutputStream() instead, or remove the password() call to use consumeOutputStreamWithPassword().");
+                            + "Use write() instead, or remove the password() call to use consumeOutputStreamWithPassword().");
         }
     }
 

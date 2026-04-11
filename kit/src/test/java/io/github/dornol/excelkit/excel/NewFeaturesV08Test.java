@@ -38,7 +38,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Rotated", s -> s, c -> c.rotation(45))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -52,7 +52,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Rotated", s -> s, c -> c.rotation(-45))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -67,7 +67,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("NoRotation", s -> s, c -> c.rotation(0))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -81,7 +81,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Vertical", s -> s, c -> c.rotation(90))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -95,7 +95,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Vertical", s -> s, c -> c.rotation(-90))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -109,7 +109,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("BoundaryNeg", s -> s, c -> c.rotation(-1))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -135,7 +135,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Rotated", s -> s, c -> c.rotation(60))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -150,7 +150,7 @@ class NewFeaturesV08Test {
                 wb.<String>sheet("Test")
                         .column("Rotated", s -> s, c -> c.rotation(30))
                         .write(Stream.of("test"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -175,7 +175,7 @@ class NewFeaturesV08Test {
                         .bold(true)
                         .backgroundColor(ExcelColor.LIGHT_YELLOW))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -193,7 +193,7 @@ class NewFeaturesV08Test {
                     .column("Col2", s -> s, c -> c.rotation(45))
                     .column("Col3", s -> s, c -> c.rotation(-45))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var row = wb.getSheetAt(0).getRow(1);
@@ -220,7 +220,7 @@ class NewFeaturesV08Test {
                         .borderLeft(ExcelBorderStyle.DASHED)
                         .borderRight(ExcelBorderStyle.DOTTED))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -239,7 +239,7 @@ class NewFeaturesV08Test {
                         .border(ExcelBorderStyle.MEDIUM)
                         .borderTop(ExcelBorderStyle.THICK))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -257,7 +257,7 @@ class NewFeaturesV08Test {
                     .column("Borders", s -> s, c -> c
                         .borderTop(ExcelBorderStyle.DOUBLE))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -278,7 +278,7 @@ class NewFeaturesV08Test {
                         .borderLeft(ExcelBorderStyle.THICK)
                         .borderRight(ExcelBorderStyle.THICK))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -297,7 +297,7 @@ class NewFeaturesV08Test {
                             .borderTop(ExcelBorderStyle.MEDIUM)
                             .borderBottom(ExcelBorderStyle.DASHED))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -315,7 +315,7 @@ class NewFeaturesV08Test {
                                 .borderTop(ExcelBorderStyle.DOUBLE)
                                 .borderBottom(ExcelBorderStyle.HAIR))
                         .write(Stream.of("test"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -339,7 +339,7 @@ class NewFeaturesV08Test {
                         .borderLeft(ExcelBorderStyle.DOTTED)
                         .borderRight(ExcelBorderStyle.DOTTED))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var row = wb.getSheetAt(0).getRow(1);
@@ -368,7 +368,7 @@ class NewFeaturesV08Test {
                         return ctx.getCurrentRow();
                     })
                     .write(Stream.of("a", "b", "c", "d", "e"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Sheet sheet = wb.getSheetAt(0);
@@ -390,7 +390,7 @@ class NewFeaturesV08Test {
                         return ctx.getCurrentRow();
                     })
                     .write(Stream.of("a", "b", "c", "d"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Sheet sheet = wb.getSheetAt(0);
@@ -411,7 +411,7 @@ class NewFeaturesV08Test {
                         return ctx.getCurrentRow();
                     })
                     .write(Stream.of("a", "b", "c", "d", "e", "f"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Sheet sheet = wb.getSheetAt(0);
@@ -435,7 +435,7 @@ class NewFeaturesV08Test {
                         return ctx.getCurrentRow();
                     })
                     .write(Stream.of("a", "b", "c", "d", "e"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertNotNull(wb.getSheetAt(0));
@@ -453,7 +453,7 @@ class NewFeaturesV08Test {
                             return ctx.getCurrentRow();
                         })
                         .write(Stream.of("a", "b", "c", "d"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -478,7 +478,7 @@ class NewFeaturesV08Test {
                     .column("Score", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(1, 100)))
                     .write(Stream.of("50"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -493,7 +493,7 @@ class NewFeaturesV08Test {
                     .column("GPA", s -> s, c -> c
                         .validation(ExcelValidation.decimalBetween(0.0, 4.0)))
                     .write(Stream.of("3.5"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -508,7 +508,7 @@ class NewFeaturesV08Test {
                     .column("Name", s -> s, c -> c
                         .validation(ExcelValidation.textLength(1, 50)))
                     .write(Stream.of("John"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -523,7 +523,7 @@ class NewFeaturesV08Test {
                     .column("Value", s -> s, c -> c
                         .validation(ExcelValidation.formula("AND(A2>0,A2<100)")))
                     .write(Stream.of("50"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -538,7 +538,7 @@ class NewFeaturesV08Test {
                     .column("Qty", s -> s, c -> c
                         .validation(ExcelValidation.integerGreaterThan(0)))
                     .write(Stream.of("5"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -553,7 +553,7 @@ class NewFeaturesV08Test {
                     .column("Val", s -> s, c -> c
                         .validation(ExcelValidation.integerLessThan(1000)))
                     .write(Stream.of("500"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -570,7 +570,7 @@ class NewFeaturesV08Test {
                                 LocalDate.of(2024, 1, 1),
                                 LocalDate.of(2024, 12, 31))))
                     .write(Stream.of("2024-06-15"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -587,7 +587,7 @@ class NewFeaturesV08Test {
                                 .errorTitle("Invalid Age")
                                 .errorMessage("Please enter a value between 0 and 150")))
                     .write(Stream.of("25"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -603,7 +603,7 @@ class NewFeaturesV08Test {
                         .validation(ExcelValidation.integerBetween(1, 10)
                                 .errorMessage("Must be 1–10")))
                     .write(Stream.of("5"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -618,7 +618,7 @@ class NewFeaturesV08Test {
                     .column("Soft", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(1, 100).showError(false)))
                     .write(Stream.of("50"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -633,7 +633,7 @@ class NewFeaturesV08Test {
                     .column("Score", s -> s, c -> c
                             .validation(ExcelValidation.integerBetween(1, 100)))
                     .write(Stream.of("50"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -649,7 +649,7 @@ class NewFeaturesV08Test {
                         .column("Score", s -> s, c -> c
                                 .validation(ExcelValidation.integerBetween(1, 100)))
                         .write(Stream.of("50"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -667,7 +667,7 @@ class NewFeaturesV08Test {
                     .column("Score", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(1, 100)))
                     .write(Stream.of("Active"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -686,7 +686,7 @@ class NewFeaturesV08Test {
                     .column("Name", s -> s, c -> c
                         .validation(ExcelValidation.textLength(1, 100)))
                     .write(Stream.of("25"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -707,7 +707,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Colored", s -> s, c -> c.fontColor(255, 0, 0))
                     .write(Stream.of("red text"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -728,7 +728,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Blue", s -> s, c -> c.fontColor(ExcelColor.BLUE))
                     .write(Stream.of("blue text"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -749,7 +749,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Green", s -> s, c -> c.fontColor(0, 128, 0))
                     .write(Stream.of("green"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -767,7 +767,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Strike", s -> s, c -> c.strikethrough())
                     .write(Stream.of("struck out"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -781,7 +781,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Strike", s -> s, c -> c.strikethrough(true))
                     .write(Stream.of("struck"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -795,7 +795,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("NoStrike", s -> s, c -> c.strikethrough(false))
                     .write(Stream.of("normal text"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -809,7 +809,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Underlined", s -> s, c -> c.underline())
                     .write(Stream.of("underlined text"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -823,7 +823,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("UL", s -> s, c -> c.underline(true))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -837,7 +837,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("NoUL", s -> s, c -> c.underline(false))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -856,7 +856,7 @@ class NewFeaturesV08Test {
                         .underline()
                         .strikethrough())
                     .write(Stream.of("fully styled"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -878,7 +878,7 @@ class NewFeaturesV08Test {
                             .strikethrough()
                             .underline())
                     .write(Stream.of("styled"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Font font = wb.getFontAt(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getFontIndex());
@@ -897,7 +897,7 @@ class NewFeaturesV08Test {
                                 .underline()
                                 .strikethrough())
                         .write(Stream.of("styled"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -917,7 +917,7 @@ class NewFeaturesV08Test {
                         .fontColor(ExcelColor.RED)
                         .backgroundColor(ExcelColor.LIGHT_YELLOW))
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 CellStyle style = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
@@ -936,7 +936,7 @@ class NewFeaturesV08Test {
                     .column("Under", s -> s, c -> c.underline())
                     .column("Plain", s -> s)
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var row = wb.getSheetAt(0).getRow(1);
@@ -966,7 +966,7 @@ class NewFeaturesV08Test {
                     .tabColor(255, 0, 0)
                     .column("Data", s -> s)
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFColor tabColor = wb.getSheetAt(0).getTabColor();
@@ -986,7 +986,7 @@ class NewFeaturesV08Test {
                     .tabColor(ExcelColor.BLUE)
                     .column("Data", s -> s)
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFColor tabColor = wb.getSheetAt(0).getTabColor();
@@ -1005,7 +1005,7 @@ class NewFeaturesV08Test {
             new ExcelWriter<String>()
                     .column("Data", s -> s)
                     .write(Stream.of("test"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFColor tabColor = wb.getSheetAt(0).getTabColor();
@@ -1020,7 +1020,7 @@ class NewFeaturesV08Test {
                     .tabColor(0, 255, 0)
                     .column("Data", s -> s)
                     .write(Stream.of("a", "b", "c"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 // Tab color should be applied to all rollover sheets
@@ -1039,7 +1039,7 @@ class NewFeaturesV08Test {
                         .tabColor(ExcelColor.RED)
                         .column("Data", s -> s)
                         .write(Stream.of("test"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -1064,7 +1064,7 @@ class NewFeaturesV08Test {
                         .tabColor(ExcelColor.BLUE)
                         .column("Data", s -> s)
                         .write(Stream.of("b"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -1104,7 +1104,7 @@ class NewFeaturesV08Test {
                             .valueColumn(1, "Price")
                             .showDataLabels(true))
                     .write(data.stream())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFDrawing drawing = wb.getSheetAt(0).getDrawingPatriarch();
@@ -1136,7 +1136,7 @@ class NewFeaturesV08Test {
                             .valueColumn(1, "Sales")
                             .legendPosition(ExcelChartConfig.LegendPosition.BOTTOM))
                     .write(data.stream())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFDrawing drawing = wb.getSheetAt(0).getDrawingPatriarch();
@@ -1167,7 +1167,7 @@ class NewFeaturesV08Test {
                             .valueColumn(1, "Sales")
                             .showDataLabels(true))
                     .write(data.stream())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFDrawing drawing = wb.getSheetAt(0).getDrawingPatriarch();
@@ -1198,7 +1198,7 @@ class NewFeaturesV08Test {
                             .categoryAxisTitle("Quarter")
                             .valueAxisTitle("Sales Amount"))
                     .write(data.stream())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -1226,7 +1226,7 @@ class NewFeaturesV08Test {
                             .categoryAxisTitle("Sales")
                             .valueAxisTitle("Price"))
                     .write(data.stream())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -1255,7 +1255,7 @@ class NewFeaturesV08Test {
                             .valueColumn(1, "Price")
                             .valueColumn(2, "Volume"))
                     .write(data.stream())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -1284,7 +1284,7 @@ class NewFeaturesV08Test {
                             .valueColumn(1, "Sales")
                             .valueColumn(2, "Price"))
                     .write(data.stream())
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var areaList = wb.getSheetAt(0).getDrawingPatriarch().getCharts()
@@ -1324,7 +1324,7 @@ class NewFeaturesV08Test {
                                 .valueColumn(1, "Sales"))
                         .write(Stream.of(new Product("A", 60, 0)));
 
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -1382,7 +1382,7 @@ class NewFeaturesV08Test {
                             return ctx.getCurrentRow();
                         })
                         .write(Stream.of("10", "20", "30"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -1424,7 +1424,7 @@ class NewFeaturesV08Test {
                 wb.<String>sheet("Default")
                         .column("Plain", s -> s)
                         .write(Stream.of("a", "b"));
-                wb.finish().consumeOutputStream(out);
+                wb.finish().write(out);
             }
 
             try (var xwb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -1455,7 +1455,7 @@ class NewFeaturesV08Test {
                         return ctx.getCurrentRow();
                     })
                     .write(Stream.of("10", "20", "30"))
-                    .consumeOutputStream(out);
+                    .write(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);

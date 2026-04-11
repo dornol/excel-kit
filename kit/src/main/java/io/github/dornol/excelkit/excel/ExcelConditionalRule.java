@@ -36,7 +36,7 @@ import java.util.List;
  *         .columns(1)
  *         .iconSet(ExcelConditionalRule.IconSetType.ARROWS_3))
  *     .write(stream)
- *     .consumeOutputStream(out);
+ *     .write(out);
  * }</pre>
  *
  * @author dhkim

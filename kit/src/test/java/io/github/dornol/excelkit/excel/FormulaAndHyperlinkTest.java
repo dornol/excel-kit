@@ -29,7 +29,7 @@ class FormulaAndHyperlinkTest {
                         new TestRow(100, "A2*2"),
                         new TestRow(200, "A3*2")
                 ))
-                .consumeOutputStream(out);
+                .write(out);
 
         // Read back with XSSFWorkbook to verify formulas
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -62,7 +62,7 @@ class FormulaAndHyperlinkTest {
                     return ctx.getCurrentRow() + 1;
                 })
                 .write(Stream.of(new TestRow(100, null), new TestRow(200, null)))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -85,7 +85,7 @@ class FormulaAndHyperlinkTest {
                         new TestLink("Google", "https://google.com"),
                         new TestLink("GitHub", "https://github.com")
                 ))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -111,7 +111,7 @@ class FormulaAndHyperlinkTest {
                 .column("Name", TestLink::getName)
                 .column("Link", t -> new ExcelHyperlink(t.getUrl(), "Click Here"), cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of(new TestLink("Google", "https://google.com")))
-                .consumeOutputStream(out);
+                .write(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);

@@ -86,7 +86,7 @@ class ExcelColorTest {
                 .write(data);
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
+            handler.write(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -101,7 +101,7 @@ class ExcelColorTest {
                 .write(data);
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
+            handler.write(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -116,7 +116,7 @@ class ExcelColorTest {
                 .write(data);
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
+            handler.write(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -128,7 +128,7 @@ class ExcelColorTest {
                 .column("A", (row, c) -> row)
                 .write(Stream.of("a"));
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
+            handler.write(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -140,7 +140,7 @@ class ExcelColorTest {
                 .column("A", (row, c) -> row)
                 .write(Stream.of("a"));
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
+            handler.write(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -156,7 +156,7 @@ class ExcelColorTest {
                 .write(data);
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.consumeOutputStream(bos);
+            handler.write(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }

@@ -46,12 +46,12 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void consumeOutputStream_shouldWriteWorkbookToOutputStream() throws IOException {
+    void write_shouldWriteWorkbookToOutputStream() throws IOException {
         // Arrange
         createSampleWorkbookContent();
 
         // Act
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert
         byte[] excelBytes = outputStream.toByteArray();
@@ -59,15 +59,15 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void consumeOutputStream_shouldThrowExceptionWhenAlreadyConsumed() throws IOException {
+    void write_shouldThrowExceptionWhenAlreadyConsumed() throws IOException {
         // Arrange
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
         ByteArrayOutputStream secondOutputStream = new ByteArrayOutputStream();
 
         // Act & Assert
         assertThrows(ExcelWriteException.class, () -> {
-            handler.consumeOutputStream(secondOutputStream);
-        }, "consumeOutputStream should throw ExcelWriteException when already consumed");
+            handler.write(secondOutputStream);
+        }, "write should throw ExcelWriteException when already consumed");
 
         secondOutputStream.close();
     }
@@ -91,7 +91,7 @@ class ExcelHandlerTest {
     @Test
     void consumeOutputStreamWithPassword_shouldThrowExceptionWhenAlreadyConsumed() throws IOException {
         // Arrange
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
         ByteArrayOutputStream secondOutputStream = new ByteArrayOutputStream();
 
         // Act & Assert
@@ -148,7 +148,7 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void consumeOutputStream_withPassword_shouldProduceOLE2Format() throws IOException {
+    void write_withPassword_shouldProduceOLE2Format() throws IOException {
         // Arrange
         SXSSFWorkbook pwWorkbook = new SXSSFWorkbook();
         pwWorkbook.createSheet("Test").createRow(0).createCell(0).setCellValue("Test");
@@ -156,7 +156,7 @@ class ExcelHandlerTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         // Act
-        pwHandler.consumeOutputStream(out);
+        pwHandler.write(out);
 
         // Assert - verify OLE2 magic bytes (encrypted), not ZIP (unencrypted)
         byte[] bytes = out.toByteArray();
@@ -165,12 +165,12 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void consumeOutputStream_withoutPassword_shouldProduceZipFormat() throws IOException {
+    void write_withoutPassword_shouldProduceZipFormat() throws IOException {
         // Arrange
         createSampleWorkbookContent();
 
         // Act
-        handler.consumeOutputStream(outputStream);
+        handler.write(outputStream);
 
         // Assert - verify ZIP magic bytes (unencrypted OOXML)
         byte[] bytes = outputStream.toByteArray();
@@ -190,13 +190,13 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void consumeOutputStream_shouldCloseWorkbookAfterWriting() throws IOException {
+    void write_shouldCloseWorkbookAfterWriting() throws IOException {
         // Arrange
         SXSSFWorkbook testWorkbook = new SXSSFWorkbook();
         ExcelHandler testHandler = new ExcelHandler(testWorkbook);
         
         // Act
-        testHandler.consumeOutputStream(outputStream);
+        testHandler.write(outputStream);
         
         // Assert - attempting to use the workbook after it's closed should throw an exception
         assertThrows(IOException.class, () -> {

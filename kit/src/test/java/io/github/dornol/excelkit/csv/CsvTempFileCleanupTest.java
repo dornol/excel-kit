@@ -39,7 +39,7 @@ class CsvTempFileCleanupTest {
         ));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.consumeOutputStream(baos);
+        handler.write(baos);
 
         String csv = baos.toString();
         String[] lines = csv.split("\r?\n");
@@ -61,7 +61,7 @@ class CsvTempFileCleanupTest {
 
         CsvHandler handler = writer.write(Stream.of(new TestItem("Test", 100)));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.consumeOutputStream(baos);
+        handler.write(baos);
 
         String csv = baos.toString();
         String[] lines = csv.split("\\r?\\n");
@@ -78,15 +78,15 @@ class CsvTempFileCleanupTest {
     }
 
     @Test
-    void consumeOutputStream_calledTwice_shouldThrow() {
+    void write_calledTwice_shouldThrow() {
         CsvWriter<TestItem> writer = new CsvWriter<>();
         writer.column("Name", item -> item.name);
 
         CsvHandler handler = writer.write(Stream.of(new TestItem("Test", 100)));
-        handler.consumeOutputStream(new ByteArrayOutputStream());
+        handler.write(new ByteArrayOutputStream());
 
         assertThrows(CsvWriteException.class, () ->
-                handler.consumeOutputStream(new ByteArrayOutputStream()));
+                handler.write(new ByteArrayOutputStream()));
     }
 
     @Test
@@ -96,7 +96,7 @@ class CsvTempFileCleanupTest {
 
         CsvHandler handler = writer.write(Stream.empty());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.consumeOutputStream(baos);
+        handler.write(baos);
 
         String csv = baos.toString();
         assertTrue(csv.contains("Name"), "Header should be present even for empty data");
@@ -124,7 +124,7 @@ class CsvTempFileCleanupTest {
 
         CsvHandler handler = writer.write(items.stream());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.consumeOutputStream(baos);
+        handler.write(baos);
 
         String csv = baos.toString();
         String[] lines = csv.split("\\r?\\n");
@@ -148,7 +148,7 @@ class CsvTempFileCleanupTest {
 
         CsvHandler handler = writer.write(Stream.of(new TestItem("Test", 100)));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.consumeOutputStream(baos);
+        handler.write(baos);
 
         String csv = baos.toString();
         String[] lines = csv.split("\\r?\\n");
@@ -259,7 +259,7 @@ class CsvTempFileCleanupTest {
                         new TestItem("Apple", 1000),
                         new TestItem("Banana", 2000)
                 ))
-                .consumeOutputStream(baos);
+                .write(baos);
 
         // Read back
         List<TestItem> results = new ArrayList<>();
