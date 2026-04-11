@@ -1,6 +1,9 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.ReadResult;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,6 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -237,6 +241,207 @@ class ExcelReaderMapModeTest {
             assertDoesNotThrow(() -> reader.columnAt(0, (row, cell) -> {}));
             assertDoesNotThrow(reader::skipColumn);
             assertDoesNotThrow(() -> reader.skipColumns(2));
+        }
+    }
+
+    @Nested
+    @DisplayName("Behavioral equivalence with deleted ExcelMapReader")
+    class BehavioralEquivalence {
+
+        /**
+         * Builds an Excel file by hand with an explicit row layout (including nulls and
+         * short rows) so we can test the edges that the normal ExcelWriter/XSSFWorkbook
+         * round trip would paper over.
+         */
+        private byte[] writeHandCraftedWorkbook(HandCrafter crafter) throws IOException {
+            try (XSSFWorkbook wb = new XSSFWorkbook();
+                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                Sheet sheet = wb.createSheet("Sheet1");
+                crafter.craft(sheet);
+                wb.write(out);
+                return out.toByteArray();
+            }
+        }
+
+        @FunctionalInterface
+        private interface HandCrafter {
+            void craft(Sheet sheet);
+        }
+
+        @Test
+        @DisplayName("row with fewer cells than headers: trailing header keys are absent")
+        void excelMapReader_fewerDataColumnsThanHeaders() throws IOException {
+            byte[] data = writeHandCraftedWorkbook(sheet -> {
+                Row header = sheet.createRow(0);
+                header.createCell(0).setCellValue("Name");
+                header.createCell(1).setCellValue("Age");
+                header.createCell(2).setCellValue("City");
+                Row dataRow = sheet.createRow(1);
+                dataRow.createCell(0).setCellValue("Alice");
+                dataRow.createCell(1).setCellValue("30");
+                // City column intentionally left unwritten — row has only 2 cells
+            });
+
+            List<Map<String, String>> results = new ArrayList<>();
+            ExcelReader.forMap()
+                    .build(new ByteArrayInputStream(data))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertEquals("Alice", results.get(0).get("Name"));
+            assertEquals("30", results.get(0).get("Age"));
+            assertFalse(results.get(0).containsKey("City"),
+                    "trailing missing cell means the corresponding header key is absent "
+                            + "(preserved from deleted ExcelMapReader)");
+        }
+
+        @Test
+        @DisplayName("row with more cells than headers: the extras are ignored")
+        void excelMapReader_moreDataColumnsThanHeaders() throws IOException {
+            byte[] data = writeHandCraftedWorkbook(sheet -> {
+                Row header = sheet.createRow(0);
+                header.createCell(0).setCellValue("Name");
+                header.createCell(1).setCellValue("Age");
+                // Only 2 headers
+                Row dataRow = sheet.createRow(1);
+                dataRow.createCell(0).setCellValue("Alice");
+                dataRow.createCell(1).setCellValue("30");
+                dataRow.createCell(2).setCellValue("extra-ignored");
+                dataRow.createCell(3).setCellValue("also-ignored");
+            });
+
+            List<Map<String, String>> results = new ArrayList<>();
+            ExcelReader.forMap()
+                    .build(new ByteArrayInputStream(data))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertEquals(2, results.get(0).size(),
+                    "map shape is bounded by header count, not data-cell count");
+            assertEquals("Alice", results.get(0).get("Name"));
+            assertEquals("30", results.get(0).get("Age"));
+            assertFalse(results.get(0).containsKey("extra-ignored"));
+        }
+
+        @Test
+        @DisplayName("blank header cell becomes an empty-string map key (CellData compact ctor coerces null → \"\")")
+        void excelMapReader_blankHeaderCell_becomesEmptyStringKey() throws IOException {
+            // This test documents an important subtlety: ExcelReadHandler's cell() callback
+            // backfills missing cells with CellData(i, null), which the record's compact
+            // constructor then coerces to formattedValue="". The extracted header is
+            // therefore "" (not null), and the mapMapper's "if (header == null) continue"
+            // branch is effectively dead code for Excel. The deleted ExcelMapReader had the
+            // same behavior — the apparent "null filter" in its code was a no-op for the
+            // same reason. This test pins the behavior so future CellData changes don't
+            // silently alter it.
+            byte[] data = writeHandCraftedWorkbook(sheet -> {
+                Row header = sheet.createRow(0);
+                header.createCell(0).setCellValue("Name");
+                // Column 1 header intentionally not written — gets backfilled as empty
+                header.createCell(2).setCellValue("City");
+                Row dataRow = sheet.createRow(1);
+                dataRow.createCell(0).setCellValue("Alice");
+                dataRow.createCell(1).setCellValue("30");
+                dataRow.createCell(2).setCellValue("Seoul");
+            });
+
+            List<Map<String, String>> results = new ArrayList<>();
+            ExcelReader.forMap()
+                    .build(new ByteArrayInputStream(data))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertEquals("Alice", results.get(0).get("Name"));
+            assertEquals("Seoul", results.get(0).get("City"));
+            assertTrue(results.get(0).containsKey(""),
+                    "blank header cell becomes an empty-string map key, matching the "
+                            + "deleted ExcelMapReader's behavior");
+            assertEquals("30", results.get(0).get(""));
+            assertEquals(3, results.get(0).size());
+            assertFalse(results.get(0).containsKey(null));
+        }
+
+        @Test
+        @DisplayName("empty cell value (present but blank) maps to empty string, not null")
+        void excelMapReader_presentButEmptyCell_becomesEmptyString() throws IOException {
+            byte[] data = writeHandCraftedWorkbook(sheet -> {
+                Row header = sheet.createRow(0);
+                header.createCell(0).setCellValue("Name");
+                header.createCell(1).setCellValue("Age");
+                Row dataRow = sheet.createRow(1);
+                dataRow.createCell(0).setCellValue("Alice");
+                dataRow.createCell(1).setCellValue("");  // explicit empty string
+            });
+
+            List<Map<String, String>> results = new ArrayList<>();
+            ExcelReader.forMap()
+                    .build(new ByteArrayInputStream(data))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertTrue(results.get(0).containsKey("Age"),
+                    "present cell should still put the header key even when empty");
+            // Excel treats empty string cells specially — the cell may either be written as
+            // an empty string or collapsed to no value. Either way, the map value must be
+            // a non-null String per the forMap() contract (the deleted ExcelMapReader
+            // inherits CellData's null→"" coercion).
+            assertNotNull(results.get(0).get("Age"),
+                    "CellData's compact constructor coerces null to empty string, so values "
+                            + "in forMap() maps are never null");
+            assertEquals("", results.get(0).get("Age"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Read path error surfacing (sheetIndex out of range)")
+    class ReadPathErrors {
+
+        @Test
+        @DisplayName("read() on a non-existent sheet throws ExcelReadException")
+        void read_nonExistentSheet_throws() throws IOException {
+            byte[] data = writeSampleExcel();
+            assertThrows(ExcelReadException.class, () ->
+                    ExcelReader.forMap()
+                            .sheetIndex(99)
+                            .build(new ByteArrayInputStream(data))
+                            .read(r -> {}));
+        }
+    }
+
+    @Nested
+    @DisplayName("ExcelWorkbook multi-sheet + sheetIndex selection")
+    class MultiSheetSelection {
+
+        @Test
+        @DisplayName("sheetIndex(1) reads the second sheet, not the first")
+        void sheetIndex_selectsSecondSheet() throws IOException {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+                wb.<Map<String, Object>>sheet("First")
+                        .column("Name", m -> m.get("Name"))
+                        .write(Stream.<Map<String, Object>>of(Map.of("Name", "first-sheet-row")));
+                wb.<Map<String, Object>>sheet("Second")
+                        .column("Name", m -> m.get("Name"))
+                        .column("Tag", m -> m.get("Tag"))
+                        .write(Stream.<Map<String, Object>>of(
+                                Map.of("Name", "second-a", "Tag", "x"),
+                                Map.of("Name", "second-b", "Tag", "y")));
+                wb.finish().write(out);
+            }
+
+            List<Map<String, String>> results = new ArrayList<>();
+            ExcelReader.forMap()
+                    .sheetIndex(1)
+                    .build(new ByteArrayInputStream(out.toByteArray()))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(2, results.size());
+            assertEquals("second-a", results.get(0).get("Name"));
+            assertEquals("x", results.get(0).get("Tag"));
+            assertEquals("second-b", results.get(1).get("Name"));
+            // Verify we didn't accidentally read the first sheet
+            assertFalse(results.stream().anyMatch(r -> "first-sheet-row".equals(r.get("Name"))),
+                    "sheetIndex(1) must not leak rows from sheet 0");
         }
     }
 }

@@ -212,5 +212,122 @@ class CsvReaderMapModeTest {
             assertDoesNotThrow(reader::skipColumn);
             assertDoesNotThrow(() -> reader.skipColumns(1));
         }
+
+        @Test
+        @DisplayName("guard message names the rejected method and mentions forMap()")
+        void guardMessage_identifiesMethodName() {
+            var reader = CsvReader.forMap();
+            var ex = assertThrows(IllegalStateException.class,
+                    () -> reader.column((row, cell) -> {}));
+            assertTrue(ex.getMessage().contains("column(BiConsumer)"),
+                    "error message should name the rejected method");
+            assertTrue(ex.getMessage().contains("forMap()"),
+                    "error message should point the user at forMap()");
+
+            var ex2 = assertThrows(IllegalStateException.class,
+                    () -> reader.columnAt(0, (r, c) -> {}));
+            assertTrue(ex2.getMessage().contains("columnAt(int, BiConsumer)"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Behavioral equivalence with deleted CsvMapReader")
+    class BehavioralEquivalence {
+
+        @Test
+        @DisplayName("row with more cells than headers: the extras are ignored")
+        void csvMapReader_moreDataColumnsThanHeaders() {
+            String csv = "Name,Age\nAlice,30,extra1,extra2\n";
+            List<Map<String, String>> results = new ArrayList<>();
+            CsvReader.forMap()
+                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertEquals(2, results.get(0).size(),
+                    "map shape is bounded by header count, not data-cell count");
+            assertEquals("Alice", results.get(0).get("Name"));
+            assertEquals("30", results.get(0).get("Age"));
+        }
+
+        @Test
+        @DisplayName("blank header cell is treated as empty string, not null")
+        void csvMapReader_blankHeaderCell() {
+            // CSV parsers represent a missing field between delimiters as empty string,
+            // which then becomes a header key of "" (non-null), so it's retained.
+            // This documents the behavior vs Excel's null-header path.
+            String csv = "Name,,City\nAlice,30,Seoul\n";
+            List<Map<String, String>> results = new ArrayList<>();
+            CsvReader.forMap()
+                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertEquals("Alice", results.get(0).get("Name"));
+            assertEquals("Seoul", results.get(0).get("City"));
+            assertTrue(results.get(0).containsKey(""),
+                    "CSV empty header becomes a '' key (different from Excel's null-header path)");
+            assertEquals("30", results.get(0).get(""));
+        }
+
+        @Test
+        @DisplayName("present but empty cell maps to empty string, not null")
+        void csvMapReader_presentButEmptyCell_becomesEmptyString() {
+            String csv = "Name,Age,City\nAlice,,Seoul\n";
+            List<Map<String, String>> results = new ArrayList<>();
+            CsvReader.forMap()
+                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertTrue(results.get(0).containsKey("Age"));
+            assertNotNull(results.get(0).get("Age"),
+                    "values in forMap() maps are never null (CellData coerces null → \"\")");
+            assertEquals("", results.get(0).get("Age"));
+            assertEquals("Seoul", results.get(0).get("City"));
+        }
+
+        @Test
+        @DisplayName("duplicate headers: first occurrence wins (RowData.headerIndex behavior)")
+        void csvMapReader_duplicateHeaders_firstWins() {
+            // putIfAbsent semantics in buildHeaderIndexMap mean the first occurrence of a
+            // duplicate header keeps its index; the duplicate column is not independently
+            // addressable via get(name). The map output has one entry per unique header name.
+            String csv = "A,B,A\nfirst,b-val,second\n";
+            List<Map<String, String>> results = new ArrayList<>();
+            CsvReader.forMap()
+                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertEquals(2, results.get(0).size(),
+                    "duplicate headers collapse to a single map key");
+            // Last write wins on Map.put: headers are iterated in order, so "A" is put twice —
+            // once with the value at index 0 (first) and once with the value at index 2 (second).
+            // RowData.get(i) is positional, so both iterations look up by the iteration index.
+            // Final state: "A" → "second".
+            assertEquals("second", results.get(0).get("A"));
+            assertEquals("b-val", results.get(0).get("B"));
+        }
+
+        @Test
+        @DisplayName("BOM-prefixed file: BOM is stripped from the first header, data reads correctly")
+        void csvMapReader_bomPrefix_isStripped() {
+            byte[] bom = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+            byte[] content = "Name,Age\nAlice,30\n".getBytes(StandardCharsets.UTF_8);
+            byte[] withBom = new byte[bom.length + content.length];
+            System.arraycopy(bom, 0, withBom, 0, bom.length);
+            System.arraycopy(content, 0, withBom, bom.length, content.length);
+
+            List<Map<String, String>> results = new ArrayList<>();
+            CsvReader.forMap()
+                    .build(new ByteArrayInputStream(withBom))
+                    .read(r -> results.add(r.data()));
+
+            assertEquals(1, results.size());
+            assertEquals("Alice", results.get(0).get("Name"),
+                    "first header key should be 'Name', not '\\uFEFFName'");
+            assertEquals("30", results.get(0).get("Age"));
+        }
     }
 }
