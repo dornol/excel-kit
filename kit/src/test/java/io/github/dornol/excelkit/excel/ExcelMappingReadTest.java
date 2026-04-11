@@ -476,7 +476,7 @@ class ExcelMappingReadTest {
     void roundTrip_writeWithExcelWriter_readWithMapping() throws IOException {
         // Write
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<PersonRecord>()
+        ExcelWriter.<PersonRecord>builder().build()
                 .column("Name", PersonRecord::name)
                 .column("Age", p -> p.age())
                 .column("City", PersonRecord::city)

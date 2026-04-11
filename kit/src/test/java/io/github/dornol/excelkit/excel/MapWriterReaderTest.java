@@ -46,7 +46,7 @@ class MapWriterReaderTest {
     void excelMapWriter_withCustomWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelMapWriter writer = new ExcelMapWriter(
-                new ExcelWriter<>(ExcelColor.LIGHT_BLUE),
+                ExcelWriter.<Map<String, Object>>builder().color(ExcelColor.LIGHT_BLUE).build(),
                 "Name", "Score"
         );
         writer.write(Stream.of(

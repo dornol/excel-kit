@@ -23,7 +23,7 @@ import java.util.List;
  * Supports cell-value-based rules, data bars, and icon sets.
  *
  * <pre>{@code
- * new ExcelWriter<Product>()
+ * ExcelWriter.<Product>builder().build()
  *     .column("Price", Product::getPrice, c -> c.type(ExcelDataType.INTEGER))
  *     .conditionalFormatting(cf -> cf
  *         .columns(1)

@@ -37,7 +37,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/formula")
     public ResponseEntity<StreamingResponseBody> downloadFormula() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.STEEL_BLUE).build()
                 .sheetName("Formula Demo")
                 .autoFilter(true)
                 .freezePane(1)
@@ -83,7 +83,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/hyperlink")
     public ResponseEntity<StreamingResponseBody> downloadHyperlink() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.FOREST_GREEN)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.FOREST_GREEN).build()
                 .sheetName("Hyperlinks")
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
@@ -147,7 +147,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/cell-color")
     public ResponseEntity<StreamingResponseBody> downloadCellColor() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.STEEL_BLUE).build()
                 .sheetName("Cell Color")
                 .autoFilter(true)
                 .freezePane(1)
@@ -182,7 +182,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/group-header")
     public ResponseEntity<StreamingResponseBody> downloadGroupHeader() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.CORAL)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.CORAL).build()
                 .sheetName("Group Header")
                 .autoFilter(true)
                 .freezePane(1)
@@ -240,7 +240,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/outline")
     public ResponseEntity<StreamingResponseBody> downloadOutline() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.GOLD)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.GOLD).build()
                 .sheetName("Outline Demo")
                 .autoFilter(true)
                 .freezePane(1)
@@ -268,7 +268,7 @@ public class WriteShowcaseController {
         String subtotalCol = SheetContext.columnLetter(6);   // G
         String afterDiscCol = SheetContext.columnLetter(7);  // H
 
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.STEEL_BLUE).build()
                 .sheetName("Full Showcase")
                 .autoFilter(true)
                 .freezePane(1)
@@ -356,7 +356,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/border-style")
     public ResponseEntity<StreamingResponseBody> downloadBorderStyle() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.STEEL_BLUE).build()
                 .sheetName("Border Styles")
                 .column("Name", ProductDto::name, cfg -> cfg.border(ExcelBorderStyle.MEDIUM))
                 .column("Category", ProductDto::category, cfg -> cfg.border(ExcelBorderStyle.DASHED))
@@ -379,7 +379,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/cell-comment")
     public ResponseEntity<StreamingResponseBody> downloadCellComment() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.FOREST_GREEN)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.FOREST_GREEN).build()
                 .sheetName("Cell Comments")
                 .autoFilter(true)
                 .column("Name", ProductDto::name, cfg -> cfg
@@ -404,7 +404,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/conditional-format")
     public ResponseEntity<StreamingResponseBody> downloadConditionalFormat() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.GOLD)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.GOLD).build()
                 .sheetName("Conditional Formatting")
                 .autoFilter(true)
                 .freezePane(1)
@@ -433,7 +433,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/sheet-protection")
     public ResponseEntity<StreamingResponseBody> downloadSheetProtection() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.CORAL)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.CORAL).build()
                 .sheetName("Protected Sheet")
                 .autoFilter(true)
                 .column("Name (locked)", ProductDto::name, c -> c.locked(true))
@@ -462,7 +462,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/chart")
     public ResponseEntity<StreamingResponseBody> downloadChart() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.STEEL_BLUE).build()
                 .sheetName("Chart Demo")
                 .column("Name", ProductDto::name)
                 .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
@@ -542,7 +542,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/header-font")
     public ResponseEntity<StreamingResponseBody> downloadHeaderFont() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.CORAL)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.CORAL).build()
                 .sheetName("Header Font Demo")
                 .headerFontName("Arial")
                 .headerFontSize(14)
@@ -566,7 +566,7 @@ public class WriteShowcaseController {
     public ResponseEntity<StreamingResponseBody> downloadHeaderFontColor() {
         boolean hasStockAlert = true; // simulate condition
 
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.STEEL_BLUE).build()
                 .sheetName("Header Font Color Demo")
                 .headerFontName("Arial")
                 .headerFontSize(13)
@@ -594,7 +594,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/default-style")
     public ResponseEntity<StreamingResponseBody> downloadDefaultStyle() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.FOREST_GREEN)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.FOREST_GREEN).build()
                 .sheetName("Default Style Demo")
                 .autoFilter(true)
                 .freezePane(1)
@@ -623,7 +623,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/summary")
     public ResponseEntity<StreamingResponseBody> downloadSummary() {
-        var handler = new ExcelWriter<ProductDto>(ExcelColor.GOLD)
+        var handler = ExcelWriter.<ProductDto>builder().color(ExcelColor.GOLD).build()
                 .sheetName("Summary Demo")
                 .autoFilter(true)
                 .freezePane(1)
@@ -677,7 +677,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/data-bar")
     public ResponseEntity<StreamingResponseBody> downloadDataBar() {
-        var writer = new ExcelWriter<ProductDto>(ExcelColor.STEEL_BLUE)
+        var writer = ExcelWriter.<ProductDto>builder().color(ExcelColor.STEEL_BLUE).build()
                 .sheetName("Data Bar Demo")
                 .autoFilter(true)
                 .freezePane(1);

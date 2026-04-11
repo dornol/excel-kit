@@ -530,7 +530,7 @@ class ExcelReaderBranchTest {
     // ============================================================
     private byte[] writeSimpleExcel() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Item>()
+        ExcelWriter.<Item>builder().build()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new Item("A", 10), new Item("B", 20), new Item("C", 30)))

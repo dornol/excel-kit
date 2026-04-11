@@ -30,7 +30,7 @@ public class ExcelMapWriter {
      * @param columnNames the column names (used as header labels and map keys)
      */
     public ExcelMapWriter(String... columnNames) {
-        this(new ExcelWriter<>(), columnNames);
+        this(ExcelWriter.<Map<String, Object>>builder().build(), columnNames);
     }
 
     /**

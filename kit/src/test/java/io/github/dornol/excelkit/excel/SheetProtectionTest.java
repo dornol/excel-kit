@@ -29,7 +29,7 @@ class SheetProtectionTest {
     @Test
     void protectSheet_shouldEnableProtection() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s)
                 .protectSheet("password123")
                 .write(Stream.of("Alice"))
@@ -43,7 +43,7 @@ class SheetProtectionTest {
     @Test
     void protectSheet_lockedColumn_shouldLockCells() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Locked", s -> s, c -> c.locked(true))
                 .column("Unlocked", s -> s, c -> c.locked(false))
                 .protectSheet("password")
@@ -61,7 +61,7 @@ class SheetProtectionTest {
     @Test
     void protectSheet_withoutProtection_lockedFlagOnStyle() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Col", s -> s, c -> c.locked(false))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -91,7 +91,7 @@ class SheetProtectionTest {
     @Test
     void protectSheet_multipleSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>(5)
+        ExcelWriter.<String>builder().maxRows(5).build()
                 .column("Name", s -> s)
                 .protectSheet("password")
                 .write(Stream.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J"))

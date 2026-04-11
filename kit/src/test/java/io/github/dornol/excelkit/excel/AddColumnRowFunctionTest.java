@@ -18,7 +18,7 @@ class AddColumnRowFunctionTest {
     @Test
     void addColumn_withRowFunction_shouldProvideCursorAccess() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("No.", (ExcelRowFunction<String, Object>) (row, cursor) -> cursor.getCurrentTotal(),
                         c -> c.type(ExcelDataType.LONG))
                 .column("Name", s -> s)
@@ -37,7 +37,7 @@ class AddColumnRowFunctionTest {
     @Test
     void addColumn_withRowFunctionAndConfigurer_shouldApplyType() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("No.", (row, cursor) -> cursor.getCurrentTotal(),
                         c -> c.type(ExcelDataType.LONG))
                 .column("Name", s -> s)

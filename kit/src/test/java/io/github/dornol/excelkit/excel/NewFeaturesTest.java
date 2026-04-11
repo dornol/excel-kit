@@ -29,7 +29,7 @@ class NewFeaturesTest {
     void progress_shouldFireAtCorrectIntervals() {
         List<Long> progressCounts = new ArrayList<>();
 
-        new ExcelWriter<Integer>()
+        ExcelWriter.<Integer>builder().build()
                 .column("Value", i -> i, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .onProgress(3, (count, cursor) -> progressCounts.add(count))
                 .write(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
@@ -42,7 +42,7 @@ class NewFeaturesTest {
     void progress_shouldNotFireWhenIntervalNotReached() {
         List<Long> progressCounts = new ArrayList<>();
 
-        new ExcelWriter<Integer>()
+        ExcelWriter.<Integer>builder().build()
                 .column("Value", i -> i, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .onProgress(100, (count, cursor) -> progressCounts.add(count))
                 .write(Stream.of(1, 2, 3));
@@ -69,7 +69,7 @@ class NewFeaturesTest {
     void progress_shouldWorkWithColumnBuilderChain() {
         AtomicInteger callCount = new AtomicInteger();
 
-        new ExcelWriter<Integer>()
+        ExcelWriter.<Integer>builder().build()
                 .column("A", i -> i)
                 .column("B", i -> i * 2)
                 .onProgress(5, (count, cursor) -> callCount.incrementAndGet())
@@ -84,7 +84,7 @@ class NewFeaturesTest {
     @Test
     void cellColor_shouldApplyPerCellColor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Integer>()
+        ExcelWriter.<Integer>builder().build()
                 .column("Value", i -> i, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .cellColor((value, row) -> {
@@ -114,7 +114,7 @@ class NewFeaturesTest {
     @Test
     void cellColor_shouldOverrideRowColor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Integer>()
+        ExcelWriter.<Integer>builder().build()
                 .rowColor(i -> ExcelColor.LIGHT_YELLOW) // all rows yellow
                 .column("Value", i -> i, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
@@ -254,7 +254,7 @@ class NewFeaturesTest {
     @Test
     void groupHeader_shouldCreateMergedGroupRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<int[]>()
+        ExcelWriter.<int[]>builder().build()
                 .column("Name", r -> "Item")
                 .column("Price", r -> r[0], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
                 .column("Qty", r -> r[1], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
@@ -299,7 +299,7 @@ class NewFeaturesTest {
     @Test
     void groupHeader_withNoGroups_shouldCreateSingleHeaderRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("A", s -> s)
                 .column("B", s -> s)
                 .write(Stream.of("test"))

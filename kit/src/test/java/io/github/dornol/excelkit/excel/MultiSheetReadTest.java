@@ -39,7 +39,7 @@ class MultiSheetReadTest {
     @Test
     void getSheetHeaders_shouldReturnHeaderNames() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("First", s -> s)
                 .column("Second", s -> s)
                 .column("Third", s -> s)
@@ -79,7 +79,7 @@ class MultiSheetReadTest {
     @Test
     void getSheetNames_singleSheet() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .sheetName("Data")
                 .column("Name", s -> s)
                 .write(Stream.of("Alice"))
@@ -96,7 +96,7 @@ class MultiSheetReadTest {
     void getSheetHeaders_withHeaderRowIndex() throws IOException {
         // Create a file with content before the header
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .beforeHeader(ctx -> {
                     var row = ctx.getSheet().createRow(0);
                     row.createCell(0).setCellValue("Title Row");

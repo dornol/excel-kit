@@ -20,7 +20,7 @@ class ChartTest {
     @Test
     void chart_barChart_shouldBeCreated() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -41,7 +41,7 @@ class ChartTest {
     @Test
     void chart_lineChart_shouldBeCreated() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -60,7 +60,7 @@ class ChartTest {
     @Test
     void chart_pieChart_shouldBeCreated() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -79,7 +79,7 @@ class ChartTest {
     @Test
     void chart_withCustomPosition() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -100,7 +100,7 @@ class ChartTest {
         record Data(String name, int sales, int profit) {}
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Data>()
+        ExcelWriter.<Data>builder().build()
                 .column("Name", Data::name)
                 .column("Sales", d -> d.sales, c -> c.type(ExcelDataType.INTEGER))
                 .column("Profit", d -> d.profit, c -> c.type(ExcelDataType.INTEGER))
@@ -141,7 +141,7 @@ class ChartTest {
     @Test
     void chart_barChart_withAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -176,7 +176,7 @@ class ChartTest {
     @Test
     void chart_lineChart_withAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -207,7 +207,7 @@ class ChartTest {
     @Test
     void chart_withLegendPosition() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -236,7 +236,7 @@ class ChartTest {
     @Test
     void chart_barChart_horizontalDirection() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -265,7 +265,7 @@ class ChartTest {
         record Data(String name, int sales, int profit) {}
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Data>()
+        ExcelWriter.<Data>builder().build()
                 .column("Name", Data::name)
                 .column("Sales", d -> d.sales, c -> c.type(ExcelDataType.INTEGER))
                 .column("Profit", d -> d.profit, c -> c.type(ExcelDataType.INTEGER))
@@ -294,7 +294,7 @@ class ChartTest {
     @Test
     void chart_noValueSeries_shouldNotCreateChart() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Product>()
+        ExcelWriter.<Product>builder().build()
                 .column("Name", Product::name)
                 .chart(chart -> chart
                         .type(ExcelChartConfig.ChartType.BAR)

@@ -37,7 +37,7 @@ class ComprehensiveFeatureTest {
     @Test
     void cellColor_withNullValue_shouldNotApplyColor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Value", s -> null, c -> c // always null
                     .cellColor((value, row) -> value != null ? ExcelColor.LIGHT_RED : null))
                 .write(Stream.of("a", "b"))
@@ -55,7 +55,7 @@ class ComprehensiveFeatureTest {
     @Test
     void cellColor_onMultipleColumns_shouldApplyIndependently() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<int[]>()
+        ExcelWriter.<int[]>builder().build()
                 .column("A", r -> r[0], c -> c
                     .type(ExcelDataType.INTEGER)
                     .cellColor((v, r) -> ((Number) v).intValue() > 50 ? ExcelColor.LIGHT_GREEN : null))
@@ -85,7 +85,7 @@ class ComprehensiveFeatureTest {
     @Test
     void groupHeader_allColumnsSameGroup_shouldMergeEntireRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<int[]>()
+        ExcelWriter.<int[]>builder().build()
                 .column("A", r -> r[0], c -> c.group("All"))
                 .column("B", r -> r[1], c -> c.group("All"))
                 .column("C", r -> r[2], c -> c.group("All"))
@@ -105,7 +105,7 @@ class ComprehensiveFeatureTest {
     @Test
     void groupHeader_multipleDistinctGroups_shouldMergeSeparately() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<int[]>()
+        ExcelWriter.<int[]>builder().build()
                 .column("A", r -> r[0], c -> c.group("X"))
                 .column("B", r -> r[1], c -> c.group("X"))
                 .column("C", r -> r[2], c -> c.group("Y"))
@@ -128,7 +128,7 @@ class ComprehensiveFeatureTest {
     @Test
     void groupHeader_singleColumnGroup_shouldNotMergeHorizontally() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("A", s -> s)
                 .column("B", s -> s, c -> c.group("Solo"))
                 .column("C", s -> s)
@@ -192,7 +192,7 @@ class ComprehensiveFeatureTest {
     // ========================================================================
     @Test
     void duplicateColumnName_constColumn_shouldThrow() {
-        var writer = new ExcelWriter<String>()
+        var writer = ExcelWriter.<String>builder().build()
                 .column("Name", s -> s);
         writer.column("Name", s -> s); // duplicate via constColumn path
         assertThrows(ExcelWriteException.class, () -> writer.write(Stream.of("test")));
@@ -315,7 +315,7 @@ class ComprehensiveFeatureTest {
     @Test
     void outline_level7_shouldBeValid() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("A", s -> s, c -> c.outline(7))
                 .column("B", s -> s)
                 .write(Stream.of("test"))
@@ -353,7 +353,7 @@ class ComprehensiveFeatureTest {
     @Test
     void hyperlink_withSpecialCharsInUrl_shouldWork() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Link", s -> s, c -> c.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of("https://example.com/search?q=hello+world&lang=ko#section"))
                 .write(out);
@@ -373,7 +373,7 @@ class ComprehensiveFeatureTest {
         List<Long> totals = new ArrayList<>();
         List<Integer> sheetRows = new ArrayList<>();
 
-        new ExcelWriter<Integer>()
+        ExcelWriter.<Integer>builder().build()
                 .column("V", i -> i, c -> c.type(ExcelDataType.INTEGER))
                 .onProgress(3, (count, cursor) -> {
                     totals.add(count);

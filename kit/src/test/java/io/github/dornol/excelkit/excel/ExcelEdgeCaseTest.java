@@ -44,7 +44,7 @@ class ExcelEdgeCaseTest {
         @Test
         void write_twice_throws() throws IOException {
             ByteArrayOutputStream out1 = new ByteArrayOutputStream();
-            ExcelHandler handler = new ExcelWriter<Item>()
+            ExcelHandler handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             handler.write(out1);
@@ -64,7 +64,7 @@ class ExcelEdgeCaseTest {
         @ParameterizedTest(name = "String password={1}")
         @MethodSource("invalidStringPasswords")
         void consumeOutputStreamWithPassword_invalidString_throws(String password, String label) throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
+            ExcelHandler handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             var ex = assertThrows(IllegalArgumentException.class,
@@ -83,7 +83,7 @@ class ExcelEdgeCaseTest {
         @ParameterizedTest(name = "char[] password={1}")
         @MethodSource("invalidCharPasswords")
         void consumeOutputStreamWithPassword_invalidCharArray_throws(char[] password, String label) throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
+            ExcelHandler handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             var ex = assertThrows(IllegalArgumentException.class,
@@ -102,7 +102,7 @@ class ExcelEdgeCaseTest {
         @Test
         void password_shouldAutoEncryptAndBeDecryptableWithCorrectPassword() throws IOException, GeneralSecurityException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .password("secret123")
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
@@ -134,7 +134,7 @@ class ExcelEdgeCaseTest {
         @Test
         void password_shouldNotBeDecryptableWithWrongPassword() throws IOException, GeneralSecurityException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .password("correct")
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
@@ -150,7 +150,7 @@ class ExcelEdgeCaseTest {
         @Test
         void noPassword_shouldWriteUnencryptedOOXML() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
                     .write(out);
@@ -163,7 +163,7 @@ class ExcelEdgeCaseTest {
 
         @Test
         void password_write_twice_shouldThrowAlreadyConsumed() throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
+            ExcelHandler handler = ExcelWriter.<Item>builder().build()
                     .password("secret")
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
@@ -178,7 +178,7 @@ class ExcelEdgeCaseTest {
         @Test
         void password_combinedWithProtectSheetAndWorkbook() throws IOException, GeneralSecurityException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .password("filePass")
                     .protectSheet("sheetPass")
                     .protectWorkbook("wbPass")
@@ -206,14 +206,14 @@ class ExcelEdgeCaseTest {
         @Test
         void password_nullValue_shouldThrow() {
             var ex = assertThrows(IllegalArgumentException.class, () ->
-                    new ExcelWriter<Item>().password(null));
+                    ExcelWriter.<Item>builder().build().password(null));
             assertTrue(ex.getMessage().toLowerCase().contains("password"));
         }
 
         @Test
         void password_blankValue_shouldThrow() {
             var ex = assertThrows(IllegalArgumentException.class, () ->
-                    new ExcelWriter<Item>().password("   "));
+                    ExcelWriter.<Item>builder().build().password("   "));
             assertTrue(ex.getMessage().toLowerCase().contains("password"));
         }
     }
@@ -302,7 +302,7 @@ class ExcelEdgeCaseTest {
 
         @Test
         void passwordSet_thenConsumeWithPassword_shouldThrow() throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
+            ExcelHandler handler = ExcelWriter.<Item>builder().build()
                     .password("first")
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
@@ -315,7 +315,7 @@ class ExcelEdgeCaseTest {
 
         @Test
         void passwordSet_thenConsumeWithCharArrayPassword_shouldThrowAndZeroPassword() throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
+            ExcelHandler handler = ExcelWriter.<Item>builder().build()
                     .password("first")
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
@@ -341,7 +341,7 @@ class ExcelEdgeCaseTest {
 
         @Test
         void consumeOutputStreamWithPassword_blankCharArray_throws() throws IOException {
-            ExcelHandler handler = new ExcelWriter<Item>()
+            ExcelHandler handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             char[] blankPassword = {' ', '\t', ' '};
@@ -383,7 +383,7 @@ class ExcelEdgeCaseTest {
         @Test
         void headerNotFound_throws() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
@@ -401,7 +401,7 @@ class ExcelEdgeCaseTest {
         @Test
         void getSheetHeaders_withHeaderRowIndex() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
@@ -425,7 +425,7 @@ class ExcelEdgeCaseTest {
         @Test
         void allSummaryOps_shouldWriteFormulaRows() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
@@ -453,7 +453,7 @@ class ExcelEdgeCaseTest {
         @Test
         void summary_singleOp_withLabel_shouldUseLabelText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
@@ -472,7 +472,7 @@ class ExcelEdgeCaseTest {
         @Test
         void summary_labelInNonExistentColumn_shouldFallbackToFirstColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
@@ -491,7 +491,7 @@ class ExcelEdgeCaseTest {
         @Test
         void summary_labelInColumn_shouldWriteLabelAndFormula() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
@@ -519,7 +519,7 @@ class ExcelEdgeCaseTest {
         @Test
         void defaultStyle_shouldApplyBoldToAllColumns() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .defaultStyle(d -> d.bold(true).fontSize(12))
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
@@ -539,7 +539,7 @@ class ExcelEdgeCaseTest {
         @Test
         void defaultStyle_columnOverrides_shouldNotBeBold() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .defaultStyle(d -> d.bold(true))
                     .column("Name", Item::name, c -> c.bold(false))
                     .column("Value", i -> i.value)
@@ -591,7 +591,7 @@ class ExcelEdgeCaseTest {
         @Test
         void headerFontName_shouldApplyCustomFont() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .headerFontName("Arial")
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
@@ -608,7 +608,7 @@ class ExcelEdgeCaseTest {
         @Test
         void headerFontSize_shouldApplyCustomSize() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .headerFontSize(16)
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
@@ -624,7 +624,7 @@ class ExcelEdgeCaseTest {
         @Test
         void headerFontNameAndSize_combined() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .headerFontName("Times New Roman")
                     .headerFontSize(14)
                     .column("Name", Item::name)
@@ -649,7 +649,7 @@ class ExcelEdgeCaseTest {
         @Test
         void write_emptyStream_shouldCreateHeaderOnly() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.empty())
@@ -675,7 +675,7 @@ class ExcelEdgeCaseTest {
         @Test
         void readStrict_emptyMessages_shouldShowUnknownError() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Item>()
+            ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new Item("A", 10)))

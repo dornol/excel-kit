@@ -16,7 +16,7 @@ class BorderStyleTest {
     @Test
     void border_shouldApplyConfiguredBorderStyle() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.MEDIUM))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -33,7 +33,7 @@ class BorderStyleTest {
     @Test
     void border_none_shouldRemoveBorders() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.NONE))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -47,7 +47,7 @@ class BorderStyleTest {
     @Test
     void border_thick_shouldApply() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.THICK))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -61,7 +61,7 @@ class BorderStyleTest {
     @Test
     void border_dashed_shouldApply() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.DASHED))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -75,7 +75,7 @@ class BorderStyleTest {
     @Test
     void defaultBorder_shouldBeThin() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s)
                 .write(Stream.of("Alice"))
                 .write(out);

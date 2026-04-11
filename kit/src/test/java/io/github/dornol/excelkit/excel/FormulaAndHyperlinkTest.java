@@ -22,7 +22,7 @@ class FormulaAndHyperlinkTest {
     @Test
     void formula_shouldWriteFormulaCells() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<TestRow>()
+        ExcelWriter.<TestRow>builder().build()
                 .column("Value", TestRow::getValue, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .column("Formula", TestRow::getFormula, cfg -> cfg.type(ExcelDataType.FORMULA))
                 .write(Stream.of(
@@ -51,7 +51,7 @@ class FormulaAndHyperlinkTest {
     @Test
     void formula_inAfterData_shouldWriteSummaryRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<TestRow>()
+        ExcelWriter.<TestRow>builder().build()
                 .column("Value", TestRow::getValue, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .afterData(ctx -> {
                     var sheet = ctx.getSheet();
@@ -78,7 +78,7 @@ class FormulaAndHyperlinkTest {
     @Test
     void hyperlink_shouldWriteHyperlinkCells() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<TestLink>()
+        ExcelWriter.<TestLink>builder().build()
                 .column("Name", TestLink::getName)
                 .column("URL", TestLink::getUrl, cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of(
@@ -107,7 +107,7 @@ class FormulaAndHyperlinkTest {
     @Test
     void hyperlink_withExcelHyperlink_shouldUseSeparateLabelAndUrl() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<TestLink>()
+        ExcelWriter.<TestLink>builder().build()
                 .column("Name", TestLink::getName)
                 .column("Link", t -> new ExcelHyperlink(t.getUrl(), "Click Here"), cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of(new TestLink("Google", "https://google.com")))

@@ -16,7 +16,7 @@ class CellMergeTest {
     @Test
     void mergeCells_indexBased_viaBeforeHeader() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .beforeHeader(ctx -> {
                     // Create a title row spanning columns A-C (indices 0-2)
                     ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("Report Title");
@@ -43,7 +43,7 @@ class CellMergeTest {
     @Test
     void mergeCells_stringBased_viaAfterData() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", (row, c) -> row)
                 .column("Value", (row, c) -> row.length())
                 .afterData(ctx -> {
@@ -72,7 +72,7 @@ class CellMergeTest {
     @Test
     void mergeCells_shouldSupportChaining() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .beforeHeader(ctx -> {
                     ctx.getSheet().createRow(0).createCell(0).setCellValue("Title");
                     ctx.getSheet().createRow(1).createCell(0).setCellValue("Subtitle");
@@ -95,7 +95,7 @@ class CellMergeTest {
     @Test
     void mergeCells_viaAfterAll() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", (row, c) -> row)
                 .column("Value", (row, c) -> row.length())
                 .afterAll(ctx -> {
@@ -160,7 +160,7 @@ class CellMergeTest {
     @Test
     void mergeCells_preservesCellValue() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .beforeHeader(ctx -> {
                     var row = ctx.getSheet().createRow(ctx.getCurrentRow());
                     row.createCell(0).setCellValue("Merged Title");
@@ -187,7 +187,7 @@ class CellMergeTest {
     @Test
     void mergeCells_withSheetRollover() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>(3)
+        ExcelWriter.<String>builder().maxRows(3).build()
                 .beforeHeader(ctx -> {
                     ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("Title");
                     ctx.mergeCells(ctx.getCurrentRow(), ctx.getCurrentRow(), 0, 1);

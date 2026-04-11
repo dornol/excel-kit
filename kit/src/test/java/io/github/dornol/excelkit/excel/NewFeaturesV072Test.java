@@ -31,7 +31,7 @@ class NewFeaturesV072Test {
 
         @Test
         void excelWriter_protectWorkbook_structureIsLocked() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .protectWorkbook("secret")
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
@@ -64,7 +64,7 @@ class NewFeaturesV072Test {
 
         @Test
         void withoutProtectWorkbook_structureIsNotLocked() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
 
@@ -79,7 +79,7 @@ class NewFeaturesV072Test {
 
         @Test
         void protectWorkbook_combinedWithProtectSheet_bothApply() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .protectWorkbook("workbookPwd")
                     .protectSheet("sheetPwd")
                     .column("Name", s -> s)
@@ -105,7 +105,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontName_only_verifiesFontNameOnHeaderCell() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .headerFontName("Arial")
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
@@ -122,7 +122,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontSize_only_verifiesFontSizeOnHeaderCell() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .headerFontSize(18)
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
@@ -139,7 +139,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontNameAndSize_bothApplied() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .headerFontName("Courier New")
                     .headerFontSize(14)
                     .column("Name", s -> s)
@@ -177,7 +177,7 @@ class NewFeaturesV072Test {
 
         @Test
         void defaultHeaderStyle_isBold11pt() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
 
@@ -195,19 +195,19 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontSize_zeroThrowsIllegalArgumentException() {
-            var writer = new ExcelWriter<String>();
+            var writer = ExcelWriter.<String>builder().build();
             assertThrows(IllegalArgumentException.class, () -> writer.headerFontSize(0));
         }
 
         @Test
         void headerFontSize_negativeThrowsIllegalArgumentException() {
-            var writer = new ExcelWriter<String>();
+            var writer = ExcelWriter.<String>builder().build();
             assertThrows(IllegalArgumentException.class, () -> writer.headerFontSize(-5));
         }
 
         @Test
         void multipleColumns_allHeadersHaveSameFont() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .headerFontName("Georgia")
                     .headerFontSize(12)
                     .column("Col1", s -> s)
@@ -239,7 +239,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontColor_appliedToSpecificColumn_excelWriter() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Normal", s -> s)
                     .column("Alert", s -> s, c -> c
                         .headerFontColor(ExcelColor.RED))
@@ -297,7 +297,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontColor_null_usesDefaultHeaderStyle() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Col1", s -> s, c -> c
                         .headerFontColor((ExcelColor) null))
                     .column("Col2", s -> s)
@@ -317,7 +317,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontColor_rgb_appliedCorrectly() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Custom", s -> s, c -> c
                         .headerFontColor(0, 128, 255))
                     .write(Stream.of("data"));
@@ -340,7 +340,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontColor_preservesBoldAndSize() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .headerFontName("Arial")
                     .headerFontSize(14)
                     .column("Alert", s -> s, c -> c
@@ -361,7 +361,7 @@ class NewFeaturesV072Test {
 
         @Test
         void headerFontColor_multipleColumns_mixedStyles() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Normal", s -> s)
                     .column("Red", s -> s, c -> c
                         .headerFontColor(ExcelColor.RED))
@@ -429,7 +429,7 @@ class NewFeaturesV072Test {
         void headerFontColor_conditionalUsage() throws Exception {
             boolean hasError = true;
 
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Amount", s -> s, c -> c
                         .headerFontColor(hasError ? ExcelColor.RED : null))
                     .write(Stream.of("1000"));
@@ -456,7 +456,7 @@ class NewFeaturesV072Test {
 
         @Test
         void excelWriter_defaultStyle_allColumnsInheritBoldFontNameAlignment() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .defaultStyle(d -> d.bold(true).fontName("Arial").alignment(HorizontalAlignment.LEFT))
                     .column("Name", s -> s)
                     .column("Value", s -> s)
@@ -481,7 +481,7 @@ class NewFeaturesV072Test {
 
         @Test
         void columnLevelOverride_winsOverDefault() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .defaultStyle(d -> d.bold(true).fontName("Arial"))
                     .column("Name", s -> s, c -> c
                         .bold(false))  // override bold
@@ -519,7 +519,7 @@ class NewFeaturesV072Test {
 
         @Test
         void defaultStyle_withVerticalAlignmentWrapTextFontSizeFontColor() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .defaultStyle(d -> d
                             .verticalAlignment(VerticalAlignment.TOP)
                             .wrapText(true)
@@ -543,7 +543,7 @@ class NewFeaturesV072Test {
 
         @Test
         void noDefaultStyle_columnsUseNormalDefaults() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Col", s -> s)
                     .write(Stream.of("Test"));
 
@@ -635,7 +635,7 @@ class NewFeaturesV072Test {
 
         @Test
         void summary_singleSum_generatesFormulaAndLabel() throws Exception {
-            var handler = new ExcelWriter<Item>()
+            var handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Qty", i -> i.qty(), c -> c.type(ExcelDataType.INTEGER))
@@ -659,7 +659,7 @@ class NewFeaturesV072Test {
         @Test
         void summary_multipleColumnsSum_allFormulasGenerated() throws Exception {
             record Data(String a, int b, int c, int d) {}
-            var handler = new ExcelWriter<Data>()
+            var handler = ExcelWriter.<Data>builder().build()
                     .column("A", Data::a)
                     .column("B", x -> x.b(), c -> c.type(ExcelDataType.INTEGER))
                     .column("C", x -> x.c(), c -> c.type(ExcelDataType.INTEGER))
@@ -681,7 +681,7 @@ class NewFeaturesV072Test {
 
         @Test
         void summary_multipleOps_separateRowsWithCorrectLabels() throws Exception {
-            var handler = new ExcelWriter<Item>()
+            var handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s.sum("Price").average("Price"))
@@ -705,7 +705,7 @@ class NewFeaturesV072Test {
 
         @Test
         void summary_countMinMax_generateCorrectFormulas() throws Exception {
-            var handler = new ExcelWriter<Item>()
+            var handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s.count("Price").min("Price").max("Price"))
@@ -733,7 +733,7 @@ class NewFeaturesV072Test {
 
         @Test
         void summary_customLabelText_singleOp() throws Exception {
-            var handler = new ExcelWriter<Item>()
+            var handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s.label("Grand Total").sum("Price"))
@@ -751,7 +751,7 @@ class NewFeaturesV072Test {
 
         @Test
         void summary_labelInSpecificColumn_verifyPlacement() throws Exception {
-            var handler = new ExcelWriter<Item>()
+            var handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Qty", i -> i.qty(), c -> c.type(ExcelDataType.INTEGER))
@@ -792,7 +792,7 @@ class NewFeaturesV072Test {
 
         @Test
         void summary_withBeforeHeader_formulaRangeAccountsForOffset() throws Exception {
-            var handler = new ExcelWriter<Item>()
+            var handler = ExcelWriter.<Item>builder().build()
                     .beforeHeader(ctx -> {
                         // Write a title row before the header
                         var row = ctx.getSheet().createRow(ctx.getCurrentRow());
@@ -821,7 +821,7 @@ class NewFeaturesV072Test {
 
         @Test
         void summary_emptyData_summaryRowStillCreated() throws Exception {
-            var handler = new ExcelWriter<Item>()
+            var handler = ExcelWriter.<Item>builder().build()
                     .column("Name", Item::name)
                     .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s.label("Total").sum("Price"))
@@ -850,7 +850,7 @@ class NewFeaturesV072Test {
 
         @Test
         void namedRange_withReferenceString_verifyNameAndFormula() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Category", s -> s)
                     .afterData(ctx -> {
                         ctx.namedRange("Categories", "Sheet0!$A$2:$A$4");
@@ -870,7 +870,7 @@ class NewFeaturesV072Test {
 
         @Test
         void namedRange_withColumnIndices_generatesCorrectReference() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .sheetName("Data")
                     .column("Items", s -> s)
                     .afterData(ctx -> {
@@ -891,7 +891,7 @@ class NewFeaturesV072Test {
 
         @Test
         void multipleNamedRanges_allCreated() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .sheetName("Ref")
                     .column("Col", s -> s)
                     .afterData(ctx -> {
@@ -958,7 +958,7 @@ class NewFeaturesV072Test {
 
         @Test
         void listFromRange_createsValidationOnSheet() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Category", s -> s, c -> c
                             .validation(ExcelValidation.listFromRange("Sheet2!$A$1:$A$5")))
                     .write(Stream.of("Test"));
@@ -975,7 +975,7 @@ class NewFeaturesV072Test {
 
         @Test
         void listFromRange_withErrorConfiguration_verifyErrorBox() throws Exception {
-            var handler = new ExcelWriter<String>()
+            var handler = ExcelWriter.<String>builder().build()
                     .column("Status", s -> s, c -> c
                             .validation(ExcelValidation.listFromRange("Statuses!$A$1:$A$3")
                                     .errorTitle("Invalid Status")

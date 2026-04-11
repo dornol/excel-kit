@@ -52,7 +52,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelHandler handler = new ExcelWriter<int[]>()
+        ExcelHandler handler = ExcelWriter.<int[]>builder().build()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                 .column("Name", r -> "User-" + r[0])
                 .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -80,7 +80,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelHandler handler = new ExcelWriter<int[]>()
+        ExcelHandler handler = ExcelWriter.<int[]>builder().build()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                 .column("Name", r -> "User-" + r[0])
                 .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -109,7 +109,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelWriter<int[]> writer = new ExcelWriter<>();
+        ExcelWriter<int[]> writer = ExcelWriter.<int[]>builder().build();
         for (int i = 0; i < cols; i++) {
             final int idx = i;
             writer.column("Col" + i, r -> r[idx % r.length], c -> c.type(ExcelDataType.INTEGER));
@@ -137,7 +137,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelHandler handler = new ExcelWriter<int[]>(rowsPerSheet)
+        ExcelHandler handler = ExcelWriter.<int[]>builder().maxRows(rowsPerSheet).build()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                 .column("Name", r -> "User-" + r[0])
                 .column("Value", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -259,7 +259,7 @@ class BenchmarkTest {
 
         // Write test file
         try (OutputStream os = Files.newOutputStream(file)) {
-            new ExcelWriter<int[]>()
+            ExcelWriter.<int[]>builder().build()
                     .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -288,7 +288,7 @@ class BenchmarkTest {
         Path file = tempDir.resolve("read_typed_100k.xlsx");
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            new ExcelWriter<int[]>()
+            ExcelWriter.<int[]>builder().build()
                     .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))

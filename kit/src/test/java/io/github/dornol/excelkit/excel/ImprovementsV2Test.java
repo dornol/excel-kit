@@ -119,7 +119,7 @@ class ImprovementsV2Test {
     @Test
     void autoWidthSampleRows_shouldBeConfigurable() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .autoWidthSampleRows(5)
                 .column("Name", s -> s)
                 .write(Stream.of("short", "a very long column value that should affect width"))
@@ -131,7 +131,7 @@ class ImprovementsV2Test {
     @Test
     void autoWidthSampleRows_zero_shouldDisable() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .autoWidthSampleRows(0)
                 .column("Name", s -> s)
                 .write(Stream.of("test"))
@@ -143,7 +143,7 @@ class ImprovementsV2Test {
     @Test
     void autoWidthSampleRows_negative_shouldThrow() {
         assertThrows(IllegalArgumentException.class, () ->
-                new ExcelWriter<String>().autoWidthSampleRows(-1));
+                ExcelWriter.<String>builder().build().autoWidthSampleRows(-1));
     }
 
     @Test

@@ -19,7 +19,7 @@ import java.util.List;
  * and reference cell ranges for their data.
  *
  * <pre>{@code
- * new ExcelWriter<Product>()
+ * ExcelWriter.<Product>builder().build()
  *     .column("Name", Product::getName)
  *     .column("Sales", Product::getSales, c -> c.type(ExcelDataType.INTEGER))
  *     .chart(chart -> chart

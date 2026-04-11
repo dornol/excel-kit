@@ -25,7 +25,7 @@ class ExcelReadHandlerEdgeCaseTest {
 
     private byte[] writeTestExcel() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Item>()
+        ExcelWriter.<Item>builder().build()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new Item("A", 10), new Item("B", 20), new Item("C", 30)))
@@ -140,7 +140,7 @@ class ExcelReadHandlerEdgeCaseTest {
         // Write an Excel with 2 columns
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        new ExcelWriter<Item>()
+        ExcelWriter.<Item>builder().build()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value)
                 .write(Stream.of(new Item("x", 1)))

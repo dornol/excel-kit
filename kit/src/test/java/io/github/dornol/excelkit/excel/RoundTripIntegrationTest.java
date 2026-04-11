@@ -41,7 +41,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldPreserveVerticalAlignmentWrapTextFontNameAndIndentation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<StyledRow>()
+            ExcelWriter.<StyledRow>builder().build()
                     .column("Label", StyledRow::label, c -> c
                         .verticalAlignment(VerticalAlignment.TOP)
                         .wrapText(false)
@@ -93,7 +93,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldPreserveWorkbookAndSheetProtection() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<SimpleRow>()
+            ExcelWriter.<SimpleRow>builder().build()
                     .protectWorkbook("wbPass")
                     .protectSheet("sheetPass")
                     .column("Value", SimpleRow::value)
@@ -118,7 +118,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldPreserveHeaderFontNameAndSize() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<DataRow>()
+            ExcelWriter.<DataRow>builder().build()
                     .headerFontName("Courier New")
                     .headerFontSize(16)
                     .column("Name", DataRow::name)
@@ -150,7 +150,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldApplyDefaultStyleWithPerColumnOverride() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<TwoCol>()
+            ExcelWriter.<TwoCol>builder().build()
                     .defaultStyle(d -> d
                             .fontName("Arial")
                             .bold(true)
@@ -194,7 +194,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldWriteSummaryRowsWithFormulas() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<SaleRow>()
+            ExcelWriter.<SaleRow>builder().build()
                     .column("Item", SaleRow::item)
                     .column("Price", s -> s.price(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Qty", s -> s.qty(), c -> c.type(ExcelDataType.INTEGER))
@@ -250,7 +250,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldCreateNamedRangeViaAfterData() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<Category>()
+            ExcelWriter.<Category>builder().build()
                     .sheetName("Categories")
                     .column("Name", Category::name)
                     .afterData(ctx -> {
@@ -335,7 +335,7 @@ class RoundTripIntegrationTest {
             UUID id2 = UUID.randomUUID();
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<TypedRow>()
+            ExcelWriter.<TypedRow>builder().build()
                     .column("Name", TypedRow::name)
                     .column("Price", r -> r.price(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Weight", r -> r.weight(), c -> c.type(ExcelDataType.DOUBLE))
@@ -383,7 +383,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldApplyDefaultsForEmptyAndNullCells() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new ExcelWriter<SparseRow>()
+            ExcelWriter.<SparseRow>builder().build()
                     .column("Name", SparseRow::name)
                     .column("Qty", r -> r.qty() == 0 ? null : r.qty(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Price", r -> r.price() == 0.0 ? null : r.price(), c -> c.type(ExcelDataType.DOUBLE))

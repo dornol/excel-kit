@@ -23,7 +23,7 @@ class ExcelValidationEdgeCaseTest {
 
     private List<XSSFDataValidation> writeAndGetValidations(ExcelValidation validation) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Val", s -> s, c -> c.validation(validation))
                 .write(Stream.of("test"))
                 .write(out);

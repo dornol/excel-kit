@@ -31,7 +31,7 @@ class DataBarIconSetTest {
 
     private CTWorksheet writeAndGetWorksheet(java.util.function.Consumer<ExcelConditionalRule> cfConfig) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<Item>()
+        ExcelWriter.<Item>builder().build()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cfConfig)

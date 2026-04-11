@@ -8,10 +8,10 @@ package io.github.dornol.excelkit.excel;
  *
  * <pre>{@code
  * // Using a preset
- * new ExcelWriter<>(ExcelColor.STEEL_BLUE);
+ * ExcelWriter.builder().color(ExcelColor.STEEL_BLUE).build();
  *
  * // Using a custom RGB color
- * new ExcelWriter<>(ExcelColor.of(180, 200, 220));
+ * ExcelWriter.builder().color(ExcelColor.of(180, 200, 220)).build();
  * }</pre>
  *
  * @author dhkim

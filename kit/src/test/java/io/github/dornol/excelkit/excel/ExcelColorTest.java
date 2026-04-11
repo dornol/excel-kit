@@ -78,7 +78,7 @@ class ExcelColorTest {
 
     @Test
     void excelWriter_shouldAcceptExcelColor() throws IOException {
-        ExcelWriter<String> writer = new ExcelWriter<>(ExcelColor.STEEL_BLUE);
+        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.STEEL_BLUE).build();
         Stream<String> data = Stream.of("a", "b");
 
         ExcelHandler handler = writer
@@ -93,7 +93,7 @@ class ExcelColorTest {
 
     @Test
     void excelWriter_shouldAcceptCustomColor() throws IOException {
-        ExcelWriter<String> writer = new ExcelWriter<>(ExcelColor.of(100, 150, 200));
+        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.of(100, 150, 200)).build();
         Stream<String> data = Stream.of("a");
 
         ExcelHandler handler = writer
@@ -108,7 +108,7 @@ class ExcelColorTest {
 
     @Test
     void excelWriter_shouldAcceptExcelColorWithMaxRowsAndWindowSize() throws IOException {
-        ExcelWriter<String> writer = new ExcelWriter<>(ExcelColor.LIGHT_BLUE, 1_000_000, 100);
+        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.LIGHT_BLUE).maxRows(1_000_000).rowAccessWindowSize(100).build();
         Stream<String> data = Stream.of("a");
 
         ExcelHandler handler = writer
@@ -123,7 +123,7 @@ class ExcelColorTest {
 
     @Test
     void excelWriter_maxRowsOnly() throws IOException {
-        ExcelWriter<String> writer = new ExcelWriter<>(500_000);
+        ExcelWriter<String> writer = ExcelWriter.<String>builder().maxRows(500_000).build();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .write(Stream.of("a"));
@@ -135,7 +135,7 @@ class ExcelColorTest {
 
     @Test
     void excelWriter_colorAndMaxRows() throws IOException {
-        ExcelWriter<String> writer = new ExcelWriter<>(ExcelColor.CORAL, 500_000);
+        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.CORAL).maxRows(500_000).build();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .write(Stream.of("a"));
@@ -147,7 +147,7 @@ class ExcelColorTest {
 
     @Test
     void backgroundColor_shouldAcceptExcelColor() throws IOException {
-        ExcelWriter<String> writer = new ExcelWriter<>();
+        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
         Stream<String> data = Stream.of("a", "b");
 
         ExcelHandler handler = writer

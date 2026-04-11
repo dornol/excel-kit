@@ -52,53 +52,110 @@ public class ExcelWriter<T> {
     private @Nullable Cursor cursor;
 
 
+    private static final int DEFAULT_MAX_ROWS = 1_000_000;
+
     /**
-     * Constructs an ExcelWriter with a header color, maximum rows per sheet, and row access window size.
+     * Creates a new builder for configuring an ExcelWriter.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * ExcelWriter<User> writer = ExcelWriter.<User>builder()
+     *     .color(ExcelColor.STEEL_BLUE)
+     *     .maxRows(500_000)
+     *     .rowAccessWindowSize(500)
+     *     .build();
+     * }</pre>
      *
-     * @param color              Header color (use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)})
-     * @param maxRows            Maximum number of rows allowed per sheet before creating a new one
-     * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook (higher = more memory, lower = less memory)
+     * @param <T> the row data type
+     * @return a new builder seeded with default values (white header, 1,000,000 max rows, 1000 row window)
      */
-    public ExcelWriter(ExcelColor color, int maxRows, int rowAccessWindowSize) {
-        this.wb = new SXSSFWorkbook(rowAccessWindowSize);
-        this.maxRows = maxRows;
-        this.headerColor = new XSSFColor(new byte[]{(byte) color.getR(), (byte) color.getG(), (byte) color.getB()});
+    public static <T> Builder<T> builder() {
+        return new Builder<>();
+    }
+
+    private ExcelWriter(Builder<T> builder) {
+        this.wb = new SXSSFWorkbook(builder.rowAccessWindowSize);
+        this.maxRows = builder.maxRows;
+        this.headerColor = new XSSFColor(new byte[]{
+                (byte) builder.color.getR(),
+                (byte) builder.color.getG(),
+                (byte) builder.color.getB()
+        });
         this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
     }
 
     /**
-     * Constructs an ExcelWriter with a header color and maximum rows per sheet.
+     * Builder for {@link ExcelWriter}. Obtained via {@link ExcelWriter#builder()}.
+     * <p>
+     * All fields have sensible defaults, so callers only need to set what they want to override.
      *
-     * @param color    Header color
-     * @param maxRows  Maximum number of rows allowed per sheet before creating a new one
+     * @param <T> the row data type
+     * @since 0.11.0
      */
-    public ExcelWriter(ExcelColor color, int maxRows) {
-        this(color, maxRows, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
-    }
+    public static final class Builder<T> {
+        private ExcelColor color = ExcelColor.WHITE;
+        private int maxRows = DEFAULT_MAX_ROWS;
+        private int rowAccessWindowSize = DEFAULT_ROW_ACCESS_WINDOW_SIZE;
 
-    /**
-     * Constructs an ExcelWriter with a header color and default max 1,000,000 rows per sheet.
-     *
-     * @param color Header color
-     */
-    public ExcelWriter(ExcelColor color) {
-        this(color, 1_000_000);
-    }
+        private Builder() {
+        }
 
-    /**
-     * Constructs an ExcelWriter with white header color and custom sheet row limit.
-     *
-     * @param maxRows Maximum number of rows per sheet
-     */
-    public ExcelWriter(int maxRows) {
-        this(ExcelColor.WHITE, maxRows);
-    }
+        /**
+         * Sets the header background color.
+         * <p>
+         * Use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)}.
+         * Defaults to {@link ExcelColor#WHITE}.
+         *
+         * @param color header color (must not be null)
+         * @return this builder for chaining
+         */
+        public Builder<T> color(ExcelColor color) {
+            if (color == null) {
+                throw new IllegalArgumentException("color must not be null");
+            }
+            this.color = color;
+            return this;
+        }
 
-    /**
-     * Constructs an ExcelWriter with a default white header and default max 1,000,000 rows per sheet.
-     */
-    public ExcelWriter() {
-        this(ExcelColor.WHITE);
+        /**
+         * Sets the maximum number of rows per sheet before a new sheet is created.
+         * Defaults to 1,000,000.
+         *
+         * @param maxRows maximum rows per sheet (must be positive)
+         * @return this builder for chaining
+         */
+        public Builder<T> maxRows(int maxRows) {
+            if (maxRows <= 0) {
+                throw new IllegalArgumentException("maxRows must be positive");
+            }
+            this.maxRows = maxRows;
+            return this;
+        }
+
+        /**
+         * Sets the number of rows kept in memory by the underlying SXSSFWorkbook.
+         * Higher values use more memory but reduce disk I/O; lower values are the inverse.
+         * Defaults to 1000.
+         *
+         * @param size row access window size (must be positive)
+         * @return this builder for chaining
+         */
+        public Builder<T> rowAccessWindowSize(int size) {
+            if (size <= 0) {
+                throw new IllegalArgumentException("rowAccessWindowSize must be positive");
+            }
+            this.rowAccessWindowSize = size;
+            return this;
+        }
+
+        /**
+         * Builds a new ExcelWriter with the configured settings.
+         *
+         * @return a new ExcelWriter instance
+         */
+        public ExcelWriter<T> build() {
+            return new ExcelWriter<>(this);
+        }
     }
 
     /**

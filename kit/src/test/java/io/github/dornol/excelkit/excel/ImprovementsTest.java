@@ -23,7 +23,7 @@ class ImprovementsTest {
     // ========================================================================
     @Test
     void duplicateColumnName_shouldThrowInExcelWriter() {
-        var writer = new ExcelWriter<String>()
+        var writer = ExcelWriter.<String>builder().build()
                 .column("Name", s -> s)
                 .column("Name", s -> s);
         assertThrows(ExcelWriteException.class, () -> writer.write(Stream.of("test")));
@@ -42,7 +42,7 @@ class ImprovementsTest {
     @Test
     void uniqueColumnNames_shouldNotThrow() {
         assertDoesNotThrow(() ->
-                new ExcelWriter<String>()
+                ExcelWriter.<String>builder().build()
                         .column("Name", s -> s)
                         .column("Age", s -> s)
                         .write(Stream.of("test")));
@@ -144,7 +144,7 @@ class ImprovementsTest {
     void emptyStream_withAfterData_shouldStillCallback() throws IOException {
         boolean[] called = {false};
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s)
                 .afterData(ctx -> {
                     called[0] = true;
@@ -160,7 +160,7 @@ class ImprovementsTest {
     void emptyStream_withBeforeHeader_shouldStillCallback() throws IOException {
         boolean[] called = {false};
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExcelWriter<String>()
+        ExcelWriter.<String>builder().build()
                 .column("Name", s -> s)
                 .beforeHeader(ctx -> {
                     called[0] = true;
