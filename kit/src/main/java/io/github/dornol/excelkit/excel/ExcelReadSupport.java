@@ -1,8 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
 /**
- * Package-private utility methods shared by {@link ExcelReadHandler}, {@link ExcelMapReader},
- * and {@link ExcelReader} to eliminate duplicate read logic.
+ * Package-private utility methods shared by {@link ExcelReadHandler} and {@link ExcelReader}
+ * to eliminate duplicate read logic.
  *
  * @author dhkim
  */
