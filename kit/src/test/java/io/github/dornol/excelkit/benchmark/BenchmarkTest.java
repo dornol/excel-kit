@@ -1,12 +1,10 @@
 package io.github.dornol.excelkit.benchmark;
 
-import io.github.dornol.excelkit.csv.CsvMapReader;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelColor;
 import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.excel.ExcelHandler;
-import io.github.dornol.excelkit.excel.ExcelMapReader;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWorkbook;
 import io.github.dornol.excelkit.excel.ExcelWriter;
@@ -271,7 +269,7 @@ class BenchmarkTest {
         long startTime = System.currentTimeMillis();
 
         AtomicLong count = new AtomicLong();
-        new ExcelMapReader()
+        ExcelReader.forMap()
                 .build(new FileInputStream(file.toFile()))
                 .read(r -> count.incrementAndGet());
 
@@ -336,7 +334,7 @@ class BenchmarkTest {
         long startTime = System.currentTimeMillis();
 
         AtomicLong count = new AtomicLong();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .build(new FileInputStream(file.toFile()))
                 .read(r -> count.incrementAndGet());
 

@@ -69,7 +69,7 @@ CsvReader.<Product>mapping(row -> new Product(
 
 ### Map Mode
 ```java
-new CsvMapReader()
+CsvReader.forMap()
     .delimiter(',')
     .charset(StandardCharsets.UTF_8)
     .headerRowIndex(0)

@@ -1,12 +1,10 @@
 package io.github.dornol.excelkit.shared;
 
 import io.github.dornol.excelkit.csv.CsvDialect;
-import io.github.dornol.excelkit.csv.CsvMapReader;
 import io.github.dornol.excelkit.csv.CsvReadException;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.csv.CsvQuoting;
-import io.github.dornol.excelkit.excel.ExcelMapReader;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelReadException;
 import io.github.dornol.excelkit.excel.ExcelWriter;
@@ -58,19 +56,19 @@ class CoverageBoostTest {
         @Test
         void excelMapReader_nullInputStream_throwsException() {
             assertThrows(Exception.class,
-                    () -> new ExcelMapReader().build(null));
+                    () -> ExcelReader.forMap().build(null));
         }
 
         @Test
         void csvMapReader_nullInputStream_throwsIllegalArgument() {
             assertThrows(IllegalArgumentException.class,
-                    () -> new CsvMapReader().build(null));
+                    () -> CsvReader.forMap().build(null));
         }
 
         @Test
         void csvMapReader_negativeHeaderRowIndex_throwsIllegalArgument() {
             assertThrows(IllegalArgumentException.class,
-                    () -> new CsvMapReader()
+                    () -> CsvReader.forMap()
                             .headerRowIndex(-1)
                             .build(new ByteArrayInputStream("A\n1".getBytes())));
         }
@@ -85,7 +83,7 @@ class CoverageBoostTest {
         @Test
         void readAsStream_emptyFile_throwsCsvReadException() {
             assertThrows(CsvReadException.class, () -> {
-                try (var stream = new CsvMapReader()
+                try (var stream = CsvReader.forMap()
                         .build(new ByteArrayInputStream(new byte[0]))
                         .readAsStream()) {
                     stream.toList();
@@ -96,7 +94,7 @@ class CoverageBoostTest {
         @Test
         void readAsStream_headerOnly_returnsEmptyStream() {
             String csv = "Name,Age\n";
-            try (var stream = new CsvMapReader()
+            try (var stream = CsvReader.forMap()
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .readAsStream()) {
                 var results = stream.toList();
@@ -107,7 +105,7 @@ class CoverageBoostTest {
         @Test
         void readAsStream_closeWithoutConsuming_shouldNotLeak() {
             String csv = "Name\nAlice\nBob\n";
-            var stream = new CsvMapReader()
+            var stream = CsvReader.forMap()
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .readAsStream();
             stream.close();
@@ -117,7 +115,7 @@ class CoverageBoostTest {
         @Test
         void readAsStream_partialConsumption_shouldCleanup() {
             String csv = "Name\nAlice\nBob\nCharlie\n";
-            try (var stream = new CsvMapReader()
+            try (var stream = CsvReader.forMap()
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .readAsStream()) {
                 var first = stream.findFirst();
@@ -130,7 +128,7 @@ class CoverageBoostTest {
         void readAsStream_withProgress_shouldFireCallbacks() {
             String csv = "Name\nA\nB\nC\nD\n";
             List<Long> progressCounts = new ArrayList<>();
-            try (var stream = new CsvMapReader()
+            try (var stream = CsvReader.forMap()
                     .onProgress(2, (count, total) -> progressCounts.add(count))
                     .build(new ByteArrayInputStream(csv.getBytes()))
                     .readAsStream()) {
@@ -144,7 +142,7 @@ class CoverageBoostTest {
         void readAsStream_insufficientRowsForHeader_throwsCsvReadException() {
             String csv = "only one line";
             assertThrows(CsvReadException.class, () -> {
-                try (var stream = new CsvMapReader()
+                try (var stream = CsvReader.forMap()
                         .headerRowIndex(5)
                         .build(new ByteArrayInputStream(csv.getBytes()))
                         .readAsStream()) {
@@ -364,7 +362,7 @@ class CoverageBoostTest {
                     Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")
             )).write(out);
 
-            try (var stream = new ExcelMapReader()
+            try (var stream = ExcelReader.forMap()
                     .build(new ByteArrayInputStream(out.toByteArray()))
                     .readAsStream()) {
                 var results = stream.toList();
@@ -383,7 +381,7 @@ class CoverageBoostTest {
             )).write(out);
 
             // headerRowIndex 0 is default — just verifying the API path
-            try (var stream = new ExcelMapReader()
+            try (var stream = ExcelReader.forMap()
                     .headerRowIndex(0)
                     .sheetIndex(0)
                     .build(new ByteArrayInputStream(out.toByteArray()))
@@ -507,7 +505,7 @@ class CoverageBoostTest {
         void csvMapReader_dialect_TSV_withCharset() {
             String tsv = "Name\tAge\nAlice\t30\n";
             List<Map<String, String>> results = new ArrayList<>();
-            new CsvMapReader()
+            CsvReader.forMap()
                     .dialect(CsvDialect.TSV)
                     .charset(StandardCharsets.UTF_8)
                     .build(new ByteArrayInputStream(tsv.getBytes()))
@@ -521,7 +519,7 @@ class CoverageBoostTest {
         void csvMapReader_read_insufficientRowsForHeader_throwsCsvReadException() {
             String csv = "only one line";
             assertThrows(CsvReadException.class, () ->
-                    new CsvMapReader()
+                    CsvReader.forMap()
                             .headerRowIndex(5)
                             .build(new ByteArrayInputStream(csv.getBytes()))
                             .read(r -> {}));

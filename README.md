@@ -81,7 +81,7 @@ without requiring any additional architectural effort.
 - Read progress callback via `onProgress()`
 - Large file support configuration
 - Multi-sheet discovery via `getSheetNames()` and `getSheetHeaders()`
-- Map-based reading via `ExcelMapReader` — read into `Map<String, String>` without typed POJOs
+- Map-based reading via `ExcelReader.forMap()` — read into `Map<String, String>` without typed POJOs
 
 **CSV Writing**
 - Streaming write to temp file, then flush to `OutputStream`
@@ -102,7 +102,7 @@ without requiring any additional architectural effort.
 - Column mapping DSL with Bean Validation support
 - Configurable delimiter, charset, and header row index
 - CSV dialect presets via `dialect()` — RFC4180, EXCEL, TSV, PIPE
-- Map-based reading via `CsvMapReader` — read into `Map<String, String>` without typed POJOs
+- Map-based reading via `CsvReader.forMap()` — read into `Map<String, String>` without typed POJOs
 
 **Unified Schema**
 - `ExcelKitSchema` — define columns once for both reading and writing
@@ -118,13 +118,13 @@ without requiring any additional architectural effort.
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
 | Read Excel (typed) | `ExcelReader<T>` | `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)` |
-| Read Excel (map) | `ExcelMapReader` | `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))` |
+| Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 | Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)` |
 | Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).write(out)` |
 | Read CSV (typed) | `CsvReader<T>` | `new CsvReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)` |
-| Read CSV (map) | `CsvMapReader` | `new CsvMapReader().build(in).read(r -> r.data().get("Name"))` |
+| Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 
-**Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`new ExcelMapReader()` / `new CsvMapReader()`) for schema-less reading.
+**Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`ExcelReader.forMap()` / `CsvReader.forMap()`) for schema-less reading.
 
 **Output consumption:** `write(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `consumeOutputStreamWithPassword(out, "pw")` for late-binding encryption.
 
@@ -133,7 +133,7 @@ without requiring any additional architectural effort.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.dornol:excel-kit:0.11.0")
+    implementation("io.github.dornol:excel-kit:0.12.0")
 }
 ```
 
@@ -142,7 +142,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.11.0</version>
+  <version>0.12.0</version>
 </dependency>
 ```
 
@@ -1325,7 +1325,7 @@ CsvWriter.forMap("Name", "Age")
 Read Excel files into `Map<String, String>` without defining typed POJOs:
 
 ```java
-new ExcelMapReader()
+ExcelReader.forMap()
     .sheetIndex(0)         // optional, defaults to 0
     .headerRowIndex(0)     // optional, defaults to 0
     .build(inputStream)
@@ -1338,7 +1338,7 @@ new ExcelMapReader()
 
 CSV equivalent:
 ```java
-new CsvMapReader()
+CsvReader.forMap()
     .delimiter(',')        // optional, defaults to ','
     .headerRowIndex(0)     // optional, defaults to 0
     .build(inputStream)
@@ -2012,7 +2012,7 @@ Call it once at application startup if needed; avoid calling it with different v
 
 ### `readAsStream()` requires try-with-resources
 
-`ExcelReadHandler.readAsStream()`, `CsvReadHandler.readAsStream()`, `ExcelMapReader.readAsStream()`, and `CsvMapReader.readAsStream()` hold file and thread resources.
+`ExcelReadHandler.readAsStream()` and `CsvReadHandler.readAsStream()` hold file and thread resources.
 Always use try-with-resources to ensure proper cleanup:
 
 ```java

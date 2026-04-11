@@ -2,6 +2,83 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0] - 2026-04-12
+
+v0.12.0 completes the Map I/O symmetry that v0.11.0 deferred: the Map Reader
+classes are absorbed into `ExcelReader.forMap()` / `CsvReader.forMap()` static
+factories, matching the Writer side.
+
+### Changed (Breaking)
+
+- **`ExcelMapReader` class removed** — use `ExcelReader.forMap()`. The returned
+  reader is an `ExcelReader<Map<String, String>>` with the full fluent API
+  (`sheetIndex`, `headerRowIndex`, `onProgress`, `readAsStream`). Gains
+  `onProgress` support that `ExcelMapReader` never had.
+- **`CsvMapReader` class removed** — use `CsvReader.forMap()`. Same benefits:
+  full `CsvReader` API including `dialect`, `delimiter`, `charset`,
+  `headerRowIndex`, `onProgress`, `readAsStream`.
+- **Mixed-mode runtime guard** — calling `column(setter)`, `column(name, setter)`,
+  `columnAt(idx, setter)`, `skipColumn()`, or `skipColumns(int)` on a reader
+  obtained from `forMap()` now throws `IllegalStateException`. Map mode
+  auto-discovers columns; the setter API doesn't apply.
+
+### Behavioral notes
+
+- **`readAsStream` on a non-existent sheet** now throws `ExcelReadException`
+  via `ExcelReadHandler`'s missing-sheet check. The deleted `ExcelMapReader`
+  silently returned an empty stream, which hid caller bugs.
+- Map building still uses positional pairing truncated at
+  `min(headerCount, cellCount)` — matches the deleted Map Readers exactly.
+
+### Migration Guide
+
+```java
+// ─── Excel map reading ───
+// Before (v0.11.0)
+new ExcelMapReader()
+    .sheetIndex(0)
+    .headerRowIndex(0)
+    .build(inputStream)
+    .read(r -> process(r.data()));
+
+// After (v0.12.0)
+ExcelReader.forMap()
+    .sheetIndex(0)
+    .headerRowIndex(0)
+    .build(inputStream)
+    .read(r -> process(r.data()));
+
+// ─── CSV map reading ───
+// Before
+new CsvMapReader()
+    .dialect(CsvDialect.EXCEL)
+    .onProgress(1000, (count, total) -> System.out.println(count))
+    .build(inputStream)
+    .read(r -> process(r.data()));
+
+// After
+CsvReader.forMap()
+    .dialect(CsvDialect.EXCEL)
+    .onProgress(1000, (count, total) -> System.out.println(count))
+    .build(inputStream)
+    .read(r -> process(r.data()));
+
+// ─── Excel map reading now supports onProgress (new) ───
+ExcelReader.forMap()
+    .onProgress(1000, (count, total) -> System.out.println("read " + count))
+    .build(inputStream)
+    .read(r -> process(r.data()));
+```
+
+### Internal note
+
+Absorption reuses the existing mapping-mode infrastructure
+(`Function<RowData, T>`) via a synthetic `Function<RowData, Map<String, String>>`.
+No SAX handler or `ExcelReadHandler` / `CsvReadHandler` changes were needed —
+`RowData` already exposes `headerNames()` and `get(name)`, so the entire
+"map reader" can be expressed as a 5-line row mapper. This eliminated the
+"SAX callback state-machine rewrite" risk called out in the Plan.
+
 ## [0.11.0] - 2026-04-12
 
 v0.11.0 is an **API cleanup release**. It removes a handful of parallel or

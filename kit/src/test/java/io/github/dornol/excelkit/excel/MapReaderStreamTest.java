@@ -35,7 +35,7 @@ class MapReaderStreamTest {
         byte[] excel = writeTestExcel();
 
         List<ReadResult<Map<String, String>>> results;
-        try (var stream = new ExcelMapReader()
+        try (var stream = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(excel))
                 .readAsStream()) {
             results = stream.toList();
@@ -52,7 +52,7 @@ class MapReaderStreamTest {
         byte[] excel = writeTestExcel();
 
         List<Map<String, String>> results;
-        try (var stream = new ExcelMapReader()
+        try (var stream = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(excel))
                 .readAsStream()) {
             results = stream
@@ -71,7 +71,7 @@ class MapReaderStreamTest {
     void readAsStream_partialConsumption_shouldCleanup() throws IOException {
         byte[] excel = writeTestExcel();
 
-        try (var stream = new ExcelMapReader()
+        try (var stream = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(excel))
                 .readAsStream()) {
             var first = stream.findFirst();
@@ -85,7 +85,7 @@ class MapReaderStreamTest {
     void readAsStream_closeWithoutConsuming_shouldNotHang() throws IOException {
         byte[] excel = writeTestExcel();
 
-        var stream = new ExcelMapReader()
+        var stream = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(excel))
                 .readAsStream();
         assertDoesNotThrow(stream::close, "Closing unconsumed stream should not hang or throw");
@@ -100,7 +100,7 @@ class MapReaderStreamTest {
                 .write(out);
 
         List<ReadResult<Map<String, String>>> results;
-        try (var stream = new ExcelMapReader()
+        try (var stream = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .readAsStream()) {
             results = stream.toList();
@@ -132,7 +132,7 @@ class MapReaderStreamTest {
             out = bout;
         }
 
-        try (var stream = new ExcelMapReader()
+        try (var stream = ExcelReader.forMap()
                 .headerRowIndex(1)
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .readAsStream()) {
@@ -160,7 +160,7 @@ class MapReaderStreamTest {
         }
 
         var results = new java.util.ArrayList<Map<String, String>>();
-        new ExcelMapReader()
+        ExcelReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(r -> results.add(r.data()));
 
@@ -180,7 +180,7 @@ class MapReaderStreamTest {
                 .write(Stream.of(new Multi("x", "y", "z")))
                 .write(out);
 
-        try (var stream = new ExcelMapReader()
+        try (var stream = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .readAsStream()) {
             var result = stream.findFirst().orElseThrow();

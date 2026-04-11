@@ -113,7 +113,7 @@ ExcelWriter.forMap("Name", "Age").write(Stream.of(
 )).write(out);
 
 // Read
-new ExcelMapReader().build(inputStream).read(result -> {
+ExcelReader.forMap().build(inputStream).read(result -> {
     Map<String, String> row = result.data();
     String name = row.get("Name");
 });

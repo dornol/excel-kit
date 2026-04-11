@@ -4,8 +4,8 @@ import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.example.app.common.DownloadFileType;
 import io.github.dornol.excelkit.example.app.common.DownloadUtil;
 import io.github.dornol.excelkit.csv.CsvDialect;
-import io.github.dornol.excelkit.csv.CsvMapReader;
 import io.github.dornol.excelkit.csv.CsvQuoting;
+import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.shared.ExcelKitSchema;
 import org.springframework.http.ResponseEntity;
@@ -96,7 +96,7 @@ public class CsvShowcaseController {
     public String readCsvMap(MultipartFile file) throws IOException {
         try (InputStream is = file.getInputStream()) {
             List<Map<String, String>> results = new ArrayList<>();
-            new CsvMapReader()
+            CsvReader.forMap()
                     .build(is)
                     .read(r -> results.add(r.data()));
 

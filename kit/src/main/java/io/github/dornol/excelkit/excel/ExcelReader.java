@@ -55,6 +55,7 @@ public class ExcelReader<T> {
     private int headerRowIndex = 0;
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
+    private boolean mapMode = false;
 
     /**
      * Configures Apache POI's internal limits for reading large Excel files.
@@ -139,6 +140,61 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Creates a reader that parses Excel files into {@code Map<String, String>} rows by
+     * auto-discovering columns from the header row.
+     * <p>
+     * The returned reader exposes the standard fluent API ({@link #sheetIndex(int)},
+     * {@link #headerRowIndex(int)}, {@link #onProgress(int, ProgressCallback)}) but rejects
+     * {@link #column(BiConsumer)}, {@link #column(String, BiConsumer)},
+     * {@link #columnAt(int, BiConsumer)}, {@link #skipColumn()}, and {@link #skipColumns(int)}
+     * at runtime — map mode infers columns automatically from the header row and does not
+     * use the setter API.
+     *
+     * <pre>{@code
+     * ExcelReader.forMap()
+     *     .sheetIndex(0)
+     *     .headerRowIndex(0)
+     *     .build(inputStream)
+     *     .read(result -> {
+     *         Map<String, String> row = result.data();
+     *         String name = row.get("Name");
+     *     });
+     * }</pre>
+     *
+     * @return a new ExcelReader in map mode
+     * @since 0.12.0
+     */
+    public static ExcelReader<Map<String, String>> forMap() {
+        // Match the deleted ExcelMapReader's behavior: truncate at min(headerCount, cellCount)
+        // and use positional pairing. This preserves v0.11.0 semantics:
+        //   - trailing missing cells → the corresponding header keys are absent from the map
+        //   - null headers are skipped
+        //   - present-but-empty cells → "" (CellData's compact constructor coerces null to "")
+        Function<RowData, Map<String, String>> mapMapper = row -> {
+            Map<String, String> map = new LinkedHashMap<>();
+            List<String> headers = row.headerNames();
+            int bound = Math.min(headers.size(), row.size());
+            for (int i = 0; i < bound; i++) {
+                String header = headers.get(i);
+                if (header == null) continue;
+                map.put(header, row.get(i).formattedValue());
+            }
+            return map;
+        };
+        ExcelReader<Map<String, String>> reader = ExcelReader.mapping(mapMapper);
+        reader.mapMode = true;
+        return reader;
+    }
+
+    private void requireNotMapMode(String method) {
+        if (mapMode) {
+            throw new IllegalStateException(
+                    method + " cannot be called on a forMap() reader; "
+                            + "map mode auto-discovers columns from the header row");
+        }
+    }
+
+    /**
      * Sets the zero-based sheet index to read from.
      * Defaults to 0 (the first sheet).
      *
@@ -180,6 +236,7 @@ public class ExcelReader<T> {
      * @return this reader for chaining
      */
     public ExcelReader<T> column(BiConsumer<T, CellData> setter) {
+        requireNotMapMode("column(BiConsumer)");
         columns.add(new ExcelReadColumn<>(setter));
         return this;
     }
@@ -193,6 +250,7 @@ public class ExcelReader<T> {
      * @return this reader for chaining
      */
     public ExcelReader<T> column(String headerName, BiConsumer<T, CellData> setter) {
+        requireNotMapMode("column(String, BiConsumer)");
         columns.add(new ExcelReadColumn<>(headerName, setter));
         return this;
     }
@@ -206,6 +264,7 @@ public class ExcelReader<T> {
      * @return this reader for chaining
      */
     public ExcelReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
+        requireNotMapMode("columnAt(int, BiConsumer)");
         columns.add(new ExcelReadColumn<>(null, columnIndex, setter));
         return this;
     }
@@ -217,6 +276,7 @@ public class ExcelReader<T> {
      * @return this reader for chaining
      */
     public ExcelReader<T> skipColumn() {
+        requireNotMapMode("skipColumn()");
         columns.add(new ExcelReadColumn<>((instance, cellData) -> {}));
         return this;
     }
@@ -229,6 +289,7 @@ public class ExcelReader<T> {
      * @throws IllegalArgumentException if {@code count} is negative
      */
     public ExcelReader<T> skipColumns(int count) {
+        requireNotMapMode("skipColumns(int)");
         if (count < 0) {
             throw new IllegalArgumentException("skipColumns count must be non-negative");
         }

@@ -11,7 +11,9 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -38,6 +40,7 @@ public class CsvReader<T> {
     private Charset charset = StandardCharsets.UTF_8;
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
+    private boolean mapMode = false;
 
     /**
      * Constructs a CsvReader in setter mode with instance supplier and optional validator.
@@ -89,6 +92,59 @@ public class CsvReader<T> {
      */
     public static <T> CsvReader<T> mapping(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         return new CsvReader<>(rowMapper, validator);
+    }
+
+    /**
+     * Creates a reader that parses CSV files into {@code Map<String, String>} rows by
+     * auto-discovering columns from the header row.
+     * <p>
+     * The returned reader exposes the standard fluent API ({@link #dialect(CsvDialect)},
+     * {@link #delimiter(char)}, {@link #charset(Charset)}, {@link #headerRowIndex(int)},
+     * {@link #onProgress(int, ProgressCallback)}) but rejects
+     * {@link #column(BiConsumer)}, {@link #column(String, BiConsumer)},
+     * {@link #columnAt(int, BiConsumer)}, {@link #skipColumn()}, and {@link #skipColumns(int)}
+     * at runtime — map mode infers columns automatically from the header row and does not
+     * use the setter API.
+     *
+     * <pre>{@code
+     * CsvReader.forMap()
+     *     .dialect(CsvDialect.EXCEL)
+     *     .build(inputStream)
+     *     .read(result -> {
+     *         Map<String, String> row = result.data();
+     *         String name = row.get("Name");
+     *     });
+     * }</pre>
+     *
+     * @return a new CsvReader in map mode
+     * @since 0.12.0
+     */
+    public static CsvReader<Map<String, String>> forMap() {
+        // Match the deleted CsvMapReader's behavior: truncate at min(headerCount, cellCount)
+        // and use positional pairing. Trailing missing cells → absent keys; null headers → skipped;
+        // present-but-empty cells → "" (CellData compact constructor coerces null to "").
+        Function<RowData, Map<String, String>> mapMapper = row -> {
+            Map<String, String> map = new LinkedHashMap<>();
+            List<String> headers = row.headerNames();
+            int bound = Math.min(headers.size(), row.size());
+            for (int i = 0; i < bound; i++) {
+                String header = headers.get(i);
+                if (header == null) continue;
+                map.put(header, row.get(i).formattedValue());
+            }
+            return map;
+        };
+        CsvReader<Map<String, String>> reader = CsvReader.mapping(mapMapper);
+        reader.mapMode = true;
+        return reader;
+    }
+
+    private void requireNotMapMode(String method) {
+        if (mapMode) {
+            throw new IllegalStateException(
+                    method + " cannot be called on a forMap() reader; "
+                            + "map mode auto-discovers columns from the header row");
+        }
     }
 
     /**
@@ -161,6 +217,7 @@ public class CsvReader<T> {
      * @return this reader for chaining
      */
     public CsvReader<T> column(BiConsumer<T, CellData> setter) {
+        requireNotMapMode("column(BiConsumer)");
         columns.add(new CsvReadColumn<>(setter));
         return this;
     }
@@ -174,6 +231,7 @@ public class CsvReader<T> {
      * @return this reader for chaining
      */
     public CsvReader<T> column(String headerName, BiConsumer<T, CellData> setter) {
+        requireNotMapMode("column(String, BiConsumer)");
         columns.add(new CsvReadColumn<>(headerName, setter));
         return this;
     }
@@ -187,6 +245,7 @@ public class CsvReader<T> {
      * @return this reader for chaining
      */
     public CsvReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
+        requireNotMapMode("columnAt(int, BiConsumer)");
         columns.add(new CsvReadColumn<>(null, columnIndex, setter));
         return this;
     }
@@ -197,6 +256,7 @@ public class CsvReader<T> {
      * @return this reader for chaining
      */
     public CsvReader<T> skipColumn() {
+        requireNotMapMode("skipColumn()");
         columns.add(new CsvReadColumn<>((instance, cellData) -> {}));
         return this;
     }
@@ -209,6 +269,7 @@ public class CsvReader<T> {
      * @throws IllegalArgumentException if {@code count} is negative
      */
     public CsvReader<T> skipColumns(int count) {
+        requireNotMapMode("skipColumns(int)");
         if (count < 0) {
             throw new IllegalArgumentException("skipColumns count must be non-negative");
         }

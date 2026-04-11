@@ -27,7 +27,7 @@ ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
 
 ### 3. Map Mode (No POJO)
 ```java
-new ExcelMapReader()
+ExcelReader.forMap()
     .build(inputStream)
     .read(result -> {
         Map<String, String> row = result.data();
@@ -145,7 +145,7 @@ CsvReader.<Product>mapping(row -> new Product(
 )).build(inputStream).read(result -> { ... });
 
 // Map mode
-new CsvMapReader().build(inputStream).read(result -> {
+CsvReader.forMap().build(inputStream).read(result -> {
     Map<String, String> row = result.data();
 });
 ```

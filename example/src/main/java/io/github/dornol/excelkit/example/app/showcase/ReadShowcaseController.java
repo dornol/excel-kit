@@ -3,7 +3,6 @@ package io.github.dornol.excelkit.example.app.showcase;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.example.app.common.DownloadFileType;
 import io.github.dornol.excelkit.example.app.common.DownloadUtil;
-import io.github.dornol.excelkit.excel.ExcelMapReader;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSheetInfo;
 import io.github.dornol.excelkit.shared.ExcelKitSchema;
@@ -131,7 +130,7 @@ public class ReadShowcaseController {
     public String readMap(MultipartFile file) throws IOException {
         try (InputStream is = file.getInputStream()) {
             List<Map<String, String>> results = new ArrayList<>();
-            new ExcelMapReader()
+            ExcelReader.forMap()
                     .build(is)
                     .read(r -> results.add(r.data()));
 

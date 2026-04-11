@@ -18,12 +18,12 @@ Not annotation-based — columns are defined programmatically via builder chains
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list(...).write(stream, out)` |
 | Read Excel (typed) | `ExcelReader<T>` | `.column("Name", T::setName).build(in).read(r -> ...)` |
-| Read Excel (map) | `ExcelMapReader` | `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))` |
+| Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 | Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString()))` |
 | Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).write(out)` |
 | Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream)` |
 | Read CSV | `CsvReader<T>` | `.column("Name", T::setName).build(in).read(r -> ...)` |
-| Read CSV (map) | `CsvMapReader` | `new CsvMapReader().build(in).read(r -> r.data().get("Name"))` |
+| Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 
 ## Detailed Documentation
 

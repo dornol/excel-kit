@@ -240,7 +240,7 @@ class V06FeaturesTest {
                     .write(out);
 
             List<Map<String, String>> results = new ArrayList<>();
-            new ExcelMapReader()
+            ExcelReader.forMap()
                     .build(new ByteArrayInputStream(out.toByteArray()))
                     .read(r -> results.add(r.data()));
 
@@ -265,7 +265,7 @@ class V06FeaturesTest {
                     .write(out);
 
             List<Map<String, String>> results = new ArrayList<>();
-            new ExcelMapReader()
+            ExcelReader.forMap()
                     .build(new ByteArrayInputStream(out.toByteArray()))
                     .read(r -> results.add(r.data()));
 
@@ -288,7 +288,7 @@ class V06FeaturesTest {
                     .write(out);
 
             List<Map<String, String>> results = new ArrayList<>();
-            new ExcelMapReader()
+            ExcelReader.forMap()
                     .headerRowIndex(1)
                     .build(new ByteArrayInputStream(out.toByteArray()))
                     .read(r -> results.add(r.data()));

@@ -1,8 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.csv.CsvDialect;
-import io.github.dornol.excelkit.csv.CsvMapReader;
 import io.github.dornol.excelkit.csv.CsvReadException;
+import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.shared.ReadResult;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -51,7 +51,7 @@ class MapWriterReaderTest {
         )).write(out);
 
         List<Map<String, String>> results = new ArrayList<>();
-        new ExcelMapReader()
+        ExcelReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(r -> results.add(r.data()));
 
@@ -70,7 +70,7 @@ class MapWriterReaderTest {
                 Map.of("Name", "Bob")
         )).write(out);
 
-        var results = new ExcelMapReader()
+        var results = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .readAsStream()
                 .toList();
@@ -93,7 +93,7 @@ class MapWriterReaderTest {
         }
 
         List<Map<String, String>> results = new ArrayList<>();
-        new ExcelMapReader()
+        ExcelReader.forMap()
                 .sheetIndex(1)
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(r -> results.add(r.data()));
@@ -173,7 +173,7 @@ class MapWriterReaderTest {
         )).write(out);
 
         List<ReadResult<Map<String, String>>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(results::add);
 
@@ -204,7 +204,7 @@ class MapWriterReaderTest {
         )).write(out);
 
         List<ReadResult<Map<String, String>>> results;
-        try (var stream = new CsvMapReader()
+        try (var stream = CsvReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .readAsStream()) {
             results = stream.toList();
@@ -222,7 +222,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapReader_readAsStream_closesResources() throws IOException {
         String csv = "Name\nAlice\n";
-        var handler = new CsvMapReader()
+        var handler = CsvReader.forMap()
                 .build(new ByteArrayInputStream(csv.getBytes()));
 
         try (var stream = handler.readAsStream()) {
@@ -237,7 +237,7 @@ class MapWriterReaderTest {
     void csvMapReader_withDelimiter() throws IOException {
         String tsv = "Name\tAge\nAlice\t30\nBob\t25\n";
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .delimiter('\t')
                 .build(new ByteArrayInputStream(tsv.getBytes()))
                 .read(r -> results.add(r.data()));
@@ -254,7 +254,7 @@ class MapWriterReaderTest {
     void csvMapReader_withDialect_TSV() throws IOException {
         String tsv = "Name\tAge\nAlice\t30\n";
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .dialect(CsvDialect.TSV)
                 .build(new ByteArrayInputStream(tsv.getBytes()))
                 .read(r -> results.add(r.data()));
@@ -268,7 +268,7 @@ class MapWriterReaderTest {
     void csvMapReader_withHeaderRowIndex() throws IOException {
         String csv = "skip this line\nName,Age\nAlice,30\n";
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .headerRowIndex(1)
                 .build(new ByteArrayInputStream(csv.getBytes()))
                 .read(r -> results.add(r.data()));
@@ -291,7 +291,7 @@ class MapWriterReaderTest {
 
         List<Long> progressCounts = new ArrayList<>();
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .onProgress(2, (count, total) -> progressCounts.add(count))
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(r -> results.add(r.data()));
@@ -314,7 +314,7 @@ class MapWriterReaderTest {
         )).write(out);
 
         List<ReadResult<Map<String, String>>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
                 .read(results::add);
 
@@ -340,7 +340,7 @@ class MapWriterReaderTest {
     void csvMapReader_emptyFile_throwsException() {
         String csv = "";
         assertThrows(CsvReadException.class, () ->
-                new CsvMapReader()
+                CsvReader.forMap()
                         .build(new ByteArrayInputStream(csv.getBytes()))
                         .read(r -> {}));
     }
@@ -349,7 +349,7 @@ class MapWriterReaderTest {
     void csvMapReader_headerOnly_returnsNoRows() throws IOException {
         String csv = "Name,Age\n";
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .build(new ByteArrayInputStream(csv.getBytes()))
                 .read(r -> results.add(r.data()));
 
@@ -358,15 +358,15 @@ class MapWriterReaderTest {
 
     @Test
     void csvMapReader_fewerDataColumnsThanHeaders() throws IOException {
-        // Row has fewer columns than header
+        // Row has fewer columns than header. Behavior preserved from the deleted CsvMapReader:
+        // the map is truncated at min(headerCount, cellCount), so trailing header keys are absent.
         String csv = "Name,Age,City\nAlice,30\n";
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .build(new ByteArrayInputStream(csv.getBytes()))
                 .read(r -> results.add(r.data()));
 
         assertEquals(1, results.size());
-        // Only mapped columns present
         assertEquals("Alice", results.get(0).get("Name"));
         assertEquals("30", results.get(0).get("Age"));
         assertFalse(results.get(0).containsKey("City"));
@@ -381,7 +381,7 @@ class MapWriterReaderTest {
         System.arraycopy(content, 0, csvBytes, bom.length, content.length);
 
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .build(new ByteArrayInputStream(csvBytes))
                 .read(r -> results.add(r.data()));
 
@@ -395,16 +395,16 @@ class MapWriterReaderTest {
     @Test
     void csvMapReader_onProgress_invalidInterval_throwsException() {
         assertThrows(IllegalArgumentException.class, () ->
-                new CsvMapReader().onProgress(0, (count, total) -> {}));
+                CsvReader.forMap().onProgress(0, (count, total) -> {}));
         assertThrows(IllegalArgumentException.class, () ->
-                new CsvMapReader().onProgress(-1, (count, total) -> {}));
+                CsvReader.forMap().onProgress(-1, (count, total) -> {}));
     }
 
     @Test
     void csvMapReader_preservesColumnOrder() throws IOException {
         String csv = "C,A,B\n3,1,2\n";
         List<Map<String, String>> results = new ArrayList<>();
-        new CsvMapReader()
+        CsvReader.forMap()
                 .build(new ByteArrayInputStream(csv.getBytes()))
                 .read(r -> results.add(r.data()));
 

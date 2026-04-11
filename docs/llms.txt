@@ -17,7 +17,7 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 - Write Excel (map): `ExcelWriter.forMap("Name", "Age").write(stream)`
 - Read Excel (setter): `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
 - Read Excel (mapping): `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).build(in)`
-- Read Excel (map): `new ExcelMapReader().build(in).read(r -> r.data().get("Name"))`
+- Read Excel (map): `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))`
 - Write CSV: `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)`
 - Read CSV: `new CsvReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
 
@@ -29,10 +29,10 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 - ExcelWriter.forMap(...) — write Map<String, Object> without typed POJOs (static factory on ExcelWriter)
 - ExcelTemplateWriter — write into existing Excel template files
 - ExcelReader<T> — streaming Excel reader (SAX-based)
-- ExcelMapReader — read Excel into Map<String, String>
+- ExcelReader.forMap() — read Excel into Map<String, String> (static factory on ExcelReader)
 - CsvWriter<T> — streaming CSV writer (CsvWriter.forMap(...) for map-based writing)
 - CsvReader<T> — CSV reader (OpenCSV-based)
-- CsvMapReader — map-based CSV reading
+- CsvReader.forMap() — map-based CSV reading (static factory on CsvReader)
 - ExcelKitSchema<T> — unified schema for both reading and writing
 - ExcelHandler / CsvHandler — consume-once output wrappers
 

@@ -506,22 +506,27 @@ class ExcelReaderBranchTest {
     }
 
     // ============================================================
-    // ExcelMapReader - exception in readAsStream producer
+    // ExcelReader.forMap() - exception in readAsStream producer
     // ============================================================
     @Nested
     class MapReaderStreamErrorTests {
 
         @Test
-        void readAsStream_nonExistentSheet_returnsEmptyStream() throws IOException {
+        void readAsStream_nonExistentSheet_throwsExcelReadException() throws IOException {
+            // v0.12.0 behavior change: ExcelReader.forMap() now surfaces a missing-sheet
+            // error via ExcelReadException (via readInternal's currentIndex check).
+            // The deleted ExcelMapReader silently returned an empty stream, which hid
+            // caller bugs where the sheet index was wrong.
             byte[] excel = writeSimpleExcel();
 
-            try (var stream = new ExcelMapReader()
-                    .sheetIndex(99)
-                    .build(new ByteArrayInputStream(excel))
-                    .readAsStream()) {
-                var results = stream.toList();
-                assertTrue(results.isEmpty(), "Non-existent sheet should return empty stream");
-            }
+            assertThrows(ExcelReadException.class, () -> {
+                try (var stream = ExcelReader.forMap()
+                        .sheetIndex(99)
+                        .build(new ByteArrayInputStream(excel))
+                        .readAsStream()) {
+                    stream.toList();
+                }
+            });
         }
     }
 
