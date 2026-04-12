@@ -50,6 +50,7 @@ public class ExcelSheetWriter<T> {
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private int maxRows = Integer.MAX_VALUE;
+    private boolean written = false;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -403,6 +404,10 @@ public class ExcelSheetWriter<T> {
      * @param stream the data stream to write
      */
     public void write(Stream<T> stream) {
+        if (written) {
+            throw new ExcelWriteException("write() has already been called on this sheet");
+        }
+        written = true;
         if (columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }

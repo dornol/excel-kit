@@ -188,4 +188,17 @@ class ExcelSheetWriterEdgeCaseTest {
                     "Data should be written even with autoWidthSampleRows=0");
         }
     }
+
+    @Test
+    void write_calledTwice_shouldThrow() {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            ExcelSheetWriter<Item> sw = wb.sheet("test");
+            sw.column("Name", Item::name);
+            sw.write(Stream.of(new Item("A", 1)));
+
+            assertThrows(ExcelWriteException.class,
+                    () -> sw.write(Stream.of(new Item("B", 2))),
+                    "Second write() call should throw");
+        }
+    }
 }
