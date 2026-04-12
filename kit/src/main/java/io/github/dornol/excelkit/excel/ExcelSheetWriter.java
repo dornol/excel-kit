@@ -433,7 +433,7 @@ public class ExcelSheetWriter<T> {
                     allSheets.add(activeSheet);
                     cursor.initRow();
                     ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
-                    ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle);
+                    ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
                 }

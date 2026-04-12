@@ -453,7 +453,14 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             for (int i = 0; i < columns.size(); i++) {
                 int actualIndex = resolvedIndices[i];
-                if (actualIndex >= currentRow.size()) continue;
+                if (actualIndex >= currentRow.size()) {
+                    if (columns.get(i).isRequired()) {
+                        String header = (actualIndex < headerNames.size()) ? headerNames.get(actualIndex) : "column#" + actualIndex;
+                        getOrCreateMessages().add("Required column '" + header + "' is empty");
+                        success = false;
+                    }
+                    continue;
+                }
 
                 if (!mapColumn(columns.get(i), currentInstance, currentRow.get(actualIndex),
                         actualIndex, headerNames, getOrCreateMessages())) {

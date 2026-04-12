@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.core;
 
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.excel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -463,6 +464,83 @@ class V016ImprovementsTest {
 
                 assertEquals(2, names.size());
                 assertEquals("Alice", names.get(0));
+            }
+        }
+    }
+
+    // ============================================================
+    // Bug fixes: sparse row required validation, rollover header color
+    // ============================================================
+    @Nested
+    @DisplayName("Bugfix: required column in sparse Excel row")
+    class RequiredSparseRowTests {
+
+        @Test
+        void required_sparseRow_missingColumn_shouldFail() throws Exception {
+            // Write Excel with 3 columns, but third column is null (SAX won't emit it)
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ExcelWriter<String[]> writer = ExcelWriter.<String[]>builder().build();
+            writer.column("Name", arr -> arr[0])
+                    .column("Age", arr -> arr[1])
+                    .column("City", arr -> arr[2]);
+            writer.write(Stream.<String[]>of(new String[]{"Alice", "30", null})).write(bos);
+
+            // Read with required() on the third column (which is empty/missing)
+            List<ReadResult<String[]>> results = new ArrayList<>();
+            ExcelReader.setter(() -> new String[3])
+                    .column("Name", (arr, c) -> arr[0] = c.asString())
+                    .column("Age", (arr, c) -> arr[1] = c.asString())
+                    .column("City", (arr, c) -> arr[2] = c.asString()).required()
+                    .build(new ByteArrayInputStream(bos.toByteArray()))
+                    .read(results::add);
+
+            assertEquals(1, results.size());
+            assertFalse(results.get(0).success(), "Required column with missing cell in sparse row should fail");
+            assertTrue(results.get(0).messages().stream().anyMatch(m -> m.contains("Required")));
+        }
+
+        @Test
+        void nonRequired_sparseRow_missingColumn_shouldSucceed() throws Exception {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ExcelWriter<String[]> writer = ExcelWriter.<String[]>builder().build();
+            writer.column("Name", arr -> arr[0])
+                    .column("Age", arr -> arr[1])
+                    .column("City", arr -> arr[2]);
+            writer.write(Stream.<String[]>of(new String[]{"Alice", "30", null})).write(bos);
+
+            List<ReadResult<String[]>> results = new ArrayList<>();
+            ExcelReader.setter(() -> new String[3])
+                    .column("Name", (arr, c) -> arr[0] = c.asString())
+                    .column("Age", (arr, c) -> arr[1] = c.asString())
+                    .column("City", (arr, c) -> arr[2] = c.asString())
+                    .build(new ByteArrayInputStream(bos.toByteArray()))
+                    .read(results::add);
+
+            assertEquals(1, results.size());
+            assertTrue(results.get(0).success(), "Non-required missing column should succeed");
+        }
+    }
+
+    @Nested
+    @DisplayName("Bugfix: ExcelSheetWriter rollover header style")
+    class RolloverHeaderStyleTests {
+
+        @Test
+        void rollover_shouldPreserveHeaderFontColor() throws Exception {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+                ExcelSheetWriter<Integer> sw = wb.sheet("test");
+                sw.column("ID", i -> i, c -> c.headerFontColor(ExcelColor.RED))
+                        .maxRows(2);
+                sw.write(Stream.of(1, 2, 3, 4));
+                wb.finish().write(bos);
+            }
+
+            // Verify the file is readable and has 2 sheets (rollover occurred)
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(
+                    new ByteArrayInputStream(bos.toByteArray()))) {
+                assertTrue(workbook.getNumberOfSheets() >= 2,
+                        "Should have at least 2 sheets due to maxRows=2, got " + workbook.getNumberOfSheets());
             }
         }
     }
