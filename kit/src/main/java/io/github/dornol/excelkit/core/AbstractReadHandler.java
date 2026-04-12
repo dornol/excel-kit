@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -134,31 +135,32 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @throws ReadAbortException if any row fails validation or mapping
      */
     public void readStrict(Consumer<T> consumer) {
-        final long[] rowNum = {0};
+        AtomicLong rowNum = new AtomicLong(0);
         read(result -> {
-            rowNum[0]++;
+            long row = rowNum.incrementAndGet();
             if (!result.success()) {
                 String detail = (result.messages() != null && !result.messages().isEmpty())
                         ? String.join("; ", result.messages()) : "Unknown error";
-                throw new ReadAbortException("Row " + rowNum[0] + " read failed: " + detail);
+                throw new ReadAbortException("Row " + row + " read failed: " + detail);
             }
             consumer.accept(result.data());
         });
     }
 
     /**
-     * Reads the file and returns a stream of row results.
+     * Reads the file and returns a lazy stream of row results.
      * <p>
-     * This method collects all results into a list and returns a stream over them.
-     * The underlying file resources are closed before the stream is returned.
+     * <strong>Important:</strong> The returned stream holds file and thread resources.
+     * Always use try-with-resources to ensure proper cleanup:
+     * <pre>{@code
+     * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
+     *     stream.forEach(result -> ...);
+     * }
+     * }</pre>
      *
      * @return A stream of parsed and validated row results
      */
-    public Stream<ReadResult<T>> readAsStream() {
-        List<ReadResult<T>> results = new ArrayList<>();
-        read(results::add);
-        return results.stream();
-    }
+    public abstract Stream<ReadResult<T>> readAsStream();
 
     /**
      * Validates the given instance using Bean Validation (if a validator is configured).
@@ -239,6 +241,27 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             log.warn("Column mapping failed for '{}': value='{}'", header, cellData.formattedValue(), e);
             return false;
         }
+    }
+
+    /**
+     * Maps a single column value to the instance, with required-field validation.
+     *
+     * @param column      The column definition (includes required flag)
+     * @param instance    The target object
+     * @param cellData    The cell data to set
+     * @param columnIndex The column index (for error reporting)
+     * @param headerNames The header names (for error reporting)
+     * @param messages    A mutable list to collect error messages
+     * @return {@code true} if mapping succeeded, {@code false} if an error occurred
+     */
+    protected boolean mapColumn(ReadColumn<T> column, T instance, CellData cellData,
+                                int columnIndex, List<String> headerNames, List<String> messages) {
+        if (column.isRequired() && cellData.isEmpty()) {
+            String header = (columnIndex < headerNames.size()) ? headerNames.get(columnIndex) : "column#" + columnIndex;
+            messages.add("Required column '" + header + "' is empty");
+            return false;
+        }
+        return mapColumn(column.setter(), instance, cellData, columnIndex, headerNames, messages);
     }
 
     /**

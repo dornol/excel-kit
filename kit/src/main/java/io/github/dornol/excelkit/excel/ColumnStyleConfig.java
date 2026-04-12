@@ -78,6 +78,9 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable String groupName;
     int outlineLevel;
 
+    // ── Null handling ──
+    @Nullable Object nullValue;
+
     // Return self for fluent chaining
     private SELF self() {
         return (SELF) this;
@@ -537,6 +540,24 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     }
 
     /**
+     * Sets the default value to write when the column function returns {@code null}.
+     * <p>
+     * Without this, null values produce empty cells. With a null value set,
+     * the specified value is written instead.
+     *
+     * <pre>{@code
+     * writer.column("Status", Item::getStatus, c -> c.nullValue("N/A"));
+     * }</pre>
+     *
+     * @param value the value to write for null cells (e.g., "N/A", 0, "-")
+     * @return this instance for chaining
+     */
+    public SELF nullValue(Object value) {
+        this.nullValue = value;
+        return self();
+    }
+
+    /**
      * Sets advanced data validation for this column.
      *
      * @param validation the validation configuration
@@ -571,6 +592,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         if (this.wrapText == null) this.wrapText = defaults.wrapText;
         if (this.fontName == null) this.fontName = defaults.fontName;
         if (this.indentation == null) this.indentation = defaults.indentation;
+        if (this.nullValue == null) this.nullValue = defaults.nullValue;
         if (!this.alignmentSet && defaults.alignmentSet) {
             this.alignment = defaults.alignment;
             this.alignmentSet = true;

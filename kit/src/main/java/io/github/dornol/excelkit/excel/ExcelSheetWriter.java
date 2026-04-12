@@ -199,6 +199,16 @@ public class ExcelSheetWriter<T> {
         return this;
     }
 
+    /** Freezes the specified number of columns and rows.
+     * @param cols number of columns to freeze from the left
+     * @param rows number of rows to freeze
+     * @return this writer for chaining */
+    public ExcelSheetWriter<T> freezePane(int cols, int rows) {
+        this.cfg.freezePaneCols = cols;
+        this.cfg.freezePaneRows = rows;
+        return this;
+    }
+
     /** Registers a callback that writes content before the header row.
      * @param writer the before-header writer callback
      * @return this writer for chaining */
@@ -407,7 +417,7 @@ public class ExcelSheetWriter<T> {
 
         ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
         int headerRowIdx = cursor.getRowOfSheet() - 1;
-        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
+        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
 
         SXSSFSheet activeSheet = this.sheet;
 
@@ -425,7 +435,7 @@ public class ExcelSheetWriter<T> {
                     ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
                     ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
-                    ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
+                    ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
                 }
                 ExcelWriteSupport.writeRowCells(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
@@ -477,7 +487,7 @@ public class ExcelSheetWriter<T> {
                 c.minWidth, c.maxWidth, c.fixedWidth, c.dropdownOptions,
                 c.cellColorFunction, c.groupName, c.outlineLevel,
                 c.commentFunction, c.borderStyle, c.locked, c.hidden, c.validation,
-                c.headerFontColor);
+                c.headerFontColor, c.nullValue);
     }
 
 }

@@ -29,11 +29,13 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -63,6 +65,8 @@ import java.util.stream.StreamSupport;
  * @since 2025-07-19
  */
 public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExcelReadHandler.class);
+
     private final @Nullable List<ReadColumn<T>> columns;
     private final int sheetIndex;
     private final int headerRowIndex;
@@ -173,9 +177,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     public void read(Consumer<ReadResult<T>> consumer) {
         try {
             readInternal(consumer);
-        } catch (ExcelReadException e) {
-            throw e;
-        } catch (ReadAbortException e) {
+        } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException("Failed to read excel", e);
@@ -396,12 +398,21 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         /**
-         * Extracts header names from the first row.
+         * Extracts header names from the first row and warns about duplicates.
          */
         private void extractHeaderNames() {
-            headerNames.addAll(currentRow.stream()
+            List<String> names = currentRow.stream()
                     .map(CellData::formattedValue)
-                    .toList());
+                    .toList();
+            headerNames.addAll(names);
+
+            Set<String> seen = new HashSet<>();
+            for (String name : names) {
+                if (name != null && !seen.add(name)) {
+                    log.warn("Duplicate header name '{}' found in sheet (headerRowIndex={}). "
+                            + "Only the first occurrence will be used in mapping mode.", name, headerRowIndex);
+                }
+            }
         }
 
         /**
@@ -444,7 +455,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 int actualIndex = resolvedIndices[i];
                 if (actualIndex >= currentRow.size()) continue;
 
-                if (!mapColumn(columns.get(i).setter(), currentInstance, currentRow.get(actualIndex),
+                if (!mapColumn(columns.get(i), currentInstance, currentRow.get(actualIndex),
                         actualIndex, headerNames, getOrCreateMessages())) {
                     success = false;
                 }

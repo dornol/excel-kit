@@ -24,6 +24,7 @@ class SheetConfig<T> {
 
     float rowHeightInPoints = DEFAULT_ROW_HEIGHT_POINTS;
     boolean autoFilter = false;
+    int freezePaneCols = 0;
     int freezePaneRows = 0;
     @Nullable BeforeHeaderWriter beforeHeaderWriter;
     @Nullable AfterDataWriter afterDataWriter;

@@ -293,6 +293,29 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Sets the number of columns and rows to freeze.
+     * <p>
+     * Columns are frozen from the left edge, rows are frozen below the header row.
+     * This is useful for data entry forms and ledgers where both ID columns and
+     * header rows should remain visible while scrolling.
+     *
+     * @param cols Number of columns to freeze from the left (must be non-negative)
+     * @param rows Number of rows to freeze below the header (must be non-negative)
+     * @return Current ExcelWriter instance for chaining
+     */
+    public ExcelWriter<T> freezePane(int cols, int rows) {
+        if (cols < 0) {
+            throw new IllegalArgumentException("freezePaneCols must be non-negative");
+        }
+        if (rows < 0) {
+            throw new IllegalArgumentException("freezePaneRows must be non-negative");
+        }
+        this.cfg.freezePaneCols = cols;
+        this.cfg.freezePaneRows = rows;
+        return this;
+    }
+
+    /**
      * Registers a callback that writes custom content before the column header row.
      * <p>
      * The callback is invoked on every sheet, including rollover sheets,
@@ -823,7 +846,7 @@ public class ExcelWriter<T> {
      */
     private void applySheetOptions() {
         int headerRowIdx = cursor.getRowOfSheet() - 1;
-        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
+        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
     }
 
     /**

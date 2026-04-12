@@ -176,12 +176,12 @@ class ExcelWriteSupport {
     }
 
     static void applySheetOptions(SXSSFSheet sheet, int headerRowIdx,
-                                   boolean autoFilter, int freezePaneRows, int columnCount) {
+                                   boolean autoFilter, int freezePaneCols, int freezePaneRows, int columnCount) {
         if (autoFilter) {
             sheet.setAutoFilter(new CellRangeAddress(headerRowIdx, headerRowIdx, 0, columnCount - 1));
         }
-        if (freezePaneRows > 0) {
-            sheet.createFreezePane(0, headerRowIdx + freezePaneRows);
+        if (freezePaneCols > 0 || freezePaneRows > 0) {
+            sheet.createFreezePane(freezePaneCols, headerRowIdx + freezePaneRows);
         }
     }
 

@@ -310,6 +310,22 @@ public class CsvReader<T> {
     }
 
     /**
+     * Marks the last registered column as required.
+     * A required column produces a validation error if its cell value is blank or empty.
+     *
+     * @return this reader for chaining
+     * @throws IllegalStateException if no columns have been registered
+     */
+    public CsvReader<T> required() {
+        if (columns.isEmpty()) {
+            throw new IllegalStateException("required() must be called after column()");
+        }
+        int lastIndex = columns.size() - 1;
+        columns.set(lastIndex, columns.get(lastIndex).required());
+        return this;
+    }
+
+    /**
      * Skips one column during reading by registering a no-op mapping.
      *
      * @return this reader for chaining

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.regex.Pattern;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -35,6 +36,7 @@ import java.util.function.Function;
  */
 public record CellData(int columnIndex, @Nullable String formattedValue) {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
+    private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$,₩€%원]");
     private static volatile Locale defaultLocale = Locale.getDefault();
 
     /**
@@ -176,9 +178,9 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
 
         try {
             // Remove NBSP, currency symbols, and whitespace
-            String cleaned = formattedValue
-                    .replace("\u00A0", " ")
-                    .replaceAll("[$,₩€%원]", "")
+            String cleaned = CURRENCY_SYMBOLS.matcher(
+                    formattedValue.replace("\u00A0", " "))
+                    .replaceAll("")
                     .replace(" ", "")
                     .trim();
 

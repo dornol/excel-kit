@@ -50,19 +50,21 @@ public class ExcelColumn<T> {
     private final boolean hidden;
     private final @Nullable ExcelValidation validation;
     private final int @Nullable [] headerFontColor;
+    private final @Nullable Object nullValue;
     private int columnWidth = 1;
 
     static <T> ExcelColumn<T> of(String name, RowFunction<T, @Nullable Object> function,
                                   @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
         return new ExcelColumn<>(name, function, style, columnSetter,
-                0, 0, false, null, null, null, 0, null, null, null, false, null, null);
+                0, 0, false, null, null, null, 0, null, null, null, false, null, null, null);
     }
 
     ExcelColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
-                boolean hidden, @Nullable ExcelValidation validation, int @Nullable [] headerFontColor) {
+                boolean hidden, @Nullable ExcelValidation validation, int @Nullable [] headerFontColor,
+                @Nullable Object nullValue) {
         this.name = name;
         this.function = function;
         this.style = style;
@@ -80,6 +82,7 @@ public class ExcelColumn<T> {
         this.hidden = hidden;
         this.validation = validation;
         this.headerFontColor = headerFontColor;
+        this.nullValue = nullValue;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
 
@@ -129,8 +132,12 @@ public class ExcelColumn<T> {
      */
     void setColumnData(SXSSFCell cell, @Nullable Object columnData) {
         if (columnData == null) {
-            cell.setCellValue("");
-            return;
+            if (nullValue != null) {
+                columnData = nullValue;
+            } else {
+                cell.setCellValue("");
+                return;
+            }
         }
         try {
             this.columnSetter.set(cell, columnData);
@@ -270,7 +277,7 @@ public class ExcelColumn<T> {
                     this.minWidth, this.maxWidth, this.fixedWidth, this.dropdownOptions,
                     this.cellColorFunction, this.groupName, this.outlineLevel,
                     this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation,
-                    this.headerFontColor);
+                    this.headerFontColor, this.nullValue);
         }
 
     }

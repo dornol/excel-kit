@@ -317,6 +317,31 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Marks the last registered column as required.
+     * <p>
+     * A required column will produce a validation error if its cell value is blank or empty.
+     *
+     * <pre>{@code
+     * ExcelReader.setter(Person::new)
+     *     .column("Name", (p, c) -> p.setName(c.asString())).required()
+     *     .column("Age", (p, c) -> p.setAge(c.asInt()))
+     *     .build(inputStream)
+     *     .read(result -> { ... });
+     * }</pre>
+     *
+     * @return this reader for chaining
+     * @throws IllegalStateException if no columns have been registered
+     */
+    public ExcelReader<T> required() {
+        if (columns.isEmpty()) {
+            throw new IllegalStateException("required() must be called after column()");
+        }
+        int lastIndex = columns.size() - 1;
+        columns.set(lastIndex, columns.get(lastIndex).required());
+        return this;
+    }
+
+    /**
      * Skips one column during reading by registering a no-op mapping at the next
      * positional slot.
      *

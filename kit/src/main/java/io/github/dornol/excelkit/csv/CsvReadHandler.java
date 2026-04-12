@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -123,9 +124,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     }
                 }
             }
-        } catch (CsvReadException e) {
-            throw e;
-        } catch (ReadAbortException e) {
+        } catch (CsvReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new CsvReadException("Failed to read CSV", e);
@@ -149,8 +148,9 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
      */
     @Override
     public Stream<ReadResult<T>> readAsStream() {
+        CSVReader reader = null;
         try {
-            CSVReader reader = buildCsvReader();
+            reader = buildCsvReader();
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);
             if (headerLine == null) {
@@ -163,15 +163,16 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
             final int[] resolvedIndices = mappingMode ? null : resolveIndices();
             final Map<String, Integer> headerIndexMap = mappingMode ? buildHeaderIndexMap() : null;
 
-            final long[] streamRowCount = {0};
+            final CSVReader csvReader = reader;
+            final AtomicLong streamRowCount = new AtomicLong(0);
             Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
                     Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
                 @Override
                 public boolean tryAdvance(Consumer<? super ReadResult<T>> action) {
                     try {
-                        String[] line = reader.readNext();
+                        String[] line = csvReader.readNext();
                         if (line == null) {
-                            closeQuietly(reader);
+                            closeQuietly(csvReader);
                             close();
                             return false;
                         }
@@ -179,29 +180,32 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                                 ? processRowMapping(line, headerIndexMap)
                                 : processRow(line, resolvedIndices);
                         action.accept(result);
-                        streamRowCount[0]++;
+                        long count = streamRowCount.incrementAndGet();
                         if (progressCallback != null && progressInterval > 0
-                                && streamRowCount[0] % progressInterval == 0) {
-                            progressCallback.onProgress(streamRowCount[0], null);
+                                && count % progressInterval == 0) {
+                            progressCallback.onProgress(count, null);
                         }
                         return true;
                     } catch (Exception e) {
-                        closeQuietly(reader);
+                        closeQuietly(csvReader);
                         close();
                         throw new CsvReadException("Failed to read CSV row", e);
                     }
                 }
             };
 
+            reader = null; // ownership transferred to spliterator/onClose
             return StreamSupport.stream(spliterator, false)
                     .onClose(() -> {
-                        closeQuietly(reader);
+                        closeQuietly(csvReader);
                         close();
                     });
         } catch (CsvReadException e) {
+            closeQuietly(reader);
             close();
             throw e;
         } catch (Exception e) {
+            closeQuietly(reader);
             close();
             throw new CsvReadException("Failed to initialize CSV reading", e);
         }
@@ -218,7 +222,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         for (int i = 0; i < columns.size(); i++) {
             int actualIndex = resolvedIndices[i];
             String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
-            if (!mapColumn(columns.get(i).setter(), currentInstance, new CellData(actualIndex, columnValue),
+            if (!mapColumn(columns.get(i), currentInstance, new CellData(actualIndex, columnValue),
                     actualIndex, headerNames, messages)) {
                 success = false;
             }
@@ -270,7 +274,8 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         );
     }
 
-    private void closeQuietly(CSVReader reader) {
+    private void closeQuietly(@Nullable CSVReader reader) {
+        if (reader == null) return;
         try {
             reader.close();
         } catch (Exception e) {
