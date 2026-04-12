@@ -432,7 +432,9 @@ public class ExcelSheetWriter<T> {
                     activeSheet = createRolloverSheet(allSheets.size());
                     allSheets.add(activeSheet);
                     cursor.initRow();
-                    ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
+                    int preambleRow = ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
+                    cursor.setRowOfSheet(preambleRow);
+                    headerRowIndex = preambleRow;
                     ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());

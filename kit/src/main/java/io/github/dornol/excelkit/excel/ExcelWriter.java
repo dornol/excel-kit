@@ -867,7 +867,9 @@ public class ExcelWriter<T> {
         if (isOverMaxRows()) {
             ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
             turnOverSheet();
-            ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
+            int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
+            cursor.setRowOfSheet(preambleRow);
+            headerRowIndex = preambleRow;
             ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
             applySheetOptions();
         }

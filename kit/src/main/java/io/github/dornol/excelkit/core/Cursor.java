@@ -49,6 +49,16 @@ public class Cursor {
     }
 
     /**
+     * Sets the current sheet's row index to the given value.
+     * Used when sheet preamble (beforeHeader) writes rows that shift the starting position.
+     *
+     * @param row the new row index
+     */
+    public void setRowOfSheet(int row) {
+        this.rowOfSheet = row;
+    }
+
+    /**
      * Increments the total number of processed rows (across all sheets) by 1.
      */
     public void plusTotal() {
