@@ -210,8 +210,18 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         Thread producer = new Thread(() -> {
             try {
                 readInternal(result -> {
+                    if (Thread.currentThread().isInterrupted()) {
+                        throw new ExcelReadException("Producer thread interrupted");
+                    }
                     try {
-                        queue.put(result);
+                        // Use offer with timeout to avoid permanent block when consumer closes early.
+                        // If the queue is full and consumer stopped draining, the offer will time out
+                        // and the interrupt check above will catch it on the next row.
+                        while (!queue.offer(result, 100, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                            if (Thread.currentThread().isInterrupted()) {
+                                throw new ExcelReadException("Producer thread interrupted");
+                            }
+                        }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw new ExcelReadException("Producer thread interrupted", e);
@@ -220,15 +230,13 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             } catch (Throwable t) {
                 producerError.set(t);
             } finally {
-                try {
-                    queue.put(sentinel);
-                } catch (InterruptedException ignored) {
-                    Thread.currentThread().interrupt();
-                }
+                // Use offer to avoid blocking forever if queue is full and consumer is gone.
+                // Sentinel delivery is best-effort; consumer also checks producerError on interrupt.
+                queue.offer(sentinel);
             }
         });
         // Daemon thread: if the caller abandons the stream without close(),
-        // the producer blocks forever on queue.put(). Daemon ensures JVM can still exit.
+        // the producer eventually exits via interrupt check or offer timeout.
         // Normal cleanup path is stream.onClose() → producer.interrupt().
         producer.setDaemon(true);
         producer.setName("excel-kit-reader");

@@ -116,6 +116,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
                 Files.copy(is, getTempFile(), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
+            // Clean up partially created temp resources before rethrowing
+            close();
             throw new ExcelKitException("Failed to initialize temporary file", e);
         }
     }
