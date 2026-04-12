@@ -96,7 +96,29 @@ public class ExcelWriter<T> {
      * @since 0.11.0
      */
     public static ExcelWriter<Map<String, Object>> forMap(String... columnNames) {
-        ExcelWriter<Map<String, Object>> writer = ExcelWriter.<Map<String, Object>>builder().build();
+        return forMap(ExcelWriter.<Map<String, Object>>builder(), columnNames);
+    }
+
+    /**
+     * Creates a map-valued ExcelWriter using a pre-configured builder for color,
+     * maxRows, or rowAccessWindowSize.
+     *
+     * <pre>{@code
+     * ExcelWriter.forMap(
+     *         ExcelWriter.<Map<String, Object>>builder().color(ExcelColor.STEEL_BLUE).maxRows(500_000),
+     *         "Name", "Age", "City")
+     *     .autoFilter(true)
+     *     .write(stream)
+     *     .write(out);
+     * }</pre>
+     *
+     * @param builder     a pre-configured builder (color, maxRows, rowAccessWindowSize)
+     * @param columnNames the column names (used as both header labels and map keys)
+     * @return a new ExcelWriter with the columns registered
+     * @since 0.13.0
+     */
+    public static ExcelWriter<Map<String, Object>> forMap(Builder<Map<String, Object>> builder, String... columnNames) {
+        ExcelWriter<Map<String, Object>> writer = builder.build();
         for (String name : columnNames) {
             writer.column(name, map -> map.get(name));
         }

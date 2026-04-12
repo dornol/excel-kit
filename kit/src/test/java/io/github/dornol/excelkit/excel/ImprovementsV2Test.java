@@ -149,7 +149,7 @@ class ImprovementsV2Test {
     @Test
     void autoWidthSampleRows_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<String>sheet("Test")
                     .autoWidthSampleRows(10)
                     .column("Name", s -> s)

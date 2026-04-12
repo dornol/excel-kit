@@ -5,7 +5,7 @@
 ## Multi-Sheet Workbook
 
 ```java
-try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
     wb.headerFontName("Arial").headerFontSize(12);
 
     wb.<User>sheet("Users")

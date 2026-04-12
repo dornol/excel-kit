@@ -21,7 +21,7 @@ class ExcelWorkbookTest {
     @Test
     void multiSheet_shouldCreateSeparateSheets() throws IOException {
         // Arrange & Act
-        ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE);
+        ExcelWorkbook workbook = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build();
 
         workbook.<String>sheet("Users")
                 .column("Name", s -> s)
@@ -46,7 +46,7 @@ class ExcelWorkbookTest {
     @Test
     void multiSheet_shouldHaveCorrectSheetNames() {
         // Arrange & Act
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Sheet A")
                 .column("Col", s -> s)
@@ -71,7 +71,7 @@ class ExcelWorkbookTest {
 
     @Test
     void duplicateSheetName_shouldThrow() {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Users")
                 .column("Name", s -> s)
@@ -85,7 +85,7 @@ class ExcelWorkbookTest {
 
     @Test
     void finishedWorkbook_shouldRejectNewSheets() {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .column("Col", s -> s)
@@ -99,7 +99,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetWriter_shouldSupportDropdown() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Config")
                 .column("Name", s -> s)
@@ -117,7 +117,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetWriter_shouldSupportRowColor() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .column("Name", s -> s)
@@ -135,7 +135,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetWriter_shouldSupportBeforeHeaderAndAfterData() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .beforeHeader(ctx -> {
@@ -160,7 +160,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetWriter_noColumns_shouldThrow() {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         ExcelSheetWriter<String> sheetWriter = workbook.<String>sheet("Empty");
 
@@ -172,7 +172,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetWriter_shouldSupportColumnConfig() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Styled")
                 .column("Name", s -> s, c -> c.bold(true).fontSize(14))
@@ -191,7 +191,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetWriter_shouldSupportAutoFilterAndFreezePane() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Filtered")
                 .column("Col", s -> s)
@@ -210,7 +210,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetWriter_shouldSupportConstColumn() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Const")
                 .column("Name", s -> s)
@@ -228,7 +228,7 @@ class ExcelWorkbookTest {
 
     @Test
     void sheetContext_shouldProvideCorrectSheetInCallbacks() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
         SheetContext[] beforeCtx = new SheetContext[1];
         SheetContext[] afterCtx = new SheetContext[1];
 
@@ -267,7 +267,7 @@ class ExcelWorkbookTest {
 
     @Test
     void multiSheet_shouldProvideCorrectSheetContextPerSheet() throws IOException {
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
         SheetContext[] ctx1 = new SheetContext[1];
         SheetContext[] ctx2 = new SheetContext[1];
 
@@ -311,7 +311,7 @@ class ExcelWorkbookTest {
 
     @Test
     void defaultConstructor_createsWorkbook() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -323,7 +323,7 @@ class ExcelWorkbookTest {
 
     @Test
     void customColorConstructor_createsWorkbook() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.of(100, 150, 200))) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.of(100, 150, 200)).build()) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -335,7 +335,7 @@ class ExcelWorkbookTest {
 
     @Test
     void customColorWithWindowSizeConstructor_createsWorkbook() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.of(100, 150, 200), 500)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.of(100, 150, 200)).rowAccessWindowSize(500).build()) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -347,7 +347,7 @@ class ExcelWorkbookTest {
 
     @Test
     void colorConstructor_createsWorkbook() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.LIGHT_BLUE)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.LIGHT_BLUE).build()) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -359,7 +359,7 @@ class ExcelWorkbookTest {
 
     @Test
     void colorWithWindowSizeConstructor_createsWorkbook() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE, 2000)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).rowAccessWindowSize(2000).build()) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -375,7 +375,7 @@ class ExcelWorkbookTest {
 
     @Test
     void protectWorkbook_chainsCorrectly() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             ExcelWorkbook result = wb.protectWorkbook("password123");
             assertSame(wb, result);
         }
@@ -383,7 +383,7 @@ class ExcelWorkbookTest {
 
     @Test
     void protectWorkbook_producesValidOutput() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.protectWorkbook("secret");
             wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
@@ -400,7 +400,7 @@ class ExcelWorkbookTest {
 
     @Test
     void headerFontName_chainsCorrectly() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             ExcelWorkbook result = wb.headerFontName("Arial");
             assertSame(wb, result);
         }
@@ -408,7 +408,7 @@ class ExcelWorkbookTest {
 
     @Test
     void headerFontSize_chainsCorrectly() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             ExcelWorkbook result = wb.headerFontSize(14);
             assertSame(wb, result);
         }
@@ -416,21 +416,21 @@ class ExcelWorkbookTest {
 
     @Test
     void headerFontSize_zero_throws() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             assertThrows(IllegalArgumentException.class, () -> wb.headerFontSize(0));
         }
     }
 
     @Test
     void headerFontSize_negative_throws() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             assertThrows(IllegalArgumentException.class, () -> wb.headerFontSize(-1));
         }
     }
 
     @Test
     void headerFont_producesValidOutput() throws IOException {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.headerFontName("Arial").headerFontSize(16);
             wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
@@ -447,14 +447,14 @@ class ExcelWorkbookTest {
 
     @Test
     void close_beforeFinish_doesNotThrow() {
-        ExcelWorkbook wb = new ExcelWorkbook();
+        ExcelWorkbook wb = ExcelWorkbook.builder().build();
         wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
         assertDoesNotThrow(wb::close);
     }
 
     @Test
     void close_afterFinish_doesNotThrow() throws IOException {
-        ExcelWorkbook wb = new ExcelWorkbook();
+        ExcelWorkbook wb = ExcelWorkbook.builder().build();
         wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
         ExcelHandler handler = wb.finish();
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -466,7 +466,7 @@ class ExcelWorkbookTest {
 
     @Test
     void close_multipleTimes_doesNotThrow() {
-        ExcelWorkbook wb = new ExcelWorkbook();
+        ExcelWorkbook wb = ExcelWorkbook.builder().build();
         assertDoesNotThrow(wb::close);
         assertDoesNotThrow(wb::close);
     }

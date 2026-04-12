@@ -121,7 +121,7 @@ class ChartTest {
     @Test
     void chart_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Product>sheet("Products")
                     .column("Name", Product::name)
                     .column("Sales", p -> p.sales, c -> c.type(ExcelDataType.INTEGER))

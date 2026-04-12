@@ -151,7 +151,7 @@ class ComprehensiveFeatureTest {
     @Test
     void rollover_withFreezePane_shouldApplyToAllSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Data")
                     .maxRows(2)
                     .freezePane(1)
@@ -173,7 +173,7 @@ class ComprehensiveFeatureTest {
     @Test
     void rollover_withAutoFilter_shouldApplyToAllSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Data")
                     .maxRows(2)
                     .autoFilter(true)
@@ -329,7 +329,7 @@ class ComprehensiveFeatureTest {
     @Test
     void outline_withRollover_shouldApplyToAllSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Data")
                     .maxRows(2)
                     .column("A", i -> i, c -> c.outline(1))
@@ -422,7 +422,7 @@ class ComprehensiveFeatureTest {
     @Test
     void columnIf_withRollover_shouldApplyConsistently() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Data")
                     .maxRows(2)
                     .column("A", i -> i)

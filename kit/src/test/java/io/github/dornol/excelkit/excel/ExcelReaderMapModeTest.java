@@ -113,7 +113,7 @@ class ExcelReaderMapModeTest {
         void forMap_headerRowIndex_skipsRowsBeforeHeader() throws IOException {
             // Build a file where headers are on row 2 (rowNum=2). Use ExcelWorkbook for custom placement.
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String[]>sheet("Sheet1")
                         .beforeHeader(ctx -> {
                             var sheet = ctx.getSheet();
@@ -416,7 +416,7 @@ class ExcelReaderMapModeTest {
         @DisplayName("sheetIndex(1) reads the second sheet, not the first")
         void sheetIndex_selectsSecondSheet() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<Map<String, Object>>sheet("First")
                         .column("Name", m -> m.get("Name"))
                         .write(Stream.<Map<String, Object>>of(Map.of("Name", "first-sheet-row")));

@@ -20,7 +20,7 @@ import java.util.Set;
  * {@code ExcelWorkbook} allows explicitly writing different data types to separate sheets.
  *
  * <pre>{@code
- * try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+ * try (ExcelWorkbook workbook = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
  *     workbook.<User>sheet("Users")
  *         .column("Name", u -> u.getName())
  *         .column("Status", u -> u.getStatus(), c -> c.dropdown("Active", "Inactive"))
@@ -55,31 +55,78 @@ public class ExcelWorkbook implements AutoCloseable {
     private @Nullable Integer headerFontSize;
 
     /**
-     * Creates a workbook with a default white header color.
+     * Creates a new builder for configuring an ExcelWorkbook.
+     *
+     * <pre>{@code
+     * try (ExcelWorkbook wb = ExcelWorkbook.builder()
+     *         .color(ExcelColor.STEEL_BLUE)
+     *         .rowAccessWindowSize(500)
+     *         .build()) {
+     *     wb.<User>sheet("Users").column("Name", User::getName).write(stream);
+     *     wb.finish().write(out);
+     * }
+     * }</pre>
+     *
+     * @return a new builder with default values (white header, 1000 row window)
+     * @since 0.13.0
      */
-    public ExcelWorkbook() {
-        this(ExcelColor.WHITE);
+    public static Builder builder() {
+        return new Builder();
     }
 
-    /**
-     * Creates a workbook with a header color.
-     *
-     * @param color Header color (use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)})
-     */
-    public ExcelWorkbook(ExcelColor color) {
-        this(color, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
-    }
-
-    /**
-     * Creates a workbook with a header color and row access window size.
-     *
-     * @param color               Header color
-     * @param rowAccessWindowSize Number of rows kept in memory by SXSSFWorkbook
-     */
-    public ExcelWorkbook(ExcelColor color, int rowAccessWindowSize) {
-        this.wb = new SXSSFWorkbook(rowAccessWindowSize);
-        this.headerColor = new XSSFColor(new byte[]{(byte) color.getR(), (byte) color.getG(), (byte) color.getB()});
+    private ExcelWorkbook(Builder builder) {
+        this.wb = new SXSSFWorkbook(builder.rowAccessWindowSize);
+        this.headerColor = new XSSFColor(new byte[]{
+                (byte) builder.color.getR(),
+                (byte) builder.color.getG(),
+                (byte) builder.color.getB()
+        });
         this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
+    }
+
+    /**
+     * Builder for {@link ExcelWorkbook}. Obtained via {@link #builder()}.
+     *
+     * @since 0.13.0
+     */
+    public static final class Builder {
+        private ExcelColor color = ExcelColor.WHITE;
+        private int rowAccessWindowSize = DEFAULT_ROW_ACCESS_WINDOW_SIZE;
+
+        private Builder() {}
+
+        /**
+         * Sets the header background color for all sheets.
+         *
+         * @param color header color (must not be null)
+         * @return this builder
+         */
+        public Builder color(ExcelColor color) {
+            if (color == null) throw new IllegalArgumentException("color must not be null");
+            this.color = color;
+            return this;
+        }
+
+        /**
+         * Sets the SXSSF row access window size.
+         *
+         * @param size row window (must be positive)
+         * @return this builder
+         */
+        public Builder rowAccessWindowSize(int size) {
+            if (size <= 0) throw new IllegalArgumentException("rowAccessWindowSize must be positive");
+            this.rowAccessWindowSize = size;
+            return this;
+        }
+
+        /**
+         * Builds a new ExcelWorkbook.
+         *
+         * @return a new workbook instance (implements AutoCloseable)
+         */
+        public ExcelWorkbook build() {
+            return new ExcelWorkbook(this);
+        }
     }
 
     /**

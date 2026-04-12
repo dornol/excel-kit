@@ -23,7 +23,7 @@ class ExcelSheetWriterEdgeCaseTest {
     @Test
     void columnIf_falseCondition_shouldNotAddColumn() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Item>sheet("Test")
                     .column("Name", Item::name)
                     .columnIf("Value", false, i -> i.value)
@@ -41,7 +41,7 @@ class ExcelSheetWriterEdgeCaseTest {
     @Test
     void columnIf_trueCondition_shouldAddColumn() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Item>sheet("Test")
                     .column("Name", Item::name)
                     .columnIf("Value", true, i -> i.value)
@@ -59,7 +59,7 @@ class ExcelSheetWriterEdgeCaseTest {
     @Test
     void columnIf_withConfig_falseCondition_shouldNotAddColumn() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Item>sheet("Test")
                     .column("Name", Item::name)
                     .columnIf("Value", false, i -> i.value,
@@ -77,7 +77,7 @@ class ExcelSheetWriterEdgeCaseTest {
     @Test
     void columnIf_withConfig_trueCondition_shouldAddColumn() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Item>sheet("Test")
                     .column("Name", Item::name)
                     .columnIf("Value", true, i -> i.value,
@@ -100,7 +100,7 @@ class ExcelSheetWriterEdgeCaseTest {
     // ============================================================
     @Test
     void onProgress_zeroInterval_throws() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             var sheet = wb.<Item>sheet("Test").column("Name", Item::name);
             assertThrows(IllegalArgumentException.class,
                     () -> sheet.onProgress(0, (count, cursor) -> {}));
@@ -109,7 +109,7 @@ class ExcelSheetWriterEdgeCaseTest {
 
     @Test
     void onProgress_negativeInterval_throws() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             var sheet = wb.<Item>sheet("Test").column("Name", Item::name);
             assertThrows(IllegalArgumentException.class,
                     () -> sheet.onProgress(-1, (count, cursor) -> {}));
@@ -122,7 +122,7 @@ class ExcelSheetWriterEdgeCaseTest {
     @Test
     void defaultStyle_shouldApplyBoldAndFontSize() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Item>sheet("Test")
                     .defaultStyle(d -> d.bold(true).fontSize(14))
                     .column("Name", Item::name)
@@ -147,7 +147,7 @@ class ExcelSheetWriterEdgeCaseTest {
     // ============================================================
     @Test
     void maxRows_zero_throws() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             var sheet = wb.<Item>sheet("Test").column("Name", Item::name);
             assertThrows(IllegalArgumentException.class, () -> sheet.maxRows(0));
         }
@@ -155,7 +155,7 @@ class ExcelSheetWriterEdgeCaseTest {
 
     @Test
     void maxRows_negative_throws() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             var sheet = wb.<Item>sheet("Test").column("Name", Item::name);
             assertThrows(IllegalArgumentException.class, () -> sheet.maxRows(-1));
         }
@@ -166,7 +166,7 @@ class ExcelSheetWriterEdgeCaseTest {
     // ============================================================
     @Test
     void autoWidthSampleRows_negative_throws() {
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             var sheet = wb.<Item>sheet("Test").column("Name", Item::name);
             assertThrows(IllegalArgumentException.class, () -> sheet.autoWidthSampleRows(-1));
         }
@@ -175,7 +175,7 @@ class ExcelSheetWriterEdgeCaseTest {
     @Test
     void autoWidthSampleRows_zero_accepted() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Item>sheet("Test")
                     .column("Name", Item::name)
                     .autoWidthSampleRows(0)

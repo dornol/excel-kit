@@ -48,7 +48,7 @@ ExcelWriter.<Person>builder().build()
 
 `ExcelWorkbook` (multi-sheet, different types per sheet):
 ```java
-try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
     wb.<User>sheet("Users").column("Name", User::getName).write(userStream);
     wb.<Order>sheet("Orders").column("ID", Order::getId).write(orderStream);
     wb.finish().write(out);

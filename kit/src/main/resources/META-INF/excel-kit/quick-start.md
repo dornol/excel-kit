@@ -26,7 +26,7 @@ try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
 ## Excel Writing (Multi-Sheet)
 
 ```java
-try (var wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
     wb.<User>sheet("Users")
         .column("Name", User::getName)
         .column("Age", User::getAge)

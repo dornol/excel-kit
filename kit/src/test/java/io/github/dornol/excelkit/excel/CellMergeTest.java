@@ -121,7 +121,7 @@ class CellMergeTest {
     @Test
     void mergeCells_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+        try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
             workbook.<String>sheet("TestSheet")
                     .beforeHeader(ctx -> {
                         ctx.getSheet().createRow(ctx.getCurrentRow()).createCell(0).setCellValue("Report");

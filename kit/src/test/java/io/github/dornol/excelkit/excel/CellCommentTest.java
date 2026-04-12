@@ -61,7 +61,7 @@ class CellCommentTest {
     @Test
     void comment_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<String>sheet("Sheet1")
                     .column("Name", s -> s, c -> c.comment(s -> "Hi " + s))
                     .write(Stream.of("Alice"));

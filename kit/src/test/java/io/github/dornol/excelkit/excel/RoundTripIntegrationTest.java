@@ -288,7 +288,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldCreateListValidationReferencingAnotherSheet() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 // Sheet1: Options
                 workbook.<Option>sheet("Options")
                         .column("Status", Option::value)
@@ -521,7 +521,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldWriteMultiSheetWithSummaryAndConditionalFormatting() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 // Sheet 1: Sales with summary
                 workbook.<SaleItem>sheet("Sales")
                         .column("Name", SaleItem::name)

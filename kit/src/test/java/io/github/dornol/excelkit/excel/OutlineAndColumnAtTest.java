@@ -57,7 +57,7 @@ class OutlineAndColumnAtTest {
     @Test
     void outline_shouldWorkInExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<String[]>sheet("Test")
                     .column("A", r -> r[0])
                     .column("B", r -> r[1], c -> c.outline(1))

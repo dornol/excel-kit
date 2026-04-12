@@ -148,7 +148,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_format_shouldApplyCustomFormat() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<Integer>sheet("Data")
                 .column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER).format("#,##0.00"))
@@ -168,7 +168,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_alignment_shouldApplyAlignment() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .column("Left", s -> s, c -> c.alignment(HorizontalAlignment.LEFT))
@@ -189,7 +189,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_bold_shouldApplyBoldFont() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .column("Bold", s -> s, c -> c.bold(true))
@@ -212,7 +212,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_fontSize_shouldApplyFontSize() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .column("Big", s -> s, c -> c.fontSize(18))
@@ -238,7 +238,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_width_shouldSetFixedWidth() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .column("Fixed", s -> s, c -> c.width(30))
@@ -254,7 +254,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_minWidth_maxWidth_shouldWrite() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = new ExcelWorkbook();
+        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
 
         workbook.<String>sheet("Data")
                 .column("Bounded", s -> s, c -> c.minWidth(10).maxWidth(50))

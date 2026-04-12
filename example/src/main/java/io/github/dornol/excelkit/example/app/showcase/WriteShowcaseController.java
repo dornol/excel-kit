@@ -104,7 +104,7 @@ public class WriteShowcaseController {
     public ResponseEntity<StreamingResponseBody> downloadMultiSheet() {
         var products = sampleProducts();
 
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.CORAL)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.CORAL).build()) {
             wb.<ProductDto>sheet("Electronics")
                     .autoFilter()
                     .freezePane(1)
@@ -215,7 +215,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/rollover")
     public ResponseEntity<StreamingResponseBody> downloadRollover() {
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.FOREST_GREEN)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.FOREST_GREEN).build()) {
             wb.<ProductDto>sheet("Products")
                     .maxRows(8)
                     .sheetName(idx -> "Products-Page" + (idx + 1))
@@ -508,7 +508,7 @@ public class WriteShowcaseController {
     // ========================================================================
     @GetMapping("/workbook-protection")
     public ResponseEntity<StreamingResponseBody> downloadWorkbookProtection() {
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
             wb.protectWorkbook("secret");
 
             wb.<ProductDto>sheet("Protected Data")
@@ -647,7 +647,7 @@ public class WriteShowcaseController {
     public ResponseEntity<StreamingResponseBody> downloadNamedRange() {
         var categories = List.of("Electronics", "Accessories", "Office", "Peripherals");
 
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
             wb.<String>sheet("Options")
                     .column("Category", s -> s)
                     .afterData(ctx -> {

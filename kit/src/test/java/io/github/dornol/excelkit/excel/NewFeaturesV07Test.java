@@ -97,7 +97,7 @@ class NewFeaturesV07Test {
         @Test
         void hidden_withExcelSheetWriter_columnConfigHidden() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Sheet1")
                         .column("Visible", s -> s)
                         .column("Hidden", s -> "secret", c -> c.hidden())
@@ -132,7 +132,7 @@ class NewFeaturesV07Test {
         @Test
         void hidden_withSheetRollover_allSheetsHaveHiddenColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Data")
                         .column("Visible", s -> s)
                         .column("Hidden", s -> "h", c -> c.hidden())
@@ -341,7 +341,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_inExcelSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("RichSheet")
                         .column("Col", s -> new ExcelRichText()
                                         .text("Normal ")
@@ -603,7 +603,7 @@ class NewFeaturesV07Test {
         @Test
         void printSetup_withExcelSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("PrintSheet")
                         .column("Col", s -> s)
                         .printSetup(ps -> ps
@@ -634,7 +634,7 @@ class NewFeaturesV07Test {
         @Test
         void printSetup_withSheetRollover_allSheetsHavePrintSetup() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Data")
                         .column("Col", s -> s)
                         .maxRows(3)

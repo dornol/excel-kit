@@ -162,7 +162,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Product>sheet("Products")
                     .column("Name", Product::name)
                     .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))

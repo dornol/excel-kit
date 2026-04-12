@@ -16,7 +16,7 @@ class MultiSheetReadTest {
     @Test
     void getSheetNames_shouldReturnAllSheetNames() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<String>sheet("Users")
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
@@ -55,7 +55,7 @@ class MultiSheetReadTest {
     @Test
     void readSpecificSheet_shouldReadCorrectSheet() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<String>sheet("Users")
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));

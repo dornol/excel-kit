@@ -137,7 +137,7 @@ class V06FeaturesTest {
         @Test
         void readAllSheets_iterateByName() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Users")
                         .column("Name", s -> s)
                         .write(Stream.of("Alice", "Bob"));
@@ -695,7 +695,7 @@ class V06FeaturesTest {
         @Test
         void sheetWriter_allNewFeatures() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Protected")
                         .column("Name", s -> s, c -> c
                                 .border(ExcelBorderStyle.DASHED)

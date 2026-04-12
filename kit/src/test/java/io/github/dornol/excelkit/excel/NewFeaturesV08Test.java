@@ -146,7 +146,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Test")
                         .column("Rotated", s -> s, c -> c.rotation(30))
                         .write(Stream.of("test"));
@@ -309,7 +309,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Test")
                         .column("Col", s -> s, c -> c
                                 .borderTop(ExcelBorderStyle.DOUBLE)
@@ -445,7 +445,7 @@ class NewFeaturesV08Test {
         @Test
         void groupRows_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Test")
                         .column("Data", s -> s)
                         .afterData(ctx -> {
@@ -644,7 +644,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Test")
                         .column("Score", s -> s, c -> c
                                 .validation(ExcelValidation.integerBetween(1, 100)))
@@ -890,7 +890,7 @@ class NewFeaturesV08Test {
         @Test
         void fontStyling_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Test")
                         .column("Colored", s -> s, c -> c
                                 .fontColor(0, 128, 0)
@@ -1034,7 +1034,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("TabTest")
                         .tabColor(ExcelColor.RED)
                         .column("Data", s -> s)
@@ -1055,7 +1055,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_differentPerSheet() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Red")
                         .tabColor(ExcelColor.RED)
                         .column("Data", s -> s)
@@ -1296,7 +1296,7 @@ class NewFeaturesV08Test {
         @Test
         void newChartTypes_inExcelWorkbook() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<Product>sheet("Scatter")
                         .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                         .column("Price", p -> p.price(), c -> c.type(ExcelDataType.DOUBLE))
@@ -1357,7 +1357,7 @@ class NewFeaturesV08Test {
         @Test
         void allNewFeatures_viaSheetWriter_combined() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
                 wb.<String>sheet("Styled")
                         .tabColor(ExcelColor.RED)
                         .column("Rotated", s -> s, c -> c
@@ -1420,7 +1420,7 @@ class NewFeaturesV08Test {
         @Test
         void sheetWriter_noConfig_defaultsWork() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<String>sheet("Default")
                         .column("Plain", s -> s)
                         .write(Stream.of("a", "b"));

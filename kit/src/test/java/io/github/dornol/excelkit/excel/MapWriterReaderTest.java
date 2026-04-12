@@ -82,7 +82,7 @@ class MapWriterReaderTest {
     @Test
     void excelMapReader_withSheetIndex() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Map<String, Object>>sheet("Sheet1")
                     .column("A", m -> m.get("A"))
                     .write(Stream.of(Map.of("A", "first")));

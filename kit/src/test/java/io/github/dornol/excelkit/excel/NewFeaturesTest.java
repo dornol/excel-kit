@@ -54,7 +54,7 @@ class NewFeaturesTest {
     void progress_shouldWorkInExcelSheetWriter() {
         List<Long> progressCounts = new ArrayList<>();
 
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Test")
                     .column("Value", i -> i)
                     .onProgress(2, (count, cursor) -> progressCounts.add(count))
@@ -140,7 +140,7 @@ class NewFeaturesTest {
     @Test
     void cellColor_shouldWorkInExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Test")
                     .column("Value", i -> i, c -> c
                             .type(ExcelDataType.INTEGER)
@@ -167,7 +167,7 @@ class NewFeaturesTest {
     @Test
     void rollover_shouldCreateMultipleSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Data")
                     .maxRows(3)
                     .column("Value", i -> i)
@@ -191,7 +191,7 @@ class NewFeaturesTest {
     @Test
     void rollover_shouldUseCustomSheetNameFunction() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Orders")
                     .maxRows(2)
                     .sheetName(idx -> "Orders-Page" + (idx + 1))
@@ -211,7 +211,7 @@ class NewFeaturesTest {
     @Test
     void rollover_withoutMaxRows_shouldWriteToSingleSheet() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("Single")
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4, 5));
@@ -227,7 +227,7 @@ class NewFeaturesTest {
     @Test
     void rollover_shouldNotConflictWithOtherSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<Integer>sheet("A")
                     .maxRows(2)
                     .column("Value", i -> i)
@@ -315,7 +315,7 @@ class NewFeaturesTest {
     @Test
     void groupHeader_shouldWorkInExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = new ExcelWorkbook()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
             wb.<int[]>sheet("Test")
                     .column("Name", r -> "Item")
                     .column("Price", r -> r[0], c -> c.type(ExcelDataType.INTEGER).group("Financial"))

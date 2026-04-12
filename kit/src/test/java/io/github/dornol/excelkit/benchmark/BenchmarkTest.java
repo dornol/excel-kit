@@ -161,7 +161,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        try (ExcelWorkbook wb = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
             wb.<int[]>sheet("Numbers")
                     .column("ID", r -> r[0])
                     .column("Value", r -> r[1])

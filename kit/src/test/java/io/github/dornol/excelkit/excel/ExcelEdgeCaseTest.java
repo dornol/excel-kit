@@ -227,7 +227,7 @@ class ExcelEdgeCaseTest {
         @Test
         void password_shouldAutoEncryptAndBeDecryptable() throws IOException, GeneralSecurityException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 workbook.password("secret123");
                 workbook.<Item>sheet("Data")
                         .column("Name", Item::name)
@@ -255,7 +255,7 @@ class ExcelEdgeCaseTest {
         @Test
         void password_combinedWithProtectWorkbook() throws IOException, GeneralSecurityException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
                 workbook.password("filePass");
                 workbook.protectWorkbook("structPass");
                 workbook.<Item>sheet("Data")
@@ -279,7 +279,7 @@ class ExcelEdgeCaseTest {
 
         @Test
         void password_nullValue_shouldThrow() {
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 var ex = assertThrows(IllegalArgumentException.class, () -> wb.password(null));
                 assertTrue(ex.getMessage().toLowerCase().contains("password"));
             }
@@ -287,7 +287,7 @@ class ExcelEdgeCaseTest {
 
         @Test
         void password_blankValue_shouldThrow() {
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 var ex = assertThrows(IllegalArgumentException.class, () -> wb.password("  "));
                 assertTrue(ex.getMessage().toLowerCase().contains("password"));
             }
@@ -567,7 +567,7 @@ class ExcelEdgeCaseTest {
         @Test
         void protectWorkbook_shouldSetWorkbookProtection() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = new ExcelWorkbook()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
                 wb.<Item>sheet("Data")
                         .column("Name", Item::name)
                         .write(Stream.of(new Item("A", 1)));

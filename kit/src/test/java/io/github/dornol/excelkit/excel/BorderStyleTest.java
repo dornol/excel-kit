@@ -89,7 +89,7 @@ class BorderStyleTest {
     @Test
     void border_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook workbook = new ExcelWorkbook()) {
+        try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
             workbook.<String>sheet("Sheet1")
                     .column("Name", s -> s, c -> c.border(ExcelBorderStyle.DOUBLE))
                     .write(Stream.of("Alice"));

@@ -48,7 +48,7 @@ class NewFeaturesV072Test {
         @Test
         void excelWorkbook_protectWorkbook_structureIsLocked() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
+            try (var workbook = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
                 workbook.protectWorkbook("pwd");
                 workbook.<String>sheet("Sheet1")
                         .column("Name", s -> s)
@@ -159,7 +159,7 @@ class NewFeaturesV072Test {
         @Test
         void excelWorkbook_headerFontNameAndSize_appliedToSheet() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook()) {
+            try (var workbook = ExcelWorkbook.builder().build()) {
                 workbook.headerFontName("Times New Roman").headerFontSize(16);
                 workbook.<String>sheet("Sheet1")
                         .column("Name", s -> s)
@@ -273,7 +273,7 @@ class NewFeaturesV072Test {
         @Test
         void headerFontColor_appliedToSpecificColumn_excelSheetWriter() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook()) {
+            try (var workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Sheet1")
                         .column("Normal", s -> s)
                         .column("Alert", s -> s, cfg -> cfg.headerFontColor(ExcelColor.RED))
@@ -403,7 +403,7 @@ class NewFeaturesV072Test {
         @Test
         void headerFontColor_withGroupHeaders() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook()) {
+            try (var workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Sheet1")
                         .column("Name", s -> s, cfg -> cfg.group("Info"))
                         .column("Alert", s -> s, cfg -> cfg
@@ -502,7 +502,7 @@ class NewFeaturesV072Test {
         @Test
         void excelSheetWriter_defaultStyle_appliedToColumn() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook()) {
+            try (var workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Data")
                         .defaultStyle(d -> d.fontName("Courier New"))
                         .column("Name", s -> s)
@@ -772,7 +772,7 @@ class NewFeaturesV072Test {
         @Test
         void excelSheetWriter_withSummary_generatesFormulaRow() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook()) {
+            try (var workbook = ExcelWorkbook.builder().build()) {
                 workbook.<Item>sheet("Sales")
                         .column("Name", Item::name)
                         .column("Price", i -> i.price(), c -> c.type(ExcelDataType.INTEGER))
@@ -918,7 +918,7 @@ class NewFeaturesV072Test {
         @Test
         void namedRange_inExcelWorkbookMultiSheet_verifyAcrossSheets() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook()) {
+            try (var workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Categories")
                         .column("Cat", s -> s)
                         .afterData(ctx -> {
@@ -1004,7 +1004,7 @@ class NewFeaturesV072Test {
         @Test
         void listFromRange_combinedWithExcelSheetWriter_validationApplied() throws Exception {
             var baos = new ByteArrayOutputStream();
-            try (var workbook = new ExcelWorkbook()) {
+            try (var workbook = ExcelWorkbook.builder().build()) {
                 workbook.<String>sheet("Data")
                         .column("Type", s -> s, c -> c
                                 .validation(ExcelValidation.listFromRange("Lookup!$A$1:$A$5")))
