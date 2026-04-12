@@ -7,8 +7,12 @@ import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.TempResourceCreator;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.poifs.crypt.Decryptor;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.XMLHelper;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
@@ -21,8 +25,12 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -256,7 +264,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
-        java.nio.file.Path fileToRead = getTempFile();
+        Path fileToRead = getTempFile();
         if (password != null) {
             fileToRead = decryptFile(getTempFile(), password);
         }
@@ -289,18 +297,17 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
 
-    private java.nio.file.Path decryptFile(java.nio.file.Path encryptedFile, String pwd) throws Exception {
-        try (org.apache.poi.poifs.filesystem.POIFSFileSystem fs =
-                     new org.apache.poi.poifs.filesystem.POIFSFileSystem(encryptedFile.toFile())) {
-            org.apache.poi.poifs.crypt.EncryptionInfo info = new org.apache.poi.poifs.crypt.EncryptionInfo(fs);
-            org.apache.poi.poifs.crypt.Decryptor dec = org.apache.poi.poifs.crypt.Decryptor.getInstance(info);
+    private Path decryptFile(Path encryptedFile, String pwd) throws Exception {
+        try (POIFSFileSystem fs = new POIFSFileSystem(encryptedFile.toFile())) {
+            EncryptionInfo info = new EncryptionInfo(fs);
+            Decryptor dec = Decryptor.getInstance(info);
             if (!dec.verifyPassword(pwd)) {
                 throw new ExcelReadException("Invalid password for encrypted Excel file");
             }
-            java.nio.file.Path decryptedFile = io.github.dornol.excelkit.core.TempResourceCreator.createTempFile(
-                    getTempDir(), java.util.UUID.randomUUID().toString(), ".xlsx");
+            Path decryptedFile = TempResourceCreator.createTempFile(
+                    getTempDir(), UUID.randomUUID().toString(), ".xlsx");
             try (InputStream decryptedStream = dec.getDataStream(fs);
-                 java.io.OutputStream out = java.nio.file.Files.newOutputStream(decryptedFile)) {
+                 OutputStream out = Files.newOutputStream(decryptedFile)) {
                 decryptedStream.transferTo(out);
             }
             return decryptedFile;
