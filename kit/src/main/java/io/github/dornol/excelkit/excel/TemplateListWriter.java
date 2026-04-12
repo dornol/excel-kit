@@ -70,6 +70,10 @@ public class TemplateListWriter<T> {
 
     /**
      * Adds a column using a simple function.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> column(String name, Function<T, @Nullable Object> function) {
         columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
@@ -78,6 +82,11 @@ public class TemplateListWriter<T> {
 
     /**
      * Adds a column with additional configuration.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @param cfg consumer to configure column styling
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> column(String name, Function<T, @Nullable Object> function,
                                          Consumer<ColumnConfig<T>> cfg) {
@@ -89,6 +98,10 @@ public class TemplateListWriter<T> {
 
     /**
      * Adds a column using a row function with cursor support.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
         columns.add(buildColumn(name, function, null));
@@ -97,6 +110,11 @@ public class TemplateListWriter<T> {
 
     /**
      * Adds a column using a row function with cursor support and additional configuration.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @param cfg consumer to configure column styling
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function,
                                          Consumer<ColumnConfig<T>> cfg) {
@@ -108,6 +126,9 @@ public class TemplateListWriter<T> {
 
     /**
      * Sets the row height for data rows in points.
+     *
+     * @param rowHeightInPoints row height in points
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> rowHeight(float rowHeightInPoints) {
         this.rowHeightInPoints = rowHeightInPoints;
@@ -116,6 +137,9 @@ public class TemplateListWriter<T> {
 
     /**
      * Sets a function that determines the background color for each row.
+     *
+     * @param fn function returning a color per row, or null
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> rowColor(Function<T, @Nullable ExcelColor> fn) {
         this.rowColorFunction = fn;
@@ -124,6 +148,10 @@ public class TemplateListWriter<T> {
 
     /**
      * Registers a progress callback that fires every {@code interval} rows.
+     *
+     * @param interval rows between each callback
+     * @param callback the callback to invoke
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> onProgress(int interval, ProgressCallback callback) {
         if (interval <= 0) {
@@ -136,6 +164,9 @@ public class TemplateListWriter<T> {
 
     /**
      * Sets the number of rows sampled for auto column width calculation.
+     *
+     * @param rows number of rows to sample
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> autoWidthSampleRows(int rows) {
         if (rows < 0) {
@@ -147,6 +178,9 @@ public class TemplateListWriter<T> {
 
     /**
      * Registers a callback that writes content after all data rows.
+     *
+     * @param writer the after-data writer callback
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> afterData(AfterDataWriter writer) {
         this.afterDataWriter = writer;
@@ -155,6 +189,9 @@ public class TemplateListWriter<T> {
 
     /**
      * Configures summary (footer) rows with formulas.
+     *
+     * @param configurer consumer to configure the summary
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> summary(Consumer<ExcelSummary> configurer) {
         ExcelSummary summary = new ExcelSummary();
@@ -165,6 +202,9 @@ public class TemplateListWriter<T> {
 
     /**
      * Sets default column styles that apply to all columns unless overridden per-column.
+     *
+     * @param configurer consumer to configure default styles
+     * @return this writer for chaining
      */
     public TemplateListWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
         ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();

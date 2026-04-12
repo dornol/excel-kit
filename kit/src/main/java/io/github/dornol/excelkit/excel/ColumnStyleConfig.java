@@ -27,6 +27,9 @@ import java.util.function.Function;
 @SuppressWarnings("unchecked")
 public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SELF>> {
 
+    /** Creates a new column style configuration with defaults. */
+    protected ColumnStyleConfig() {}
+
     @Nullable ExcelDataType dataType;
     @Nullable String dataFormat;
     HorizontalAlignment alignment = HorizontalAlignment.CENTER;
@@ -67,6 +70,9 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Sets the column's data type (used for styling and value conversion).
+     *
+     * @param dataType the data type
+     * @return this instance for chaining
      */
     public SELF type(ExcelDataType dataType) {
         this.dataType = dataType;
@@ -75,6 +81,9 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Sets the column's Excel cell data format.
+     *
+     * @param dataFormat the format string
+     * @return this instance for chaining
      */
     public SELF format(String dataFormat) {
         this.dataFormat = dataFormat;
@@ -83,6 +92,9 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Sets the column's horizontal text alignment.
+     *
+     * @param alignment the horizontal alignment
+     * @return this instance for chaining
      */
     public SELF alignment(HorizontalAlignment alignment) {
         this.alignment = alignment;
@@ -96,6 +108,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param r Red component (0-255)
      * @param g Green component (0-255)
      * @param b Blue component (0-255)
+     * @return this instance for chaining
      */
     public SELF backgroundColor(int r, int g, int b) {
         this.backgroundColor = new int[]{r, g, b};
@@ -106,6 +119,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the background color for this column's cells using a preset color.
      *
      * @param color Preset color
+     * @return this instance for chaining
      */
     public SELF backgroundColor(ExcelColor color) {
         return backgroundColor(color.getR(), color.getG(), color.getB());
@@ -113,6 +127,9 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Sets whether this column's font should be bold.
+     *
+     * @param bold whether the font should be bold
+     * @return this instance for chaining
      */
     public SELF bold(boolean bold) {
         this.bold = bold;
@@ -123,6 +140,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the font size for this column's cells.
      *
      * @param fontSize Font size in points (must be positive)
+     * @return this instance for chaining
      */
     public SELF fontSize(int fontSize) {
         if (fontSize <= 0) {
@@ -136,6 +154,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets a fixed column width. The column will not auto-resize.
      *
      * @param fixedWidth Fixed width value (in Excel internal units)
+     * @return this instance for chaining
      */
     public SELF width(int fixedWidth) {
         this.fixedWidth = true;
@@ -147,6 +166,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the minimum column width. Auto-resize will not shrink below this value.
      *
      * @param minWidth Minimum width value (in Excel internal units)
+     * @return this instance for chaining
      */
     public SELF minWidth(int minWidth) {
         this.minWidth = minWidth;
@@ -157,6 +177,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the maximum column width. Auto-resize will not grow beyond this value.
      *
      * @param maxWidth Maximum width value (in Excel internal units)
+     * @return this instance for chaining
      */
     public SELF maxWidth(int maxWidth) {
         this.maxWidth = maxWidth;
@@ -167,6 +188,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets dropdown validation options for this column's cells.
      *
      * @param options The list of allowed values for the dropdown
+     * @return this instance for chaining
      */
     public SELF dropdown(String... options) {
         this.dropdownOptions = options;
@@ -181,6 +203,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Cell-level color takes precedence over row-level {@code rowColor}.
      *
      * @param cellColorFunction function to determine per-cell background color
+     * @return this instance for chaining
      */
     public SELF cellColor(CellColorFunction<T> cellColorFunction) {
         this.cellColorFunction = cellColorFunction;
@@ -194,6 +217,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * above the regular column header row.
      *
      * @param groupName the group header label
+     * @return this instance for chaining
      */
     public SELF group(String groupName) {
         this.groupName = groupName;
@@ -207,6 +231,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Adjacent columns with the same outline level are grouped together.
      *
      * @param level the outline level (1-7, 0 = no outline)
+     * @return this instance for chaining
      */
     public SELF outline(int level) {
         if (level < 0 || level > 7) {
@@ -223,6 +248,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * or {@code null} if no comment should be added.
      *
      * @param commentFunction function to generate comment text per row
+     * @return this instance for chaining
      */
     public SELF comment(Function<T, @Nullable String> commentFunction) {
         this.commentFunction = commentFunction;
@@ -235,6 +261,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Overrides the default THIN border on all sides.
      *
      * @param borderStyle the border style to apply
+     * @return this instance for chaining
      */
     public SELF border(ExcelBorderStyle borderStyle) {
         this.borderStyle = borderStyle;
@@ -245,6 +272,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the top border style for this column's cells.
      *
      * @param borderStyle the border style to apply to the top border
+     * @return this instance for chaining
      */
     public SELF borderTop(ExcelBorderStyle borderStyle) {
         this.borderTop = borderStyle;
@@ -255,6 +283,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the bottom border style for this column's cells.
      *
      * @param borderStyle the border style to apply to the bottom border
+     * @return this instance for chaining
      */
     public SELF borderBottom(ExcelBorderStyle borderStyle) {
         this.borderBottom = borderStyle;
@@ -265,6 +294,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the left border style for this column's cells.
      *
      * @param borderStyle the border style to apply to the left border
+     * @return this instance for chaining
      */
     public SELF borderLeft(ExcelBorderStyle borderStyle) {
         this.borderLeft = borderStyle;
@@ -275,6 +305,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the right border style for this column's cells.
      *
      * @param borderStyle the border style to apply to the right border
+     * @return this instance for chaining
      */
     public SELF borderRight(ExcelBorderStyle borderStyle) {
         this.borderRight = borderStyle;
@@ -288,6 +319,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Set to {@code false} to allow editing of this column's cells even when the sheet is protected.
      *
      * @param locked whether cells should be locked
+     * @return this instance for chaining
      */
     public SELF locked(boolean locked) {
         this.locked = locked;
@@ -296,6 +328,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Marks this column as hidden in the Excel output.
+     *
+     * @return this instance for chaining
      */
     public SELF hidden() {
         this.hidden = true;
@@ -306,6 +340,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets whether this column should be hidden in the Excel output.
      *
      * @param hidden whether the column should be hidden
+     * @return this instance for chaining
      */
     public SELF hidden(boolean hidden) {
         this.hidden = hidden;
@@ -319,6 +354,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Negative values rotate text clockwise (-1 to -90 degrees).
      *
      * @param degrees rotation angle (-90 to 90)
+     * @return this instance for chaining
      */
     public SELF rotation(int degrees) {
         if (degrees < -90 || degrees > 90) {
@@ -334,6 +370,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param r Red component (0-255)
      * @param g Green component (0-255)
      * @param b Blue component (0-255)
+     * @return this instance for chaining
      */
     public SELF fontColor(int r, int g, int b) {
         this.fontColor = new int[]{r, g, b};
@@ -344,6 +381,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the font color for this column's cells using a preset color.
      *
      * @param color Preset color
+     * @return this instance for chaining
      */
     public SELF fontColor(ExcelColor color) {
         return fontColor(color.getR(), color.getG(), color.getB());
@@ -351,6 +389,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Enables strikethrough on this column's font.
+     *
+     * @return this instance for chaining
      */
     public SELF strikethrough() {
         this.strikethrough = true;
@@ -361,6 +401,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets whether this column's font should be strikethrough.
      *
      * @param strikethrough whether to apply strikethrough
+     * @return this instance for chaining
      */
     public SELF strikethrough(boolean strikethrough) {
         this.strikethrough = strikethrough;
@@ -369,6 +410,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Enables underline on this column's font.
+     *
+     * @return this instance for chaining
      */
     public SELF underline() {
         this.underline = true;
@@ -379,6 +422,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets whether this column's font should be underlined.
      *
      * @param underline whether to apply underline
+     * @return this instance for chaining
      */
     public SELF underline(boolean underline) {
         this.underline = underline;
@@ -389,6 +433,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the column's vertical text alignment.
      *
      * @param verticalAlignment vertical alignment (e.g., TOP, CENTER, BOTTOM, JUSTIFY)
+     * @return this instance for chaining
      */
     public SELF verticalAlignment(VerticalAlignment verticalAlignment) {
         this.verticalAlignment = verticalAlignment;
@@ -400,6 +445,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * <p>
      * When enabled, cell content that exceeds the column width wraps to the next line
      * within the cell instead of being clipped.
+     *
+     * @return this instance for chaining
      */
     public SELF wrapText() {
         this.wrapText = true;
@@ -410,6 +457,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets whether text wrapping is enabled for this column's cells.
      *
      * @param wrapText whether to enable text wrapping
+     * @return this instance for chaining
      */
     public SELF wrapText(boolean wrapText) {
         this.wrapText = wrapText;
@@ -420,6 +468,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets the font family name for this column's cells.
      *
      * @param fontName the font name (e.g., "Arial", "맑은 고딕", "Times New Roman")
+     * @return this instance for chaining
      */
     public SELF fontName(String fontName) {
         this.fontName = fontName;
@@ -432,6 +481,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Indentation shifts the cell content to the right by the specified number of levels.
      *
      * @param level the indentation level (0-250)
+     * @return this instance for chaining
      */
     public SELF indentation(int level) {
         if (level < 0 || level > 250) {
@@ -450,6 +500,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param r Red component (0-255)
      * @param g Green component (0-255)
      * @param b Blue component (0-255)
+     * @return this instance for chaining
      */
     public SELF headerFontColor(int r, int g, int b) {
         this.headerFontColor = new int[]{r, g, b};
@@ -463,6 +514,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Other columns retain the global header style.
      *
      * @param color Preset color, or {@code null} to use the default header style
+     * @return this instance for chaining
      */
     public SELF headerFontColor(@Nullable ExcelColor color) {
         this.headerFontColor = color != null ? color.toRgb() : null;
@@ -473,6 +525,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets advanced data validation for this column.
      *
      * @param validation the validation configuration
+     * @return this instance for chaining
      */
     public SELF validation(ExcelValidation validation) {
         this.validation = validation;
@@ -515,6 +568,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param <T> the row data type
      */
     public static class DefaultStyleConfig<T> extends ColumnStyleConfig<T, DefaultStyleConfig<T>> {
+        /** Creates a new default style configuration. */
+        public DefaultStyleConfig() {}
     }
 
     /**

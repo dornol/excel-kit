@@ -23,12 +23,15 @@ import java.util.function.BiConsumer;
  */
 public record ReadColumn<T>(@Nullable String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
 
-    /** Creates a positional column binding (matched by column index order). */
+    /** Creates a positional column binding (matched by column index order).
+     * @param setter the setter function */
     public ReadColumn(BiConsumer<T, CellData> setter) {
         this(null, -1, setter);
     }
 
-    /** Creates a name-based column binding. */
+    /** Creates a name-based column binding.
+     * @param headerName the header name to match
+     * @param setter the setter function */
     public ReadColumn(String headerName, BiConsumer<T, CellData> setter) {
         this(headerName, -1, setter);
     }

@@ -26,6 +26,9 @@ import org.jspecify.annotations.Nullable;
  */
 public class ExcelPrintSetup {
 
+    /** Creates a new print setup configuration with defaults. */
+    public ExcelPrintSetup() {}
+
     /**
      * Page orientation for printing.
      */
@@ -40,12 +43,19 @@ public class ExcelPrintSetup {
      * Standard paper sizes for printing.
      */
     public enum PaperSize {
+        /** US Letter size. */
         LETTER(PrintSetup.LETTER_PAPERSIZE),
+        /** US Legal size. */
         LEGAL(PrintSetup.LEGAL_PAPERSIZE),
+        /** A3 paper size. */
         A3(PrintSetup.A3_PAPERSIZE),
+        /** A4 paper size. */
         A4(PrintSetup.A4_PAPERSIZE),
+        /** A5 paper size. */
         A5(PrintSetup.A5_PAPERSIZE),
+        /** B4 paper size. */
         B4(12),
+        /** B5 paper size. */
         B5(PrintSetup.B5_PAPERSIZE);
 
         private final short code;

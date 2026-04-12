@@ -179,6 +179,10 @@ public class ExcelKitSchema<T> {
     ) {
         /**
          * Creates a schema column without write configuration.
+         *
+         * @param name the column header name
+         * @param writeFunction function to extract the cell value
+         * @param readSetter consumer to set the cell value
          */
         public SchemaColumn(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter) {
             this(name, writeFunction, readSetter, null);

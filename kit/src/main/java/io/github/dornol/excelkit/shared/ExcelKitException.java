@@ -10,14 +10,21 @@ package io.github.dornol.excelkit.shared;
  */
 public class ExcelKitException extends RuntimeException {
 
+    /** Creates an exception with the given message.
+     * @param message the detail message */
     public ExcelKitException(String message) {
         super(message);
     }
 
+    /** Creates an exception with the given message and cause.
+     * @param message the detail message
+     * @param cause the underlying cause */
     public ExcelKitException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    /** Creates an exception with the given cause.
+     * @param cause the underlying cause */
     public ExcelKitException(Throwable cause) {
         super(cause);
     }

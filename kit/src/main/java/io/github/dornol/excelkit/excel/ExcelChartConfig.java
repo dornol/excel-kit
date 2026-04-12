@@ -43,15 +43,24 @@ import java.util.List;
  */
 public class ExcelChartConfig {
 
+    /** Creates a new chart configuration with defaults. */
+    public ExcelChartConfig() {}
+
     /**
      * Supported chart types.
      */
     public enum ChartType {
+        /** Bar chart. */
         BAR,
+        /** Line chart. */
         LINE,
+        /** Pie chart. */
         PIE,
+        /** Scatter (XY) chart. */
         SCATTER,
+        /** Area chart. */
         AREA,
+        /** Doughnut chart. */
         DOUGHNUT
     }
 
@@ -61,10 +70,15 @@ public class ExcelChartConfig {
      * @since 0.6.1
      */
     public enum LegendPosition {
+        /** Bottom position. */
         BOTTOM,
+        /** Left position. */
         LEFT,
+        /** Right position. */
         RIGHT,
+        /** Top position. */
         TOP,
+        /** Top-right position. */
         TOP_RIGHT
     }
 

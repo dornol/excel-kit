@@ -36,6 +36,9 @@ import java.util.function.Consumer;
  */
 public class ExcelRichText {
 
+    /** Creates a new empty rich text instance. */
+    public ExcelRichText() {}
+
     private static final Map<SXSSFWorkbook, Map<String, Font>> FONT_CACHES =
             Collections.synchronizedMap(new WeakHashMap<>());
 
@@ -146,6 +149,9 @@ public class ExcelRichText {
      * Supports bold, italic, underline, strikethrough, font color (RGB), and font size.
      */
     public static class FontStyle {
+        /** Creates a new font style with defaults. */
+        public FontStyle() {}
+
         private boolean bold;
         private boolean italic;
         private boolean underline;
@@ -155,6 +161,9 @@ public class ExcelRichText {
 
         /**
          * Sets bold styling.
+         *
+         * @param bold whether to apply bold
+         * @return this instance for chaining
          */
         public FontStyle bold(boolean bold) {
             this.bold = bold;
@@ -163,6 +172,9 @@ public class ExcelRichText {
 
         /**
          * Sets italic styling.
+         *
+         * @param italic whether to apply italic
+         * @return this instance for chaining
          */
         public FontStyle italic(boolean italic) {
             this.italic = italic;
@@ -171,6 +183,9 @@ public class ExcelRichText {
 
         /**
          * Sets underline styling.
+         *
+         * @param underline whether to apply underline
+         * @return this instance for chaining
          */
         public FontStyle underline(boolean underline) {
             this.underline = underline;
@@ -179,6 +194,9 @@ public class ExcelRichText {
 
         /**
          * Sets strikethrough styling.
+         *
+         * @param strikethrough whether to apply strikethrough
+         * @return this instance for chaining
          */
         public FontStyle strikethrough(boolean strikethrough) {
             this.strikethrough = strikethrough;
@@ -191,6 +209,7 @@ public class ExcelRichText {
          * @param r red component (0–255)
          * @param g green component (0–255)
          * @param b blue component (0–255)
+         * @return this instance for chaining
          */
         public FontStyle color(int r, int g, int b) {
             this.color = new int[]{r, g, b};
@@ -201,6 +220,7 @@ public class ExcelRichText {
          * Sets the font color using a predefined {@link ExcelColor}.
          *
          * @param color the color preset
+         * @return this instance for chaining
          */
         public FontStyle color(ExcelColor color) {
             return color(color.getR(), color.getG(), color.getB());
@@ -210,6 +230,7 @@ public class ExcelRichText {
          * Sets the font size in points.
          *
          * @param size font size in points
+         * @return this instance for chaining
          */
         public FontStyle fontSize(int size) {
             this.fontSize = size;

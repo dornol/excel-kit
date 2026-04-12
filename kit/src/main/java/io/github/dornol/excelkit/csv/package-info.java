@@ -1,3 +1,4 @@
+/** CSV reading and writing support. */
 @NullMarked
 package io.github.dornol.excelkit.csv;
 

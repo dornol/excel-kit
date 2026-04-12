@@ -14,15 +14,25 @@ import org.apache.poi.ss.usermodel.BorderStyle;
  */
 public enum ExcelBorderStyle {
 
+    /** No border. */
     NONE(BorderStyle.NONE),
+    /** Thin border. */
     THIN(BorderStyle.THIN),
+    /** Medium border. */
     MEDIUM(BorderStyle.MEDIUM),
+    /** Thick border. */
     THICK(BorderStyle.THICK),
+    /** Dashed border. */
     DASHED(BorderStyle.DASHED),
+    /** Dotted border. */
     DOTTED(BorderStyle.DOTTED),
+    /** Double border. */
     DOUBLE(BorderStyle.DOUBLE),
+    /** Hairline border. */
     HAIR(BorderStyle.HAIR),
+    /** Medium dashed border. */
     MEDIUM_DASHED(BorderStyle.MEDIUM_DASHED),
+    /** Dash-dot border. */
     DASH_DOT(BorderStyle.DASH_DOT),
     ;
 

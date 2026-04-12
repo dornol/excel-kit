@@ -27,11 +27,23 @@ import java.util.Map;
  */
 public class ExcelSummary {
 
+    /** Creates a new summary configuration. */
+    public ExcelSummary() {}
+
     /**
      * Supported summary operations.
      */
     public enum Op {
-        SUM, AVERAGE, COUNT, MIN, MAX
+        /** Sum formula. */
+        SUM,
+        /** Average formula. */
+        AVERAGE,
+        /** Count formula. */
+        COUNT,
+        /** Min formula. */
+        MIN,
+        /** Max formula. */
+        MAX
     }
 
     private final Map<Op, List<String>> entries = new LinkedHashMap<>();
@@ -66,6 +78,9 @@ public class ExcelSummary {
 
     /**
      * Adds a SUM formula for the specified column.
+     *
+     * @param columnName the target column name
+     * @return this summary for chaining
      */
     public ExcelSummary sum(String columnName) {
         return addEntry(Op.SUM, columnName);
@@ -73,6 +88,9 @@ public class ExcelSummary {
 
     /**
      * Adds an AVERAGE formula for the specified column.
+     *
+     * @param columnName the target column name
+     * @return this summary for chaining
      */
     public ExcelSummary average(String columnName) {
         return addEntry(Op.AVERAGE, columnName);
@@ -80,6 +98,9 @@ public class ExcelSummary {
 
     /**
      * Adds a COUNT formula for the specified column.
+     *
+     * @param columnName the target column name
+     * @return this summary for chaining
      */
     public ExcelSummary count(String columnName) {
         return addEntry(Op.COUNT, columnName);
@@ -87,6 +108,9 @@ public class ExcelSummary {
 
     /**
      * Adds a MIN formula for the specified column.
+     *
+     * @param columnName the target column name
+     * @return this summary for chaining
      */
     public ExcelSummary min(String columnName) {
         return addEntry(Op.MIN, columnName);
@@ -94,6 +118,9 @@ public class ExcelSummary {
 
     /**
      * Adds a MAX formula for the specified column.
+     *
+     * @param columnName the target column name
+     * @return this summary for chaining
      */
     public ExcelSummary max(String columnName) {
         return addEntry(Op.MAX, columnName);

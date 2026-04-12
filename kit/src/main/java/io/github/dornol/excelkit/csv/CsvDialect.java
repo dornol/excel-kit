@@ -60,6 +60,8 @@ public enum CsvDialect {
 
     /**
      * Returns the field delimiter character.
+     *
+     * @return the delimiter character
      */
     public char getDelimiter() {
         return delimiter;
@@ -67,6 +69,8 @@ public enum CsvDialect {
 
     /**
      * Returns the character encoding.
+     *
+     * @return the charset
      */
     public Charset getCharset() {
         return charset;
@@ -74,6 +78,8 @@ public enum CsvDialect {
 
     /**
      * Returns whether a UTF-8 BOM should be written.
+     *
+     * @return true if BOM is enabled
      */
     public boolean isBom() {
         return bom;

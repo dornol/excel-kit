@@ -43,6 +43,9 @@ import java.util.List;
  * @since 0.6.0
  */
 public class ExcelConditionalRule {
+    /** Creates a new conditional rule builder. */
+    public ExcelConditionalRule() {}
+
     private static final Logger log = LoggerFactory.getLogger(ExcelConditionalRule.class);
 
     /**
@@ -51,15 +54,25 @@ public class ExcelConditionalRule {
      * @since 0.9.2
      */
     public enum IconSetType {
+        /** 3 arrows icon set. */
         ARROWS_3,
+        /** 4 arrows icon set. */
         ARROWS_4,
+        /** 5 arrows icon set. */
         ARROWS_5,
+        /** 3 traffic lights icon set. */
         TRAFFIC_LIGHTS_3,
+        /** 3 signs icon set. */
         SIGNS_3,
+        /** 3 symbols icon set. */
         SYMBOLS_3,
+        /** 3 flags icon set. */
         FLAGS_3,
+        /** 4 ratings icon set. */
         RATINGS_4,
+        /** 5 ratings icon set. */
         RATINGS_5,
+        /** 5 quarters icon set. */
         QUARTERS_5
     }
 
@@ -95,6 +108,10 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value greater than the given value.
+     *
+     * @param value the comparison value
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule greaterThan(String value, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.GT, value, null, bgColor));
@@ -103,6 +120,10 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value greater than or equal to the given value.
+     *
+     * @param value the comparison value
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule greaterThanOrEqual(String value, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.GE, value, null, bgColor));
@@ -111,6 +132,10 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value less than the given value.
+     *
+     * @param value the comparison value
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule lessThan(String value, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.LT, value, null, bgColor));
@@ -119,6 +144,10 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value less than or equal to the given value.
+     *
+     * @param value the comparison value
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule lessThanOrEqual(String value, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.LE, value, null, bgColor));
@@ -127,6 +156,10 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value equal to the given value.
+     *
+     * @param value the comparison value
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule equalTo(String value, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.EQUAL, value, null, bgColor));
@@ -135,6 +168,10 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value not equal to the given value.
+     *
+     * @param value the comparison value
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule notEqualTo(String value, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.NOT_EQUAL, value, null, bgColor));
@@ -143,6 +180,11 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value between the given values (inclusive).
+     *
+     * @param value1 the lower bound
+     * @param value2 the upper bound
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule between(String value1, String value2, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.BETWEEN, value1, value2, bgColor));
@@ -151,6 +193,11 @@ public class ExcelConditionalRule {
 
     /**
      * Adds a rule: cell value not between the given values.
+     *
+     * @param value1 the lower bound
+     * @param value2 the upper bound
+     * @param bgColor the background color to apply
+     * @return this rule for chaining
      */
     public ExcelConditionalRule notBetween(String value1, String value2, ExcelColor bgColor) {
         rules.add(new RuleEntry(ComparisonOperator.NOT_BETWEEN, value1, value2, bgColor));

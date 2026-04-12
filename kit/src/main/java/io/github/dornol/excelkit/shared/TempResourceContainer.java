@@ -18,12 +18,17 @@ import java.nio.file.Path;
  * @since 2025-07-19
  */
 public class TempResourceContainer implements AutoCloseable {
+    /** Creates a new empty temp resource container. */
+    public TempResourceContainer() {}
+
     private static final Logger log = LoggerFactory.getLogger(TempResourceContainer.class);
     private @Nullable Path tempDir;
     private @Nullable Path tempFile;
 
     /**
      * Returns the path to the temporary directory (if set).
+     *
+     * @return the temporary directory path, or null
      */
     protected @Nullable Path getTempDir() {
         return tempDir;
@@ -40,6 +45,8 @@ public class TempResourceContainer implements AutoCloseable {
 
     /**
      * Returns the path to the temporary file (if set).
+     *
+     * @return the temporary file path, or null
      */
     protected @Nullable Path getTempFile() {
         return tempFile;

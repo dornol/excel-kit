@@ -18,40 +18,58 @@ package io.github.dornol.excelkit.excel;
  */
 public final class ExcelColor {
 
-    // White / Black
+    /** White (255, 255, 255). */
     public static final ExcelColor WHITE = new ExcelColor(255, 255, 255);
+    /** Black (0, 0, 0). */
     public static final ExcelColor BLACK = new ExcelColor(0, 0, 0);
 
-    // Gray
+    /** Light gray (217, 217, 217). */
     public static final ExcelColor LIGHT_GRAY = new ExcelColor(217, 217, 217);
+    /** Gray (128, 128, 128). */
     public static final ExcelColor GRAY = new ExcelColor(128, 128, 128);
+    /** Dark gray (64, 64, 64). */
     public static final ExcelColor DARK_GRAY = new ExcelColor(64, 64, 64);
 
-    // Basic colors
+    /** Red (255, 0, 0). */
     public static final ExcelColor RED = new ExcelColor(255, 0, 0);
+    /** Green (0, 128, 0). */
     public static final ExcelColor GREEN = new ExcelColor(0, 128, 0);
+    /** Blue (0, 0, 255). */
     public static final ExcelColor BLUE = new ExcelColor(0, 0, 255);
+    /** Yellow (255, 255, 0). */
     public static final ExcelColor YELLOW = new ExcelColor(255, 255, 0);
+    /** Orange (255, 165, 0). */
     public static final ExcelColor ORANGE = new ExcelColor(255, 165, 0);
 
-    // Light colors (for backgrounds)
+    /** Light red for backgrounds. */
     public static final ExcelColor LIGHT_RED = new ExcelColor(255, 199, 206);
+    /** Light green for backgrounds. */
     public static final ExcelColor LIGHT_GREEN = new ExcelColor(198, 239, 206);
+    /** Light blue for backgrounds. */
     public static final ExcelColor LIGHT_BLUE = new ExcelColor(189, 215, 238);
+    /** Light yellow for backgrounds. */
     public static final ExcelColor LIGHT_YELLOW = new ExcelColor(255, 235, 156);
+    /** Light orange for backgrounds. */
     public static final ExcelColor LIGHT_ORANGE = new ExcelColor(252, 228, 214);
+    /** Light purple for backgrounds. */
     public static final ExcelColor LIGHT_PURPLE = new ExcelColor(228, 210, 245);
 
-    // Additional basic colors
+    /** Purple (128, 0, 128). */
     public static final ExcelColor PURPLE = new ExcelColor(128, 0, 128);
+    /** Pink (255, 192, 203). */
     public static final ExcelColor PINK = new ExcelColor(255, 192, 203);
+    /** Teal (0, 128, 128). */
     public static final ExcelColor TEAL = new ExcelColor(0, 128, 128);
+    /** Navy (0, 0, 128). */
     public static final ExcelColor NAVY = new ExcelColor(0, 0, 128);
 
-    // Commonly used colors
+    /** Coral (255, 127, 80). */
     public static final ExcelColor CORAL = new ExcelColor(255, 127, 80);
+    /** Steel blue (70, 130, 180). */
     public static final ExcelColor STEEL_BLUE = new ExcelColor(70, 130, 180);
+    /** Forest green (34, 139, 34). */
     public static final ExcelColor FOREST_GREEN = new ExcelColor(34, 139, 34);
+    /** Gold (255, 215, 0). */
     public static final ExcelColor GOLD = new ExcelColor(255, 215, 0);
 
     private final int r;
@@ -80,14 +98,20 @@ public final class ExcelColor {
         return new ExcelColor(r, g, b);
     }
 
+    /** Returns the red component (0-255).
+     * @return red value */
     public int getR() {
         return r;
     }
 
+    /** Returns the green component (0-255).
+     * @return green value */
     public int getG() {
         return g;
     }
 
+    /** Returns the blue component (0-255).
+     * @return blue value */
     public int getB() {
         return b;
     }

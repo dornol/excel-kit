@@ -12,6 +12,8 @@ package io.github.dornol.excelkit.shared;
  */
 public class ReadAbortException extends RuntimeException {
 
+    /** Creates an exception with the given message.
+     * @param message the detail message */
     public ReadAbortException(String message) {
         super(message);
     }

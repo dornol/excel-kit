@@ -218,6 +218,9 @@ public class ExcelColumn<T> {
 
         /**
          * Sets a custom {@link CellStyle} for this column.
+         *
+         * @param style the cell style to apply
+         * @return this instance for chaining
          */
         public ExcelColumnBuilder<T> style(CellStyle style) {
             this.style = style;

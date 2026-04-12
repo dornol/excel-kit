@@ -18,4 +18,6 @@ package io.github.dornol.excelkit.excel;
  * @since 0.13.0
  */
 public class ColumnConfig<T> extends ColumnStyleConfig<T, ColumnConfig<T>> {
+    /** Creates a new column configuration with defaults. */
+    public ColumnConfig() {}
 }

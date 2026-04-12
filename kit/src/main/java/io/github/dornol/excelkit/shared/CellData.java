@@ -150,6 +150,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
         }
     }
 
+    /** Validates and normalizes the cell data. */
     public CellData {
         if (formattedValue == null) {
             formattedValue = "";
@@ -192,6 +193,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * Parses the value as a {@link Number} using the configured default locale.
      * Returns {@code null} if the value is empty or blank.
      *
+     * @return parsed number, or {@code null} if blank
      * @see #setDefaultLocale(Locale)
      */
     public @Nullable Number asNumber() {
@@ -201,6 +203,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
     /**
      * Converts the value to {@link Long}.
      * Returns {@code null} if the value is empty or blank.
+     *
+     * @return the long value, or {@code null} if blank
      */
     public @Nullable Long asLong() {
         Number number = asNumber();
@@ -211,6 +215,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * Converts the value to {@link Integer}.
      * Returns {@code null} if the value is empty or blank.
      * Throws if the long value is out of int range.
+     *
+     * @return the integer value, or {@code null} if blank
      */
     public @Nullable Integer asInt() {
         Long longValue = asLong();
@@ -225,6 +231,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
 
     /**
      * Returns the raw string as-is.
+     *
+     * @return the formatted string value
      */
     public String asString() {
         return formattedValue;
@@ -280,6 +288,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      *
      * The patterns support optional sections for time (hours, minutes, seconds).
      * If all patterns fail, a {@link DateTimeParseException} will be thrown.
+     *
+     * @return the parsed date-time, or {@code null} if blank
      */
     public @Nullable LocalDateTime asLocalDateTime() {
         if (formattedValue.isBlank()) {
@@ -302,6 +312,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * Returns {@code null} if the value is empty or blank.
      *
      * @param format the date-time pattern (e.g., "yyyy-MM-dd HH:mm:ss")
+     * @return the parsed date-time, or {@code null} if blank
      */
     public @Nullable LocalDateTime asLocalDateTime(String format) {
         if (formattedValue.isBlank()) {
@@ -322,6 +333,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * - ISO_LOCAL_DATE
      *
      * If all patterns fail, a {@link DateTimeParseException} will be thrown.
+     *
+     * @return the parsed date, or {@code null} if blank
      */
     public @Nullable LocalDate asLocalDate() {
         if (formattedValue.isBlank()) {
@@ -342,6 +355,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * Returns {@code null} if the value is empty or blank.
      *
      * @param format the date pattern (e.g., "yyyy/MM/dd")
+     * @return the parsed date, or {@code null} if blank
      */
     public @Nullable LocalDate asLocalDate(String format) {
         if (formattedValue.isBlank()) {
@@ -353,6 +367,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
     /**
      * Converts the value to {@link LocalTime} using ISO format (HH:mm:ss).
      * Returns {@code null} if the value is empty or blank.
+     *
+     * @return the parsed time, or {@code null} if blank
      */
     public @Nullable LocalTime asLocalTime() {
         if (formattedValue.isBlank()) {
@@ -366,6 +382,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * Returns {@code null} if the value is empty or blank.
      *
      * @param format the time pattern (e.g., "HH:mm")
+     * @return the parsed time, or {@code null} if blank
      */
     public @Nullable LocalTime asLocalTime(String format) {
         if (formattedValue.isBlank()) {
@@ -405,6 +422,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
     /**
      * Converts the value to {@link Double}.
      * Returns {@code null} if the value is empty or blank.
+     *
+     * @return the double value, or {@code null} if blank
      */
     public @Nullable Double asDouble() {
         Number number = asNumber();
@@ -414,6 +433,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
     /**
      * Converts the value to {@link Float}.
      * Returns {@code null} if the value is empty or blank.
+     *
+     * @return the float value, or {@code null} if blank
      */
     public @Nullable Float asFloat() {
         Number number = asNumber();
@@ -424,6 +445,8 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * Converts the value to {@link BigDecimal}.
      * Uses the string representation of the parsed number to avoid precision loss.
      * Returns {@code null} if the value is empty or blank.
+     *
+     * @return the BigDecimal value, or {@code null} if blank
      */
     public @Nullable BigDecimal asBigDecimal() {
         Number number = asNumber();

@@ -57,6 +57,10 @@ public class ExcelSheetWriter<T> {
 
     /**
      * Adds a column using a simple function.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function) {
         columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
@@ -65,6 +69,11 @@ public class ExcelSheetWriter<T> {
 
     /**
      * Adds a column with additional configuration.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @param cfg consumer to configure column styling
+     * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
         ColumnConfig<T> config = new ColumnConfig<>();
@@ -75,6 +84,10 @@ public class ExcelSheetWriter<T> {
 
     /**
      * Adds a column using a row function with cursor support.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
         columns.add(buildColumn(name, function, null));
@@ -83,6 +96,11 @@ public class ExcelSheetWriter<T> {
 
     /**
      * Adds a column using a row function with cursor support and additional configuration.
+     *
+     * @param name the column header
+     * @param function function to extract the cell value
+     * @param cfg consumer to configure column styling
+     * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
         ColumnConfig<T> config = new ColumnConfig<>();
@@ -93,6 +111,10 @@ public class ExcelSheetWriter<T> {
 
     /**
      * Adds a column with a constant value for all rows.
+     *
+     * @param name the column header
+     * @param value the constant value
+     * @return this writer for chaining
      */
     public ExcelSheetWriter<T> constColumn(String name, @Nullable Object value) {
         columns.add(buildColumn(name, (r, c) -> value, null));
@@ -162,21 +184,33 @@ public class ExcelSheetWriter<T> {
         return this;
     }
 
+    /** Freezes the specified number of top rows.
+     * @param rows number of rows to freeze
+     * @return this writer for chaining */
     public ExcelSheetWriter<T> freezePane(int rows) {
         this.cfg.freezePaneRows = rows;
         return this;
     }
 
+    /** Registers a callback that writes content before the header row.
+     * @param writer the before-header writer callback
+     * @return this writer for chaining */
     public ExcelSheetWriter<T> beforeHeader(BeforeHeaderWriter writer) {
         this.cfg.beforeHeaderWriter = writer;
         return this;
     }
 
+    /** Registers a callback that writes content after all data rows.
+     * @param writer the after-data writer callback
+     * @return this writer for chaining */
     public ExcelSheetWriter<T> afterData(AfterDataWriter writer) {
         this.cfg.afterDataWriter = writer;
         return this;
     }
 
+    /** Sets a function that determines the background color for each row.
+     * @param fn function returning a color per row, or null
+     * @return this writer for chaining */
     public ExcelSheetWriter<T> rowColor(Function<T, @Nullable ExcelColor> fn) {
         this.cfg.rowColorFunction = fn;
         return this;
@@ -348,6 +382,8 @@ public class ExcelSheetWriter<T> {
 
     /**
      * Writes the data stream to this sheet (with optional auto-rollover).
+     *
+     * @param stream the data stream to write
      */
     public void write(Stream<T> stream) {
         if (columns.isEmpty()) {

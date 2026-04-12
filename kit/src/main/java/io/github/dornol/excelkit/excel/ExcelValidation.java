@@ -29,11 +29,17 @@ public class ExcelValidation {
      * Supported validation types.
      */
     public enum ValidationType {
+        /** Integer value validation. */
         INTEGER,
+        /** Decimal value validation. */
         DECIMAL,
+        /** Text length validation. */
         TEXT_LENGTH,
+        /** Date range validation. */
         DATE,
+        /** Custom formula validation. */
         FORMULA,
+        /** List from cell range validation. */
         LIST_FORMULA
     }
 
@@ -55,6 +61,10 @@ public class ExcelValidation {
 
     /**
      * Creates a validation that requires an integer between min and max (inclusive).
+     *
+     * @param min minimum value (inclusive)
+     * @param max maximum value (inclusive)
+     * @return the validation instance
      */
     public static ExcelValidation integerBetween(int min, int max) {
         return new ExcelValidation(ValidationType.INTEGER,
@@ -64,6 +74,9 @@ public class ExcelValidation {
 
     /**
      * Creates a validation that requires an integer greater than the given value.
+     *
+     * @param min the minimum threshold (exclusive)
+     * @return the validation instance
      */
     public static ExcelValidation integerGreaterThan(int min) {
         return new ExcelValidation(ValidationType.INTEGER,
@@ -73,6 +86,9 @@ public class ExcelValidation {
 
     /**
      * Creates a validation that requires an integer less than the given value.
+     *
+     * @param max the maximum threshold (exclusive)
+     * @return the validation instance
      */
     public static ExcelValidation integerLessThan(int max) {
         return new ExcelValidation(ValidationType.INTEGER,
@@ -82,6 +98,10 @@ public class ExcelValidation {
 
     /**
      * Creates a validation that requires a decimal between min and max (inclusive).
+     *
+     * @param min minimum value (inclusive)
+     * @param max maximum value (inclusive)
+     * @return the validation instance
      */
     public static ExcelValidation decimalBetween(double min, double max) {
         return new ExcelValidation(ValidationType.DECIMAL,
@@ -91,6 +111,10 @@ public class ExcelValidation {
 
     /**
      * Creates a validation that restricts text length between min and max (inclusive).
+     *
+     * @param min minimum text length (inclusive)
+     * @param max maximum text length (inclusive)
+     * @return the validation instance
      */
     public static ExcelValidation textLength(int min, int max) {
         return new ExcelValidation(ValidationType.TEXT_LENGTH,
@@ -100,7 +124,10 @@ public class ExcelValidation {
 
     /**
      * Creates a validation that restricts dates between start and end (inclusive).
-     * Dates are represented as Excel serial numbers.
+     *
+     * @param start the earliest allowed date
+     * @param end the latest allowed date
+     * @return the validation instance
      */
     public static ExcelValidation dateRange(LocalDate start, LocalDate end) {
         return new ExcelValidation(ValidationType.DATE,
@@ -116,6 +143,7 @@ public class ExcelValidation {
      * instead of inline string arrays.
      *
      * @param range the cell range reference (e.g., "Sheet2!$A$1:$A$10")
+     * @return the validation instance
      */
     public static ExcelValidation listFromRange(String range) {
         return new ExcelValidation(ValidationType.LIST_FORMULA,
@@ -124,6 +152,9 @@ public class ExcelValidation {
 
     /**
      * Creates a validation using a custom Excel formula.
+     *
+     * @param formula the Excel formula
+     * @return the validation instance
      */
     public static ExcelValidation formula(String formula) {
         return new ExcelValidation(ValidationType.FORMULA,
@@ -133,6 +164,9 @@ public class ExcelValidation {
 
     /**
      * Sets the error dialog title.
+     *
+     * @param errorTitle the error dialog title
+     * @return this instance for chaining
      */
     public ExcelValidation errorTitle(String errorTitle) {
         this.errorTitle = errorTitle;
@@ -141,6 +175,9 @@ public class ExcelValidation {
 
     /**
      * Sets the error dialog message.
+     *
+     * @param errorMessage the error message text
+     * @return this instance for chaining
      */
     public ExcelValidation errorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
@@ -149,6 +186,9 @@ public class ExcelValidation {
 
     /**
      * Sets whether to show the error dialog when validation fails.
+     *
+     * @param showError whether to show the error dialog
+     * @return this instance for chaining
      */
     public ExcelValidation showError(boolean showError) {
         this.showError = showError;

@@ -36,8 +36,11 @@ import java.util.stream.Stream;
 public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     private static final Logger log = LoggerFactory.getLogger(AbstractReadHandler.class);
 
+    /** Supplier for creating new row instances (setter mode). */
     protected final @Nullable Supplier<T> instanceSupplier;
+    /** Function for mapping row data to instances (mapping mode). */
     protected final @Nullable Function<RowData, T> rowMapper;
+    /** Optional bean validator for row validation. */
     protected final @Nullable Validator validator;
 
     /**

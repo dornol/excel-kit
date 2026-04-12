@@ -77,6 +77,8 @@ public class RowData {
 
     /**
      * Returns the number of cells in this row.
+     *
+     * @return the cell count
      */
     public int size() {
         return cells.size();
@@ -84,6 +86,8 @@ public class RowData {
 
     /**
      * Returns the header names from the file.
+     *
+     * @return unmodifiable list of header names
      */
     public List<String> headerNames() {
         return Collections.unmodifiableList(headerNames);

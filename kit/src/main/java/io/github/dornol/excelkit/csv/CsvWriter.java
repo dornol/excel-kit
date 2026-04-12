@@ -35,6 +35,9 @@ import java.util.stream.Stream;
  * @since 2025-07-19
  */
 public class CsvWriter<T> {
+    /** Creates a new CSV writer with default settings. */
+    public CsvWriter() {}
+
     private static final Logger log = LoggerFactory.getLogger(CsvWriter.class);
     private final List<CsvColumn<T>> columns = new ArrayList<>();
     private char delimiter = ',';
