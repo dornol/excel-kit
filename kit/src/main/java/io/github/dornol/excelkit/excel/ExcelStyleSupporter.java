@@ -108,17 +108,14 @@ class ExcelStyleSupporter {
      * @return Configured CellStyle for body cells
      */
     static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, @Nullable String format, Map<String, CellStyle> cache) {
-        return cellStyle(wb, alignment, format, null, null, null, null, null, cache);
+        return cellStyle(wb, CellStyleParams.of(alignment, format), cache);
     }
 
     static CellStyle cellStyle(SXSSFWorkbook wb, HorizontalAlignment alignment, @Nullable String format,
                                int @Nullable [] backgroundColor, @Nullable Boolean bold, @Nullable Integer fontSize,
                                @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
                                Map<String, CellStyle> cache) {
-        CellStyleParams params = new CellStyleParams(alignment, format, backgroundColor, bold, fontSize,
-                borderStyle, locked, null, null, null, null, null, null, null, null,
-                null, null, null, null);
-        return cellStyle(wb, params, cache);
+        return cellStyle(wb, CellStyleParams.of(alignment, format, backgroundColor, bold, fontSize, borderStyle, locked), cache);
     }
 
     static CellStyle cellStyle(SXSSFWorkbook wb, CellStyleParams params, Map<String, CellStyle> cache) {

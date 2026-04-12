@@ -49,14 +49,7 @@ public class TemplateListWriter<T> {
 
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
-    private float rowHeightInPoints = SheetConfig.DEFAULT_ROW_HEIGHT_POINTS;
-    private @Nullable Function<T, @Nullable ExcelColor> rowColorFunction;
-    private @Nullable ProgressCallback progressCallback;
-    private int progressInterval;
-    private int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
-    private @Nullable AfterDataWriter afterDataWriter;
-    private @Nullable ExcelSummary summaryConfig;
-    private ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyleConfig;
+    private final SheetConfig<T> cfg = new SheetConfig<>();
 
     TemplateListWriter(ExcelTemplateWriter parent, SXSSFWorkbook wb, SXSSFSheet sheet,
                        int startRow, Map<String, CellStyle> cellStyleCache, int sheetIndex) {
@@ -131,7 +124,7 @@ public class TemplateListWriter<T> {
      * @return this writer for chaining
      */
     public TemplateListWriter<T> rowHeight(float rowHeightInPoints) {
-        this.rowHeightInPoints = rowHeightInPoints;
+        this.cfg.rowHeightInPoints = rowHeightInPoints;
         return this;
     }
 
@@ -142,7 +135,7 @@ public class TemplateListWriter<T> {
      * @return this writer for chaining
      */
     public TemplateListWriter<T> rowColor(Function<T, @Nullable ExcelColor> fn) {
-        this.rowColorFunction = fn;
+        this.cfg.rowColorFunction = fn;
         return this;
     }
 
@@ -157,8 +150,8 @@ public class TemplateListWriter<T> {
         if (interval <= 0) {
             throw new IllegalArgumentException("progress interval must be positive");
         }
-        this.progressInterval = interval;
-        this.progressCallback = callback;
+        this.cfg.progressInterval = interval;
+        this.cfg.progressCallback = callback;
         return this;
     }
 
@@ -172,7 +165,7 @@ public class TemplateListWriter<T> {
         if (rows < 0) {
             throw new IllegalArgumentException("autoWidthSampleRows must be non-negative");
         }
-        this.autoWidthSampleRows = rows;
+        this.cfg.autoWidthSampleRows = rows;
         return this;
     }
 
@@ -183,7 +176,7 @@ public class TemplateListWriter<T> {
      * @return this writer for chaining
      */
     public TemplateListWriter<T> afterData(AfterDataWriter writer) {
-        this.afterDataWriter = writer;
+        this.cfg.afterDataWriter = writer;
         return this;
     }
 
@@ -196,7 +189,7 @@ public class TemplateListWriter<T> {
     public TemplateListWriter<T> summary(Consumer<ExcelSummary> configurer) {
         ExcelSummary summary = new ExcelSummary();
         configurer.accept(summary);
-        this.summaryConfig = summary;
+        this.cfg.summaryConfig = summary;
         return this;
     }
 
@@ -209,7 +202,7 @@ public class TemplateListWriter<T> {
     public TemplateListWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
         ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
         configurer.accept(config);
-        this.defaultStyleConfig = config;
+        this.cfg.defaultStyleConfig = config;
         return this;
     }
 
@@ -257,19 +250,13 @@ public class TemplateListWriter<T> {
         try (stream) {
             stream.forEach(rowData -> {
                 cursor.plusTotal();
-                ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, rowHeightInPoints,
-                        rowColorFunction, rowStyleCache, wb, autoWidthSampleRows);
-                ExcelWriteSupport.checkProgress(cursor, progressInterval, progressCallback);
+                ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg.rowHeightInPoints,
+                        cfg.rowColorFunction, rowStyleCache, wb, cfg.autoWidthSampleRows);
+                ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             });
         }
 
-        int nextRow = cursor.getRowOfSheet();
-        if (afterDataWriter != null) {
-            nextRow = afterDataWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
-        }
-        if (summaryConfig != null) {
-            nextRow = summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
-        }
+        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
         ExcelWriteSupport.applyColumnWidths(sheet, columns);
 
@@ -280,8 +267,8 @@ public class TemplateListWriter<T> {
     private ExcelColumn<T> buildColumn(String name, ExcelRowFunction<T, @Nullable Object> function,
                                         @Nullable ColumnConfig<T> config) {
         ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
-        if (defaultStyleConfig != null) {
-            c.applyDefaults(defaultStyleConfig);
+        if (cfg.defaultStyleConfig != null) {
+            c.applyDefaults(cfg.defaultStyleConfig);
         }
         ExcelDataType dataType = c.dataType != null ? c.dataType : ExcelDataType.STRING;
         String dataFormat = c.dataFormat != null ? c.dataFormat : dataType.getDefaultFormat();

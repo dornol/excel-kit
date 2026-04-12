@@ -448,7 +448,7 @@ public class ExcelSheetWriter<T> {
             name = baseName + " (" + (rolloverIndex + 1) + ")";
         }
         if (usedSheetNames != null && !usedSheetNames.add(name)) {
-            throw new ExcelWriteException("Duplicate sheet name during rollover: " + name);
+            throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
         }
         return wb.createSheet(name);
     }
