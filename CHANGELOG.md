@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.3] - 2026-04-12
+
+### Fixed
+
+- **readAsStream() producer thread deadlock** — when consumer closed the stream early
+  (e.g., `limit()`, `takeWhile()`), the producer thread could block forever on
+  `queue.put()`. Replaced with `offer(timeout)` + interrupt check loop so the producer
+  exits cleanly on consumer close.
+- **Temp file leak on read initialization failure** — if `Files.copy()` failed during
+  `initTempFile()`, already-created temp directory and file were not cleaned up. Now
+  calls `close()` before rethrowing the exception.
+
 ## [0.16.2] - 2026-04-12
 
 ### Fixed
