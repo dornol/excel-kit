@@ -78,15 +78,18 @@ public final class ExcelHandler implements FileHandler {
      * This method can only be called once; subsequent calls will throw an exception.
      *
      * @param outputStream The OutputStream to write the Excel file to
-     * @throws IOException If an I/O error occurs during writing
-     * @throws ExcelWriteException If this method has already been called
+     * @throws ExcelWriteException If this method has already been called or if an I/O error occurs
      */
     @Override
-    public void write(OutputStream outputStream) throws IOException {
-        if (password != null) {
-            encryptAndWrite(outputStream, password);
-        } else {
-            writePlain(outputStream);
+    public void write(OutputStream outputStream) {
+        try {
+            if (password != null) {
+                encryptAndWrite(outputStream, password);
+            } else {
+                writePlain(outputStream);
+            }
+        } catch (IOException e) {
+            throw new ExcelWriteException("Failed to write Excel", e);
         }
     }
 
@@ -99,15 +102,19 @@ public final class ExcelHandler implements FileHandler {
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
-     * @throws IOException If an I/O or encryption error occurs during writing
+     * @throws ExcelWriteException If an I/O or encryption error occurs during writing
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      */
-    public void consumeOutputStreamWithPassword(OutputStream outputStream, String password) throws IOException {
+    public void consumeOutputStreamWithPassword(OutputStream outputStream, String password) {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
-        rejectIfPasswordAlreadySet();
-        encryptAndWrite(outputStream, password);
+        try {
+            rejectIfPasswordAlreadySet();
+            encryptAndWrite(outputStream, password);
+        } catch (IOException e) {
+            throw new ExcelWriteException("Failed to write encrypted Excel", e);
+        }
     }
 
     /**
@@ -120,16 +127,18 @@ public final class ExcelHandler implements FileHandler {
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password as a char array (will be zeroed after use)
-     * @throws IOException If an I/O or encryption error occurs during writing
+     * @throws ExcelWriteException If an I/O or encryption error occurs during writing
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      */
-    public void consumeOutputStreamWithPassword(OutputStream outputStream, char[] password) throws IOException {
+    public void consumeOutputStreamWithPassword(OutputStream outputStream, char[] password) {
         if (password == null || password.length == 0 || isBlank(password)) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
         try {
             rejectIfPasswordAlreadySet();
             encryptAndWrite(outputStream, new String(password));
+        } catch (IOException e) {
+            throw new ExcelWriteException("Failed to write encrypted Excel", e);
         } finally {
             Arrays.fill(password, '\0');
         }

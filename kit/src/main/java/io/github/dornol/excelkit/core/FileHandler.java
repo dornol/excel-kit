@@ -35,11 +35,13 @@ public interface FileHandler {
      * <p>
      * Can only be called once per handler instance. The handler's backing resources
      * (workbook, staging file) are released before this method returns.
+     * <p>
+     * I/O errors are wrapped as unchecked exceptions (e.g., {@code ExcelWriteException},
+     * {@code CsvWriteException}) so callers do not need to handle checked exceptions.
      *
      * @param out the destination stream
-     * @throws IOException if an I/O error occurs while writing
      */
-    void write(OutputStream out) throws IOException;
+    void write(OutputStream out);
 
     /**
      * Writes the generated file content directly to a file path.
@@ -56,12 +58,13 @@ public interface FileHandler {
      * }</pre>
      *
      * @param path the destination file path
-     * @throws IOException if an I/O error occurs while writing
      * @since 0.14.0
      */
-    default void toFile(Path path) throws IOException {
+    default void toFile(Path path) {
         try (OutputStream out = Files.newOutputStream(path)) {
             write(out);
+        } catch (IOException e) {
+            throw new ExcelKitException("Failed to write file: " + path, e);
         }
     }
 }

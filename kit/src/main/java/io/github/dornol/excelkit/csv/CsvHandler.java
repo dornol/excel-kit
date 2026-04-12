@@ -40,9 +40,8 @@ public final class CsvHandler extends TempResourceContainer implements FileHandl
      * <p>
      * The temporary file and directory will be deleted automatically after writing.
      * <p>
-     * This implementation wraps {@link IOException} as {@link CsvWriteException} internally
-     * and never actually throws {@code IOException}, even though the {@link FileHandler}
-     * contract declares it.
+     * Note: I/O errors are wrapped as {@link CsvWriteException} (unchecked) rather than
+     * propagated as {@link IOException}, so callers do not need a try-catch for checked exceptions.
      *
      * @param outputStream The stream to which the CSV content will be written
      * @throws CsvWriteException If this method has already been called or if an I/O error occurs

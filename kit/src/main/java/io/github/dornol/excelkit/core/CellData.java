@@ -444,15 +444,31 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
     }
 
     /**
-     * Converts the value to {@link BigDecimal}.
-     * Uses the string representation of the parsed number to avoid precision loss.
+     * Converts the value to {@link BigDecimal} with full precision.
+     * <p>
+     * Unlike {@link #asNumber()}, this method parses the cleaned string directly
+     * as a {@link BigDecimal}, avoiding intermediate {@link Double} conversion
+     * that can lose precision for large or high-precision values.
      * Returns {@code null} if the value is empty or blank.
      *
      * @return the BigDecimal value, or {@code null} if blank
+     * @throws IllegalArgumentException if the value cannot be parsed as a number
      */
     public @Nullable BigDecimal asBigDecimal() {
-        Number number = asNumber();
-        return number != null ? new BigDecimal(number.toString()) : null;
+        if (formattedValue.isBlank()) {
+            return null;
+        }
+        try {
+            String cleaned = CURRENCY_SYMBOLS.matcher(
+                    formattedValue.replace("\u00A0", " "))
+                    .replaceAll("")
+                    .replace(" ", "")
+                    .trim();
+            return new BigDecimal(cleaned);
+        } catch (NumberFormatException e) {
+            log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, formattedValue);
+            throw new IllegalArgumentException("Failed to parse BigDecimal: " + formattedValue);
+        }
     }
 
     /**

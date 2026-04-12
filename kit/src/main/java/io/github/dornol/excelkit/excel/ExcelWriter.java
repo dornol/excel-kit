@@ -808,27 +808,35 @@ public class ExcelWriter<T> {
         ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
         applySheetOptions();
 
-        try (stream) {
-            stream.forEach(rowData -> {
-                this.handleRowData(rowData);
-                consumer.accept(rowData, cursor);
-            });
+        try {
+            try (stream) {
+                stream.forEach(rowData -> {
+                    this.handleRowData(rowData);
+                    consumer.accept(rowData, cursor);
+                });
+            }
+
+            int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+            if (this.afterAllWriter != null) {
+                this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
+            }
+
+            applyPostProcessingAllSheets();
+            ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
+
+            // Apply chart on last sheet
+            if (cfg.chartConfig != null) {
+                ExcelWriteSupport.applyChart(sheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
+            }
+
+            return new ExcelHandler(this.wb, this.password);
+        } catch (ExcelWriteException e) {
+            closeWorkbookQuietly();
+            throw e;
+        } catch (Exception e) {
+            closeWorkbookQuietly();
+            throw new ExcelWriteException("Failed to write excel", e);
         }
-
-        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
-        if (this.afterAllWriter != null) {
-            this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
-        }
-
-        applyPostProcessingAllSheets();
-        ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
-
-        // Apply chart on last sheet
-        if (cfg.chartConfig != null) {
-            ExcelWriteSupport.applyChart(sheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
-        }
-
-        return new ExcelHandler(this.wb, this.password);
     }
 
     /**
@@ -912,6 +920,14 @@ public class ExcelWriter<T> {
      *
      * @return SXSSFWorkbook instance
      */
+    private void closeWorkbookQuietly() {
+        try {
+            wb.close();
+        } catch (Exception e) {
+            log.warn("Failed to close workbook after error", e);
+        }
+    }
+
     SXSSFWorkbook getWb() {
         return wb;
     }
