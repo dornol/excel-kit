@@ -470,4 +470,17 @@ class ExcelWorkbookTest {
         assertDoesNotThrow(wb::close);
         assertDoesNotThrow(wb::close);
     }
+
+    // ============================================================
+    // finish() duplicate-call guard
+    // ============================================================
+
+    @Test
+    void finish_twice_throws() {
+        ExcelWorkbook wb = ExcelWorkbook.builder().build();
+        wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
+        wb.finish();
+        assertThrows(ExcelWriteException.class, wb::finish,
+                "Calling finish() a second time should throw");
+    }
 }

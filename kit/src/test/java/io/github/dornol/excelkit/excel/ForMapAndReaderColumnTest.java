@@ -288,6 +288,69 @@ class ForMapAndReaderColumnTest {
         }
     }
 
+    @Nested
+    @DisplayName("ExcelReader.forMap(String...) column selection")
+    class ExcelReaderForMapColumnSelection {
+
+        @Test
+        @DisplayName("forMap with selected columns returns only those columns")
+        void forMap_selectedColumns_filtersOthers() throws IOException {
+            // Write a 3-column Excel file
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.forMap("Name", "Age", "City")
+                    .write(Stream.of(
+                            Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
+                            Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")))
+                    .write(out);
+
+            // Read with only "Name" and "City" selected
+            List<ReadResult<Map<String, String>>> results = new ArrayList<>();
+            ExcelReader.forMap("Name", "City")
+                    .build(new ByteArrayInputStream(out.toByteArray()))
+                    .read(results::add);
+
+            assertEquals(2, results.size());
+            Map<String, String> row1 = results.get(0).data();
+            assertEquals("Alice", row1.get("Name"));
+            assertEquals("Seoul", row1.get("City"));
+            assertNull(row1.get("Age"), "Age should be filtered out");
+            assertEquals(2, row1.size());
+        }
+
+        @Test
+        @DisplayName("forMap with no args returns all columns")
+        void forMap_noArgs_returnsAll() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.forMap("Name", "Age")
+                    .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
+                    .write(out);
+
+            List<ReadResult<Map<String, String>>> results = new ArrayList<>();
+            ExcelReader.forMap()
+                    .build(new ByteArrayInputStream(out.toByteArray()))
+                    .read(results::add);
+
+            assertEquals(1, results.size());
+            assertEquals(2, results.get(0).data().size());
+        }
+
+        @Test
+        @DisplayName("CsvReader.forMap(String...) column selection")
+        void csvReader_forMap_selectedColumns() {
+            String csv = "Name,Age,City\nAlice,30,Seoul\nBob,25,Tokyo\n";
+            List<ReadResult<Map<String, String>>> results = new ArrayList<>();
+            CsvReader.forMap("Name", "City")
+                    .build(new ByteArrayInputStream(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                    .read(results::add);
+
+            assertEquals(2, results.size());
+            Map<String, String> row1 = results.get(0).data();
+            assertEquals("Alice", row1.get("Name"));
+            assertEquals("Seoul", row1.get("City"));
+            assertNull(row1.get("Age"), "Age should be filtered out");
+        }
+    }
+
     private static Person makePerson(String name, int age, String city) {
         Person p = new Person();
         p.name = name;
