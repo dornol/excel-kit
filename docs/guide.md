@@ -113,14 +113,14 @@ without requiring any additional architectural effort.
 | Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).write(out)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
-| Read Excel (typed) | `ExcelReader<T>` | `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)` |
+| Read Excel (typed) | `ExcelReader<T>` | `ExcelReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 | Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)` |
 | Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).write(out)` |
-| Read CSV (typed) | `CsvReader<T>` | `new CsvReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)` |
+| Read CSV (typed) | `CsvReader<T>` | `CsvReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 
-**Read modes:** Setter mode (`new XxxReader<>(T::new, validator)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`ExcelReader.forMap()` / `CsvReader.forMap()`) for schema-less reading.
+**Read modes:** Setter mode (`XxxReader.setter(T::new)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`ExcelReader.forMap()` / `CsvReader.forMap()`) for schema-less reading.
 
 **Output consumption:** `write(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `consumeOutputStreamWithPassword(out, "pw")` for late-binding encryption.
 
@@ -268,14 +268,14 @@ Match columns by header name instead of positional index. Column order in the fi
 
 ```java
 // Excel — matched by header name "Name" and "Age", regardless of column order
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .column("Name", (u, cell) -> u.name = cell.asString())
         .column("Age", (u, cell) -> u.age = cell.asInt())
         .build(inputStream)
         .read(result -> { ... });
 
 // CSV — same API
-new CsvReader<>(User::new, null)
+CsvReader.setter(User::new)
         .column("Name", (u, cell) -> u.name = cell.asString())
         .column("Age", (u, cell) -> u.age = cell.asInt())
         .build(inputStream)
@@ -287,7 +287,7 @@ You can also read a subset of columns — only the named columns are mapped, oth
 ```java
 // File has columns: Name, Age, City, Email, Phone
 // Only read Name and City
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .column("Name", (u, cell) -> u.name = cell.asString())
         .column("City", (u, cell) -> u.city = cell.asString())
         .build(inputStream);
@@ -296,7 +296,7 @@ new ExcelReader<>(User::new, null)
 The `column(String headerName, BiConsumer)` overload also supports name-based mapping:
 
 ```java
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .column("Name", (u, cell) -> u.name = cell.asString())
         .column("Age", (u, cell) -> u.age = cell.asInt())
         .build(inputStream);
@@ -310,7 +310,7 @@ Map columns by explicit 0-based index — no need for `skipColumn()` chains:
 
 ```java
 // Read only columns 0, 2, and 4 directly
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .columnAt(0, (u, cell) -> u.name = cell.asString())
         .columnAt(2, (u, cell) -> u.city = cell.asString())
         .columnAt(4, (u, cell) -> u.phone = cell.asString())
@@ -320,7 +320,7 @@ new ExcelReader<>(User::new, null)
 Can be mixed with name-based and positional mapping:
 
 ```java
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .column("Name", (u, cell) -> u.name = cell.asString())  // by name
         .columnAt(3, (u, cell) -> u.age = cell.asInt())          // by index
         .build(inputStream);
@@ -328,7 +328,7 @@ new ExcelReader<>(User::new, null)
 
 Also available for CSV:
 ```java
-new CsvReader<>(User::new, null)
+CsvReader.setter(User::new)
         .columnAt(0, (u, cell) -> u.name = cell.asString())
         .columnAt(2, (u, cell) -> u.city = cell.asString())
         .build(inputStream);
@@ -1362,7 +1362,7 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 Combined with `sheetIndex()` to iterate over all sheets:
 ```java
 for (ExcelSheetInfo sheet : ExcelReader.getSheetNames(new FileInputStream(file))) {
-    new ExcelReader<>(Row::new, null)
+    ExcelReader.setter(Row::new)
         .sheetIndex(sheet.index())
         .column("Name", (r, cell) -> r.name = cell.asString())
         .build(new FileInputStream(file))
@@ -1383,6 +1383,8 @@ writer
 ```
 
 The callback fires every `interval` rows. Works with both `ExcelWriter` and `ExcelSheetWriter`, including across sheet rollovers.
+
+> **Warning:** The callback runs on the writing thread — keep it fast and non-blocking. Heavy operations (e.g., DB queries, HTTP calls) will slow down the entire write process.
 
 ### Conditional Columns
 
@@ -1632,7 +1634,7 @@ writer
 
 **Header row index** (for files with metadata rows above the header):
 ```java
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .headerRowIndex(2)  // use the 3rd row as header (0-based)
         .column((u, cell) -> u.name = cell.asString())
         .build(inputStream);
@@ -1640,7 +1642,7 @@ new ExcelReader<>(User::new, null)
 
 **Specific sheet:**
 ```java
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .sheetIndex(1)  // read the 2nd sheet (0-based)
         .column((u, cell) -> u.name = cell.asString())
         .build(inputStream);
@@ -1673,7 +1675,7 @@ ExcelReader.configureLargeFileSupport();
 
 **Read progress callback:**
 ```java
-new ExcelReader<>(User::new, null)
+ExcelReader.setter(User::new)
         .column((u, cell) -> u.name = cell.asString())
         .onProgress(10_000, (count, cursor) ->
             log.info("Read {} rows", count))
@@ -1681,10 +1683,12 @@ new ExcelReader<>(User::new, null)
         .read(consumer);
 ```
 
+> **Warning:** Progress callbacks run on the read/write thread — keep them fast and non-blocking.
+
 **Bean Validation:**
 ```java
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-ExcelReader<User> reader = new ExcelReader<>(User::new, validator);
+ExcelReader<User> reader = ExcelReader.setter(User::new, validator);
 ```
 
 ### CellData Conversion Methods
@@ -1835,7 +1839,7 @@ new CsvWriter<Row>()
     .column("Name", r -> r.name())
     .write(rows);
 
-new CsvReader<>(Row::new, null)
+CsvReader.setter(Row::new)
     .delimiter('\t')
     .charset(StandardCharsets.UTF_16)
     .headerRowIndex(1)

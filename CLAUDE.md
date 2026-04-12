@@ -6,7 +6,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 
 - `kit/` — 라이브러리 본체 (Maven Central 배포 대상)
 - `example/` — Spring Boot 예제 앱 (showcase 엔드포인트)
-- `docs/` — 문서 (`guide.md` 상세 가이드, `llms.txt` LLM 컨텍스트)
+- `docs/` — 문서 (`guide.md` 상세 가이드)
 
 ## 릴리스 체크리스트
 
@@ -21,7 +21,6 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
    - Quick Start 코드가 최신 API 사용하는지 확인
 5. 문서 최신화 (새 기능이 있으면):
    - `docs/guide.md` — 상세 가이드에 새 기능 사용법 추가
-   - `docs/llms.txt` — LLM 컨텍스트 문서 반영
    - `META-INF/AI.md` 및 `META-INF/excel-kit/*.md` — JAR 내 AI 문서 반영
 6. `example/` 최신화 (showcase할 기능이 있으면):
    - `WriteShowcaseController` — 새 기능 엔드포인트 추가
