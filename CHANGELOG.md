@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.0] - 2026-04-12
+
+### Added
+
+- **`FileHandler.toFile(Path)`** — convenience default method that writes directly to a
+  file path without manually opening an OutputStream. Works for both Excel and CSV:
+  `writer.write(stream).toFile(Path.of("output.xlsx"))`.
+- **`ExcelReader.password(String)`** — enables reading password-encrypted Excel files.
+  Symmetric with `ExcelWriter.password()` for writing. Uses POI's Decryptor API.
+- **`CsvWriter.constColumnIf(name, condition, value)`** — conditional constant column,
+  symmetric with `ExcelWriter.constColumnIf()`.
+
+### Fixed
+
+- **BookJpaRepository JPQL path** — example app's JPQL query referenced a wrong package
+  (`book.domain.BookDto` instead of `book.application.port.out.BookDto`). Pre-existing bug
+  unrelated to library code.
+
+### Changed
+
+- **Release checklist strengthened** — CLAUDE.md now requires `./gradlew :example:bootRun`
+  to verify Spring context initialization (catches JPQL/HQL errors that `compileJava` misses),
+  plus `./gradlew :kit:javadoc` for zero-warning verification.
+
 ## [0.14.0] - 2026-04-12
 
 v0.14.0 is a comprehensive API cleanup and internal refactoring release.
