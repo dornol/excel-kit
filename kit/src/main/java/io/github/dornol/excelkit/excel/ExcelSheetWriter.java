@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -402,31 +403,31 @@ public class ExcelSheetWriter<T> {
         int headerRowIdx = cursor.getRowOfSheet() - 1;
         ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
 
-        // Mutable holder for current sheet in lambda
-        SXSSFSheet[] currentSheet = {this.sheet};
+        SXSSFSheet activeSheet = this.sheet;
 
         try (stream) {
-            stream.forEach(rowData -> {
+            Iterator<T> it = stream.iterator();
+            while (it.hasNext()) {
+                T rowData = it.next();
                 cursor.plusTotal();
                 if (maxRows != Integer.MAX_VALUE && cursor.getCurrentTotal() >= maxRows
                         && cursor.getCurrentTotal() % maxRows == 1) {
-                    ExcelWriteSupport.writeAfterDataAndSummary(currentSheet[0], wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
-                    // Create rollover sheet
-                    currentSheet[0] = createRolloverSheet(allSheets.size());
-                    allSheets.add(currentSheet[0]);
+                    ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+                    activeSheet = createRolloverSheet(allSheets.size());
+                    allSheets.add(activeSheet);
                     cursor.initRow();
-                    ExcelWriteSupport.initSheetPreamble(currentSheet[0], wb, columns, cfg.beforeHeaderWriter);
-                    ExcelWriteSupport.writeColumnHeaders(currentSheet[0], cursor, columns, headerStyle);
+                    ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
+                    ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
-                    ExcelWriteSupport.applySheetOptions(currentSheet[0], hdrIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
+                    ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
                 }
-                ExcelWriteSupport.writeRowCells(currentSheet[0], cursor, rowData, columns, cfg.rowHeightInPoints,
+                ExcelWriteSupport.writeRowCells(activeSheet, cursor, rowData, columns, cfg.rowHeightInPoints,
                         cfg.rowColorFunction, rowStyleCache, wb, cfg.autoWidthSampleRows);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
-            });
+            }
         }
 
-        ExcelWriteSupport.writeAfterDataAndSummary(currentSheet[0], wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+        ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
         for (SXSSFSheet s : allSheets) {
             ExcelWriteSupport.applyPostProcessing(s, columns, headerRowIndex, cfg);
