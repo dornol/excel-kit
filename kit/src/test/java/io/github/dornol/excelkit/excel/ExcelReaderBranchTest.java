@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.csv.CsvReader;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -394,7 +395,7 @@ class ExcelReaderBranchTest {
         void csvReadStrict_failedRow_throwsReadAbort() {
             String csv = "Name,Value\nAlice,10\nBob,bad";
 
-            var handler = new io.github.dornol.excelkit.csv.CsvReader<>(CsvItem::new, null)
+            var handler = new CsvReader<>(CsvItem::new, null)
                     .column("Name", (t, cell) -> t.name = cell.asString())
                     .column("Value", (t, cell) -> t.value = cell.asInt())
                     .build(new ByteArrayInputStream(csv.getBytes()));
@@ -406,7 +407,7 @@ class ExcelReaderBranchTest {
         void csvMapping_readStrict_throwsReadAbortOnError() {
             String csv = "Name,Value\nAlice,10\nBob,bad";
 
-            var handler = io.github.dornol.excelkit.csv.CsvReader.<Item>mapping(row ->
+            var handler = CsvReader.<Item>mapping(row ->
                     new Item(row.get("Name").asString(), row.get("Value").asInt())
             ).build(new ByteArrayInputStream(csv.getBytes()));
 
@@ -424,7 +425,7 @@ class ExcelReaderBranchTest {
         void positionalColumns_shouldMapByOrder() throws IOException {
             byte[] excel = writeSimpleExcel();
 
-            List<io.github.dornol.excelkit.core.ReadResult<Mapped>> results = new ArrayList<>();
+            List<ReadResult<Mapped>> results = new ArrayList<>();
             new ExcelReader<>(Mapped::new, null)
                     .column((t, cell) -> t.col0 = cell.asString())  // positional: index 0
                     .column((t, cell) -> t.col1 = cell.asString())  // positional: index 1
@@ -440,8 +441,8 @@ class ExcelReaderBranchTest {
         void csvPositionalColumns_shouldMapByOrder() {
             String csv = "Name,Age\nAlice,30";
 
-            List<io.github.dornol.excelkit.core.ReadResult<Mapped>> results = new ArrayList<>();
-            new io.github.dornol.excelkit.csv.CsvReader<>(Mapped::new, null)
+            List<ReadResult<Mapped>> results = new ArrayList<>();
+            new CsvReader<>(Mapped::new, null)
                     .column((t, cell) -> t.col0 = cell.asString())
                     .column((t, cell) -> t.col1 = cell.asString())
                     .build(new ByteArrayInputStream(csv.getBytes()))

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
 import org.junit.jupiter.api.Test;
 
@@ -178,7 +179,7 @@ class CsvReadHandlerEdgeCaseTest {
                 new Person(row.get("Name").asString(), row.get("Age").asInt())
         ).build(toInputStream(csv));
 
-        assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class,
+        assertThrows(CsvReadException.class,
                 handler::readAsStream);
     }
 
@@ -229,9 +230,9 @@ class CsvReadHandlerEdgeCaseTest {
                 new Person(row.get("Name").asString(), row.get("Age").asInt())
         ).build(toInputStream(csv));
 
-        assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class, () ->
+        assertThrows(CsvReadException.class, () ->
                 handler.read(r -> {
-                    throw new io.github.dornol.excelkit.csv.CsvReadException("test error");
+                    throw new CsvReadException("test error");
                 }));
     }
 
@@ -243,9 +244,9 @@ class CsvReadHandlerEdgeCaseTest {
                 new Person(row.get("Name").asString(), row.get("Age").asInt())
         ).build(toInputStream(csv));
 
-        assertThrows(io.github.dornol.excelkit.core.ReadAbortException.class, () ->
+        assertThrows(ReadAbortException.class, () ->
                 handler.read(r -> {
-                    throw new io.github.dornol.excelkit.core.ReadAbortException("abort!");
+                    throw new ReadAbortException("abort!");
                 }));
     }
 
