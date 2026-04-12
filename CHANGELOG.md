@@ -2,6 +2,117 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2026-04-12
+
+v0.14.0 is a comprehensive API cleanup and internal refactoring release.
+
+### Changed (Breaking)
+
+- **Package renamed: `shared` → `core`** — `io.github.dornol.excelkit.shared` is now
+  `io.github.dornol.excelkit.core`. All imports must be updated. The package holds the
+  library's central abstractions (FileHandler, CellData, ReadColumn, RowData, etc.) —
+  "core" describes their role more accurately.
+- **`ExcelRowFunction` and `CsvRowFunction` deleted** — both were empty marker interfaces
+  extending `RowFunction` with zero additional methods. Use `RowFunction` (in `core/`)
+  directly.
+- **`ExcelConsumer` renamed to `WriteRowCallback`** — better signals that it's a per-row
+  callback during writes, not a generic consumer.
+- **`ExcelReadColumn` and `CsvReadColumn` merged into `ReadColumn`** — identical records
+  consolidated into `core/ReadColumn<T>`.
+- **`ExcelWorkbook` constructors removed** — use `ExcelWorkbook.builder()` (same pattern
+  as `ExcelWriter.builder()`).
+- **`ExcelReader.configureLargeFileSupport()` moved to `ExcelKitConfig`** — JVM-global
+  POI configuration belongs at application bootstrap level, not on a reader class.
+- **`ExcelWorkbook.finish()` now throws on duplicate calls** — second call to `finish()`
+  throws `ExcelWriteException` instead of silently creating a new handler.
+
+### Added
+
+- **`ExcelReader.setter()` / `CsvReader.setter()` static factories** — all three read
+  modes now have symmetric entry points: `setter()`, `mapping()`, `forMap()`.
+- **`ExcelReader(Supplier)` / `CsvReader(Supplier)` no-validator constructors** —
+  eliminates the `null` parameter: `new ExcelReader<>(User::new)` instead of
+  `new ExcelReader<>(User::new, null)`.
+- **`ExcelWriter.forMap(Builder, String...)` overload** — allows setting color, maxRows,
+  rowAccessWindowSize on map-mode writers.
+- **`ExcelReader.forMap(String...)` / `CsvReader.forMap(String...)` column selection** —
+  include only specified headers in the output map.
+- **`ExcelKitConfig` utility class** — centralized JVM-global POI configuration.
+- **`ExcelColumn.of(name, fn, style, setter)` factory** — 4-param shortcut for the
+  17-param constructor (mainly useful in tests).
+- **`CellStyleParams.of()` convenience factories** — eliminates 11-null padding in
+  common call patterns.
+
+### Internal improvements
+
+- **Javadoc warnings: 100 → 0** — all public APIs now have complete javadoc.
+- **`ExcelWriteSupport` shared methods** — `writeAfterDataAndSummary()` and
+  `applyPostProcessing()` extracted, eliminating duplication between ExcelWriter and
+  ExcelSheetWriter. `writeRowCells()` now accepts `SheetConfig<T>` directly (9→7 params).
+- **`TemplateListWriter` → `SheetConfig` delegation** — 8 duplicate fields replaced with
+  a shared `SheetConfig<T>` instance.
+- **`AbstractReadHandler` validation helpers** — `validateHeaderRowIndex()` and
+  `validateColumns()` eliminate repeated if/throw blocks across 4 handler constructors.
+- **Mutable array hack removed** — `ExcelSheetWriter.write()` uses an Iterator loop
+  instead of `SXSSFSheet[]` array workaround.
+- **Magic numbers extracted** — `WIDTH_PER_CHAR`, `WIDTH_BASE_PADDING`,
+  `DEFAULT_FONT_SIZE`, `FONT_HEIGHT_MULTIPLIER`, `LUMINANCE_DARK_THRESHOLD`,
+  `DEFAULT_ROW_HEIGHT_POINTS` are now named constants.
+- **Defensive array copies** — `ExcelColumn.getDropdownOptions()` and
+  `getHeaderFontColor()` return cloned arrays.
+- **`ColumnStyleConfig` fields reorganized** — grouped by category (Layout, Font, Color,
+  Borders, Validation, Protection, Grouping) with section comments.
+- **Package-info expanded** — all three package descriptions upgraded from one-liners to
+  meaningful summaries listing key classes and capabilities.
+- **Error message consistency** — duplicate-name errors now use consistent `'name'`
+  quoting format.
+- **ExcelSheetWriter javadoc** — documents the `ColumnConfig` vs `ExcelColumnBuilder`
+  design difference.
+
+### Migration Guide
+
+```java
+// ─── Package rename ───
+// Before
+import io.github.dornol.excelkit.shared.FileHandler;
+import io.github.dornol.excelkit.shared.CellData;
+// After
+import io.github.dornol.excelkit.core.FileHandler;
+import io.github.dornol.excelkit.core.CellData;
+
+// ─── RowFunction ───
+// Before
+ExcelRowFunction<User, Object> fn = (user, cursor) -> user.getName();
+CsvRowFunction<User, Object> fn = (user, cursor) -> user.getName();
+// After
+RowFunction<User, Object> fn = (user, cursor) -> user.getName();
+
+// ─── ExcelConsumer → WriteRowCallback ───
+// Before
+writer.write(stream, (ExcelConsumer<User>) (row, cursor) -> log(row));
+// After
+writer.write(stream, (WriteRowCallback<User>) (row, cursor) -> log(row));
+
+// ─── ExcelWorkbook ───
+// Before
+new ExcelWorkbook(ExcelColor.STEEL_BLUE)
+// After
+ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()
+
+// ─── Reader setter mode ───
+// Before
+new ExcelReader<>(User::new, null)
+// After (pick one)
+new ExcelReader<>(User::new)          // no-validator constructor
+ExcelReader.setter(User::new)         // static factory (symmetric with mapping/forMap)
+
+// ─── Large file support ───
+// Before
+ExcelReader.configureLargeFileSupport();
+// After
+ExcelKitConfig.configureLargeFileSupport();
+```
+
 ## [0.13.0] - 2026-04-12
 
 ### Changed (Breaking)
