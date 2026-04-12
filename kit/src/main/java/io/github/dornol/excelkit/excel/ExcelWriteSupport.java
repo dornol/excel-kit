@@ -35,6 +35,40 @@ class ExcelWriteSupport {
     }
 
     /**
+     * Invokes the afterData and summary callbacks on the given sheet, returning the next
+     * available row index. Used at both rollover points and post-data finalization.
+     */
+    static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
+                                             List<ExcelColumn<T>> columns, int headerRowIndex,
+                                             SheetConfig<T> cfg) {
+        int row = startRow;
+        if (cfg.afterDataWriter != null) {
+            row = cfg.afterDataWriter.write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
+        }
+        if (cfg.summaryConfig != null) {
+            cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
+        }
+        return row;
+    }
+
+    /**
+     * Applies all post-processing steps (column widths, validations, outlines, hiding,
+     * protection, conditional formatting, print setup, tab color) to a single sheet.
+     */
+    static <T> void applyPostProcessing(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
+                                         int headerRowIndex, SheetConfig<T> cfg) {
+        applyColumnWidths(sheet, columns);
+        applyDataValidations(sheet, columns, headerRowIndex);
+        applyColumnOutline(sheet, columns);
+        applyColumnHidden(sheet, columns);
+        applySheetProtection(sheet, cfg.sheetPassword);
+        applyConditionalFormatting(sheet, cfg.conditionalRules, headerRowIndex,
+                columns.size(), sheet.getLastRowNum());
+        applyPrintSetup(sheet, cfg.printSetup, headerRowIndex);
+        applyTabColor(sheet, cfg.tabColor);
+    }
+
+    /**
      * Writes column headers, with optional group header row if any column has a groupName.
      */
     static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,

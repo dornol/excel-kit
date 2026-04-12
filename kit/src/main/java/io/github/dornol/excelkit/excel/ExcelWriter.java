@@ -793,13 +793,7 @@ public class ExcelWriter<T> {
             });
         }
 
-        int nextRow = cursor.getRowOfSheet();
-        if (this.cfg.afterDataWriter != null) {
-            nextRow = this.cfg.afterDataWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
-        }
-        if (this.cfg.summaryConfig != null) {
-            nextRow = this.cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
-        }
+        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
         if (this.afterAllWriter != null) {
             this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, columns, headerRowIndex));
         }
@@ -841,13 +835,7 @@ public class ExcelWriter<T> {
     void handleRowData(T rowData) {
         cursor.plusTotal();
         if (isOverMaxRows()) {
-            int rolloverRow = cursor.getRowOfSheet();
-            if (this.cfg.afterDataWriter != null) {
-                rolloverRow = this.cfg.afterDataWriter.write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
-            }
-            if (this.cfg.summaryConfig != null) {
-                this.cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, rolloverRow, columns, headerRowIndex));
-            }
+            ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
             turnOverSheet();
             ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
             ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
@@ -894,15 +882,7 @@ public class ExcelWriter<T> {
      */
     private void applyPostProcessingAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-            SXSSFSheet s = wb.getSheetAt(i);
-            ExcelWriteSupport.applyColumnWidths(s, columns);
-            ExcelWriteSupport.applyDataValidations(s, columns, headerRowIndex);
-            ExcelWriteSupport.applyColumnOutline(s, columns);
-            ExcelWriteSupport.applyColumnHidden(s, columns);
-            ExcelWriteSupport.applySheetProtection(s, cfg.sheetPassword);
-            ExcelWriteSupport.applyConditionalFormatting(s, cfg.conditionalRules, headerRowIndex, columns.size(), s.getLastRowNum());
-            ExcelWriteSupport.applyPrintSetup(s, cfg.printSetup, headerRowIndex);
-            ExcelWriteSupport.applyTabColor(s, cfg.tabColor);
+            ExcelWriteSupport.applyPostProcessing(wb.getSheetAt(i), columns, headerRowIndex, cfg);
         }
     }
 

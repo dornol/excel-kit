@@ -410,14 +410,7 @@ public class ExcelSheetWriter<T> {
                 cursor.plusTotal();
                 if (maxRows != Integer.MAX_VALUE && cursor.getCurrentTotal() >= maxRows
                         && cursor.getCurrentTotal() % maxRows == 1) {
-                    // afterData on current sheet
-                    int rolloverRow = cursor.getRowOfSheet();
-                    if (cfg.afterDataWriter != null) {
-                        rolloverRow = cfg.afterDataWriter.write(new SheetContext(currentSheet[0], wb, rolloverRow, columns, headerRowIndex));
-                    }
-                    if (cfg.summaryConfig != null) {
-                        cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(currentSheet[0], wb, rolloverRow, columns, headerRowIndex));
-                    }
+                    ExcelWriteSupport.writeAfterDataAndSummary(currentSheet[0], wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
                     // Create rollover sheet
                     currentSheet[0] = createRolloverSheet(allSheets.size());
                     allSheets.add(currentSheet[0]);
@@ -433,23 +426,10 @@ public class ExcelSheetWriter<T> {
             });
         }
 
-        int nextRow = cursor.getRowOfSheet();
-        if (this.cfg.afterDataWriter != null) {
-            nextRow = this.cfg.afterDataWriter.write(new SheetContext(currentSheet[0], wb, nextRow, columns, headerRowIndex));
-        }
-        if (this.cfg.summaryConfig != null) {
-            this.cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(currentSheet[0], wb, nextRow, columns, headerRowIndex));
-        }
+        ExcelWriteSupport.writeAfterDataAndSummary(currentSheet[0], wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
         for (SXSSFSheet s : allSheets) {
-            ExcelWriteSupport.applyColumnWidths(s, columns);
-            ExcelWriteSupport.applyDataValidations(s, columns, headerRowIndex);
-            ExcelWriteSupport.applyColumnOutline(s, columns);
-            ExcelWriteSupport.applyColumnHidden(s, columns);
-            ExcelWriteSupport.applySheetProtection(s, cfg.sheetPassword);
-            ExcelWriteSupport.applyConditionalFormatting(s, cfg.conditionalRules, headerRowIndex, columns.size(), s.getLastRowNum());
-            ExcelWriteSupport.applyPrintSetup(s, cfg.printSetup, headerRowIndex);
-            ExcelWriteSupport.applyTabColor(s, cfg.tabColor);
+            ExcelWriteSupport.applyPostProcessing(s, columns, headerRowIndex, cfg);
         }
 
         // Apply chart on last sheet
