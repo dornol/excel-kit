@@ -24,7 +24,7 @@ ExcelWriter.<User>builder().build()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.16.0")
+implementation("io.github.dornol:excel-kit:0.16.1")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.16.0")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.15.0</version>
+  <version>0.16.1</version>
 </dependency>
 ```
 

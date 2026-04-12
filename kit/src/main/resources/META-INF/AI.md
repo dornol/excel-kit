@@ -64,3 +64,6 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - `freezePane(int cols, int rows)` — freeze both columns and rows
 - `required()` on reader columns — blank cells produce validation errors
 - `asBigDecimal()` parses directly without Double intermediate — full precision
+- `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
+- `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time
+- CSV injection defense covers leading whitespace + formula characters (e.g., `" =cmd"`)

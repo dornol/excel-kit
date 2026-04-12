@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.1] - 2026-04-12
+
+### Fixed
+
+- **CSV injection whitespace bypass** — values like `" =cmd|'/c calc"` (leading spaces
+  before formula characters) were not caught by the injection defense. Now detects formula
+  characters after leading spaces.
+- **Required column bypass in sparse Excel rows** — when trailing cells were empty (SAX
+  omits them), required column validation was skipped. Now correctly reports missing
+  required columns in sparse rows.
+- **ExcelSheetWriter rollover header color loss** — custom `headerFontColor()` was not
+  preserved on auto-rollover sheets. Fixed by passing workbook and style cache to the
+  rollover header writer.
+- **beforeHeaderWriter position ignored on rollover** — if `beforeHeaderWriter` wrote rows,
+  rollover sheets placed headers at row 0 instead of after the preamble. Now captures and
+  applies the preamble row offset.
+- **Summary row overlap with afterData** — when both `afterData()` and `summary()` were
+  used, the summary writer's return value was discarded, causing rows to overlap. Now
+  correctly chains the row position.
+- **ExcelImage null/empty data** — `ExcelImage.png(null)` and `ExcelImage.jpeg(new byte[0])`
+  now throw `IllegalArgumentException` at creation time instead of failing later during write.
+
+### Changed
+
+- **ExcelSheetWriter.write() single-call guard** — calling `write()` twice on the same
+  sheet now throws `ExcelWriteException` instead of silently corrupting data.
+
+### Improved
+
+- **docs/guide.md** — all `new ExcelReader<>(T::new, null)` / `new CsvReader<>(T::new, null)`
+  patterns updated to modern `ExcelReader.setter(T::new)` / `CsvReader.setter(T::new)` API.
+- **Progress callback warning** — documentation now warns that callbacks run on the
+  read/write thread and must be fast and non-blocking.
+- **Removed `docs/llms.txt`** — redundant with `META-INF/AI.md` in the JAR. Removed from
+  project, CI workflow, and release checklist.
+
 ## [0.16.0] - 2026-04-12
 
 ### Added
