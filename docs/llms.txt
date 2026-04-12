@@ -12,14 +12,14 @@ excel-kit is a streaming Excel/CSV library built on Apache POI (SXSSF). Columns 
 
 ## Quick Reference
 
-- Write Excel (typed): `ExcelWriter.<T>builder().build().column("Name", T::getName).column("Age", T::getAge, c -> c.type(ExcelDataType.INTEGER)).write(stream).write(out)`
-- Write Excel (multi-sheet): `new ExcelWorkbook().sheet("Sheet1").column(...).write(stream)`
-- Write Excel (map): `ExcelWriter.forMap("Name", "Age").write(stream)`
-- Read Excel (setter): `new ExcelReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
-- Read Excel (mapping): `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).build(in)`
+- Write Excel (typed): `ExcelWriter.<T>builder().build().column("Name", T::getName).column("Age", T::getAge, c -> c.type(ExcelDataType.INTEGER)).write(stream).toFile(path)`
+- Write Excel (multi-sheet): `ExcelWorkbook.builder().build().sheet("Sheet1").column(...).write(stream)` then `wb.finish().toFile(path)`
+- Write Excel (map): `ExcelWriter.forMap("Name", "Age").write(stream).toFile(path)`
+- Read Excel (setter): `ExcelReader.setter(T::new).column("Name", T::setName).required().build(in).read(r -> ...)`
+- Read Excel (mapping): `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).build(in).read(r -> ...)`
 - Read Excel (map): `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))`
-- Write CSV: `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)`
-- Read CSV: `new CsvReader<>(T::new, null).column("Name", T::setName).build(in).read(r -> ...)`
+- Write CSV: `new CsvWriter<T>().column("Name", T::getName).write(stream).toFile(path)`
+- Read CSV: `CsvReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)`
 
 ## Core Classes
 
@@ -47,6 +47,7 @@ Background: backgroundColor(ExcelColor), cellColor(CellColorFunction)
 Border: border(ExcelBorderStyle), borderTop/Bottom/Left/Right(ExcelBorderStyle)
 Header: headerFontColor(ExcelColor) — per-column header font color override
 Structure: group(String), outline(int), hidden(), locked(boolean), comment(Function)
+Null: nullValue(Object) — default value for null cells (inheritable via defaultStyle)
 
 ## Data Types
 
@@ -54,16 +55,17 @@ STRING, INTEGER, LONG, DOUBLE, DOUBLE_PERCENT, DATE, DATETIME, FORMULA, HYPERLIN
 
 ## Writer-Level Options
 
-headerFontName(String), headerFontSize(int), defaultStyle(Consumer), autoFilter(), freezePane(int), rowHeight(float), rowColor(Function), maxRows(int), tabColor(ExcelColor), protectSheet(String), protectWorkbook(String), password(String), summary(Consumer), chart(Consumer), conditionalFormatting(Consumer), printSetup(Consumer), beforeHeader(BeforeHeaderWriter), afterData(AfterDataWriter), onProgress(int, ProgressCallback)
+headerFontName(String), headerFontSize(int), defaultStyle(Consumer), autoFilter(), freezePane(int), freezePane(int cols, int rows), rowHeight(float), rowColor(Function), maxRows(int), tabColor(ExcelColor), protectSheet(String), protectWorkbook(String), password(String), summary(Consumer), chart(Consumer), conditionalFormatting(Consumer), printSetup(Consumer), beforeHeader(BeforeHeaderWriter), afterData(AfterDataWriter), onProgress(int, ProgressCallback)
 
 ## Reading Features
 
-Column mapping: name-based, index-based (columnAt), positional
+Column mapping: name-based, index-based (columnAt), positional, required() for mandatory fields
 Read modes: setter (mutable), mapping (records/immutable), map (no POJO)
-CellData: asString(), asInt(), asLong(), asDouble(), asLocalDate(), asLocalDateTime(), as(Function), isEmpty()
+CellData: asString(), asInt(), asLong(), asDouble(), asBigDecimal(), asLocalDate(), asLocalDateTime(), as(Function), isEmpty()
 RowData: get(String), get(int), has(String), size(), headerNames()
-Config: sheetIndex(int), headerRowIndex(int), onProgress(int, callback)
+Config: sheetIndex(int), headerRowIndex(int), password(String), onProgress(int, callback)
 Methods: read(Consumer), readStrict(Consumer), readAsStream()
+Note: FileHandler.write() throws unchecked exceptions (ExcelWriteException, CsvWriteException), not IOException
 Discovery: ExcelReader.getSheetNames(in), ExcelReader.getSheetHeaders(in, sheet, header)
 
 ## Optional: Full Documentation

@@ -24,7 +24,7 @@ ExcelWriter.<User>builder().build()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.15.0")
+implementation("io.github.dornol:excel-kit:0.16.0")
 ```
 
 **Maven**
@@ -170,6 +170,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Protection | Sheet/workbook protection, per-column lock, password encryption (AES-256) |
 | Multi-sheet | `ExcelWorkbook` for typed multi-sheet, auto-rollover via `maxRows()` |
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |
+| Null handling | `nullValue()` default for null cells, `defaultStyle()` for writer-level defaults |
 | Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, named ranges |
 
 **Reading (Excel & CSV)**

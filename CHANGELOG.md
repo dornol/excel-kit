@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.0] - 2026-04-12
+
+### Added
+
+- **`nullValue(Object)`** on `ColumnStyleConfig` — sets a default value to write when a
+  column function returns null (e.g., `c -> c.nullValue("N/A")`). Works with `defaultStyle()`
+  for writer-level fallback, overridable per column.
+- **`freezePane(int cols, int rows)`** overload on `ExcelWriter` and `ExcelSheetWriter` —
+  freezes both columns and rows simultaneously. The existing `freezePane(int rows)` is unchanged.
+- **`required()`** on `ExcelReader` and `CsvReader` — marks the last registered column as
+  required. Blank/empty cells produce a validation error in `ReadResult`.
+- **`ReadColumn.required()`** — returns a new `ReadColumn` with `isRequired=true`.
+
+### Changed (Breaking)
+
+- **`FileHandler.write()` no longer throws `IOException`** — I/O errors are wrapped as
+  unchecked exceptions (`ExcelWriteException`, `CsvWriteException`). `toFile()` wraps as
+  `ExcelKitException`. Callers no longer need try-catch for checked exceptions.
+- **`ExcelHandler.write()` and `consumeOutputStreamWithPassword()` no longer throw
+  `IOException`** — same unchecked wrapping as above.
+- **`AbstractReadHandler.readAsStream()` is now abstract** — the default implementation
+  (which loaded all results into memory) is removed. Both `ExcelReadHandler` and
+  `CsvReadHandler` already had proper lazy overrides.
+
+### Fixed
+
+- **ExcelWriter workbook leak on stream exception** — if the data stream threw during
+  `write()`, the `SXSSFWorkbook` was never closed, leaking temp files. Now wrapped in
+  try-catch with `closeWorkbookQuietly()`.
+- **CsvReadHandler.readAsStream() CSVReader leak** — if initialization failed after creating
+  the CSVReader but before returning the stream, the reader was not closed. Fixed with
+  null-safe cleanup in all error paths.
+- **CellData.asBigDecimal() precision loss** — previously routed through `asNumber()` →
+  `Double` → `BigDecimal(toString())`, which lost precision for very large numbers. Now
+  parses the cleaned string directly as `BigDecimal`.
+- **CsvHandler.write() javadoc** — documented that IOException is wrapped as
+  `CsvWriteException` (unchecked), clarifying the `FileHandler` contract.
+
+### Improved
+
+- **CellData regex pre-compiled** — currency symbol pattern (`[$,₩€%원]`) compiled once
+  as `static final Pattern` instead of per-call `replaceAll()`.
+- **Exception catch simplified** — `catch (A) throw; catch (B) throw;` patterns replaced
+  with `catch (A | B) throw;` in both read handlers.
+- **AtomicLong for lambda counters** — `long[]` array wrapper replaced with `AtomicLong`
+  in `readStrict()` and `CsvReadHandler.readAsStream()`.
+- **Duplicate header detection** — `ExcelReadHandler` now logs a warning when duplicate
+  header names are found, noting that only the first occurrence is used in mapping mode.
+- **README restructured** — reduced from 2043 to 231 lines. Detailed guide moved to
+  `docs/guide.md`.
+- **Release checklist updated** — reflects new README structure and `docs/guide.md`.
+
 ## [0.15.0] - 2026-04-12
 
 ### Added

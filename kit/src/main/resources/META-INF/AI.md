@@ -13,16 +13,16 @@ Not annotation-based — columns are defined programmatically via builder chains
 
 | Task | Class | Pattern |
 |------|-------|---------|
-| Write Excel (typed) | `ExcelWriter<T>` | `.column("Name", T::getName).write(stream).write(out)` |
-| Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream)` |
-| Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` |
+| Write Excel (typed) | `ExcelWriter<T>` | `.column("Name", T::getName).write(stream).toFile(path)` |
+| Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).toFile(path)` |
+| Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` → `wb.finish().toFile(path)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list(...).write(stream, out)` |
-| Read Excel (typed) | `ExcelReader<T>` | `.column("Name", T::setName).build(in).read(r -> ...)` |
+| Read Excel (setter) | `ExcelReader<T>` | `ExcelReader.setter(T::new).column("Name", T::setName).required().build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))` |
-| Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString()))` |
-| Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).write(out)` |
-| Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream)` |
-| Read CSV | `CsvReader<T>` | `.column("Name", T::setName).build(in).read(r -> ...)` |
+| Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).build(in).read(r -> ...)` |
+| Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).toFile(path)` |
+| Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).toFile(path)` |
+| Read CSV (setter) | `CsvReader<T>` | `CsvReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 
 ## Detailed Documentation
@@ -56,3 +56,11 @@ try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
 ```
 
 All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.column("Name", fn, cfg -> cfg.type().bold())` pattern.
+
+## Key API Notes (v0.16.0+)
+
+- `FileHandler.write()` throws unchecked exceptions only — no `throws IOException`
+- `nullValue(Object)` on column config — default value for null cells (e.g., `c -> c.nullValue("N/A")`)
+- `freezePane(int cols, int rows)` — freeze both columns and rows
+- `required()` on reader columns — blank cells produce validation errors
+- `asBigDecimal()` parses directly without Double intermediate — full precision

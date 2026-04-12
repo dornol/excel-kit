@@ -209,21 +209,18 @@ class User {
     Integer age;
 }
 
-ExcelReader<User> reader = new ExcelReader<>(User::new, null);
-
-ExcelReadHandler<User> rh = reader
-        .column((u, cell) -> u.name = cell.asString())
-        .column((u, cell) -> u.age = cell.asInt())
-        .build(Files.newInputStream(Path.of("users.xlsx")));
-
-rh.read(result -> {
-    if (result.success()) {
-        User u = result.data();
-        // process user
-    } else {
-        System.out.println(result.messages());
-    }
-});
+ExcelReader.setter(User::new)
+        .column("Name", (u, cell) -> u.name = cell.asString()).required()
+        .column("Age", (u, cell) -> u.age = cell.asInt())
+        .build(Files.newInputStream(Path.of("users.xlsx")))
+        .read(result -> {
+            if (result.success()) {
+                User u = result.data();
+                // process user
+            } else {
+                System.out.println(result.messages());
+            }
+        });
 ```
 
 ### CSV Writing
@@ -252,18 +249,15 @@ class Product {
     Integer price;
 }
 
-CsvReader<Product> csvReader = new CsvReader<>(Product::new, null);
-
-CsvReadHandler<Product> crh = csvReader
-        .column((p, cell) -> p.name = cell.asString())
-        .column((p, cell) -> p.price = cell.asInt())
-        .build(Files.newInputStream(Path.of("products.csv")));
-
-crh.read(result -> {
-    if (result.success()) {
-        Product p = result.data();
-    }
-});
+CsvReader.setter(Product::new)
+        .column("Name", (p, cell) -> p.name = cell.asString())
+        .column("Price", (p, cell) -> p.price = cell.asInt())
+        .build(Files.newInputStream(Path.of("products.csv")))
+        .read(result -> {
+            if (result.success()) {
+                Product p = result.data();
+            }
+        });
 ```
 
 ## Advanced Usage
@@ -969,6 +963,44 @@ workbook.<Item>sheet("Data")
     .write(stream);
 ```
 
+### Null Value Defaults
+
+Set a default value to write when a column function returns `null` (v0.16.0+):
+
+```java
+// Per-column
+writer.column("Status", Item::getStatus, c -> c.nullValue("N/A"));
+
+// Writer-level default (all columns inherit)
+writer.defaultStyle(d -> d.nullValue("-"))
+    .column("Name", Item::getName)                     // null → "-"
+    .column("Status", Item::getStatus, c -> c.nullValue("N/A"))  // null → "N/A" (override)
+    .write(data);
+```
+
+### Required Columns (Reading)
+
+Mark columns as required to fail validation when cells are blank (v0.16.0+):
+
+```java
+ExcelReader.setter(User::new)
+    .column("Name", (u, c) -> u.setName(c.asString())).required()
+    .column("Email", (u, c) -> u.setEmail(c.asString())).required()
+    .column("Nickname", (u, c) -> u.setNick(c.asString()))  // optional
+    .build(inputStream)
+    .read(result -> {
+        if (!result.success()) {
+            // result.messages() contains "Required column 'Name' is empty" etc.
+        }
+    });
+
+// Also works with CsvReader
+CsvReader.setter(Product::new)
+    .column("Name", (p, c) -> p.setName(c.asString())).required()
+    .build(inputStream)
+    .read(result -> { ... });
+```
+
 ### Summary/Footer Rows
 
 Add summary rows with formulas using a fluent DSL:
@@ -1410,6 +1442,14 @@ writer
     .autoFilter(true)    // dropdown filter on header row
     .freezePane(1)       // freeze 1 row below the header
     .column("Name", p -> p.name())
+    .write(data);
+
+// Freeze both columns and rows (v0.16.0+)
+writer
+    .freezePane(2, 1)    // freeze 2 columns from left + 1 row below header
+    .column("ID", p -> p.id())
+    .column("Name", p -> p.name())
+    .column("Age", p -> p.age())
     .write(data);
 ```
 
