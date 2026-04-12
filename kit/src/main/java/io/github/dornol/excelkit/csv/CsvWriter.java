@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import org.jspecify.annotations.Nullable;
@@ -152,7 +153,7 @@ public class CsvWriter<T> {
      * @param function A function to compute the value for each row
      * @return This writer instance (for chaining)
      */
-    public CsvWriter<T> column(String name, CsvRowFunction<T, @Nullable Object> function) {
+    public CsvWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
         var column = new CsvColumn<>(name, function);
         this.columns.add(column);
         return this;
@@ -178,7 +179,7 @@ public class CsvWriter<T> {
      * @param function  A function to compute the value for each row
      * @return This writer instance
      */
-    public CsvWriter<T> columnIf(String name, boolean condition, CsvRowFunction<T, @Nullable Object> function) {
+    public CsvWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function) {
         if (condition) {
             column(name, function);
         }

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
@@ -24,7 +25,7 @@ class ExcelColumnTest {
     private SXSSFWorkbook workbook;
     private CellStyle cellStyle;
     private ExcelColumnSetter columnSetter;
-    private ExcelRowFunction<String, Object> function;
+    private RowFunction<String, Object> function;
     private SXSSFSheet sheet;
     private SXSSFRow row;
     private SXSSFCell cell;
@@ -66,7 +67,7 @@ class ExcelColumnTest {
         String name = "Column";
         String testData = "Test Data";
         Cursor cursor = new Cursor();
-        ExcelRowFunction<String, Object> testFunction = (data, cursor1) -> data + "-processed";
+        RowFunction<String, Object> testFunction = (data, cursor1) -> data + "-processed";
         ExcelColumn<String> column = ExcelColumn.of(name, testFunction, cellStyle, columnSetter);
 
         // Act
@@ -82,7 +83,7 @@ class ExcelColumnTest {
         String name = "Column";
         String testData = "Test Data";
         Cursor cursor = new Cursor();
-        ExcelRowFunction<String, Object> exceptionFunction = (data, cursor1) -> {
+        RowFunction<String, Object> exceptionFunction = (data, cursor1) -> {
             throw new RuntimeException("Test exception");
         };
         ExcelColumn<String> column = ExcelColumn.of(name, exceptionFunction, cellStyle, columnSetter);

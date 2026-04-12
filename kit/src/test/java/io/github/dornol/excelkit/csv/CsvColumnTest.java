@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +15,7 @@ class CsvColumnTest {
     void constructor_shouldThrowExceptionWhenNameIsNull() {
         // Arrange
         String name = null;
-        CsvRowFunction<String, Object> function = (data, cursor) -> data;
+        RowFunction<String, Object> function = (data, cursor) -> data;
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
@@ -26,7 +27,7 @@ class CsvColumnTest {
     void constructor_shouldThrowExceptionWhenFunctionIsNull() {
         // Arrange
         String name = "Column";
-        CsvRowFunction<String, Object> function = null;
+        RowFunction<String, Object> function = null;
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
@@ -38,7 +39,7 @@ class CsvColumnTest {
     void constructor_shouldCreateInstanceWithValidParameters() {
         // Arrange
         String name = "Column";
-        CsvRowFunction<String, Object> function = (data, cursor) -> data;
+        RowFunction<String, Object> function = (data, cursor) -> data;
 
         // Act
         CsvColumn<String> column = new CsvColumn<>(name, function);
@@ -54,7 +55,7 @@ class CsvColumnTest {
         String name = "Column";
         String testData = "Test Data";
         Cursor cursor = new Cursor();
-        CsvRowFunction<String, Object> function = (data, cursor1) -> data + "-processed";
+        RowFunction<String, Object> function = (data, cursor1) -> data + "-processed";
         CsvColumn<String> column = new CsvColumn<>(name, function);
 
         // Act
@@ -70,7 +71,7 @@ class CsvColumnTest {
         String name = "Column";
         String testData = "Test Data";
         Cursor cursor = new Cursor();
-        CsvRowFunction<String, Object> function = (data, cursor1) -> {
+        RowFunction<String, Object> function = (data, cursor1) -> {
             throw new RuntimeException("Test exception");
         };
         CsvColumn<String> column = new CsvColumn<>(name, function);
@@ -86,7 +87,7 @@ class CsvColumnTest {
     void getName_shouldReturnColumnName() {
         // Arrange
         String name = "Test Column";
-        CsvRowFunction<String, Object> function = (data, cursor) -> data;
+        RowFunction<String, Object> function = (data, cursor) -> data;
         CsvColumn<String> column = new CsvColumn<>(name, function);
 
         // Act

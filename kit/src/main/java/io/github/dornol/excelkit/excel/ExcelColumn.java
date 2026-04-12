@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -33,7 +34,7 @@ public class ExcelColumn<T> {
     private static final int WIDTH_PER_CHAR = 250;
     private static final int WIDTH_BASE_PADDING = 1024;
     private final String name;
-    private final ExcelRowFunction<T, @Nullable Object> function;
+    private final RowFunction<T, @Nullable Object> function;
     private final CellStyle style;
     private final ExcelColumnSetter columnSetter;
     private final int minWidth;
@@ -51,13 +52,13 @@ public class ExcelColumn<T> {
     private final int @Nullable [] headerFontColor;
     private int columnWidth = 1;
 
-    static <T> ExcelColumn<T> of(String name, ExcelRowFunction<T, @Nullable Object> function,
+    static <T> ExcelColumn<T> of(String name, RowFunction<T, @Nullable Object> function,
                                   @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
         return new ExcelColumn<>(name, function, style, columnSetter,
                 0, 0, false, null, null, null, 0, null, null, null, false, null, null);
     }
 
-    ExcelColumn(String name, ExcelRowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
+    ExcelColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
@@ -214,11 +215,11 @@ public class ExcelColumn<T> {
     public static class ExcelColumnBuilder<T> extends ColumnStyleConfig<T, ExcelColumnBuilder<T>> {
         private final ExcelWriter<T> writer;
         private final String name;
-        private final ExcelRowFunction<T, @Nullable Object> function;
+        private final RowFunction<T, @Nullable Object> function;
         private @Nullable CellStyle style;
         private @Nullable ExcelColumnSetter columnSetter;
 
-        ExcelColumnBuilder(ExcelWriter<T> writer, String name, ExcelRowFunction<T, @Nullable Object> function) {
+        ExcelColumnBuilder(ExcelWriter<T> writer, String name, RowFunction<T, @Nullable Object> function) {
             this.writer = writer;
             this.name = name;
             this.function = function;

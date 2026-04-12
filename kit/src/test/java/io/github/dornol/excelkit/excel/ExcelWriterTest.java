@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.util.PaneInformation;
 import org.apache.poi.xssf.streaming.SXSSFRow;
@@ -158,7 +159,7 @@ class ExcelWriterTest {
         ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .columnIf("B", true, (ExcelRowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
+                .columnIf("B", true, (RowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
                 .write(Stream.of("x"));
 
         SXSSFSheet sheet = writer.getWb().getSheetAt(0);
@@ -177,7 +178,7 @@ class ExcelWriterTest {
         ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .columnIf("B", false, (ExcelRowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
+                .columnIf("B", false, (RowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
                 .write(Stream.of("x"));
 
         SXSSFSheet sheet = writer.getWb().getSheetAt(0);
@@ -217,9 +218,9 @@ class ExcelWriterTest {
         ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
-                .columnIf("B", true, (ExcelRowFunction<String, Object>) (row, c) -> c.getCurrentTotal(),
+                .columnIf("B", true, (RowFunction<String, Object>) (row, c) -> c.getCurrentTotal(),
                         cfg -> cfg.type(ExcelDataType.LONG))
-                .columnIf("C", false, (ExcelRowFunction<String, Object>) (row, c) -> row,
+                .columnIf("C", false, (RowFunction<String, Object>) (row, c) -> row,
                         cfg -> cfg.type(ExcelDataType.STRING))
                 .write(Stream.of("x"));
 

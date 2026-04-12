@@ -5,7 +5,7 @@ import io.github.dornol.excelkit.core.Cursor;
 /**
  * A functional interface for consuming row data during Excel export.
  * <p>
- * Used as a callback during streaming write in {@link ExcelWriter#write(java.util.stream.Stream, ExcelConsumer)},
+ * Used as a callback during streaming write in {@link ExcelWriter#write(java.util.stream.Stream, WriteRowCallback)},
  * typically for tracking, logging, progress, or collecting metadata.
  *
  * @param <T> The type of the row data
@@ -14,7 +14,7 @@ import io.github.dornol.excelkit.core.Cursor;
  * @since 2025-07-19
  */
 @FunctionalInterface
-public interface ExcelConsumer<T> {
+public interface WriteRowCallback<T> {
 
     /**
      * Called for each row processed during the Excel writing process.

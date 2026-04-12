@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -24,6 +25,11 @@ import java.util.stream.Stream;
  * <p>
  * Supports optional auto-rollover via {@link #maxRows(int)} — when set, the writer
  * automatically creates additional sheets when the row limit is reached.
+ * <p>
+ * Column configuration uses {@link ColumnConfig} (via {@code Consumer<ColumnConfig<T>>})
+ * rather than {@link ExcelColumn.ExcelColumnBuilder}. Unlike ExcelWriter's builder, there
+ * is no {@code style(CellStyle)} method — styles are derived from the declarative config
+ * properties (type, bold, color, borders, etc.).
  *
  * @param <T> the row data type for this sheet
  * @author dhkim
@@ -90,7 +96,7 @@ public class ExcelSheetWriter<T> {
      * @param function function to extract the cell value
      * @return this writer for chaining
      */
-    public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
+    public ExcelSheetWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
         columns.add(buildColumn(name, function, null));
         return this;
     }
@@ -103,7 +109,7 @@ public class ExcelSheetWriter<T> {
      * @param cfg consumer to configure column styling
      * @return this writer for chaining
      */
-    public ExcelSheetWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
+    public ExcelSheetWriter<T> column(String name, RowFunction<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
         ColumnConfig<T> config = new ColumnConfig<>();
         cfg.accept(config);
         columns.add(buildColumn(name, function, config));
@@ -452,7 +458,7 @@ public class ExcelSheetWriter<T> {
         return wb.createSheet(name);
     }
 
-    private ExcelColumn<T> buildColumn(String name, ExcelRowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
+    private ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
         ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
         if (cfg.defaultStyleConfig != null) {
             c.applyDefaults(cfg.defaultStyleConfig);

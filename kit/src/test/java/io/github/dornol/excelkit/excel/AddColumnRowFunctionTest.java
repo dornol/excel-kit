@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +12,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for ExcelWriter.addColumn with ExcelRowFunction (cursor access).
+ * Tests for ExcelWriter.addColumn with RowFunction (cursor access).
  */
 class AddColumnRowFunctionTest {
 
@@ -19,7 +20,7 @@ class AddColumnRowFunctionTest {
     void addColumn_withRowFunction_shouldProvideCursorAccess() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<String>builder().build()
-                .column("No.", (ExcelRowFunction<String, Object>) (row, cursor) -> cursor.getCurrentTotal(),
+                .column("No.", (RowFunction<String, Object>) (row, cursor) -> cursor.getCurrentTotal(),
                         c -> c.type(ExcelDataType.LONG))
                 .column("Name", s -> s)
                 .write(Stream.of("Alice", "Bob", "Charlie"))

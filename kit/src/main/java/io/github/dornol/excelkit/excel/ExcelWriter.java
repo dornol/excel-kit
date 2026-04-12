@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -618,14 +619,14 @@ public class ExcelWriter<T> {
     }
 
     /**
-     * Adds a column with cursor access using an ExcelRowFunction.
+     * Adds a column with cursor access using an RowFunction.
      * Useful when the column value depends on row position (e.g., row number).
      *
      * @param name     Column header name
      * @param function Function to extract cell value from row with cursor access
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function) {
+    public ExcelWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
         this.columns.add(builder.build());
@@ -640,7 +641,7 @@ public class ExcelWriter<T> {
      * @param configurer  Consumer to configure column properties
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> column(String name, ExcelRowFunction<T, @Nullable Object> function,
+    public ExcelWriter<T> column(String name, RowFunction<T, @Nullable Object> function,
                                   Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
@@ -686,7 +687,7 @@ public class ExcelWriter<T> {
     }
 
     /**
-     * Conditionally adds a column with cursor access using an ExcelRowFunction.
+     * Conditionally adds a column with cursor access using an RowFunction.
      * If condition is false, the column is not added.
      *
      * @param name      Column header name
@@ -694,7 +695,7 @@ public class ExcelWriter<T> {
      * @param function  Function to extract cell value from row with cursor access
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> columnIf(String name, boolean condition, ExcelRowFunction<T, @Nullable Object> function) {
+    public ExcelWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function) {
         if (condition) {
             column(name, function);
         }
@@ -711,7 +712,7 @@ public class ExcelWriter<T> {
      * @param configurer  Consumer to configure column properties
      * @return Current ExcelWriter instance for chaining
      */
-    public ExcelWriter<T> columnIf(String name, boolean condition, ExcelRowFunction<T, @Nullable Object> function,
+    public ExcelWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function,
                                     Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         if (condition) {
             column(name, function, configurer);
@@ -727,7 +728,7 @@ public class ExcelWriter<T> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> constColumn(String name, @Nullable Object value) {
-        return column(name, (ExcelRowFunction<T, Object>) (r, c) -> value);
+        return column(name, (RowFunction<T, Object>) (r, c) -> value);
     }
 
     /**
@@ -740,7 +741,7 @@ public class ExcelWriter<T> {
      */
     public ExcelWriter<T> constColumn(String name, @Nullable Object value,
                                        Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
-        return column(name, (ExcelRowFunction<T, Object>) (r, c) -> value, configurer);
+        return column(name, (RowFunction<T, Object>) (r, c) -> value, configurer);
     }
 
     /**
@@ -766,7 +767,7 @@ public class ExcelWriter<T> {
      * @param consumer Custom consumer for post-processing row with cursor
      * @return ExcelHandler wrapping the workbook
      */
-    public ExcelHandler write(Stream<T> stream, ExcelConsumer<T> consumer) {
+    public ExcelHandler write(Stream<T> stream, WriteRowCallback<T> consumer) {
         if (this.columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }

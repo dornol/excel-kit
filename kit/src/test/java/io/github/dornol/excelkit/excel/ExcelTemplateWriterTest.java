@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -546,7 +547,7 @@ class ExcelTemplateWriterTest {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
                 w.<String>list(5)
-                        .column("No", (ExcelRowFunction<String, Object>) (s, cursor) -> cursor.getCurrentTotal())
+                        .column("No", (RowFunction<String, Object>) (s, cursor) -> cursor.getCurrentTotal())
                         .column("Name", s -> s)
                         .write(Stream.of("A", "B", "C"));
                 w.finish().write(bos);
@@ -574,7 +575,7 @@ class ExcelTemplateWriterTest {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
                 w.<String>list(5)
-                        .column("No", (ExcelRowFunction<String, Object>) (s, c) -> c.getCurrentTotal(),
+                        .column("No", (RowFunction<String, Object>) (s, c) -> c.getCurrentTotal(),
                                 cfg -> cfg.type(ExcelDataType.INTEGER))
                         .write(Stream.of("A"));
                 w.finish().write(bos);

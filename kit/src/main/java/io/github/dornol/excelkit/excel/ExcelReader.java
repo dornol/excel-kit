@@ -7,8 +7,6 @@ import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.util.ZipSecureFile;
-import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.XMLHelper;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
@@ -45,9 +43,6 @@ import java.util.function.Supplier;
  * @since 2025-07-19
  */
 public class ExcelReader<T> {
-    private static final int DEFAULT_MAX_FILE_COUNT = 1_000_000;
-    private static final int DEFAULT_MAX_BYTE_ARRAY_SIZE = 500_000_000;
-
     private final List<ReadColumn<T>> columns = new ArrayList<>();
     private final @Nullable Supplier<T> instanceSupplier;
     private final @Nullable Function<RowData, T> rowMapper;
@@ -57,34 +52,6 @@ public class ExcelReader<T> {
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private boolean mapMode = false;
-
-    /**
-     * Configures Apache POI's internal limits for reading large Excel files.
-     * <p>
-     * This adjusts:
-     * <ul>
-     *     <li>{@code ZipSecureFile.setMaxFileCount(1_000_000)} — max internal zip entries</li>
-     *     <li>{@code IOUtils.setByteArrayMaxOverride(500_000_000)} — max in-memory byte array size</li>
-     * </ul>
-     * <p>
-     * <b>Note:</b> These are JVM-global settings and affect all POI operations in the same process.
-     * Call this method once at application startup if you need to read large files.
-     */
-    public static void configureLargeFileSupport() {
-        configureLargeFileSupport(DEFAULT_MAX_FILE_COUNT, DEFAULT_MAX_BYTE_ARRAY_SIZE);
-    }
-
-    /**
-     * Configures Apache POI's internal limits with custom values.
-     *
-     * @param maxFileCount       Maximum number of zip entries (default: 1,000,000)
-     * @param maxByteArraySize   Maximum byte array size in bytes (default: 500,000,000)
-     * @see #configureLargeFileSupport()
-     */
-    public static void configureLargeFileSupport(int maxFileCount, int maxByteArraySize) {
-        ZipSecureFile.setMaxFileCount(maxFileCount);
-        IOUtils.setByteArrayMaxOverride(maxByteArraySize);
-    }
 
     /**
      * Constructs an ExcelReader in setter mode with instance supplier and optional validator.
@@ -98,10 +65,52 @@ public class ExcelReader<T> {
         this.validator = validator;
     }
 
+    /**
+     * Constructs an ExcelReader in setter mode without Bean Validation.
+     *
+     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
+     */
+    public ExcelReader(Supplier<T> instanceSupplier) {
+        this(instanceSupplier, null);
+    }
+
     private ExcelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         this.instanceSupplier = null;
         this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
         this.validator = validator;
+    }
+
+    /**
+     * Creates an ExcelReader in setter mode. Symmetric with {@link #mapping(Function)}
+     * and {@link #forMap()} — all three read modes start with a static factory.
+     *
+     * <pre>{@code
+     * ExcelReader.setter(User::new)
+     *     .column("Name", (u, cell) -> u.name = cell.asString())
+     *     .build(inputStream)
+     *     .read(result -> { ... });
+     * }</pre>
+     *
+     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
+     * @param <T>              The row data type
+     * @return A new ExcelReader configured in setter mode
+     * @since 0.14.0
+     */
+    public static <T> ExcelReader<T> setter(Supplier<T> instanceSupplier) {
+        return new ExcelReader<>(instanceSupplier, null);
+    }
+
+    /**
+     * Creates an ExcelReader in setter mode with Bean Validation.
+     *
+     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
+     * @param validator        Bean Validation validator
+     * @param <T>              The row data type
+     * @return A new ExcelReader configured in setter mode
+     * @since 0.14.0
+     */
+    public static <T> ExcelReader<T> setter(Supplier<T> instanceSupplier, @Nullable Validator validator) {
+        return new ExcelReader<>(instanceSupplier, validator);
     }
 
     /**

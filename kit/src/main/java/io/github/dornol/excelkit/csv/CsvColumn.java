@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ public class CsvColumn<T> {
     private static final Logger log = LoggerFactory.getLogger(CsvColumn.class);
 
     private final String name;
-    private final CsvRowFunction<T, @Nullable Object> function;
+    private final RowFunction<T, @Nullable Object> function;
 
     /**
      * Constructs a CSV column definition.
@@ -28,7 +29,7 @@ public class CsvColumn<T> {
      * @param function A function that maps a row object and cursor to a cell value
      * @throws IllegalArgumentException if name or function is null
      */
-    CsvColumn(String name, CsvRowFunction<T, @Nullable Object> function) {
+    CsvColumn(String name, RowFunction<T, @Nullable Object> function) {
         if (name == null) {
             throw new IllegalArgumentException("name must not be null");
         }

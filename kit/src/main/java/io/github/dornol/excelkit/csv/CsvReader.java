@@ -57,6 +57,32 @@ public class CsvReader<T> {
         this.validator = validator;
     }
 
+    /** Constructs a CsvReader in setter mode without Bean Validation. */
+    public CsvReader(Supplier<T> instanceSupplier) {
+        this(instanceSupplier, null);
+    }
+
+    /**
+     * Creates a CsvReader in setter mode. Symmetric with {@link #mapping(Function)} and {@link #forMap()}.
+     *
+     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
+     * @param <T>              The row data type
+     * @return A new CsvReader configured in setter mode
+     * @since 0.14.0
+     */
+    public static <T> CsvReader<T> setter(Supplier<T> instanceSupplier) {
+        return new CsvReader<>(instanceSupplier, null);
+    }
+
+    /**
+     * Creates a CsvReader in setter mode with Bean Validation.
+     *
+     * @since 0.14.0
+     */
+    public static <T> CsvReader<T> setter(Supplier<T> instanceSupplier, @Nullable Validator validator) {
+        return new CsvReader<>(instanceSupplier, validator);
+    }
+
     private CsvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         this.instanceSupplier = null;
         this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
