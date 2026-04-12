@@ -104,15 +104,9 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                      Validator validator, int sheetIndex, int headerRowIndex,
                      int progressInterval, @Nullable ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".xlsx");
-        if (columns == null || columns.isEmpty()) {
-            throw new IllegalArgumentException("Columns cannot be null or empty");
-        }
-        if (sheetIndex < 0 || sheetIndex > 255) {
-            throw new IllegalArgumentException("sheetIndex must be between 0 and 255");
-        }
-        if (headerRowIndex < 0) {
-            throw new IllegalArgumentException("headerRowIndex must be non-negative");
-        }
+        validateColumns(columns);
+        validateSheetIndex(sheetIndex);
+        validateHeaderRowIndex(headerRowIndex);
         this.columns = columns;
         this.sheetIndex = sheetIndex;
         this.headerRowIndex = headerRowIndex;
@@ -127,17 +121,19 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                      @Nullable Validator validator, int sheetIndex, int headerRowIndex,
                      int progressInterval, @Nullable ProgressCallback progressCallback) {
         super(inputStream, rowMapper, validator, ".xlsx");
-        if (sheetIndex < 0 || sheetIndex > 255) {
-            throw new IllegalArgumentException("sheetIndex must be between 0 and 255");
-        }
-        if (headerRowIndex < 0) {
-            throw new IllegalArgumentException("headerRowIndex must be non-negative");
-        }
+        validateSheetIndex(sheetIndex);
+        validateHeaderRowIndex(headerRowIndex);
         this.columns = null;
         this.sheetIndex = sheetIndex;
         this.headerRowIndex = headerRowIndex;
         this.progressInterval = progressInterval;
         this.progressCallback = progressCallback;
+    }
+
+    private static void validateSheetIndex(int sheetIndex) {
+        if (sheetIndex < 0 || sheetIndex > 255) {
+            throw new IllegalArgumentException("sheetIndex must be between 0 and 255");
+        }
     }
 
     /**

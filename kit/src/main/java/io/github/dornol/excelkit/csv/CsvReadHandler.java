@@ -68,12 +68,8 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                    @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
                    int progressInterval, io.github.dornol.excelkit.shared.@Nullable ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".csv");
-        if (columns == null || columns.isEmpty()) {
-            throw new IllegalArgumentException("Columns cannot be null or empty");
-        }
-        if (headerRowIndex < 0) {
-            throw new IllegalArgumentException("headerRowIndex must be non-negative");
-        }
+        validateColumns(columns);
+        validateHeaderRowIndex(headerRowIndex);
         this.columns = columns;
         this.headerRowIndex = headerRowIndex;
         this.delimiter = delimiter;
@@ -89,9 +85,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                    @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
                    int progressInterval, io.github.dornol.excelkit.shared.@Nullable ProgressCallback progressCallback) {
         super(inputStream, rowMapper, validator, ".csv");
-        if (headerRowIndex < 0) {
-            throw new IllegalArgumentException("headerRowIndex must be non-negative");
-        }
+        validateHeaderRowIndex(headerRowIndex);
         this.columns = null;
         this.headerRowIndex = headerRowIndex;
         this.delimiter = delimiter;

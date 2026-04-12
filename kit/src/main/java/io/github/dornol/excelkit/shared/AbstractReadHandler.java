@@ -85,6 +85,20 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         initTempFile(inputStream, extension);
     }
 
+    /** Validates that headerRowIndex is non-negative. */
+    protected static void validateHeaderRowIndex(int headerRowIndex) {
+        if (headerRowIndex < 0) {
+            throw new IllegalArgumentException("headerRowIndex must be non-negative");
+        }
+    }
+
+    /** Validates that the columns list is non-null and non-empty. */
+    protected static void validateColumns(List<?> columns) {
+        if (columns == null || columns.isEmpty()) {
+            throw new IllegalArgumentException("Columns cannot be null or empty");
+        }
+    }
+
     private void initTempFile(InputStream inputStream, String extension) {
         try {
             setTempDir(TempResourceCreator.createTempDirectory());
