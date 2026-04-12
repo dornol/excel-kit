@@ -14,7 +14,7 @@ public interface BookJpaRepository extends JpaRepository<Book, Long> {
 
     @QueryHints(value = @QueryHint(name = HibernateHints.HINT_FETCH_SIZE, value = "1000"))
     @Query("""
-            select new io.github.dornol.excelkit.example.app.book.domain.BookDto(b.id, b.title, b.subtitle, b.author, b.publisher, b.isbn, b.description)
+            select new io.github.dornol.excelkit.example.app.book.application.port.out.BookDto(b.id, b.title, b.subtitle, b.author, b.publisher, b.isbn, b.description)
             from Book b
             where b.id > 0
             order by b.id desc
