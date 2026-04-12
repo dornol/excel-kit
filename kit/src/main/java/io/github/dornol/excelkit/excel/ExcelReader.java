@@ -52,6 +52,7 @@ public class ExcelReader<T> {
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private boolean mapMode = false;
+    private @Nullable String password;
 
     /**
      * Constructs an ExcelReader in setter mode with instance supplier and optional validator.
@@ -250,6 +251,22 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Sets the password for reading encrypted Excel files.
+     * <p>
+     * If the file is encrypted with the "agile" encryption mode (as produced by
+     * {@link ExcelWriter#password(String)}), this password will be used to decrypt
+     * it before parsing.
+     *
+     * @param password the file password
+     * @return this reader for chaining
+     * @since 0.14.0
+     */
+    public ExcelReader<T> password(String password) {
+        this.password = password;
+        return this;
+    }
+
+    /**
      * Adds a column mapping to the internal list.
      *
      * @param column An Excel column with setter logic
@@ -354,10 +371,10 @@ public class ExcelReader<T> {
     public ExcelReadHandler<T> build(InputStream inputStream) {
         if (rowMapper != null) {
             return new ExcelReadHandler<>(inputStream, rowMapper, validator,
-                    sheetIndex, headerRowIndex, progressInterval, progressCallback);
+                    sheetIndex, headerRowIndex, progressInterval, progressCallback, password);
         }
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
-                sheetIndex, headerRowIndex, progressInterval, progressCallback);
+                sheetIndex, headerRowIndex, progressInterval, progressCallback, password);
     }
 
     /**

@@ -2,6 +2,8 @@ package io.github.dornol.excelkit.core;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Common contract for file handlers produced by writer entry points.
@@ -38,4 +40,28 @@ public interface FileHandler {
      * @throws IOException if an I/O error occurs while writing
      */
     void write(OutputStream out) throws IOException;
+
+    /**
+     * Writes the generated file content directly to a file path.
+     * <p>
+     * Convenience method that opens a buffered {@link OutputStream} to the given path,
+     * delegates to {@link #write(OutputStream)}, and closes the stream.
+     * The one-shot contract applies — this method can only be called once.
+     *
+     * <pre>{@code
+     * ExcelWriter.<User>builder().build()
+     *     .column("Name", User::getName)
+     *     .write(stream)
+     *     .toFile(Path.of("users.xlsx"));
+     * }</pre>
+     *
+     * @param path the destination file path
+     * @throws IOException if an I/O error occurs while writing
+     * @since 0.14.0
+     */
+    default void toFile(Path path) throws IOException {
+        try (OutputStream out = Files.newOutputStream(path)) {
+            write(out);
+        }
+    }
 }

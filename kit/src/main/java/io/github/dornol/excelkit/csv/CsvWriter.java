@@ -214,6 +214,22 @@ public class CsvWriter<T> {
     }
 
     /**
+     * Conditionally adds a column with a constant value for all rows.
+     *
+     * @param name      The column header
+     * @param condition Whether to add the column
+     * @param value     The constant value
+     * @return This writer instance
+     * @since 0.14.0
+     */
+    public CsvWriter<T> constColumnIf(String name, boolean condition, @Nullable Object value) {
+        if (condition) {
+            constColumn(name, value);
+        }
+        return this;
+    }
+
+    /**
      * Registers a progress callback that fires every {@code interval} rows.
      *
      * @param interval the number of rows between each callback invocation (must be positive)

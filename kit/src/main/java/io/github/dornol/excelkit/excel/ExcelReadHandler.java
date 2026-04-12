@@ -60,6 +60,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final int headerRowIndex;
     private final int progressInterval;
     private final @Nullable ProgressCallback progressCallback;
+    private final @Nullable String password;
 
     /**
      * Constructs a handler for reading the first sheet of an Excel file.
@@ -103,6 +104,13 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
                      Validator validator, int sheetIndex, int headerRowIndex,
                      int progressInterval, @Nullable ProgressCallback progressCallback) {
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, progressInterval, progressCallback, null);
+    }
+
+    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                     Validator validator, int sheetIndex, int headerRowIndex,
+                     int progressInterval, @Nullable ProgressCallback progressCallback,
+                     @Nullable String password) {
         super(inputStream, instanceSupplier, validator, ".xlsx");
         validateColumns(columns);
         validateSheetIndex(sheetIndex);
@@ -112,6 +120,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         this.headerRowIndex = headerRowIndex;
         this.progressInterval = progressInterval;
         this.progressCallback = progressCallback;
+        this.password = password;
     }
 
     /**
@@ -120,6 +129,13 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
                      @Nullable Validator validator, int sheetIndex, int headerRowIndex,
                      int progressInterval, @Nullable ProgressCallback progressCallback) {
+        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, progressInterval, progressCallback, null);
+    }
+
+    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
+                     int progressInterval, @Nullable ProgressCallback progressCallback,
+                     @Nullable String password) {
         super(inputStream, rowMapper, validator, ".xlsx");
         validateSheetIndex(sheetIndex);
         validateHeaderRowIndex(headerRowIndex);
@@ -128,6 +144,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         this.headerRowIndex = headerRowIndex;
         this.progressInterval = progressInterval;
         this.progressCallback = progressCallback;
+        this.password = password;
     }
 
     private static void validateSheetIndex(int sheetIndex) {
@@ -239,7 +256,11 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
-        try (OPCPackage pkg = OPCPackage.open(getTempFile().toFile())) {
+        java.nio.file.Path fileToRead = getTempFile();
+        if (password != null) {
+            fileToRead = decryptFile(getTempFile(), password);
+        }
+        try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile())) {
             XSSFReader reader = new XSSFReader(pkg);
 
             SharedStrings ss = reader.getSharedStringsTable();
@@ -267,6 +288,24 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
+
+    private java.nio.file.Path decryptFile(java.nio.file.Path encryptedFile, String pwd) throws Exception {
+        try (org.apache.poi.poifs.filesystem.POIFSFileSystem fs =
+                     new org.apache.poi.poifs.filesystem.POIFSFileSystem(encryptedFile.toFile())) {
+            org.apache.poi.poifs.crypt.EncryptionInfo info = new org.apache.poi.poifs.crypt.EncryptionInfo(fs);
+            org.apache.poi.poifs.crypt.Decryptor dec = org.apache.poi.poifs.crypt.Decryptor.getInstance(info);
+            if (!dec.verifyPassword(pwd)) {
+                throw new ExcelReadException("Invalid password for encrypted Excel file");
+            }
+            java.nio.file.Path decryptedFile = io.github.dornol.excelkit.core.TempResourceCreator.createTempFile(
+                    getTempDir(), java.util.UUID.randomUUID().toString(), ".xlsx");
+            try (InputStream decryptedStream = dec.getDataStream(fs);
+                 java.io.OutputStream out = java.nio.file.Files.newOutputStream(decryptedFile)) {
+                decryptedStream.transferTo(out);
+            }
+            return decryptedFile;
+        }
+    }
 
     /**
      * Internal handler for row-by-row Excel parsing.
