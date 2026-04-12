@@ -30,6 +30,8 @@ import java.util.stream.Stream;
 public class ExcelColumn<T> {
     private static final Logger log = LoggerFactory.getLogger(ExcelColumn.class);
     private static final int MAX_COLUMN_WIDTH = 255 * 256;
+    private static final int WIDTH_PER_CHAR = 250;
+    private static final int WIDTH_BASE_PADDING = 1024;
     private final String name;
     private final ExcelRowFunction<T, @Nullable Object> function;
     private final CellStyle style;
@@ -49,7 +51,13 @@ public class ExcelColumn<T> {
     private final int @Nullable [] headerFontColor;
     private int columnWidth = 1;
 
-    ExcelColumn(String name, ExcelRowFunction<T, @Nullable Object> function, CellStyle style, ExcelColumnSetter columnSetter,
+    static <T> ExcelColumn<T> of(String name, ExcelRowFunction<T, @Nullable Object> function,
+                                  @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
+        return new ExcelColumn<>(name, function, style, columnSetter,
+                0, 0, false, null, null, null, 0, null, null, null, false, null, null);
+    }
+
+    ExcelColumn(String name, ExcelRowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
@@ -140,7 +148,7 @@ public class ExcelColumn<T> {
         for (char ch : input.toCharArray()) {
             logicalLength += (ch <= 0x7F) ? 1 : 2; // ASCII: 1, CJK etc: 2
         }
-        return Math.min(MAX_COLUMN_WIDTH, logicalLength * 250 + 1024);
+        return Math.min(MAX_COLUMN_WIDTH, logicalLength * WIDTH_PER_CHAR + WIDTH_BASE_PADDING);
     }
 
     String getName() {

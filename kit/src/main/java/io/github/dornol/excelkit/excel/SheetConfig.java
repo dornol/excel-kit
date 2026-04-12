@@ -20,7 +20,9 @@ import java.util.function.Function;
  */
 class SheetConfig<T> {
 
-    float rowHeightInPoints = 20;
+    static final float DEFAULT_ROW_HEIGHT_POINTS = 20f;
+
+    float rowHeightInPoints = DEFAULT_ROW_HEIGHT_POINTS;
     boolean autoFilter = false;
     int freezePaneRows = 0;
     @Nullable BeforeHeaderWriter beforeHeaderWriter;

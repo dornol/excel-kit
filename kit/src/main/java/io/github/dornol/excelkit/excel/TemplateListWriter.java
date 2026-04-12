@@ -49,7 +49,7 @@ public class TemplateListWriter<T> {
 
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
-    private float rowHeightInPoints = 20;
+    private float rowHeightInPoints = SheetConfig.DEFAULT_ROW_HEIGHT_POINTS;
     private @Nullable Function<T, @Nullable ExcelColor> rowColorFunction;
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;

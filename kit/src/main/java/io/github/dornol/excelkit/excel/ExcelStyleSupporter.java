@@ -28,6 +28,10 @@ class ExcelStyleSupporter {
         /* empty */
     }
 
+    private static final int DEFAULT_FONT_SIZE = 11;
+    private static final int FONT_HEIGHT_MULTIPLIER = 20;
+    private static final double LUMINANCE_DARK_THRESHOLD = 128;
+
     /**
      * Creates a bold, centered header cell style with a specified background color.
      * Automatically sets the font color to white if the background is dark.
@@ -53,7 +57,7 @@ class ExcelStyleSupporter {
         headerStyle.setBorderLeft(BorderStyle.THIN);
         headerStyle.setBorderRight(BorderStyle.THIN);
         headerFont.setBold(true);
-        headerFont.setFontHeight((short) ((fontSize != null ? fontSize : 11) * 20));
+        headerFont.setFontHeight((short) ((fontSize != null ? fontSize : DEFAULT_FONT_SIZE) * FONT_HEIGHT_MULTIPLIER));
         if (fontName != null) {
             headerFont.setFontName(fontName);
         }
@@ -90,7 +94,7 @@ class ExcelStyleSupporter {
 
         // W3C brightness formula (Y = 0.299R + 0.587G + 0.114B)
         double luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-        return luminance < 128; // threshold: below 128 out of 0-255 is considered dark
+        return luminance < LUMINANCE_DARK_THRESHOLD;
     }
 
     /**

@@ -39,7 +39,6 @@ public class ExcelWriter<T> {
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private final SheetConfig<T> cfg = new SheetConfig<>();
     private @Nullable AfterDataWriter afterAllWriter;
-    private int sheetCount = 0;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private int headerRowIndex;
@@ -47,7 +46,6 @@ public class ExcelWriter<T> {
     private @Nullable String workbookPassword;
     private @Nullable String headerFontName;
     private @Nullable Integer headerFontSize;
-
     private @Nullable SXSSFSheet sheet;
     private @Nullable Cursor cursor;
 
@@ -852,7 +850,7 @@ public class ExcelWriter<T> {
      * @return the newly created sheet
      */
     private SXSSFSheet createNamedSheet() {
-        int index = sheetCount++;
+        int index = wb.getNumberOfSheets();
         if (cfg.sheetNameFunction != null) {
             return wb.createSheet(cfg.sheetNameFunction.apply(index));
         }
