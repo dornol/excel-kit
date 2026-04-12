@@ -95,8 +95,20 @@ public enum ExcelDataType {
      * Formula type. The value is treated as an Excel formula string (without leading '=').
      * <p>
      * Example: {@code "SUM(A2:A100)"} or {@code "AVERAGE(B2:B50)"}
+     * <p>
+     * Formulas containing the pipe character ({@code |}) are rejected to prevent
+     * DDE command injection (e.g., {@code cmd|'/c calc'}).
+     *
+     * @throws ExcelWriteException if the formula contains a pipe character
      */
-    FORMULA((cell, value) -> cell.setCellFormula(String.valueOf(value)), null),
+    FORMULA((cell, value) -> {
+        String formula = String.valueOf(value);
+        if (formula.contains("|")) {
+            throw new ExcelWriteException(
+                    "Formula rejected: contains pipe character '|' which may indicate DDE injection. Value: " + formula);
+        }
+        cell.setCellFormula(formula);
+    }, null),
 
     /**
      * Hyperlink type. Creates a clickable URL link in the cell.

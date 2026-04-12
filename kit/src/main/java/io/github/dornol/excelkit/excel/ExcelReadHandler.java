@@ -24,6 +24,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -267,8 +268,10 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
         Path fileToRead = getTempFile();
+        Path decryptedFile = null;
         if (password != null) {
-            fileToRead = decryptFile(getTempFile(), password);
+            decryptedFile = decryptFile(getTempFile(), password);
+            fileToRead = decryptedFile;
         }
         try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile())) {
             XSSFReader reader = new XSSFReader(pkg);
@@ -294,6 +297,15 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
             if (currentIndex < sheetIndex) {
                 throw new ExcelReadException("Sheet index " + sheetIndex + " not found. File has " + (currentIndex + 1) + " sheet(s).");
+            }
+        } finally {
+            if (decryptedFile != null) {
+                try {
+                    Files.deleteIfExists(decryptedFile);
+                } catch (IOException e) {
+                    log.warn("Failed to delete decrypted temp file: {}", decryptedFile, e);
+                    decryptedFile.toFile().deleteOnExit();
+                }
             }
         }
     }

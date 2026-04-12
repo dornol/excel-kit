@@ -312,7 +312,13 @@ public class ExcelConditionalRule {
             });
 
             if (dataBarMaxColor != null) {
-                // Set gradient=true via minLength/maxLength for visual gradient effect
+                CTColor maxColorCt = dataBar.addNewColor();
+                maxColorCt.setRgb(new byte[]{
+                        (byte) 0xFF,
+                        (byte) dataBarMaxColor.getR(),
+                        (byte) dataBarMaxColor.getG(),
+                        (byte) dataBarMaxColor.getB()
+                });
                 dataBar.setMinLength(0L);
                 dataBar.setMaxLength(100L);
             }
