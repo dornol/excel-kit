@@ -6,7 +6,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 
 - `kit/` — 라이브러리 본체 (Maven Central 배포 대상)
 - `example/` — Spring Boot 예제 앱 (showcase 엔드포인트)
-- `docs/` — 웹 배포용 문서 (`llms.txt`)
+- `docs/` — 문서 (`guide.md` 상세 가이드, `llms.txt` LLM 컨텍스트)
 
 ## 릴리스 체크리스트
 
@@ -16,25 +16,25 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 2. `build.gradle.kts` — `version` 변경
 3. `CHANGELOG.md` — `[x.y.z] - YYYY-MM-DD` 섹션 추가
 4. `README.md` 최신화:
-   - Installation 섹션의 Maven/Gradle 버전 업데이트
-   - 상단 Features 목록에 새 기능 추가
-   - 새 기능 사용법 섹션 추가
-   - 설정 메서드 목록 업데이트 (ExcelColumnBuilder 메서드 나열 부분)
-5. `example/` 최신화:
-   - `WriteShowcaseController` — 새 기능 showcase 엔드포인트 추가
+   - Installation 섹션의 버전 번호 업데이트
+   - Features at a Glance 테이블에 새 기능 반영
+   - Quick Start 코드가 최신 API 사용하는지 확인
+5. 문서 최신화 (새 기능이 있으면):
+   - `docs/guide.md` — 상세 가이드에 새 기능 사용법 추가
+   - `docs/llms.txt` — LLM 컨텍스트 문서 반영
+   - `META-INF/AI.md` 및 `META-INF/excel-kit/*.md` — JAR 내 AI 문서 반영
+6. `example/` 최신화 (showcase할 기능이 있으면):
+   - `WriteShowcaseController` — 새 기능 엔드포인트 추가
    - `index.html` — 해당 다운로드 버튼 추가
-6. `META-INF/AI.md` 및 `META-INF/excel-kit/*.md` — 새 기능이 있으면 문서 반영
-7. `docs/llms.txt` — 새 기능이 있으면 문서 반영
-8. 빌드 확인:
+7. 빌드 확인:
    - `./gradlew clean test` — 단위 테스트 전체 통과
    - `./gradlew :kit:javadoc` — javadoc 경고 0 확인
-9. example 앱 실행 확인:
-   - Docker Compose 기동: `cd example && docker compose up -d` (MariaDB)
-   - 앱 실행: `./gradlew :example:bootRun` — Spring 컨텍스트 정상 초기화 확인
-   - 주요 엔드포인트 수동 검증: `http://localhost:8080` 에서 showcase 페이지 접근
+8. example 앱 실행 확인:
+   - `cd example && docker compose up -d` → `./gradlew :example:bootRun`
+   - `http://localhost:8080` 에서 showcase 페이지 접근
    - JPQL/HQL 쿼리는 컴파일 시 안 잡히므로 **반드시 앱 기동으로 확인**
-   - Docker 정리: `docker compose down`
-10. 커밋 → 태그(`vx.y.z`) → 푸시(`git push origin main --tags`)
+   - `docker compose down`
+9. 커밋 → 태그(`vx.y.z`) → 푸시(`git push origin main --tags`)
 
 ## 코드 컨벤션
 
