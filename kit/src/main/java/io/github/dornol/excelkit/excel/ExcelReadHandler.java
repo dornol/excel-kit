@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.shared.AbstractReadHandler;
+import io.github.dornol.excelkit.shared.ReadColumn;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ProgressCallback;
@@ -54,7 +55,7 @@ import java.util.stream.StreamSupport;
  * @since 2025-07-19
  */
 public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
-    private final @Nullable List<ExcelReadColumn<T>> columns;
+    private final @Nullable List<ReadColumn<T>> columns;
     private final int sheetIndex;
     private final int headerRowIndex;
     private final int progressInterval;
@@ -68,7 +69,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param instanceSupplier A supplier to instantiate new row objects
      * @param validator        Optional bean validator for validating mapped instances
      */
-    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
+    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this(inputStream, columns, instanceSupplier, validator, 0, 0, 0, null);
     }
 
@@ -81,7 +82,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param validator        Optional bean validator for validating mapped instances
      * @param sheetIndex       The zero-based index of the sheet to read
      */
-    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex) {
+    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex) {
         this(inputStream, columns, instanceSupplier, validator, sheetIndex, 0, 0, null);
     }
 
@@ -95,11 +96,11 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param sheetIndex       The zero-based index of the sheet to read
      * @param headerRowIndex   The zero-based index of the header row (rows before this are skipped)
      */
-    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex, int headerRowIndex) {
+    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex, int headerRowIndex) {
         this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, 0, null);
     }
 
-    ExcelReadHandler(InputStream inputStream, List<ExcelReadColumn<T>> columns, Supplier<T> instanceSupplier,
+    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
                      Validator validator, int sheetIndex, int headerRowIndex,
                      int progressInterval, @Nullable ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".xlsx");

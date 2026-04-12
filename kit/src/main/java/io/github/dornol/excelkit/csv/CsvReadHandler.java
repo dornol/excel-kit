@@ -5,6 +5,7 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import io.github.dornol.excelkit.shared.AbstractReadHandler;
+import io.github.dornol.excelkit.shared.ReadColumn;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
@@ -43,27 +44,27 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private static final Logger log = LoggerFactory.getLogger(CsvReadHandler.class);
 
     private final List<String> headerNames = new ArrayList<>();
-    private final @Nullable List<CsvReadColumn<T>> columns;
+    private final @Nullable List<ReadColumn<T>> columns;
     private final int headerRowIndex;
     private final char delimiter;
     private final Charset charset;
     private final int progressInterval;
     private final io.github.dornol.excelkit.shared.@Nullable ProgressCallback progressCallback;
 
-    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
+    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this(inputStream, columns, instanceSupplier, validator, 0, ',', StandardCharsets.UTF_8, 0, null);
     }
 
-    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator, int headerRowIndex) {
+    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator, int headerRowIndex) {
         this(inputStream, columns, instanceSupplier, validator, headerRowIndex, ',', StandardCharsets.UTF_8, 0, null);
     }
 
-    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier,
+    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
                    @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset) {
         this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset, 0, null);
     }
 
-    CsvReadHandler(InputStream inputStream, List<CsvReadColumn<T>> columns, Supplier<T> instanceSupplier,
+    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
                    @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
                    int progressInterval, io.github.dornol.excelkit.shared.@Nullable ProgressCallback progressCallback) {
         super(inputStream, instanceSupplier, validator, ".csv");

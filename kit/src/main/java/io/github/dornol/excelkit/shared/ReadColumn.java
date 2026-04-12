@@ -1,13 +1,11 @@
-package io.github.dornol.excelkit.excel;
+package io.github.dornol.excelkit.shared;
 
-import io.github.dornol.excelkit.shared.CellData;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 
-
 /**
- * Represents a single Excel column binding for reading.
+ * Represents a single column binding for reading (Excel or CSV).
  * <p>
  * Supports three matching modes:
  * <ul>
@@ -19,23 +17,19 @@ import java.util.function.BiConsumer;
  * @param headerName  optional header name for name-based column matching (null for positional/index)
  * @param columnIndex explicit 0-based column index (-1 for positional/name-based)
  * @param setter      the setter function to bind a column value to a field
- * @param <T> The row data type
+ * @param <T> the row data type
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.14.0
  */
-public record ExcelReadColumn<T>(@Nullable String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
+public record ReadColumn<T>(@Nullable String headerName, int columnIndex, BiConsumer<T, CellData> setter) {
 
-    /**
-     * Creates a positional column binding (matched by column index order).
-     */
-    public ExcelReadColumn(BiConsumer<T, CellData> setter) {
+    /** Creates a positional column binding (matched by column index order). */
+    public ReadColumn(BiConsumer<T, CellData> setter) {
         this(null, -1, setter);
     }
 
-    /**
-     * Creates a name-based column binding.
-     */
-    public ExcelReadColumn(String headerName, BiConsumer<T, CellData> setter) {
+    /** Creates a name-based column binding. */
+    public ReadColumn(String headerName, BiConsumer<T, CellData> setter) {
         this(headerName, -1, setter);
     }
 }

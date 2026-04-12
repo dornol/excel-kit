@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.ReadColumn;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ExcelKitException;
 import io.github.dornol.excelkit.shared.RowData;
@@ -47,7 +48,7 @@ public class ExcelReader<T> {
     private static final int DEFAULT_MAX_FILE_COUNT = 1_000_000;
     private static final int DEFAULT_MAX_BYTE_ARRAY_SIZE = 500_000_000;
 
-    private final List<ExcelReadColumn<T>> columns = new ArrayList<>();
+    private final List<ReadColumn<T>> columns = new ArrayList<>();
     private final @Nullable Supplier<T> instanceSupplier;
     private final @Nullable Function<RowData, T> rowMapper;
     private final @Nullable Validator validator;
@@ -165,11 +166,30 @@ public class ExcelReader<T> {
      * @since 0.12.0
      */
     public static ExcelReader<Map<String, String>> forMap() {
-        // Match the deleted ExcelMapReader's behavior: truncate at min(headerCount, cellCount)
-        // and use positional pairing. This preserves v0.11.0 semantics:
-        //   - trailing missing cells → the corresponding header keys are absent from the map
-        //   - null headers are skipped
-        //   - present-but-empty cells → "" (CellData's compact constructor coerces null to "")
+        return forMap((Set<String>) null);
+    }
+
+    /**
+     * Creates a reader that parses Excel files into {@code Map<String, String>} rows,
+     * including only the specified columns. Columns not listed are ignored.
+     *
+     * <pre>{@code
+     * ExcelReader.forMap("Name", "Age")
+     *     .build(inputStream)
+     *     .read(result -> {
+     *         // result.data() contains only "Name" and "Age" keys
+     *     });
+     * }</pre>
+     *
+     * @param columnNames the header names to include (others are filtered out)
+     * @return a new ExcelReader in map mode with column filtering
+     * @since 0.14.0
+     */
+    public static ExcelReader<Map<String, String>> forMap(String... columnNames) {
+        return forMap(new LinkedHashSet<>(List.of(columnNames)));
+    }
+
+    private static ExcelReader<Map<String, String>> forMap(@Nullable Set<String> selectedColumns) {
         Function<RowData, Map<String, String>> mapMapper = row -> {
             Map<String, String> map = new LinkedHashMap<>();
             List<String> headers = row.headerNames();
@@ -177,6 +197,7 @@ public class ExcelReader<T> {
             for (int i = 0; i < bound; i++) {
                 String header = headers.get(i);
                 if (header == null) continue;
+                if (selectedColumns != null && !selectedColumns.contains(header)) continue;
                 map.put(header, row.get(i).formattedValue());
             }
             return map;
@@ -224,7 +245,7 @@ public class ExcelReader<T> {
      *
      * @param column An Excel column with setter logic
      */
-    void addColumn(ExcelReadColumn<T> column) {
+    void addColumn(ReadColumn<T> column) {
         columns.add(column);
     }
 
@@ -237,7 +258,7 @@ public class ExcelReader<T> {
      */
     public ExcelReader<T> column(BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(BiConsumer)");
-        columns.add(new ExcelReadColumn<>(setter));
+        columns.add(new ReadColumn<>(setter));
         return this;
     }
 
@@ -251,7 +272,7 @@ public class ExcelReader<T> {
      */
     public ExcelReader<T> column(String headerName, BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(String, BiConsumer)");
-        columns.add(new ExcelReadColumn<>(headerName, setter));
+        columns.add(new ReadColumn<>(headerName, setter));
         return this;
     }
 
@@ -265,7 +286,7 @@ public class ExcelReader<T> {
      */
     public ExcelReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
         requireNotMapMode("columnAt(int, BiConsumer)");
-        columns.add(new ExcelReadColumn<>(null, columnIndex, setter));
+        columns.add(new ReadColumn<>(null, columnIndex, setter));
         return this;
     }
 
@@ -277,7 +298,7 @@ public class ExcelReader<T> {
      */
     public ExcelReader<T> skipColumn() {
         requireNotMapMode("skipColumn()");
-        columns.add(new ExcelReadColumn<>((instance, cellData) -> {}));
+        columns.add(new ReadColumn<>((instance, cellData) -> {}));
         return this;
     }
 
@@ -294,7 +315,7 @@ public class ExcelReader<T> {
             throw new IllegalArgumentException("skipColumns count must be non-negative");
         }
         for (int i = 0; i < count; i++) {
-            columns.add(new ExcelReadColumn<>((instance, cellData) -> {}));
+            columns.add(new ReadColumn<>((instance, cellData) -> {}));
         }
         return this;
     }

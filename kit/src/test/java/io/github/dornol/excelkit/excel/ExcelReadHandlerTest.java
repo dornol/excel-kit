@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.shared.ReadColumn;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
@@ -61,9 +62,9 @@ class ExcelReadHandlerTest {
     @Test
     void read_shouldReadExcelFileCorrectly() throws IOException {
         // Arrange
-        List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
-        columns.add(new ExcelReadColumn<>(createNameSetter()));
-        columns.add(new ExcelReadColumn<>(createAgeSetter()));
+        List<ReadColumn<TestPerson>> columns = new ArrayList<>();
+        columns.add(new ReadColumn<>(createNameSetter()));
+        columns.add(new ReadColumn<>(createAgeSetter()));
         
         Supplier<TestPerson> instanceSupplier = TestPerson::new;
         
@@ -98,9 +99,9 @@ class ExcelReadHandlerTest {
     @Test
     void read_shouldValidateData() throws IOException {
         // Arrange
-        List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
-        columns.add(new ExcelReadColumn<>(createNameSetter()));
-        columns.add(new ExcelReadColumn<>(createAgeSetter()));
+        List<ReadColumn<TestPerson>> columns = new ArrayList<>();
+        columns.add(new ReadColumn<>(createNameSetter()));
+        columns.add(new ReadColumn<>(createAgeSetter()));
         
         Supplier<TestPerson> instanceSupplier = TestPerson::new;
         
@@ -209,8 +210,8 @@ class ExcelReadHandlerTest {
     @Test
     void constructor_shouldThrowForNegativeSheetIndex() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ExcelReadColumn<>(createNameSetter()));
+            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
+            columns.add(new ReadColumn<>(createNameSetter()));
             new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, -1);
         });
     }
@@ -245,8 +246,8 @@ class ExcelReadHandlerTest {
     @Test
     void constructor_shouldThrowForSheetIndexExceeding255() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ExcelReadColumn<>(createNameSetter()));
+            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
+            columns.add(new ReadColumn<>(createNameSetter()));
             new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 256);
         }, "sheetIndex > 255 should throw IllegalArgumentException");
     }
@@ -254,8 +255,8 @@ class ExcelReadHandlerTest {
     @Test
     void constructor_shouldThrowForNegativeHeaderRowIndex() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<ExcelReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ExcelReadColumn<>(createNameSetter()));
+            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
+            columns.add(new ReadColumn<>(createNameSetter()));
             new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 0, -1);
         });
     }

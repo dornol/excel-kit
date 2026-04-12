@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.shared.ReadColumn;
 import io.github.dornol.excelkit.shared.CellData;
 import io.github.dornol.excelkit.shared.ReadAbortException;
 import io.github.dornol.excelkit.shared.ReadResult;
@@ -301,7 +302,7 @@ class CsvReadHandlerTest {
     void constructor_shouldThrowForNegativeHeaderRowIndex() {
         InputStream is = new ByteArrayInputStream("a\n".getBytes());
         assertThrows(IllegalArgumentException.class,
-                () -> new CsvReadHandler<>(is, List.of(new CsvReadColumn<>((p, c) -> {})), TestPerson::new, null, -1));
+                () -> new CsvReadHandler<>(is, List.of(new ReadColumn<>((p, c) -> {})), TestPerson::new, null, -1));
     }
 
     @Test
