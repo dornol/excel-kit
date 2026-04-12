@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.ProgressCallback;
+import io.github.dornol.excelkit.core.ProgressCallback;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.FileHandler;
-import io.github.dornol.excelkit.shared.TempResourceCreator;
+import io.github.dornol.excelkit.core.FileHandler;
+import io.github.dornol.excelkit.core.TempResourceCreator;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.crypt.EncryptionMode;
 import org.apache.poi.poifs.crypt.Encryptor;

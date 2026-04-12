@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 /**
  * Callback for reporting progress during large Excel/CSV writes.

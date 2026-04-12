@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 /**
  * Exception thrown by {@link AbstractReadHandler#readStrict(java.util.function.Consumer)}

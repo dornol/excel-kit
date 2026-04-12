@@ -1,10 +1,10 @@
 package io.github.dornol.excelkit.csv;
 
 
-import io.github.dornol.excelkit.shared.ReadColumn;
-import io.github.dornol.excelkit.shared.CellData;
-import io.github.dornol.excelkit.shared.ProgressCallback;
-import io.github.dornol.excelkit.shared.RowData;
+import io.github.dornol.excelkit.core.ReadColumn;
+import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.ProgressCallback;
+import io.github.dornol.excelkit.core.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 

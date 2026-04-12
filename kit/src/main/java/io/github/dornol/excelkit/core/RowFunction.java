@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 /**
  * A functional interface for mapping a row of data to a cell value, with optional cursor access.

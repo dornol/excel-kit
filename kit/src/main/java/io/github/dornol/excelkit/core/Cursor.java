@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 /**
  * Tracks the current writing position during an export operation.

@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.core.ReadResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;

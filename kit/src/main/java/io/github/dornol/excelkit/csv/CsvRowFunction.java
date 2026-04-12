@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.shared.RowFunction;
+import io.github.dornol.excelkit.core.RowFunction;
 
 /**
  * A functional interface for mapping a row of data to a CSV column value.

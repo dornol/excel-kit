@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.core.Cursor;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.CellData;
+import io.github.dornol.excelkit.core.CellData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import java.util.Locale;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link io.github.dornol.excelkit.shared.CellData} class.
+ * Tests for {@link io.github.dornol.excelkit.core.CellData} class.
  */
 class CellDataTest {
 

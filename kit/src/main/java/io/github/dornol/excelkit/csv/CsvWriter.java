@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.shared.Cursor;
-import io.github.dornol.excelkit.shared.TempResourceCreator;
+import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.TempResourceCreator;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import io.github.dornol.excelkit.shared.ProgressCallback;
+import io.github.dornol.excelkit.core.ProgressCallback;
 
 import java.util.ArrayList;
 import java.util.List;

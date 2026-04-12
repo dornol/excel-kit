@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.ReadAbortException;
-import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.core.ReadAbortException;
+import io.github.dornol.excelkit.core.ReadResult;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -424,7 +424,7 @@ class ExcelReaderBranchTest {
         void positionalColumns_shouldMapByOrder() throws IOException {
             byte[] excel = writeSimpleExcel();
 
-            List<io.github.dornol.excelkit.shared.ReadResult<Mapped>> results = new ArrayList<>();
+            List<io.github.dornol.excelkit.core.ReadResult<Mapped>> results = new ArrayList<>();
             new ExcelReader<>(Mapped::new, null)
                     .column((t, cell) -> t.col0 = cell.asString())  // positional: index 0
                     .column((t, cell) -> t.col1 = cell.asString())  // positional: index 1
@@ -440,7 +440,7 @@ class ExcelReaderBranchTest {
         void csvPositionalColumns_shouldMapByOrder() {
             String csv = "Name,Age\nAlice,30";
 
-            List<io.github.dornol.excelkit.shared.ReadResult<Mapped>> results = new ArrayList<>();
+            List<io.github.dornol.excelkit.core.ReadResult<Mapped>> results = new ArrayList<>();
             new io.github.dornol.excelkit.csv.CsvReader<>(Mapped::new, null)
                     .column((t, cell) -> t.col0 = cell.asString())
                     .column((t, cell) -> t.col1 = cell.asString())

@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.Cursor;
+import io.github.dornol.excelkit.core.Cursor;
 
 /**
  * A functional interface for consuming row data during Excel export.

@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.core.ReadResult;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;

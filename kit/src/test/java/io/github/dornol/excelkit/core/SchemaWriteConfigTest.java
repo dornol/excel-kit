@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.excel.ExcelHandler;

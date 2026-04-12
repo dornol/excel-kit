@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;

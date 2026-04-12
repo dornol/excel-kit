@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.shared.FileHandler;
-import io.github.dornol.excelkit.shared.TempResourceContainer;
+import io.github.dornol.excelkit.core.FileHandler;
+import io.github.dornol.excelkit.core.TempResourceContainer;
 
 import java.io.IOException;
 import java.io.InputStream;

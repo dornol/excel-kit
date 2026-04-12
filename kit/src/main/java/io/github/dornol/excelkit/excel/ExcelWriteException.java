@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.ExcelKitException;
+import io.github.dornol.excelkit.core.ExcelKitException;
 
 /**
  * Exception thrown during Excel write operations.

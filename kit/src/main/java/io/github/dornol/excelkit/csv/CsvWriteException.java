@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.shared.ExcelKitException;
+import io.github.dornol.excelkit.core.ExcelKitException;
 
 /**
  * Exception thrown during CSV write operations.

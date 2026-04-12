@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.Cursor;
-import io.github.dornol.excelkit.shared.ProgressCallback;
+import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;

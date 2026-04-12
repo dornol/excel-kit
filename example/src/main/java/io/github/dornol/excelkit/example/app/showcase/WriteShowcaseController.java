@@ -4,7 +4,7 @@ import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.example.app.common.DownloadFileType;
 import io.github.dornol.excelkit.example.app.common.DownloadUtil;
 import io.github.dornol.excelkit.excel.*;
-import io.github.dornol.excelkit.shared.ExcelKitSchema;
+import io.github.dornol.excelkit.core.ExcelKitSchema;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

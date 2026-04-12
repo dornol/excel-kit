@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.shared.ExcelKitException;
-import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.core.ExcelKitException;
+import io.github.dornol.excelkit.core.ReadResult;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;

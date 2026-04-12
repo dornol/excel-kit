@@ -2,8 +2,8 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.shared.CellData;
-import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.ReadResult;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

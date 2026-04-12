@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.shared;
+package io.github.dornol.excelkit.core;
 
 /**
  * Exception thrown when a temporary resource (file or directory) cannot be created.

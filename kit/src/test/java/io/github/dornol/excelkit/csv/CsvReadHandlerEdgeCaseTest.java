@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.shared.ReadResult;
+import io.github.dornol.excelkit.core.ReadResult;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -243,9 +243,9 @@ class CsvReadHandlerEdgeCaseTest {
                 new Person(row.get("Name").asString(), row.get("Age").asInt())
         ).build(toInputStream(csv));
 
-        assertThrows(io.github.dornol.excelkit.shared.ReadAbortException.class, () ->
+        assertThrows(io.github.dornol.excelkit.core.ReadAbortException.class, () ->
                 handler.read(r -> {
-                    throw new io.github.dornol.excelkit.shared.ReadAbortException("abort!");
+                    throw new io.github.dornol.excelkit.core.ReadAbortException("abort!");
                 }));
     }
 

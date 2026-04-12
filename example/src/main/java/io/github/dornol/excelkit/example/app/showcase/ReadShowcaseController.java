@@ -5,7 +5,7 @@ import io.github.dornol.excelkit.example.app.common.DownloadFileType;
 import io.github.dornol.excelkit.example.app.common.DownloadUtil;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSheetInfo;
-import io.github.dornol.excelkit.shared.ExcelKitSchema;
+import io.github.dornol.excelkit.core.ExcelKitSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -68,7 +68,7 @@ public class ReadShowcaseController {
         }
     }
 
-    private String readAndFormat(String type, io.github.dornol.excelkit.shared.AbstractReadHandler<ProductReadDto> handler) {
+    private String readAndFormat(String type, io.github.dornol.excelkit.core.AbstractReadHandler<ProductReadDto> handler) {
         List<ProductReadDto> results = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 

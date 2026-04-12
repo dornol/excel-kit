@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.example.app.showcase;
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.excel.ExcelDataType;
-import io.github.dornol.excelkit.shared.ExcelKitSchema;
+import io.github.dornol.excelkit.core.ExcelKitSchema;
 
 import java.util.List;
 import java.util.stream.Stream;
