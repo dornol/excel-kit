@@ -421,8 +421,7 @@ public class ExcelSheetWriter<T> {
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneRows, columns.size());
                 }
-                ExcelWriteSupport.writeRowCells(activeSheet, cursor, rowData, columns, cfg.rowHeightInPoints,
-                        cfg.rowColorFunction, rowStyleCache, wb, cfg.autoWidthSampleRows);
+                ExcelWriteSupport.writeRowCells(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             }
         }

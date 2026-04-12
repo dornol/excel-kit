@@ -839,8 +839,7 @@ public class ExcelWriter<T> {
             ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
             applySheetOptions();
         }
-        ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg.rowHeightInPoints,
-                cfg.rowColorFunction, rowStyleCache, wb, cfg.autoWidthSampleRows);
+        ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
         ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
     }
 

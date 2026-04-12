@@ -250,8 +250,7 @@ public class TemplateListWriter<T> {
         try (stream) {
             stream.forEach(rowData -> {
                 cursor.plusTotal();
-                ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg.rowHeightInPoints,
-                        cfg.rowColorFunction, rowStyleCache, wb, cfg.autoWidthSampleRows);
+                ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             });
         }

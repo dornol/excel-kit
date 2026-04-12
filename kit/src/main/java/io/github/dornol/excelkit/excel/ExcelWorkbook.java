@@ -213,6 +213,9 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return ExcelHandler wrapping the workbook
      */
     public ExcelHandler finish() {
+        if (finished) {
+            throw new ExcelWriteException("Workbook is already finished");
+        }
         finished = true;
         ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
         return new ExcelHandler(wb, password);

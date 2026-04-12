@@ -30,38 +30,53 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     /** Creates a new column style configuration with defaults. */
     protected ColumnStyleConfig() {}
 
+    // ── Data type & format ──
     @Nullable ExcelDataType dataType;
     @Nullable String dataFormat;
+
+    // ── Layout & sizing ──
     HorizontalAlignment alignment = HorizontalAlignment.CENTER;
     boolean alignmentSet;
-    int @Nullable [] backgroundColor;
-    @Nullable Boolean bold;
-    @Nullable Integer fontSize;
+    @Nullable VerticalAlignment verticalAlignment;
+    @Nullable Short rotation;
+    @Nullable Boolean wrapText;
+    @Nullable Short indentation;
     int minWidth;
     int maxWidth;
     boolean fixedWidth;
-    String @Nullable [] dropdownOptions;
+
+    // ── Font ──
+    @Nullable Boolean bold;
+    @Nullable Integer fontSize;
+    @Nullable String fontName;
+    int @Nullable [] fontColor;
+    @Nullable Boolean strikethrough;
+    @Nullable Boolean underline;
+    int @Nullable [] headerFontColor;
+
+    // ── Color & background ──
+    int @Nullable [] backgroundColor;
     @Nullable CellColorFunction<T> cellColorFunction;
-    @Nullable String groupName;
-    int outlineLevel;
-    @Nullable Function<T, @Nullable String> commentFunction;
+
+    // ── Borders ──
     @Nullable ExcelBorderStyle borderStyle;
-    @Nullable Boolean locked;
-    boolean hidden;
-    @Nullable ExcelValidation validation;
-    @Nullable Short rotation;
     @Nullable ExcelBorderStyle borderTop;
     @Nullable ExcelBorderStyle borderBottom;
     @Nullable ExcelBorderStyle borderLeft;
     @Nullable ExcelBorderStyle borderRight;
-    int @Nullable [] fontColor;
-    @Nullable Boolean strikethrough;
-    @Nullable Boolean underline;
-    @Nullable VerticalAlignment verticalAlignment;
-    @Nullable Boolean wrapText;
-    @Nullable String fontName;
-    @Nullable Short indentation;
-    int @Nullable [] headerFontColor;
+
+    // ── Validation & interaction ──
+    String @Nullable [] dropdownOptions;
+    @Nullable ExcelValidation validation;
+    @Nullable Function<T, @Nullable String> commentFunction;
+
+    // ── Protection & visibility ──
+    @Nullable Boolean locked;
+    boolean hidden;
+
+    // ── Grouping ──
+    @Nullable String groupName;
+    int outlineLevel;
 
     // Return self for fluent chaining
     private SELF self() {
