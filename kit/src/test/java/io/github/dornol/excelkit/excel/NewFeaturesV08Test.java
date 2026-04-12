@@ -161,7 +161,7 @@ class NewFeaturesV08Test {
 
         @Test
         void rotation_columnConfigOutOfRange_throws() {
-            ExcelSheetWriter.ColumnConfig<String> config = new ExcelSheetWriter.ColumnConfig<>();
+            ColumnConfig<String> config = new ColumnConfig<>();
             assertThrows(IllegalArgumentException.class, () -> config.rotation(91));
             assertThrows(IllegalArgumentException.class, () -> config.rotation(-91));
         }

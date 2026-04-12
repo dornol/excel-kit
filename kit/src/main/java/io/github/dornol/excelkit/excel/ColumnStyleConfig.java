@@ -10,7 +10,7 @@ import java.util.function.Function;
  * Shared base for column styling configuration.
  * <p>
  * Used by both {@link ExcelColumn.ExcelColumnBuilder} and
- * {@link ExcelSheetWriter.ColumnConfig} to eliminate duplicated field
+ * {@link ColumnConfig} to eliminate duplicated field
  * declarations and setter methods.
  *
  * <p><b>Why not split into FontStyle, BorderStyle, LayoutConfig, etc.?</b>

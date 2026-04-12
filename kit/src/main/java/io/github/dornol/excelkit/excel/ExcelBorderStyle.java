@@ -7,7 +7,7 @@ import org.apache.poi.ss.usermodel.BorderStyle;
  * <p>
  * Wraps Apache POI's {@link BorderStyle} to provide a simplified API
  * for configuring cell borders in {@link ExcelColumn.ExcelColumnBuilder}
- * and {@link ExcelSheetWriter.ColumnConfig}.
+ * and {@link ColumnConfig}.
  *
  * @author dhkim
  * @since 0.6.0

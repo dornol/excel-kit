@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0] - 2026-04-12
+
+### Changed (Breaking)
+
+- **`ExcelSheetWriter.ColumnConfig` and `TemplateListWriter.ColumnConfig` inner classes deleted** —
+  replaced by a single top-level `ColumnConfig<T>` class that extends `ColumnStyleConfig<T, ColumnConfig<T>>`.
+  Both inner classes were empty wrappers (zero methods) inheriting all 47 styling methods from
+  `ColumnStyleConfig`. The new class is identical in behavior; only the qualified name changes.
+  `ExcelColumn.ExcelColumnBuilder` is unaffected (it has its own unique `style()` / `build()` methods).
+
+### Migration Guide
+
+```java
+// Before (v0.12.0) — qualified references
+ExcelSheetWriter.ColumnConfig<MyRow> config = new ExcelSheetWriter.ColumnConfig<>();
+TemplateListWriter.ColumnConfig<MyRow> config2 = new TemplateListWriter.ColumnConfig<>();
+
+// After (v0.13.0) — top-level class
+ColumnConfig<MyRow> config = new ColumnConfig<>();
+
+// Lambda-style callers are unchanged (type inferred):
+sheetWriter.column("Name", row -> row.getName(), cfg -> cfg.bold(true).type(ExcelDataType.STRING));
+```
+
 ## [0.12.0] - 2026-04-12
 
 v0.12.0 completes the Map I/O symmetry that v0.11.0 deferred: the Map Reader

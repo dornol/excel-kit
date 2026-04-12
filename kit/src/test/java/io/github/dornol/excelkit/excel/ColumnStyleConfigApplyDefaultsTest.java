@@ -12,8 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ColumnStyleConfigApplyDefaultsTest {
 
-    private ExcelSheetWriter.ColumnConfig<String> config() {
-        return new ExcelSheetWriter.ColumnConfig<>();
+    private ColumnConfig<String> config() {
+        return new ColumnConfig<>();
     }
 
     private ColumnStyleConfig.DefaultStyleConfig<String> defaults() {

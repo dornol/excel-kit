@@ -9,18 +9,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for {@link ColumnStyleConfig} — the shared base for
- * {@link ExcelColumn.ExcelColumnBuilder} and {@link ExcelSheetWriter.ColumnConfig}.
+ * {@link ExcelColumn.ExcelColumnBuilder} and {@link ColumnConfig}.
  * <p>
  * Validates all configuration methods, validation logic, and fluent chaining
- * through the concrete {@link ExcelSheetWriter.ColumnConfig} subclass.
+ * through the concrete {@link ColumnConfig} subclass.
  */
 class ColumnStyleConfigTest {
 
     /**
      * Creates a fresh ColumnConfig for testing.
      */
-    private ExcelSheetWriter.ColumnConfig<String> config() {
-        return new ExcelSheetWriter.ColumnConfig<>();
+    private ColumnConfig<String> config() {
+        return new ColumnConfig<>();
     }
 
     // ============================================================
@@ -558,7 +558,7 @@ class ColumnStyleConfigTest {
                     .hidden(true)
                     .validation(ExcelValidation.decimalBetween(0, 100));
 
-            assertInstanceOf(ExcelSheetWriter.ColumnConfig.class, c);
+            assertInstanceOf(ColumnConfig.class, c);
         }
     }
 }

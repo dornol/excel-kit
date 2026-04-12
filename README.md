@@ -133,7 +133,7 @@ without requiring any additional architectural effort.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.dornol:excel-kit:0.12.0")
+    implementation("io.github.dornol:excel-kit:0.13.0")
 }
 ```
 
@@ -142,7 +142,7 @@ dependencies {
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.12.0</version>
+  <version>0.13.0</version>
 </dependency>
 ```
 

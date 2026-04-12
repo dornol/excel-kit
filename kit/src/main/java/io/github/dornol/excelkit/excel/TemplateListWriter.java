@@ -260,11 +260,4 @@ public class TemplateListWriter<T> {
                 c.headerFontColor);
     }
 
-    /**
-     * Configuration class for column options.
-     *
-     * @param <T> the row data type
-     */
-    public static class ColumnConfig<T> extends ColumnStyleConfig<T, ColumnConfig<T>> {
-    }
 }

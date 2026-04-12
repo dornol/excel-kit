@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests to boost coverage for CsvReader, ExcelSheetWriter.ColumnConfig,
+ * Tests to boost coverage for CsvReader, ColumnConfig,
  * CellData, ExcelDataType, and ExcelHyperlink.
  */
 class CoverageBoostTest {
@@ -142,7 +142,7 @@ class CoverageBoostTest {
     }
 
     // -----------------------------------------------------------------------
-    // 2. ExcelSheetWriter.ColumnConfig — format, alignment, bold, fontSize, width, minWidth, maxWidth
+    // 2. ColumnConfig — format, alignment, bold, fontSize, width, minWidth, maxWidth
     // -----------------------------------------------------------------------
 
     @Test
@@ -230,7 +230,7 @@ class CoverageBoostTest {
 
     @Test
     void columnConfig_fontSize_shouldThrowForNonPositive() {
-        ExcelSheetWriter.ColumnConfig<String> config = new ExcelSheetWriter.ColumnConfig<>();
+        ColumnConfig<String> config = new ColumnConfig<>();
         assertThrows(IllegalArgumentException.class, () -> config.fontSize(0));
         assertThrows(IllegalArgumentException.class, () -> config.fontSize(-1));
     }
@@ -701,7 +701,7 @@ class CoverageBoostTest {
 
     @Test
     void columnConfig_chainingReturnsThis() {
-        ExcelSheetWriter.ColumnConfig<String> config = new ExcelSheetWriter.ColumnConfig<>();
+        ColumnConfig<String> config = new ColumnConfig<>();
         assertSame(config, config.type(ExcelDataType.STRING));
         assertSame(config, config.format("#,##0"));
         assertSame(config, config.alignment(HorizontalAlignment.CENTER));
@@ -717,7 +717,7 @@ class CoverageBoostTest {
 
     @Test
     void columnConfig_outline_invalidLevel_shouldThrow() {
-        ExcelSheetWriter.ColumnConfig<String> config = new ExcelSheetWriter.ColumnConfig<>();
+        ColumnConfig<String> config = new ColumnConfig<>();
         assertThrows(IllegalArgumentException.class, () -> config.outline(-1));
         assertThrows(IllegalArgumentException.class, () -> config.outline(8));
     }

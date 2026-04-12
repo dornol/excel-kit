@@ -563,7 +563,7 @@ class NewFeaturesV072Test {
             var defaults = new ColumnStyleConfig.DefaultStyleConfig<String>();
             defaults.bold(true).fontName("Arial").fontSize(14).alignment(HorizontalAlignment.LEFT);
 
-            var config = new ExcelSheetWriter.ColumnConfig<String>();
+            var config = new ColumnConfig<String>();
             // Only set bold -- everything else should come from defaults
             config.bold(false);
 
@@ -581,7 +581,7 @@ class NewFeaturesV072Test {
             var defaults = new ColumnStyleConfig.DefaultStyleConfig<String>();
             defaults.bold(true).fontName("Arial");
 
-            var config = new ExcelSheetWriter.ColumnConfig<String>();
+            var config = new ColumnConfig<String>();
             config.bold(false).fontName("Courier");
 
             config.applyDefaults(defaults);
@@ -595,7 +595,7 @@ class NewFeaturesV072Test {
             var defaults = new ColumnStyleConfig.DefaultStyleConfig<String>();
             defaults.alignment(HorizontalAlignment.RIGHT);
 
-            var configWithoutAlignment = new ExcelSheetWriter.ColumnConfig<String>();
+            var configWithoutAlignment = new ColumnConfig<String>();
             // alignmentSet is false by default, so defaults should apply
             configWithoutAlignment.applyDefaults(defaults);
             assertEquals(HorizontalAlignment.RIGHT, configWithoutAlignment.alignment,
@@ -603,7 +603,7 @@ class NewFeaturesV072Test {
             assertTrue(configWithoutAlignment.alignmentSet,
                     "alignmentSet flag should be propagated from defaults");
 
-            var configWithAlignment = new ExcelSheetWriter.ColumnConfig<String>();
+            var configWithAlignment = new ColumnConfig<String>();
             configWithAlignment.alignment(HorizontalAlignment.LEFT);
             configWithAlignment.applyDefaults(defaults);
             assertEquals(HorizontalAlignment.LEFT, configWithAlignment.alignment,
@@ -615,7 +615,7 @@ class NewFeaturesV072Test {
             var defaults = new ColumnStyleConfig.DefaultStyleConfig<String>();
             // defaults has no explicit settings
 
-            var config = new ExcelSheetWriter.ColumnConfig<String>();
+            var config = new ColumnConfig<String>();
             config.bold(true).fontName("Helvetica");
 
             config.applyDefaults(defaults);
