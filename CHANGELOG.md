@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.2] - 2026-04-12
+
+### Fixed
+
+- **Decrypted temp file not cleaned up** — when reading password-protected Excel files,
+  the decrypted temp file was not deleted after reading, leaving sensitive data on disk.
+  Now explicitly deleted in a finally block.
+- **DataBar gradient maxColor not applied** — `dataBar(minColor, maxColor)` stored the
+  max color but never wrote it to the Excel XML. 2-color gradient data bars now correctly
+  render both colors.
+- **ExcelDataType.FORMULA DDE security warning** — added javadoc warning that DDE formulas
+  (e.g., `cmd|'/c calc'`) can execute commands. No runtime guard is applied because DDE
+  pipe syntax is used by legitimate integrations (Bloomberg, Reuters). Input validation
+  is the caller's responsibility.
+
 ## [0.16.1] - 2026-04-12
 
 ### Fixed
