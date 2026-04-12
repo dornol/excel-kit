@@ -167,7 +167,7 @@ public class ExcelColumn<T> {
     }
 
     String @Nullable [] getDropdownOptions() {
-        return dropdownOptions;
+        return dropdownOptions != null ? dropdownOptions.clone() : null;
     }
 
     @Nullable CellColorFunction<T> getCellColorFunction() {
@@ -203,7 +203,7 @@ public class ExcelColumn<T> {
     }
 
     int @Nullable [] getHeaderFontColor() {
-        return headerFontColor;
+        return headerFontColor != null ? headerFontColor.clone() : null;
     }
 
     /**
