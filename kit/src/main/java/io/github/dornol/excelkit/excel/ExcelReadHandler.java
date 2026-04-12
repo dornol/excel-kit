@@ -44,7 +44,7 @@ import java.util.stream.StreamSupport;
  * It is optimized for large files and avoids loading the entire workbook into memory.
  * <p>
  * For large or complex Excel files, you may need to adjust POI's internal limits via
- * {@link ExcelReader#configureLargeFileSupport()} before reading. This adjusts:
+ * {@link ExcelKitConfig#configureLargeFileSupport()} before reading. This adjusts:
  * <ul>
  *     <li>{@code ZipSecureFile.setMaxFileCount} — maximum number of internal zip entries</li>
  *     <li>{@code IOUtils.setByteArrayMaxOverride} — maximum in-memory byte array size</li>

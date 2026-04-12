@@ -57,7 +57,11 @@ public class CsvReader<T> {
         this.validator = validator;
     }
 
-    /** Constructs a CsvReader in setter mode without Bean Validation. */
+    /**
+     * Constructs a CsvReader in setter mode without Bean Validation.
+     *
+     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
+     */
     public CsvReader(Supplier<T> instanceSupplier) {
         this(instanceSupplier, null);
     }
@@ -77,6 +81,10 @@ public class CsvReader<T> {
     /**
      * Creates a CsvReader in setter mode with Bean Validation.
      *
+     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
+     * @param validator        Bean Validation validator
+     * @param <T>              The row data type
+     * @return A new CsvReader configured in setter mode
      * @since 0.14.0
      */
     public static <T> CsvReader<T> setter(Supplier<T> instanceSupplier, @Nullable Validator validator) {
