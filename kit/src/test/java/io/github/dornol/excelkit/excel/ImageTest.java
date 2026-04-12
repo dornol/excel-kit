@@ -61,6 +61,18 @@ class ImageTest {
     }
 
     @Test
+    void excelImage_nullData_shouldThrow() {
+        assertThrows(IllegalArgumentException.class, () -> ExcelImage.png(null));
+        assertThrows(IllegalArgumentException.class, () -> ExcelImage.jpeg(null));
+    }
+
+    @Test
+    void excelImage_emptyData_shouldThrow() {
+        assertThrows(IllegalArgumentException.class, () -> ExcelImage.png(new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> ExcelImage.jpeg(new byte[0]));
+    }
+
+    @Test
     void image_nonImageValue_shouldFallbackToString() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<String>builder().build()

@@ -383,9 +383,20 @@ public class CsvWriter<T> {
             return quoting == CsvQuoting.ALL ? "\"\"" : "";
         }
         String value = input.toString();
-        // CSV Injection defense: prefix formula-triggering characters with a single quote
-        if (csvInjectionDefense && !value.isEmpty() && isFormulaCharacter(value.charAt(0))) {
-            value = "'" + value;
+        // CSV Injection defense: prefix formula-triggering characters with a single quote.
+        // Also checks after leading spaces — Excel strips spaces before evaluating formulas.
+        if (csvInjectionDefense && !value.isEmpty()) {
+            char first = value.charAt(0);
+            if (isFormulaCharacter(first)) {
+                value = "'" + value;
+            } else if (first == ' ') {
+                // Check if a formula character follows leading spaces
+                int i = 0;
+                while (i < value.length() && value.charAt(i) == ' ') i++;
+                if (i < value.length() && isFormulaCharacter(value.charAt(i))) {
+                    value = "'" + value;
+                }
+            }
         }
         boolean needsQuote = value.contains(String.valueOf(this.delimiter))
                 || value.contains("\"") || value.contains("\n") || value.contains("\r");

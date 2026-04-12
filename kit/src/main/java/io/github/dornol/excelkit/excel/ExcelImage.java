@@ -13,6 +13,13 @@ import org.apache.poi.ss.usermodel.Workbook;
  */
 public record ExcelImage(byte[] data, int imageType) {
 
+    /** Validates that image data is not null or empty. */
+    public ExcelImage {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("Image data must not be null or empty");
+        }
+    }
+
     /**
      * Creates a PNG image.
      *

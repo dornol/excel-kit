@@ -251,4 +251,45 @@ class CsvInjectionDefenseTest {
             assertFalse(csv.contains("''already quoted"), "Should not double-prefix single quote");
         }
     }
+
+    // ============================================================
+    // Leading whitespace bypass defense
+    // ============================================================
+    @Nested
+    class LeadingWhitespaceBypass {
+
+        @Test
+        void prefixes_spaceBeforeEquals() throws Exception {
+            String csv = writeCsv(defaultWriter(), " =cmd|'/c calc");
+            String dataLine = dataLine(csv);
+            assertTrue(dataLine.startsWith("'"), "Should prefix when formula char follows leading space");
+        }
+
+        @Test
+        void prefixes_multipleSpacesBeforeEquals() throws Exception {
+            String csv = writeCsv(defaultWriter(), "   =SUM(A1)");
+            String dataLine = dataLine(csv);
+            assertTrue(dataLine.startsWith("'"), "Should prefix when formula char follows multiple spaces");
+        }
+
+        @Test
+        void prefixes_tabBeforePlus() throws Exception {
+            String csv = writeCsv(defaultWriter(), "\t+cmd");
+            assertTrue(csv.contains("'\t+cmd"), "Should prefix when formula char follows tab");
+        }
+
+        @Test
+        void noPrefix_spaceBeforeNormalText() throws Exception {
+            String csv = writeCsv(defaultWriter(), " hello");
+            String dataLine = dataLine(csv);
+            assertFalse(dataLine.startsWith("'"), "Should not prefix normal text with leading space");
+        }
+
+        @Test
+        void noPrefix_onlyWhitespace() throws Exception {
+            String csv = writeCsv(defaultWriter(), "   ");
+            String dataLine = dataLine(csv);
+            assertFalse(dataLine.startsWith("'"), "Should not prefix whitespace-only value");
+        }
+    }
 }

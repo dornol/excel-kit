@@ -46,7 +46,7 @@ class ExcelWriteSupport {
             row = cfg.afterDataWriter.write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
         }
         if (cfg.summaryConfig != null) {
-            cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
+            row = cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
         }
         return row;
     }
