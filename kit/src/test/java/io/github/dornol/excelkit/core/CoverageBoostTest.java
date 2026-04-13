@@ -167,7 +167,7 @@ class CoverageBoostTest {
                     .quoting(CsvQuoting.ALL)
                     .column("Value", r -> null)
                     .write(Stream.of(new Row("ignored")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String[] lines = csv.split("\r?\n");
@@ -183,7 +183,7 @@ class CoverageBoostTest {
                     .column("Text", Row::value)
                     .column("Num", r -> 42)
                     .write(Stream.of(new Row("hello")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String[] lines = csv.split("\r?\n");
@@ -199,7 +199,7 @@ class CoverageBoostTest {
                     .csvInjectionDefense(true)
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("=SUM(A1)"), new Row("+cmd"), new Row("@import")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             assertTrue(csv.contains("'=SUM(A1)"), "= should be prefixed with '");
@@ -214,7 +214,7 @@ class CoverageBoostTest {
                     .csvInjectionDefense(false)
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("=SUM(A1)")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             assertTrue(csv.contains("=SUM(A1)"), "Should not prefix when defense is disabled");
@@ -227,7 +227,7 @@ class CoverageBoostTest {
             new CsvWriter<Row>()
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("say \"hello\"")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             assertTrue(csv.contains("\"say \"\"hello\"\"\""), "Quotes should be escaped");
@@ -239,7 +239,7 @@ class CoverageBoostTest {
             new CsvWriter<Row>()
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("line1\nline2")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             assertTrue(csv.contains("\"line1\nline2\""), "Newline in value should trigger quoting");
@@ -252,7 +252,7 @@ class CoverageBoostTest {
                     .column("Always", Row::value)
                     .columnIf("Never", false, Row::value)
                     .write(Stream.of(new Row("test")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String headerLine = csv.split("\r?\n")[0];
@@ -266,7 +266,7 @@ class CoverageBoostTest {
                     .column("Name", Row::value)
                     .constColumn("Type", "Person")
                     .write(Stream.of(new Row("Alice")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String[] lines = csv.split("\r?\n");
@@ -281,7 +281,7 @@ class CoverageBoostTest {
                     .column("Name", Row::value)
                     .afterData(writer -> writer.println("# Footer"))
                     .write(Stream.of(new Row("Alice")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             assertTrue(csv.contains("# Footer"), "afterData content should be appended");
@@ -294,7 +294,7 @@ class CoverageBoostTest {
                     .bom(false)
                     .column("Name", Row::value)
                     .write(Stream.of(new Row("Alice")))
-                    .write(out);
+                    .writeTo(out);
 
             byte[] bytes = out.toByteArray();
             assertFalse(bytes[0] == (byte) 0xEF && bytes[1] == (byte) 0xBB && bytes[2] == (byte) 0xBF,
@@ -334,7 +334,7 @@ class CoverageBoostTest {
                             new Row("-"),           // just minus - not numeric
                             new Row("")             // empty - not numeric
                     ))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String[] lines = csv.split("\r?\n");
@@ -360,7 +360,7 @@ class CoverageBoostTest {
             ExcelWriter.forMap("Name", "Age", "City").write(Stream.of(
                     Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
                     Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")
-            )).write(out);
+            )).writeTo(out);
 
             try (var stream = ExcelReader.forMap()
                     .build(new ByteArrayInputStream(out.toByteArray()))
@@ -378,7 +378,7 @@ class CoverageBoostTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ExcelWriter.forMap("Name").write(Stream.of(
                     Map.of("Name", "Alice")
-            )).write(out);
+            )).writeTo(out);
 
             // headerRowIndex 0 is default — just verifying the API path
             try (var stream = ExcelReader.forMap()

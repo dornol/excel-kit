@@ -47,7 +47,7 @@ public final class CsvHandler extends TempResourceContainer implements FileHandl
      * @throws CsvWriteException If this method has already been called or if an I/O error occurs
      */
     @Override
-    public void write(OutputStream outputStream) {
+    public void writeTo(OutputStream outputStream) {
         if (!consumed.compareAndSet(false, true)) {
             throw new CsvWriteException("Already consumed");
         }

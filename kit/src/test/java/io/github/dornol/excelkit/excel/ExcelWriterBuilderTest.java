@@ -38,7 +38,7 @@ class ExcelWriterBuilderTest {
 
     private static byte[] writeSingleString(ExcelWriter<String> writer) throws IOException {
         var out = new ByteArrayOutputStream();
-        writer.column("A", s -> s).write(Stream.of("x")).write(out);
+        writer.column("A", s -> s).write(Stream.of("x")).writeTo(out);
         return out.toByteArray();
     }
 
@@ -125,7 +125,7 @@ class ExcelWriterBuilderTest {
             var out = new ByteArrayOutputStream();
             writer.column("A", s -> s)
                     .write(Stream.of("x", "y", "z"))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Sheet sheet = wb.getSheetAt(0);
@@ -154,7 +154,7 @@ class ExcelWriterBuilderTest {
             var out = new ByteArrayOutputStream();
             writer.column("n", s -> s)
                     .write(Stream.of("row-1", "row-2", "row-3"))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals(2, wb.getNumberOfSheets(),
@@ -174,7 +174,7 @@ class ExcelWriterBuilderTest {
             var out = new ByteArrayOutputStream();
             writer.column("n", s -> s)
                     .write(Stream.of("a", "b", "c"))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals(1, wb.getNumberOfSheets());
@@ -207,7 +207,7 @@ class ExcelWriterBuilderTest {
             var out = new ByteArrayOutputStream();
             writer.column("n", i -> i, c -> c.type(ExcelDataType.INTEGER))
                     .write(IntStream.rangeClosed(1, 10).boxed())
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Sheet sheet = wb.getSheetAt(0);
@@ -230,7 +230,7 @@ class ExcelWriterBuilderTest {
             var out = new ByteArrayOutputStream();
             writer.column("A", s -> s)
                     .write(Stream.of("a", "b", "c", "d"))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals(2, wb.getNumberOfSheets());

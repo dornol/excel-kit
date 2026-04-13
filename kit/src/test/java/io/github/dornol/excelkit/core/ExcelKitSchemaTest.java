@@ -71,7 +71,7 @@ class ExcelKitSchemaTest {
         // Assert
         assertNotNull(handler);
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -87,7 +87,7 @@ class ExcelKitSchemaTest {
         // Assert
         assertNotNull(handler);
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -102,7 +102,7 @@ class ExcelKitSchemaTest {
         // Assert
         assertNotNull(handler);
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -116,7 +116,7 @@ class ExcelKitSchemaTest {
         // Assert
         assertNotNull(handler);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        handler.write(bos);
+        handler.writeTo(bos);
         String csv = bos.toString();
         String[] lines = csv.split("\\r?\\n");
         assertEquals(3, lines.length);
@@ -134,7 +134,7 @@ class ExcelKitSchemaTest {
 
         // Assert
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        handler.write(bos);
+        handler.writeTo(bos);
         String csv = bos.toString();
         String[] lines = csv.split("\\r?\\n");
         assertEquals("\uFEFFName\tAge", lines[0]);
@@ -150,7 +150,7 @@ class ExcelKitSchemaTest {
 
         // Assert
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        handler.write(bos);
+        handler.writeTo(bos);
         String csv = bos.toString();
         String[] lines = csv.split("\\r?\\n");
         assertEquals("\uFEFFName,Age,Doubled Age", lines[0]);
@@ -167,7 +167,7 @@ class ExcelKitSchemaTest {
                         new TestPerson("Bob", 25),
                         new TestPerson("Charlie", 35)
                 ))
-                .write(excelOut);
+                .writeTo(excelOut);
 
         // Act - read back
         List<TestPerson> results = new ArrayList<>();
@@ -198,7 +198,7 @@ class ExcelKitSchemaTest {
         ByteArrayOutputStream excelOut = new ByteArrayOutputStream();
         schema.excelWriter()
                 .write(Stream.of(new TestPerson("Alice", 30)))
-                .write(excelOut);
+                .writeTo(excelOut);
 
         // Act
         List<TestPerson> results = new ArrayList<>();
@@ -279,7 +279,7 @@ class ExcelKitSchemaTest {
         ByteArrayOutputStream excelOut = new ByteArrayOutputStream();
         schema.excelWriter()
                 .write(original.stream())
-                .write(excelOut);
+                .writeTo(excelOut);
 
         // Read back
         List<TestPerson> results = new ArrayList<>();
@@ -316,7 +316,7 @@ class ExcelKitSchemaTest {
         schema.csvWriter()
                 .bom(false)
                 .write(original.stream())
-                .write(csvOut);
+                .writeTo(csvOut);
 
         // Read back
         InputStream is = new ByteArrayInputStream(csvOut.toByteArray());
@@ -347,7 +347,7 @@ class ExcelKitSchemaTest {
                         new TestPerson("", 25),         // blank name
                         new TestPerson("TooOld", 150)   // age > 100
                 ))
-                .write(excelOut);
+                .writeTo(excelOut);
 
         // Act
         List<TestPerson> valid = new ArrayList<>();
@@ -385,8 +385,8 @@ class ExcelKitSchemaTest {
 
         try (ByteArrayOutputStream bos1 = new ByteArrayOutputStream();
              ByteArrayOutputStream bos2 = new ByteArrayOutputStream()) {
-            handler1.write(bos1);
-            handler2.write(bos2);
+            handler1.writeTo(bos1);
+            handler2.writeTo(bos2);
             assertTrue(bos1.toByteArray().length > 0);
             assertTrue(bos2.toByteArray().length > 0);
         }
@@ -402,7 +402,7 @@ class ExcelKitSchemaTest {
                         new TestPerson("Alice", 30),
                         new TestPerson("Bob", 25)
                 ))
-                .write(excelOut);
+                .writeTo(excelOut);
 
         List<TestPerson> results = new ArrayList<>();
         try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
@@ -456,7 +456,7 @@ class ExcelKitSchemaTest {
                         new TestPerson("", 25),
                         new TestPerson("TooOld", 150)
                 ))
-                .write(excelOut);
+                .writeTo(excelOut);
 
         List<TestPerson> valid = new ArrayList<>();
         List<ReadResult<TestPerson>> invalid = new ArrayList<>();
@@ -491,7 +491,7 @@ class ExcelKitSchemaTest {
         ByteArrayOutputStream excelOut = new ByteArrayOutputStream();
         schema.excelWriter()
                 .write(original.stream())
-                .write(excelOut);
+                .writeTo(excelOut);
 
         List<TestPerson> results = new ArrayList<>();
         try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
@@ -525,7 +525,7 @@ class ExcelKitSchemaTest {
         schema.csvWriter()
                 .bom(false)
                 .write(original.stream())
-                .write(csvOut);
+                .writeTo(csvOut);
 
         InputStream is = new ByteArrayInputStream(csvOut.toByteArray());
         List<TestPerson> results = new ArrayList<>();

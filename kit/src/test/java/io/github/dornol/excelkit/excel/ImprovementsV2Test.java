@@ -123,7 +123,7 @@ class ImprovementsV2Test {
                 .autoWidthSampleRows(5)
                 .column("Name", s -> s)
                 .write(Stream.of("short", "a very long column value that should affect width"))
-                .write(out);
+                .writeTo(out);
 
         assertTrue(out.toByteArray().length > 0);
     }
@@ -135,7 +135,7 @@ class ImprovementsV2Test {
                 .autoWidthSampleRows(0)
                 .column("Name", s -> s)
                 .write(Stream.of("test"))
-                .write(out);
+                .writeTo(out);
 
         assertTrue(out.toByteArray().length > 0);
     }
@@ -154,7 +154,7 @@ class ImprovementsV2Test {
                     .autoWidthSampleRows(10)
                     .column("Name", s -> s)
                     .write(Stream.of("test"));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
         assertTrue(out.toByteArray().length > 0);
     }

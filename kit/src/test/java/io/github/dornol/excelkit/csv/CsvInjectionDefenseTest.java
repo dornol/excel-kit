@@ -17,7 +17,7 @@ class CsvInjectionDefenseTest {
     private String writeCsv(CsvWriter<String> writer, String... values) throws Exception {
         var handler = writer.write(Stream.of(values));
         var baos = new ByteArrayOutputStream();
-        handler.write(baos);
+        handler.writeTo(baos);
         return baos.toString(StandardCharsets.UTF_8);
     }
 
@@ -126,7 +126,7 @@ class CsvInjectionDefenseTest {
                     .column("Col2", arr -> arr[1]);
             var handler = writer.write(Stream.<String[]>of(new String[]{"=formula", "@inject"}));
             var baos = new ByteArrayOutputStream();
-            handler.write(baos);
+            handler.writeTo(baos);
             String csv = baos.toString(StandardCharsets.UTF_8);
 
             assertTrue(csv.contains("'=formula"), "Defense should apply to Col1");

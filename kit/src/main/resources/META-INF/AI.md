@@ -13,15 +13,15 @@ Not annotation-based — columns are defined programmatically via builder chains
 
 | Task | Class | Pattern |
 |------|-------|---------|
-| Write Excel (typed) | `ExcelWriter<T>` | `.column("Name", T::getName).write(stream).toFile(path)` |
-| Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).toFile(path)` |
-| Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` → `wb.finish().toFile(path)` |
+| Write Excel (typed) | `ExcelWriter<T>` | `.column("Name", T::getName).write(stream).writeTo(path)` |
+| Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).writeTo(path)` |
+| Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` → `wb.finish().writeTo(path)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list(...).write(stream, out)` |
 | Read Excel (setter) | `ExcelReader<T>` | `ExcelReader.setter(T::new).column("Name", T::setName).required().build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 | Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).build(in).read(r -> ...)` |
-| Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).toFile(path)` |
-| Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).toFile(path)` |
+| Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).writeTo(path)` |
+| Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).writeTo(path)` |
 | Read CSV (setter) | `CsvReader<T>` | `CsvReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 
@@ -43,7 +43,7 @@ ExcelWriter.<Person>create()
     .column("Name", Person::name)
     .column("Age", Person::age, cfg -> cfg.type(ExcelDataType.INTEGER))
     .write(stream)
-    .write(out);
+    .writeTo(out);
 ```
 
 `ExcelWorkbook` (multi-sheet, different types per sheet):
@@ -51,7 +51,7 @@ ExcelWriter.<Person>create()
 try (var wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
     wb.<User>sheet("Users").column("Name", User::getName).write(userStream);
     wb.<Order>sheet("Orders").column("ID", Order::getId).write(orderStream);
-    wb.finish().write(out);
+    wb.finish().writeTo(out);
 }
 ```
 
@@ -59,7 +59,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 
 ## Key API Notes (v0.16.0+)
 
-- `FileHandler.write()` throws unchecked exceptions only — no `throws IOException`
+- `FileHandler.writeTo()` throws unchecked exceptions only — no `throws IOException`
 - `nullValue(Object)` on column config — default value for null cells (e.g., `c -> c.nullValue("N/A")`)
 - `freezePane(int cols, int rows)` — freeze both columns and rows
 - `required()` on reader columns — blank cells produce validation errors

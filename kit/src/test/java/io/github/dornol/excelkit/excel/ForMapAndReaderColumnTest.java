@@ -67,7 +67,7 @@ class ForMapAndReaderColumnTest {
             var out = new ByteArrayOutputStream();
             ExcelWriter.forMap(names, cfgs)
                     .write(Stream.of(Map.of("Name", "Alice", "Age", 30, "City", "Seoul")))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -93,7 +93,7 @@ class ForMapAndReaderColumnTest {
             var out = new ByteArrayOutputStream();
             ExcelWriter.forMap(names, cfgs)
                     .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -112,7 +112,7 @@ class ForMapAndReaderColumnTest {
             var out = new ByteArrayOutputStream();
             ExcelWriter.forMap(names, cfgs)
                     .write(Stream.of(Map.of("A", "1", "B", "2")))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -137,7 +137,7 @@ class ForMapAndReaderColumnTest {
                     .rowHeight(30)
                     .autoFilter(true)
                     .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertEquals("Users", wb.getSheetAt(0).getSheetName());
@@ -153,7 +153,7 @@ class ForMapAndReaderColumnTest {
             ExcelWriter.forMap("Name")
                     .protectSheet("secret")
                     .write(Stream.of(Map.of("Name", "Alice")))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertNotNull(wb.getSheetAt(0).getCTWorksheet().getSheetProtection());
@@ -176,7 +176,7 @@ class ForMapAndReaderColumnTest {
                     .bom(false)
                     .csvInjectionDefense(false)
                     .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8);
             assertFalse(csv.startsWith("\uFEFF"), "bom(false) should suppress BOM");
@@ -205,7 +205,7 @@ class ForMapAndReaderColumnTest {
                     .column("Age", p -> p.age)
                     .column("City", p -> p.city)
                     .write(Stream.of(makePerson("Alice", 30, "Seoul")))
-                    .write(out);
+                    .writeTo(out);
 
             // The point of this test: `.column()` must return `ExcelReader<Person>`,
             // so we can use a single chained expression without intermediate variables.
@@ -237,7 +237,7 @@ class ForMapAndReaderColumnTest {
                     .column("City", a -> a[2])
                     .column("Note", a -> a[3])
                     .write(Stream.<String[]>of(row))
-                    .write(out);
+                    .writeTo(out);
 
             // Read via: name (by header), skip, positional age, explicit index 3 (Note)
             Person result = new Person();
@@ -301,7 +301,7 @@ class ForMapAndReaderColumnTest {
                     .write(Stream.of(
                             Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
                             Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")))
-                    .write(out);
+                    .writeTo(out);
 
             // Read with only "Name" and "City" selected
             List<ReadResult<Map<String, String>>> results = new ArrayList<>();
@@ -323,7 +323,7 @@ class ForMapAndReaderColumnTest {
             var out = new ByteArrayOutputStream();
             ExcelWriter.forMap("Name", "Age")
                     .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
-                    .write(out);
+                    .writeTo(out);
 
             List<ReadResult<Map<String, String>>> results = new ArrayList<>();
             ExcelReader.forMap()

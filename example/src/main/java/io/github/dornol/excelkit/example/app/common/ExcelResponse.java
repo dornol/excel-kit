@@ -31,7 +31,7 @@ public final class ExcelResponse {
     public static ResponseEntity<StreamingResponseBody> of(ExcelHandler handler, String filename) {
         String name = ensureExtension(filename, ".xlsx");
         return DownloadUtil.builder(name, DownloadFileType.EXCEL)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 
     /**
@@ -45,7 +45,7 @@ public final class ExcelResponse {
     public static ResponseEntity<StreamingResponseBody> of(ExcelHandler handler, String filename, String password) {
         String name = ensureExtension(filename, ".xlsx");
         return DownloadUtil.builder(name, DownloadFileType.EXCEL)
-                .body(out -> handler.consumeOutputStreamWithPassword(out, password));
+                .body(out -> handler.writeTo(out, password));
     }
 
     private static String ensureExtension(String filename, String ext) {

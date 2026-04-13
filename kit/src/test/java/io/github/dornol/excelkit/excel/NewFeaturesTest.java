@@ -94,7 +94,7 @@ class NewFeaturesTest {
                         return null;
                     }))
                 .write(Stream.of(-5, 50, 200))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -123,7 +123,7 @@ class NewFeaturesTest {
                         return v < 0 ? ExcelColor.LIGHT_RED : null; // negative → red, else fall through to row color
                     }))
                 .write(Stream.of(-5, 50))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -149,7 +149,7 @@ class NewFeaturesTest {
                                 return v > 100 ? ExcelColor.LIGHT_GREEN : null;
                             }))
                     .write(Stream.of(50, 200));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -172,7 +172,7 @@ class NewFeaturesTest {
                     .maxRows(3)
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4, 5, 6, 7));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -197,7 +197,7 @@ class NewFeaturesTest {
                     .sheetName(idx -> "Orders-Page" + (idx + 1))
                     .column("ID", i -> i)
                     .write(Stream.of(1, 2, 3, 4, 5));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -215,7 +215,7 @@ class NewFeaturesTest {
             wb.<Integer>sheet("Single")
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4, 5));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -237,7 +237,7 @@ class NewFeaturesTest {
                     .column("Name", s -> s)
                     .write(Stream.of("x", "y"));
 
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -261,7 +261,7 @@ class NewFeaturesTest {
                 .column("Total", r -> r[0] * r[1], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
                 .column("Notes", r -> "note")
                 .write(Stream.of(new int[]{100, 5}))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -303,7 +303,7 @@ class NewFeaturesTest {
                 .column("A", s -> s)
                 .column("B", s -> s)
                 .write(Stream.of("test"))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -321,7 +321,7 @@ class NewFeaturesTest {
                     .column("Price", r -> r[0], c -> c.type(ExcelDataType.INTEGER).group("Financial"))
                     .column("Qty", r -> r[1], c -> c.type(ExcelDataType.INTEGER).group("Financial"))
                     .write(Stream.of(new int[]{100, 5}));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

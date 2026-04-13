@@ -72,7 +72,7 @@ public class TemplateShowcaseController {
                       })
                       .write(products.stream());
 
-                writer.finish().write(out);
+                writer.finish().writeTo(out);
             }
         });
     }
@@ -105,7 +105,7 @@ public class TemplateShowcaseController {
                       .cell("B7", java.time.LocalDate.of(2020, 3, 15))
                       .cell("B9", java.time.LocalDate.now())
                       .finish()
-                      .write(out);
+                      .writeTo(out);
             }
         });
     }

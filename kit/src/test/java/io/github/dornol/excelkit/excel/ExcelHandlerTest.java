@@ -51,7 +51,7 @@ class ExcelHandlerTest {
         createSampleWorkbookContent();
 
         // Act
-        handler.write(outputStream);
+        handler.writeTo(outputStream);
 
         // Assert
         byte[] excelBytes = outputStream.toByteArray();
@@ -61,26 +61,26 @@ class ExcelHandlerTest {
     @Test
     void write_shouldThrowExceptionWhenAlreadyConsumed() throws IOException {
         // Arrange
-        handler.write(outputStream);
+        handler.writeTo(outputStream);
         ByteArrayOutputStream secondOutputStream = new ByteArrayOutputStream();
 
         // Act & Assert
         assertThrows(ExcelWriteException.class, () -> {
-            handler.write(secondOutputStream);
+            handler.writeTo(secondOutputStream);
         }, "write should throw ExcelWriteException when already consumed");
 
         secondOutputStream.close();
     }
 
     @Test
-    void consumeOutputStreamWithPassword_shouldWriteEncryptedWorkbook() throws IOException {
+    void writeToWithPassword_shouldWriteEncryptedWorkbook() throws IOException {
         // Arrange
         createSampleWorkbookContent();
         Path excelFile = tempDir.resolve("encrypted.xlsx");
 
         // Act
         try (FileOutputStream fos = new FileOutputStream(excelFile.toFile())) {
-            handler.consumeOutputStreamWithPassword(fos, "test123");
+            handler.writeTo(fos, "test123");
         }
 
         // Assert
@@ -89,45 +89,45 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void consumeOutputStreamWithPassword_shouldThrowExceptionWhenAlreadyConsumed() throws IOException {
+    void writeToWithPassword_shouldThrowExceptionWhenAlreadyConsumed() throws IOException {
         // Arrange
-        handler.write(outputStream);
+        handler.writeTo(outputStream);
         ByteArrayOutputStream secondOutputStream = new ByteArrayOutputStream();
 
         // Act & Assert
         assertThrows(ExcelWriteException.class, () -> {
-            handler.consumeOutputStreamWithPassword(secondOutputStream, "test123");
-        }, "consumeOutputStreamWithPassword should throw ExcelWriteException when already consumed");
+            handler.writeTo(secondOutputStream, "test123");
+        }, "writeToWithPassword should throw ExcelWriteException when already consumed");
 
         secondOutputStream.close();
     }
 
     @Test
-    void consumeOutputStreamWithPassword_shouldThrowExceptionWithNullPassword() {
+    void writeToWithPassword_shouldThrowExceptionWithNullPassword() {
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            handler.consumeOutputStreamWithPassword(outputStream, (String) null);
-        }, "consumeOutputStreamWithPassword should throw IllegalArgumentException with null password");
+            handler.writeTo(outputStream, (String) null);
+        }, "writeToWithPassword should throw IllegalArgumentException with null password");
     }
 
     @Test
-    void consumeOutputStreamWithPassword_shouldThrowExceptionWithNullCharArrayPassword() {
+    void writeToWithPassword_shouldThrowExceptionWithNullCharArrayPassword() {
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            handler.consumeOutputStreamWithPassword(outputStream, (char[]) null);
-        }, "consumeOutputStreamWithPassword should throw IllegalArgumentException with null char[] password");
+            handler.writeTo(outputStream, (char[]) null);
+        }, "writeToWithPassword should throw IllegalArgumentException with null char[] password");
     }
 
     @Test
-    void consumeOutputStreamWithPassword_shouldThrowExceptionWithEmptyCharArrayPassword() {
+    void writeToWithPassword_shouldThrowExceptionWithEmptyCharArrayPassword() {
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            handler.consumeOutputStreamWithPassword(outputStream, new char[0]);
-        }, "consumeOutputStreamWithPassword should throw IllegalArgumentException with empty char[] password");
+            handler.writeTo(outputStream, new char[0]);
+        }, "writeToWithPassword should throw IllegalArgumentException with empty char[] password");
     }
 
     @Test
-    void consumeOutputStreamWithPassword_charArray_shouldWriteEncryptedWorkbook() throws IOException {
+    void writeToWithPassword_charArray_shouldWriteEncryptedWorkbook() throws IOException {
         // Arrange
         createSampleWorkbookContent();
         Path excelFile = tempDir.resolve("encrypted-char.xlsx");
@@ -135,7 +135,7 @@ class ExcelHandlerTest {
 
         // Act
         try (FileOutputStream fos = new FileOutputStream(excelFile.toFile())) {
-            handler.consumeOutputStreamWithPassword(fos, password);
+            handler.writeTo(fos, password);
         }
 
         // Assert
@@ -156,7 +156,7 @@ class ExcelHandlerTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         // Act
-        pwHandler.write(out);
+        pwHandler.writeTo(out);
 
         // Assert - verify OLE2 magic bytes (encrypted), not ZIP (unencrypted)
         byte[] bytes = out.toByteArray();
@@ -170,7 +170,7 @@ class ExcelHandlerTest {
         createSampleWorkbookContent();
 
         // Act
-        handler.write(outputStream);
+        handler.writeTo(outputStream);
 
         // Assert - verify ZIP magic bytes (unencrypted OOXML)
         byte[] bytes = outputStream.toByteArray();
@@ -179,14 +179,14 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void consumeOutputStreamWithPassword_charArray_blankPassword_shouldThrow() {
+    void writeToWithPassword_charArray_blankPassword_shouldThrow() {
         // Arrange
         char[] blankPassword = {' ', ' ', ' '};
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            handler.consumeOutputStreamWithPassword(outputStream, blankPassword);
-        }, "consumeOutputStreamWithPassword should throw for blank char[] password");
+            handler.writeTo(outputStream, blankPassword);
+        }, "writeToWithPassword should throw for blank char[] password");
     }
 
     @Test
@@ -196,7 +196,7 @@ class ExcelHandlerTest {
         ExcelHandler testHandler = new ExcelHandler(testWorkbook);
         
         // Act
-        testHandler.write(outputStream);
+        testHandler.writeTo(outputStream);
         
         // Assert - attempting to use the workbook after it's closed should throw an exception
         assertThrows(IOException.class, () -> {

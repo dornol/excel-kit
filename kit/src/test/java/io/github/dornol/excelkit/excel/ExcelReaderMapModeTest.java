@@ -38,7 +38,7 @@ class ExcelReaderMapModeTest {
                 .write(Stream.of(
                         Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
                         Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")))
-                .write(out);
+                .writeTo(out);
         return out.toByteArray();
     }
 
@@ -126,7 +126,7 @@ class ExcelReaderMapModeTest {
                         .column("Name", a -> a[0])
                         .column("Age", a -> a[1])
                         .write(Stream.of(new String[]{"Alice", "30"}, new String[]{"Bob", "25"}));
-                wb.finish().write(out);
+                wb.finish().writeTo(out);
             }
 
             List<Map<String, String>> results = new ArrayList<>();
@@ -148,7 +148,7 @@ class ExcelReaderMapModeTest {
                     .write(Stream.of(
                             Map.of("n", "1"), Map.of("n", "2"), Map.of("n", "3"),
                             Map.of("n", "4"), Map.of("n", "5"), Map.of("n", "6")))
-                    .write(out);
+                    .writeTo(out);
 
             AtomicLong lastCount = new AtomicLong(0);
             AtomicInteger callCount = new AtomicInteger(0);
@@ -426,7 +426,7 @@ class ExcelReaderMapModeTest {
                         .write(Stream.<Map<String, Object>>of(
                                 Map.of("Name", "second-a", "Tag", "x"),
                                 Map.of("Name", "second-b", "Tag", "y")));
-                wb.finish().write(out);
+                wb.finish().writeTo(out);
             }
 
             List<Map<String, String>> results = new ArrayList<>();

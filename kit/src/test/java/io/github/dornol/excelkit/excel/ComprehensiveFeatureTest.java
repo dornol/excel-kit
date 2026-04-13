@@ -41,7 +41,7 @@ class ComprehensiveFeatureTest {
                 .column("Value", s -> null, c -> c // always null
                     .cellColor((value, row) -> value != null ? ExcelColor.LIGHT_RED : null))
                 .write(Stream.of("a", "b"))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             // null value → cellColor returns null → no color override
@@ -63,7 +63,7 @@ class ComprehensiveFeatureTest {
                     .type(ExcelDataType.INTEGER)
                     .cellColor((v, r) -> ((Number) v).intValue() < 0 ? ExcelColor.LIGHT_RED : null))
                 .write(Stream.of(new int[]{100, -5}))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -90,7 +90,7 @@ class ComprehensiveFeatureTest {
                 .column("B", r -> r[1], c -> c.group("All"))
                 .column("C", r -> r[2], c -> c.group("All"))
                 .write(Stream.of(new int[]{1, 2, 3}))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -111,7 +111,7 @@ class ComprehensiveFeatureTest {
                 .column("C", r -> r[2], c -> c.group("Y"))
                 .column("D", r -> r[3], c -> c.group("Y"))
                 .write(Stream.of(new int[]{1, 2, 3, 4}))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -133,7 +133,7 @@ class ComprehensiveFeatureTest {
                 .column("B", s -> s, c -> c.group("Solo"))
                 .column("C", s -> s)
                 .write(Stream.of("test"))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -157,7 +157,7 @@ class ComprehensiveFeatureTest {
                     .freezePane(1)
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -179,7 +179,7 @@ class ComprehensiveFeatureTest {
                     .autoFilter(true)
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -319,7 +319,7 @@ class ComprehensiveFeatureTest {
                 .column("A", s -> s, c -> c.outline(7))
                 .column("B", s -> s)
                 .write(Stream.of("test"))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getSheetAt(0).getColumnOutlineLevel(0) > 0);
@@ -335,7 +335,7 @@ class ComprehensiveFeatureTest {
                     .column("A", i -> i, c -> c.outline(1))
                     .column("B", i -> i)
                     .write(Stream.of(1, 2, 3));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -356,7 +356,7 @@ class ComprehensiveFeatureTest {
         ExcelWriter.<String>create()
                 .column("Link", s -> s, c -> c.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of("https://example.com/search?q=hello+world&lang=ko#section"))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Cell cell = wb.getSheetAt(0).getRow(1).getCell(0);
@@ -404,7 +404,7 @@ class ComprehensiveFeatureTest {
                 .write(Stream.of(
                         new TestProduct("Widget", 1000, true),
                         new TestProduct("Gadget", 2500, false)))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -429,7 +429,7 @@ class ComprehensiveFeatureTest {
                     .columnIf("B", true, i -> i * 2)
                     .columnIf("C", false, i -> i * 3)
                     .write(Stream.of(1, 2, 3));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

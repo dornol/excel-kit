@@ -31,6 +31,6 @@ public final class CsvResponse {
     public static ResponseEntity<StreamingResponseBody> of(CsvHandler handler, String filename) {
         String name = filename.endsWith(".csv") ? filename : filename + ".csv";
         return DownloadUtil.builder(name, DownloadFileType.CSV)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 }

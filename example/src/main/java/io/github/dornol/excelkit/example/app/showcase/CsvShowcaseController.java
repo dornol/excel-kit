@@ -43,7 +43,7 @@ public class CsvShowcaseController {
                 .write(sampleProducts().stream().map(ShowcaseData::toReadDto));
 
         return DownloadUtil.builder("schema-csv-demo", DownloadFileType.CSV)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 
     // ========================================================================
@@ -64,7 +64,7 @@ public class CsvShowcaseController {
                 ));
 
         return DownloadUtil.builder("csv-defense-off", DownloadFileType.CSV)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 
     // ========================================================================
@@ -85,7 +85,7 @@ public class CsvShowcaseController {
                 ));
 
         return DownloadUtil.builder("csv-defense-on", DownloadFileType.CSV)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 
     // ========================================================================
@@ -125,7 +125,7 @@ public class CsvShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("tsv-demo", DownloadFileType.CSV)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 
     // ========================================================================
@@ -142,6 +142,6 @@ public class CsvShowcaseController {
                 .write(sampleProducts().stream());
 
         return DownloadUtil.builder("quoted-csv-demo", DownloadFileType.CSV)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 }

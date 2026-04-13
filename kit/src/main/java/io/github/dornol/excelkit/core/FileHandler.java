@@ -15,7 +15,7 @@ import java.nio.file.Path;
  * a {@code StreamingResponseBody}.
  *
  * <h2>One-shot contract</h2>
- * Each implementation must refuse a second {@link #write(OutputStream)} call and
+ * Each implementation must refuse a second {@link #writeTo(OutputStream)} call and
  * must release any temporary resources (workbooks, staging files) inside the call,
  * whether it succeeds or throws.
  *
@@ -41,28 +41,28 @@ public interface FileHandler {
      *
      * @param out the destination stream
      */
-    void write(OutputStream out);
+    void writeTo(OutputStream out);
 
     /**
      * Writes the generated file content directly to a file path.
      * <p>
-     * Convenience method that opens a buffered {@link OutputStream} to the given path,
-     * delegates to {@link #write(OutputStream)}, and closes the stream.
+     * Convenience overload that opens a buffered {@link OutputStream} to the given path,
+     * delegates to {@link #writeTo(OutputStream)}, and closes the stream.
      * The one-shot contract applies — this method can only be called once.
      *
      * <pre>{@code
      * ExcelWriter.<User>create()
      *     .column("Name", User::getName)
      *     .write(stream)
-     *     .toFile(Path.of("users.xlsx"));
+     *     .writeTo(Path.of("users.xlsx"));
      * }</pre>
      *
      * @param path the destination file path
      * @since 0.14.0
      */
-    default void toFile(Path path) {
+    default void writeTo(Path path) {
         try (OutputStream out = Files.newOutputStream(path)) {
-            write(out);
+            writeTo(out);
         } catch (IOException e) {
             throw new ExcelKitException("Failed to write file: " + path, e);
         }

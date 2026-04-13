@@ -17,7 +17,7 @@ public class TypeTestController {
     public ResponseEntity<StreamingResponseBody> downloadExcelTypes() {
         var handler = TypeTestExcelMapper.getHandler(Stream.generate(TypeTestDto::rand).limit(10000));
         return DownloadUtil.builder("type test excel", DownloadFileType.EXCEL)
-                .body(handler::write);
+                .body(handler::writeTo);
     }
 
 }

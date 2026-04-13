@@ -37,7 +37,7 @@ class ExcelWorkbookTest {
 
         // Assert via output
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0, "Output should not be empty");
         }
         workbook.close();
@@ -61,7 +61,7 @@ class ExcelWorkbookTest {
         // We need to get the workbook to verify sheet names before consuming
         // Since ExcelHandler wraps wb, let's just consume and trust the sheet creation
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         } catch (IOException e) {
             fail(e);
@@ -109,7 +109,7 @@ class ExcelWorkbookTest {
         ExcelHandler handler = workbook.finish();
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
         workbook.close();
@@ -127,7 +127,7 @@ class ExcelWorkbookTest {
         ExcelHandler handler = workbook.finish();
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
         workbook.close();
@@ -152,7 +152,7 @@ class ExcelWorkbookTest {
         ExcelHandler handler = workbook.finish();
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
         workbook.close();
@@ -183,7 +183,7 @@ class ExcelWorkbookTest {
         ExcelHandler handler = workbook.finish();
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
         workbook.close();
@@ -202,7 +202,7 @@ class ExcelWorkbookTest {
         ExcelHandler handler = workbook.finish();
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
         workbook.close();
@@ -220,7 +220,7 @@ class ExcelWorkbookTest {
         ExcelHandler handler = workbook.finish();
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
         workbook.close();
@@ -260,7 +260,7 @@ class ExcelWorkbookTest {
                 "afterData should start at row 2 (header + 1 data)");
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         }
         workbook.close();
     }
@@ -300,7 +300,7 @@ class ExcelWorkbookTest {
         assertEquals(List.of("B", "C"), ctx2[0].getColumnNames());
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         }
         workbook.close();
     }
@@ -315,7 +315,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                handler.write(bos);
+                handler.writeTo(bos);
                 assertTrue(bos.toByteArray().length > 0);
             }
         }
@@ -327,7 +327,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                handler.write(bos);
+                handler.writeTo(bos);
                 assertTrue(bos.toByteArray().length > 0);
             }
         }
@@ -339,7 +339,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                handler.write(bos);
+                handler.writeTo(bos);
                 assertTrue(bos.toByteArray().length > 0);
             }
         }
@@ -351,7 +351,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                handler.write(bos);
+                handler.writeTo(bos);
                 assertTrue(bos.toByteArray().length > 0);
             }
         }
@@ -363,7 +363,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                handler.write(bos);
+                handler.writeTo(bos);
                 assertTrue(bos.toByteArray().length > 0);
             }
         }
@@ -378,7 +378,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             wb.<String>sheet("S2").column("B", s -> s).write(Stream.of("y"));
             var bos = new ByteArrayOutputStream();
-            wb.finish().write(bos);
+            wb.finish().writeTo(bos);
             xlsx = bos.toByteArray();
         }
 
@@ -404,7 +404,7 @@ class ExcelWorkbookTest {
                 .headerColor(ExcelColor.GOLD)) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             var bos = new ByteArrayOutputStream();
-            wb.finish().write(bos);
+            wb.finish().writeTo(bos);
             xlsx = bos.toByteArray();
         }
 
@@ -437,7 +437,7 @@ class ExcelWorkbookTest {
                 .headerColor(ExcelColor.CORAL)) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));
             var bos = new ByteArrayOutputStream();
-            wb.finish().write(bos);
+            wb.finish().writeTo(bos);
             xlsx = bos.toByteArray();
         }
 
@@ -471,7 +471,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                handler.write(bos);
+                handler.writeTo(bos);
                 assertTrue(bos.toByteArray().length > 0);
             }
         }
@@ -518,7 +518,7 @@ class ExcelWorkbookTest {
             wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
             ExcelHandler handler = wb.finish();
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                handler.write(bos);
+                handler.writeTo(bos);
                 assertTrue(bos.toByteArray().length > 0);
             }
         }
@@ -541,7 +541,7 @@ class ExcelWorkbookTest {
         wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
         ExcelHandler handler = wb.finish();
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         }
         // close() after finish should not close the wb (managed by ExcelHandler)
         assertDoesNotThrow(wb::close);

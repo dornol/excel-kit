@@ -47,9 +47,9 @@ class ExcelEdgeCaseTest {
             ExcelHandler handler = ExcelWriter.<Item>create()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
-            handler.write(out1);
+            handler.writeTo(out1);
             var ex = assertThrows(ExcelWriteException.class,
-                    () -> handler.write(new ByteArrayOutputStream()));
+                    () -> handler.writeTo(new ByteArrayOutputStream()));
             assertTrue(ex.getMessage().contains("Already consumed"),
                     "Should indicate handler was already consumed");
         }
@@ -63,12 +63,12 @@ class ExcelEdgeCaseTest {
 
         @ParameterizedTest(name = "String password={1}")
         @MethodSource("invalidStringPasswords")
-        void consumeOutputStreamWithPassword_invalidString_throws(String password, String label) throws IOException {
+        void writeToWithPassword_invalidString_throws(String password, String label) throws IOException {
             ExcelHandler handler = ExcelWriter.<Item>create()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             var ex = assertThrows(IllegalArgumentException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), password));
+                    () -> handler.writeTo(new ByteArrayOutputStream(), password));
             assertTrue(ex.getMessage().toLowerCase().contains("password"),
                     "Exception should mention password");
         }
@@ -82,12 +82,12 @@ class ExcelEdgeCaseTest {
 
         @ParameterizedTest(name = "char[] password={1}")
         @MethodSource("invalidCharPasswords")
-        void consumeOutputStreamWithPassword_invalidCharArray_throws(char[] password, String label) throws IOException {
+        void writeToWithPassword_invalidCharArray_throws(char[] password, String label) throws IOException {
             ExcelHandler handler = ExcelWriter.<Item>create()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             var ex = assertThrows(IllegalArgumentException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), password));
+                    () -> handler.writeTo(new ByteArrayOutputStream(), password));
             assertTrue(ex.getMessage().toLowerCase().contains("password"),
                     "Exception should mention password");
         }
@@ -107,7 +107,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new Item("A", 1), new Item("B", 2)))
-                    .write(out);
+                    .writeTo(out);
 
             byte[] bytes = out.toByteArray();
             // Verify OLE2 encrypted format
@@ -138,7 +138,7 @@ class ExcelEdgeCaseTest {
                     .password("correct")
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(out.toByteArray()))) {
                 EncryptionInfo info = new EncryptionInfo(fs);
@@ -153,7 +153,7 @@ class ExcelEdgeCaseTest {
             ExcelWriter.<Item>create()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             byte[] bytes = out.toByteArray();
             // Unencrypted OOXML starts with ZIP magic bytes (0x504B)
@@ -168,10 +168,10 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
 
-            handler.write(new ByteArrayOutputStream());
+            handler.writeTo(new ByteArrayOutputStream());
 
             var ex = assertThrows(ExcelWriteException.class,
-                    () -> handler.write(new ByteArrayOutputStream()));
+                    () -> handler.writeTo(new ByteArrayOutputStream()));
             assertTrue(ex.getMessage().contains("Already consumed"));
         }
 
@@ -184,7 +184,7 @@ class ExcelEdgeCaseTest {
                     .protectWorkbook("wbPass")
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             // Decrypt with file password
             try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(out.toByteArray()))) {
@@ -232,7 +232,7 @@ class ExcelEdgeCaseTest {
                 workbook.<Item>sheet("Data")
                         .column("Name", Item::name)
                         .write(Stream.of(new Item("A", 1)));
-                workbook.finish().write(out);
+                workbook.finish().writeTo(out);
             }
 
             byte[] bytes = out.toByteArray();
@@ -261,7 +261,7 @@ class ExcelEdgeCaseTest {
                 workbook.<Item>sheet("Data")
                         .column("Name", Item::name)
                         .write(Stream.of(new Item("A", 1)));
-                workbook.finish().write(out);
+                workbook.finish().writeTo(out);
             }
 
             try (POIFSFileSystem fs = new POIFSFileSystem(new ByteArrayInputStream(out.toByteArray()))) {
@@ -295,7 +295,7 @@ class ExcelEdgeCaseTest {
     }
 
     // ============================================================
-    // password() + consumeOutputStreamWithPassword() conflict
+    // password() + writeToWithPassword() conflict
     // ============================================================
     @Nested
     class PasswordConflictTests {
@@ -308,7 +308,7 @@ class ExcelEdgeCaseTest {
                     .write(Stream.of(new Item("A", 1)));
 
             var ex = assertThrows(IllegalStateException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), "second"));
+                    () -> handler.writeTo(new ByteArrayOutputStream(), "second"));
             assertTrue(ex.getMessage().contains("already set"),
                     "Should indicate password conflict");
         }
@@ -322,7 +322,7 @@ class ExcelEdgeCaseTest {
 
             char[] charPassword = "second".toCharArray();
             var ex = assertThrows(IllegalStateException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), charPassword));
+                    () -> handler.writeTo(new ByteArrayOutputStream(), charPassword));
             assertTrue(ex.getMessage().contains("already set"),
                     "Should indicate password conflict");
 
@@ -340,13 +340,13 @@ class ExcelEdgeCaseTest {
     class CharArrayPasswordBlankTests {
 
         @Test
-        void consumeOutputStreamWithPassword_blankCharArray_throws() throws IOException {
+        void writeToWithPassword_blankCharArray_throws() throws IOException {
             ExcelHandler handler = ExcelWriter.<Item>create()
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)));
             char[] blankPassword = {' ', '\t', ' '};
             var ex = assertThrows(IllegalArgumentException.class,
-                    () -> handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), blankPassword));
+                    () -> handler.writeTo(new ByteArrayOutputStream(), blankPassword));
             assertTrue(ex.getMessage().toLowerCase().contains("password"),
                     "Exception should mention password");
         }
@@ -387,7 +387,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             ExcelReader<MutableItem> reader = new ExcelReader<>(MutableItem::new, null);
             reader.column("Name", (item, cell) -> {});
@@ -405,7 +405,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             List<String> headers = ExcelReader.getSheetHeaders(
                     new ByteArrayInputStream(out.toByteArray()), 0, 0);
@@ -436,7 +436,7 @@ class ExcelEdgeCaseTest {
                             .min("Value")
                             .max("Value"))
                     .write(Stream.of(new Item("A", 10), new Item("B", 20)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -460,7 +460,7 @@ class ExcelEdgeCaseTest {
                             .label("Total")
                             .sum("Value"))
                     .write(Stream.of(new Item("A", 10), new Item("B", 20)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var summaryRow = wb.getSheetAt(0).getRow(3);
@@ -479,7 +479,7 @@ class ExcelEdgeCaseTest {
                             .label("NonExistent", "Total:")
                             .sum("Value"))
                     .write(Stream.of(new Item("A", 10)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var summaryRow = wb.getSheetAt(0).getRow(2);
@@ -498,7 +498,7 @@ class ExcelEdgeCaseTest {
                             .label("Name", "Total:")
                             .sum("Value"))
                     .write(Stream.of(new Item("A", 10), new Item("B", 20)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -524,7 +524,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var dataRow = wb.getSheetAt(0).getRow(1);
@@ -544,7 +544,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name, c -> c.bold(false))
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var dataRow = wb.getSheetAt(0).getRow(1);
@@ -572,7 +572,7 @@ class ExcelEdgeCaseTest {
                         .column("Name", Item::name)
                         .write(Stream.of(new Item("A", 1)));
                 wb.protectWorkbook("password123");
-                wb.finish().write(out);
+                wb.finish().writeTo(out);
             }
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -596,7 +596,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -612,7 +612,7 @@ class ExcelEdgeCaseTest {
                     .headerFontSize(16)
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -629,7 +629,7 @@ class ExcelEdgeCaseTest {
                     .headerFontSize(14)
                     .column("Name", Item::name)
                     .write(Stream.of(new Item("A", 1)))
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
@@ -653,7 +653,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value)
                     .write(Stream.empty())
-                    .write(out);
+                    .writeTo(out);
 
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 var sheet = wb.getSheetAt(0);
@@ -679,7 +679,7 @@ class ExcelEdgeCaseTest {
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new Item("A", 10)))
-                    .write(out);
+                    .writeTo(out);
 
             // Read with a mapper that always succeeds
             List<Item> results = new ArrayList<>();

@@ -109,20 +109,20 @@ without requiring any additional architectural effort.
 
 | Task | Class | Example |
 |------|-------|---------|
-| Write Excel (typed) | `ExcelWriter<T>` | `ExcelWriter.<T>create().column("Name", T::getName, cfg -> cfg.type(...)).write(stream).write(out)` |
-| Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).write(out)` |
+| Write Excel (typed) | `ExcelWriter<T>` | `ExcelWriter.<T>create().column("Name", T::getName, cfg -> cfg.type(...)).write(stream).writeTo(out)` |
+| Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).writeTo(out)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.sheet("Sheet1").column(...).write(stream)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
 | Read Excel (typed) | `ExcelReader<T>` | `ExcelReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))` |
-| Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).write(out)` |
-| Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).write(out)` |
+| Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).writeTo(out)` |
+| Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).writeTo(out)` |
 | Read CSV (typed) | `CsvReader<T>` | `CsvReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().build(in).read(r -> r.data().get("Name"))` |
 
 **Read modes:** Setter mode (`XxxReader.setter(T::new)`) for mutable objects, Mapping mode (`XxxReader.mapping(row -> ...)`) for records/immutable objects, Map mode (`ExcelReader.forMap()` / `CsvReader.forMap()`) for schema-less reading.
 
-**Output consumption:** `write(out)` for direct streaming, `consumeFile(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `consumeOutputStreamWithPassword(out, "pw")` for late-binding encryption.
+**Output consumption:** `write(out)` for direct streaming, `writeTo(path)` for file output. Excel supports `password("pw")` on the writer for automatic encryption, or `writeTo(out, "pw")` for late-binding encryption.
 
 ## Migration Guide (0.8.1 → 0.8.2)
 
@@ -197,7 +197,7 @@ ExcelHandler handler = ExcelWriter.<Person>create()
         .write(data);
 
 try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
-    handler.write(os);
+    handler.writeTo(os);
 }
 ```
 
@@ -237,7 +237,7 @@ CsvHandler ch = csv
         .write(rows);
 
 try (var os = Files.newOutputStream(Path.of("rows.csv"))) {
-    ch.write(os);
+    ch.writeTo(os);
 }
 ```
 
@@ -882,7 +882,7 @@ For `ExcelWorkbook`:
 try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
     workbook.protectWorkbook("password123");
     workbook.<User>sheet("Users").column("Name", User::getName).write(userStream);
-    workbook.finish().write(outputStream);
+    workbook.finish().writeTo(outputStream);
 }
 ```
 
@@ -905,7 +905,7 @@ For `ExcelWorkbook`:
 try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
     workbook.headerFontName("맑은 고딕").headerFontSize(12);
     workbook.<User>sheet("Users").column("Name", User::getName).write(userStream);
-    workbook.finish().write(outputStream);
+    workbook.finish().writeTo(outputStream);
 }
 ```
 
@@ -1305,14 +1305,14 @@ ExcelWriter.forMap("Name", "Age", "City")
     .write(Stream.of(
         Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
         Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")))
-    .write(outputStream);
+    .writeTo(outputStream);
 ```
 
 CSV equivalent:
 ```java
 CsvWriter.forMap("Name", "Age")
     .write(stream)
-    .write(outputStream);
+    .writeTo(outputStream);
 ```
 
 ### Map-Based Reading
@@ -1549,7 +1549,7 @@ ExcelHandler handler = ExcelWriter.<Product>create().headerColor(ExcelColor.STEE
     .column("Name", Product::name)
     .write(data);
 
-handler.write(outputStream);
+handler.writeTo(outputStream);
 ```
 
 Works the same way with `ExcelWorkbook`:
@@ -1558,21 +1558,21 @@ Works the same way with `ExcelWorkbook`:
 try (var workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
     workbook.password("P@ssw0rd!");
     workbook.<Product>sheet("Products").column("Name", Product::name).write(data);
-    workbook.finish().write(outputStream);
+    workbook.finish().writeTo(outputStream);
 }
 ```
 
 Can be combined with `protectSheet()` and `protectWorkbook()` — file encryption protects data, sheet/workbook protection controls editing.
 
-If the password is only known at output time (e.g., user-provided), use `consumeOutputStreamWithPassword()` instead:
+If the password is only known at output time (e.g., user-provided), use `writeTo(out, password)` instead:
 
 ```java
 try (var os = Files.newOutputStream(Path.of("secret.xlsx"))) {
-    handler.consumeOutputStreamWithPassword(os, "P@ssw0rd!");
+    handler.writeTo(os, "P@ssw0rd!");
 }
 ```
 
-> **Note:** Setting `password()` on the writer and calling `consumeOutputStreamWithPassword()` on the same handler throws `IllegalStateException` — use one approach or the other.
+> **Note:** Setting `password()` on the writer and calling `writeTo(out, password)` on the same handler throws `IllegalStateException` — use one approach or the other.
 
 ### Explicit Multi-Sheet Workbook
 
@@ -1593,7 +1593,7 @@ try (ExcelWorkbook workbook = new ExcelWorkbook(ExcelColor.STEEL_BLUE)) {
         .write(orderStream);
 
     ExcelHandler handler = workbook.finish();
-    handler.write(outputStream);
+    handler.writeTo(outputStream);
 }
 ```
 
@@ -1920,7 +1920,7 @@ public Mono<Void> download(ServerHttpResponse response) {
             PipedOutputStream pos = new PipedOutputStream(pis);
             Schedulers.boundedElastic().schedule(() -> {
                 try {
-                    writer.write(dataStream).write(pos);
+                    writer.write(dataStream).writeTo(pos);
                     pos.close();
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -1970,12 +1970,12 @@ The library creates temporary files during read and write operations (e.g., SAX-
 
 - Uses Apache POI's **Agile encryption mode** (AES-256, modern Excel standard).
 - **Preferred API:** `ExcelWriter.password()` / `ExcelWorkbook.password()` — set once, `write()` auto-encrypts.
-- **Late-binding API:** `consumeOutputStreamWithPassword()` — for cases where the password is only known at output time.
+- **Late-binding API:** `writeTo(out, password)` — for cases where the password is only known at output time.
 - Using both on the same handler throws `IllegalStateException` to prevent ambiguity.
 - The `char[]` password overload zeroes the array after use (including on exception) to minimize password exposure in memory.
 - Encryption uses a two-stage write (workbook → temp file → encrypted output) to keep memory usage low.
 
-> **Note:** Excel sheet protection (`protectSheet()`) is a UI-level deterrent, not cryptographic security. It prevents casual editing but can be bypassed by tools. Use file-level password encryption (`password()` or `consumeOutputStreamWithPassword()`) for actual data protection.
+> **Note:** Excel sheet protection (`protectSheet()`) is a UI-level deterrent, not cryptographic security. It prevents casual editing but can be bypassed by tools. Use file-level password encryption (`password()` or `writeTo(out, password)`) for actual data protection.
 
 ### CSV Injection Defense
 

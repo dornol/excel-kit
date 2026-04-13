@@ -321,7 +321,7 @@ class CellDataConversionTest {
                             new Product("Gadget", 5, 49.50),
                             new Product("", 0, 0.0)
                     ))
-                    .write(baos);
+                    .writeTo(baos);
 
             // Read back with mapping mode using as(), asInt(), asDouble()
             List<Product> products = new ArrayList<>();
@@ -361,7 +361,7 @@ class CellDataConversionTest {
             ExcelWriter.<UUID>create()
                     .column("ID", UUID::toString)
                     .write(Stream.of(uuid1, uuid2))
-                    .write(baos);
+                    .writeTo(baos);
 
             // Read back with as(UUID::fromString)
             List<UUID> ids = new ArrayList<>();

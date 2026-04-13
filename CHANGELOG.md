@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.5] - 2026-04-13
+
+### Changed (Breaking)
+
+- **Unified `FileHandler` output API under `writeTo(...)`.** Every way a handler
+  emits its payload is now a `writeTo` overload:
+  - `FileHandler.write(OutputStream)` → `writeTo(OutputStream)`
+  - `FileHandler.toFile(Path)` → `writeTo(Path)`
+  - `ExcelHandler.consumeOutputStreamWithPassword(OutputStream, String)` → `writeTo(OutputStream, String)`
+  - `ExcelHandler.consumeOutputStreamWithPassword(OutputStream, char[])` → `writeTo(OutputStream, char[])`
+  - `CsvHandler.write(OutputStream)` → `writeTo(OutputStream)`
+  Motivation: the old names collided conceptually with `ExcelWriter.write(Stream<T>)`
+  (which produces a handler) — reading `.write(stream).write(out)` looked like two
+  invocations of the same operation. They are not: the first pulls data *in*, the
+  second pushes bytes *out*. Renaming the handler side to `writeTo` makes the
+  direction explicit and frees the `write(Stream)` verb on the writer.
+  `consumeOutputStreamWithPassword` (30 chars, different verb family) was also
+  replaced by a plain `writeTo` overload so every output-stage call reads
+  `.writeTo(destination, ...)`.
+
+Migration:
+
+```java
+// Before
+writer.column(...).write(stream).write(out);
+writer.column(...).write(stream).toFile(path);
+writer.column(...).write(stream).consumeOutputStreamWithPassword(out, "pw");
+writer.column(...).write(stream).consumeOutputStreamWithPassword(out, pwdChars);
+
+// After
+writer.column(...).write(stream).writeTo(out);
+writer.column(...).write(stream).writeTo(path);
+writer.column(...).write(stream).writeTo(out, "pw");
+writer.column(...).write(stream).writeTo(out, pwdChars);
+
+// Spring StreamingResponseBody
+.body(handler::write)   →   .body(handler::writeTo)
+```
+
+`ExcelWriter.password(String)` / `ExcelWorkbook.password(String)` is unchanged —
+pre-set-then-`writeTo(out)` remains the preferred path. Passing the password to
+`writeTo(out, pw)` still throws `IllegalStateException` if `password()` was
+already set at the writer level.
+
 ## [0.16.4] - 2026-04-13
 
 ### Changed (Breaking)

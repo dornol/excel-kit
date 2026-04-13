@@ -84,7 +84,7 @@ class ExcelColorTest {
 
     private static byte[] writeOne(ExcelWriter<String> writer) throws IOException {
         var out = new ByteArrayOutputStream();
-        writer.column("A", (row, c) -> row).write(Stream.of("a")).write(out);
+        writer.column("A", (row, c) -> row).write(Stream.of("a")).writeTo(out);
         return out.toByteArray();
     }
 
@@ -153,7 +153,7 @@ class ExcelColorTest {
         writer.column("A", (row, c) -> row, cfg -> cfg.backgroundColor(ExcelColor.LIGHT_YELLOW))
                 .column("B", (row, c) -> row.length(), cfg -> cfg.backgroundColor(ExcelColor.LIGHT_RED))
                 .write(Stream.of("a", "b"))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             // Data cell (row 1, not header row 0) should carry per-column bg color.

@@ -53,11 +53,11 @@ class NewFeaturesV014Test {
     }
 
     // ================================================================
-    // 1. FileHandler.toFile(Path)
+    // 1. FileHandler.writeTo(Path)
     // ================================================================
 
     @Nested
-    @DisplayName("FileHandler.toFile(Path)")
+    @DisplayName("FileHandler.writeTo(Path)")
     class ToFileTests {
 
         @Test
@@ -68,7 +68,7 @@ class NewFeaturesV014Test {
             ExcelWriter.<String>create()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice", "Bob"))
-                    .toFile(target);
+                    .writeTo(target);
 
             assertTrue(Files.exists(target));
             assertTrue(Files.size(target) > 0);
@@ -87,7 +87,7 @@ class NewFeaturesV014Test {
             new CsvWriter<String>()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice", "Bob"))
-                    .toFile(target);
+                    .writeTo(target);
 
             assertTrue(Files.exists(target));
             String content = Files.readString(target, StandardCharsets.UTF_8).replace("\uFEFF", "");
@@ -104,10 +104,10 @@ class NewFeaturesV014Test {
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
 
-            handler.toFile(tempDir.resolve("first.xlsx"));
+            handler.writeTo(tempDir.resolve("first.xlsx"));
 
             assertThrows(ExcelWriteException.class,
-                    () -> handler.toFile(tempDir.resolve("second.xlsx")));
+                    () -> handler.writeTo(tempDir.resolve("second.xlsx")));
         }
 
         @Test
@@ -117,10 +117,10 @@ class NewFeaturesV014Test {
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
 
-            handler.toFile(tempDir.resolve("first.csv"));
+            handler.writeTo(tempDir.resolve("first.csv"));
 
             assertThrows(CsvWriteException.class,
-                    () -> handler.toFile(tempDir.resolve("second.csv")));
+                    () -> handler.writeTo(tempDir.resolve("second.csv")));
         }
 
         @Test
@@ -131,14 +131,14 @@ class NewFeaturesV014Test {
             ExcelWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
-                    .write(out);
+                    .writeTo(out);
 
             // Write via toFile
             Path target = tempDir.resolve("out.xlsx");
             ExcelWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
-                    .toFile(target);
+                    .writeTo(target);
 
             // Both should produce valid xlsx with identical data
             try (var wb1 = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()));
@@ -157,14 +157,14 @@ class NewFeaturesV014Test {
             new CsvWriter<String>()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
-                    .write(out);
+                    .writeTo(out);
 
             // Write via toFile
             Path target = tempDir.resolve("out.csv");
             new CsvWriter<String>()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
-                    .toFile(target);
+                    .writeTo(target);
 
             String fromStream = out.toString(StandardCharsets.UTF_8);
             String fromFile = Files.readString(target, StandardCharsets.UTF_8);
@@ -178,10 +178,10 @@ class NewFeaturesV014Test {
                     .column("A", s -> s)
                     .write(Stream.of("x"));
 
-            handler.toFile(tempDir.resolve("out.xlsx"));
+            handler.writeTo(tempDir.resolve("out.xlsx"));
 
             assertThrows(ExcelWriteException.class,
-                    () -> handler.write(new ByteArrayOutputStream()));
+                    () -> handler.writeTo(new ByteArrayOutputStream()));
         }
 
         @Test
@@ -191,10 +191,10 @@ class NewFeaturesV014Test {
                     .column("A", s -> s)
                     .write(Stream.of("x"));
 
-            handler.write(new ByteArrayOutputStream());
+            handler.writeTo(new ByteArrayOutputStream());
 
             assertThrows(ExcelWriteException.class,
-                    () -> handler.toFile(tempDir.resolve("out.xlsx")));
+                    () -> handler.writeTo(tempDir.resolve("out.xlsx")));
         }
     }
 
@@ -213,7 +213,7 @@ class NewFeaturesV014Test {
                     .column("Name", u -> u.name)
                     .column("Age", u -> u.age)
                     .write(Stream.of(makeUser("Alice", 30), makeUser("Bob", 25)))
-                    .write(out);
+                    .writeTo(out);
             return out.toByteArray();
         }
 
@@ -275,7 +275,7 @@ class NewFeaturesV014Test {
             ExcelWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("hello"))
-                    .write(out);
+                    .writeTo(out);
 
             // Reading a non-encrypted xlsx with password should fail
             // because the file is not a POIFS file
@@ -305,7 +305,7 @@ class NewFeaturesV014Test {
                     .column("Name", s -> s)
                     .constColumnIf("Type", true, "USER")
                     .write(Stream.of("Alice"))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String[] lines = csv.split("\r?\n");
@@ -321,7 +321,7 @@ class NewFeaturesV014Test {
                     .column("Name", s -> s)
                     .constColumnIf("Type", false, "USER")
                     .write(Stream.of("Alice"))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String[] lines = csv.split("\r?\n");
@@ -337,7 +337,7 @@ class NewFeaturesV014Test {
                     .column("Name", s -> s)
                     .constColumnIf("Extra", true, null)
                     .write(Stream.of("Alice"))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
             String[] lines = csv.split("\r?\n");
@@ -363,7 +363,7 @@ class NewFeaturesV014Test {
                     .column("Name", u -> u.name)
                     .column("Age", u -> u.age)
                     .write(Stream.of(makeUser("Alice", 30)))
-                    .write(out);
+                    .writeTo(out);
             byte[] data = out.toByteArray();
 
             // Read with constructor
@@ -422,7 +422,7 @@ class NewFeaturesV014Test {
                     .column("Name", u -> u.name)
                     .column("Age", u -> u.age)
                     .write(Stream.of(makeUser("Bob", 42)))
-                    .write(out);
+                    .writeTo(out);
 
             List<ReadResult<User>> results = new ArrayList<>();
             ExcelReader.setter(User::new)
@@ -452,7 +452,7 @@ class NewFeaturesV014Test {
             ExcelWriter.<User>create()
                     .column("Name", u -> u.name)
                     .write(Stream.of(makeUser("Alice", 30)))
-                    .write(out);
+                    .writeTo(out);
             byte[] data = out.toByteArray();
 
             // With null validator

@@ -46,7 +46,7 @@ class ExcelWriterTest {
         // Assert
         assertNotNull(handler);
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -66,7 +66,7 @@ class ExcelWriterTest {
         // Assert
         assertNotNull(handler, "write should return non-null ExcelHandler");
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0, "Produced Excel bytes should not be empty");
         }
     }
@@ -97,7 +97,7 @@ class ExcelWriterTest {
 
         // Finally consume to ensure no exception
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -123,7 +123,7 @@ class ExcelWriterTest {
 
         // consume for completeness
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -148,7 +148,7 @@ class ExcelWriterTest {
 
         // consume for completeness
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -167,7 +167,7 @@ class ExcelWriterTest {
         assertEquals("B", sheet.getRow(0).getCell(1).getStringCellValue());
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -185,7 +185,7 @@ class ExcelWriterTest {
         assertEquals(1, sheet.getRow(0).getLastCellNum());
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -207,7 +207,7 @@ class ExcelWriterTest {
         assertEquals("B", sheet.getRow(0).getCell(1).getStringCellValue());
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -228,7 +228,7 @@ class ExcelWriterTest {
         assertEquals(2, sheet.getRow(0).getLastCellNum(), "Only A and B should exist");
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -247,7 +247,7 @@ class ExcelWriterTest {
         assertEquals(42.0, sheet.getRow(1).getCell(1).getNumericCellValue());
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -267,7 +267,7 @@ class ExcelWriterTest {
         assertEquals("YES", sheet.getRow(1).getCell(1).getStringCellValue());
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -285,7 +285,7 @@ class ExcelWriterTest {
         assertEquals(1, sheet.getRow(0).getLastCellNum());
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -305,7 +305,7 @@ class ExcelWriterTest {
         // Assert
         assertNotNull(handler);
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         }
     }
@@ -330,7 +330,7 @@ class ExcelWriterTest {
 
         // consume for completeness
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
             assertTrue(bos.toByteArray().length > 0);
         } catch (IOException e) {
             fail(e);
@@ -357,7 +357,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -391,7 +391,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -426,7 +426,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -461,7 +461,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -497,7 +497,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -535,7 +535,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -566,7 +566,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -602,7 +602,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -638,7 +638,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -661,7 +661,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -685,7 +685,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -709,7 +709,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -733,7 +733,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -760,7 +760,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -786,7 +786,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -826,7 +826,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -853,7 +853,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -878,7 +878,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -916,7 +916,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -947,7 +947,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -979,7 +979,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -1010,7 +1010,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -1042,7 +1042,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -1079,7 +1079,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -1124,7 +1124,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -1171,7 +1171,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -1197,7 +1197,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }
@@ -1226,7 +1226,7 @@ class ExcelWriterTest {
 
         // consume
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
+            handler.writeTo(bos);
         } catch (IOException e) {
             fail(e);
         }

@@ -26,7 +26,7 @@ class ConditionalFormattingTest {
                         .columns(1)
                         .greaterThan("100", ExcelColor.LIGHT_RED))
                 .write(Stream.of(new Product("A", 50), new Product("B", 200)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             SheetConditionalFormatting scf = wb.getSheetAt(0).getSheetConditionalFormatting();
@@ -44,7 +44,7 @@ class ConditionalFormattingTest {
                         .columns(1)
                         .greaterThan("100", ExcelColor.LIGHT_RED))
                 .write(Stream.of(new Product("A", 50), new Product("B", 200), new Product("C", 150)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             SheetConditionalFormatting scf = wb.getSheetAt(0).getSheetConditionalFormatting();
@@ -69,7 +69,7 @@ class ConditionalFormattingTest {
                         .lessThan("50", ExcelColor.LIGHT_GREEN)
                         .between("50", "200", ExcelColor.LIGHT_YELLOW))
                 .write(Stream.of(new Product("A", 100)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             SheetConditionalFormatting scf = wb.getSheetAt(0).getSheetConditionalFormatting();
@@ -87,7 +87,7 @@ class ConditionalFormattingTest {
                         .columns(1)
                         .equalTo("100", ExcelColor.LIGHT_BLUE))
                 .write(Stream.of(new Product("A", 100)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getSheetAt(0).getSheetConditionalFormatting()
@@ -103,7 +103,7 @@ class ConditionalFormattingTest {
                 .conditionalFormatting(cf -> cf
                         .notEqualTo("0", ExcelColor.LIGHT_ORANGE))
                 .write(Stream.of(new Product("A", 100)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getSheetAt(0).getSheetConditionalFormatting()
@@ -119,7 +119,7 @@ class ConditionalFormattingTest {
                 .conditionalFormatting(cf -> cf
                         .greaterThanOrEqual("100", ExcelColor.LIGHT_RED))
                 .write(Stream.of(new Product("A", 100)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getSheetAt(0).getSheetConditionalFormatting()
@@ -135,7 +135,7 @@ class ConditionalFormattingTest {
                 .conditionalFormatting(cf -> cf
                         .lessThanOrEqual("50", ExcelColor.LIGHT_GREEN))
                 .write(Stream.of(new Product("A", 30)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getSheetAt(0).getSheetConditionalFormatting()
@@ -151,7 +151,7 @@ class ConditionalFormattingTest {
                 .conditionalFormatting(cf -> cf
                         .notBetween("10", "90", ExcelColor.CORAL))
                 .write(Stream.of(new Product("A", 100)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getSheetAt(0).getSheetConditionalFormatting()
@@ -170,7 +170,7 @@ class ConditionalFormattingTest {
                             .columns(1)
                             .greaterThan("100", ExcelColor.LIGHT_RED))
                     .write(Stream.of(new Product("A", 200)));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -188,7 +188,7 @@ class ConditionalFormattingTest {
                         .startRow(2)
                         .greaterThan("100", ExcelColor.LIGHT_RED))
                 .write(Stream.of(new Product("A", 200)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertTrue(wb.getSheetAt(0).getSheetConditionalFormatting()

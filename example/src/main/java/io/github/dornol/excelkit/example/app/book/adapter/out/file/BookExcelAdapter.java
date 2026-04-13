@@ -32,13 +32,13 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
     @Override
     public StreamingContent exportExcel(Stream<BookDto> data) {
         var handler = createExcelHandler(data, null);
-        return handler::write;
+        return handler::writeTo;
     }
 
     @Override
     public StreamingContent exportExcelWithPassword(Stream<BookDto> data, String password) {
         var handler = createExcelHandler(data, password);
-        return handler::write;
+        return handler::writeTo;
     }
 
     @Override
@@ -53,7 +53,7 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
                 .column("isbn", BookDto::isbn)
                 .column("description", BookDto::description)
                 .write(data);
-        return handler::write;
+        return handler::writeTo;
     }
 
     @Override

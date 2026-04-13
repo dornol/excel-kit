@@ -55,7 +55,7 @@ class RoundTripIntegrationTest {
                     .write(Stream.of(
                             new StyledRow("Item A", "First description"),
                             new StyledRow("Item B", "Second description")))
-                    .write(out);
+                    .writeTo(out);
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Sheet sheet = wb.getSheetAt(0);
@@ -98,7 +98,7 @@ class RoundTripIntegrationTest {
                     .protectSheet("sheetPass")
                     .column("Value", SimpleRow::value)
                     .write(Stream.of(new SimpleRow("data")))
-                    .write(out);
+                    .writeTo(out);
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 assertTrue(wb.isStructureLocked(), "Workbook structure should be locked");
@@ -124,7 +124,7 @@ class RoundTripIntegrationTest {
                     .column("Name", DataRow::name)
                     .column("Qty", d -> d.qty(), c -> c.type(ExcelDataType.INTEGER))
                     .write(Stream.of(new DataRow("Widget", 10)))
-                    .write(out);
+                    .writeTo(out);
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Row headerRow = wb.getSheetAt(0).getRow(0);
@@ -159,7 +159,7 @@ class RoundTripIntegrationTest {
                     .column("Col2", TwoCol::col2, c -> c
                         .bold(false))
                     .write(Stream.of(new TwoCol("A", "B")))
-                    .write(out);
+                    .writeTo(out);
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Row dataRow = wb.getSheetAt(0).getRow(1);
@@ -203,7 +203,7 @@ class RoundTripIntegrationTest {
                             new SaleRow("Apple", 100, 5),
                             new SaleRow("Banana", 200, 3),
                             new SaleRow("Cherry", 300, 7)))
-                    .write(out);
+                    .writeTo(out);
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Sheet sheet = wb.getSheetAt(0);
@@ -263,7 +263,7 @@ class RoundTripIntegrationTest {
                             new Category("Electronics"),
                             new Category("Books"),
                             new Category("Clothing")))
-                    .write(out);
+                    .writeTo(out);
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                 Name namedRange = wb.getName("CategoryList");
@@ -303,7 +303,7 @@ class RoundTripIntegrationTest {
                                 c.validation(ExcelValidation.listFromRange("Options!$A$2:$A$4")))
                         .write(Stream.of(new DataEntry("Active")));
 
-                workbook.finish().write(out);
+                workbook.finish().writeTo(out);
             }
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -343,7 +343,7 @@ class RoundTripIntegrationTest {
                     .write(Stream.of(
                             new TypedRow("Alpha", 1500, 2.75, id1),
                             new TypedRow("Beta", 2500, 4.50, id2)))
-                    .write(out);
+                    .writeTo(out);
 
             List<TypedRow> results = new ArrayList<>();
             try (InputStream is = new ByteArrayInputStream(out.toByteArray())) {
@@ -391,7 +391,7 @@ class RoundTripIntegrationTest {
                             new SparseRow("Full", 10, 99.99),
                             new SparseRow("", 0, 0.0),
                             new SparseRow("Partial", 5, 0.0)))
-                    .write(out);
+                    .writeTo(out);
 
             List<SparseRow> results = new ArrayList<>();
             try (InputStream is = new ByteArrayInputStream(out.toByteArray())) {
@@ -443,7 +443,7 @@ class RoundTripIntegrationTest {
                             new DangerousRow("=SUM(A1)"),
                             new DangerousRow("-100"),
                             new DangerousRow("+44")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8);
 
@@ -482,7 +482,7 @@ class RoundTripIntegrationTest {
                             new DangerousRow("=SUM(A1)"),
                             new DangerousRow("-100"),
                             new DangerousRow("+44")))
-                    .write(out);
+                    .writeTo(out);
 
             String csv = out.toString(StandardCharsets.UTF_8);
 
@@ -545,7 +545,7 @@ class RoundTripIntegrationTest {
                                 new ScoreEntry("Bob", 42),
                                 new ScoreEntry("Charlie", 78)));
 
-                workbook.finish().write(out);
+                workbook.finish().writeTo(out);
             }
 
             try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -642,7 +642,7 @@ class RoundTripIntegrationTest {
                             new Product("Widget", 1000, true),
                             new Product("Gadget", 2500, false),
                             new Product("Doohickey", 750, true)))
-                    .write(out);
+                    .writeTo(out);
 
             // Read back using schema's mapping mode reader
             List<Product> results = new ArrayList<>();
@@ -692,7 +692,7 @@ class RoundTripIntegrationTest {
                     .write(Stream.of(
                             new Product("Alpha", 500, true),
                             new Product("Bravo", 1200, false)))
-                    .write(out);
+                    .writeTo(out);
 
             // Read back using schema's setter mode reader
             List<Product> results = new ArrayList<>();

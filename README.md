@@ -17,14 +17,14 @@ ExcelWriter.<User>create()
     .column("Name", User::name)
     .column("Age", User::age, c -> c.type(ExcelDataType.INTEGER))
     .write(userStream)
-    .toFile(Path.of("users.xlsx"));
+    .writeTo(Path.of("users.xlsx"));
 ```
 
 ## Installation
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.16.4")
+implementation("io.github.dornol:excel-kit:0.16.5")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.16.4")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.16.4</version>
+  <version>0.16.5</version>
 </dependency>
 ```
 
@@ -59,7 +59,7 @@ ExcelWriter.<Product>create().headerColor(ExcelColor.STEEL_BLUE)
     .autoFilter(true)
     .freezePane(1)
     .write(productStream)
-    .toFile(Path.of("products.xlsx"));
+    .writeTo(Path.of("products.xlsx"));
 ```
 
 ### Read Excel
@@ -97,7 +97,7 @@ new CsvWriter<Product>()
     .column("Name", Product::name)
     .column("Price", Product::price)
     .write(productStream)
-    .toFile(Path.of("products.csv"));
+    .writeTo(Path.of("products.csv"));
 
 // Read
 CsvReader.<Person>mapping(row -> new Person(
@@ -112,7 +112,7 @@ CsvReader.<Person>mapping(row -> new Person(
 // Write
 ExcelWriter.forMap("Name", "Age", "City")
     .write(Stream.of(Map.of("Name", "Alice", "Age", 30, "City", "Seoul")))
-    .toFile(Path.of("output.xlsx"));
+    .writeTo(Path.of("output.xlsx"));
 
 // Read
 ExcelReader.forMap()
@@ -136,7 +136,7 @@ try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE
         .column("Amount", Order::amount, c -> c.type(ExcelDataType.DOUBLE))
         .write(orderStream);
 
-    wb.finish().toFile(Path.of("report.xlsx"));
+    wb.finish().writeTo(Path.of("report.xlsx"));
 }
 ```
 
@@ -149,7 +149,7 @@ public ResponseEntity<StreamingResponseBody> download() {
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"report.xlsx\"")
-        .body(handler::write);
+        .body(handler::writeTo);
 }
 ```
 

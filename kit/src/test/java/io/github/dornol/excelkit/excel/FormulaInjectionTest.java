@@ -26,7 +26,7 @@ class FormulaInjectionTest {
                 .column("Val", s -> "100")
                 .column("Calc", s -> "SUM(A2:A2)", c -> c.type(ExcelDataType.FORMULA))
                 .write(Stream.of("test"))
-                .write(bos);
+                .writeTo(bos);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(bos.toByteArray()))) {
             var cell = wb.getSheetAt(0).getRow(1).getCell(1);
@@ -43,7 +43,7 @@ class FormulaInjectionTest {
         ExcelWriter.<String>create()
                 .column("Calc", s -> s, c -> c.type(ExcelDataType.FORMULA))
                 .write(Stream.of("cmd|'/c calc'"))
-                .write(bos);
+                .writeTo(bos);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(bos.toByteArray()))) {
             var cell = wb.getSheetAt(0).getRow(1).getCell(0);

@@ -154,7 +154,7 @@ class CoverageBoostTest {
                 .column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER).format("#,##0.00"))
                 .write(Stream.of(1234));
 
-        workbook.finish().write(out);
+        workbook.finish().writeTo(out);
         workbook.close();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -175,7 +175,7 @@ class CoverageBoostTest {
                 .column("Right", s -> s, c -> c.alignment(HorizontalAlignment.RIGHT))
                 .write(Stream.of("test"));
 
-        workbook.finish().write(out);
+        workbook.finish().writeTo(out);
         workbook.close();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -196,7 +196,7 @@ class CoverageBoostTest {
                 .column("NotBold", s -> s, c -> c.bold(false))
                 .write(Stream.of("test"));
 
-        workbook.finish().write(out);
+        workbook.finish().writeTo(out);
         workbook.close();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -218,7 +218,7 @@ class CoverageBoostTest {
                 .column("Big", s -> s, c -> c.fontSize(18))
                 .write(Stream.of("test"));
 
-        workbook.finish().write(out);
+        workbook.finish().writeTo(out);
         workbook.close();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -244,7 +244,7 @@ class CoverageBoostTest {
                 .column("Fixed", s -> s, c -> c.width(30))
                 .write(Stream.of("test"));
 
-        workbook.finish().write(out);
+        workbook.finish().writeTo(out);
         workbook.close();
 
         // Just verify it writes without error; fixed width is applied via internal logic
@@ -260,7 +260,7 @@ class CoverageBoostTest {
                 .column("Bounded", s -> s, c -> c.minWidth(10).maxWidth(50))
                 .write(Stream.of("test"));
 
-        workbook.finish().write(out);
+        workbook.finish().writeTo(out);
         workbook.close();
 
         assertTrue(out.toByteArray().length > 0);
@@ -458,7 +458,7 @@ class CoverageBoostTest {
         ExcelWriter.<LocalTime>create()
                 .column("Time", t -> t, cfg -> cfg.type(ExcelDataType.TIME))
                 .write(Stream.of(LocalTime.of(14, 30, 15)))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -477,7 +477,7 @@ class CoverageBoostTest {
         ExcelWriter.<Float>create()
                 .column("Float", f -> f, cfg -> cfg.type(ExcelDataType.FLOAT))
                 .write(Stream.of(3.14f))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -496,7 +496,7 @@ class CoverageBoostTest {
         ExcelWriter.<Float>create()
                 .column("Pct", f -> f, cfg -> cfg.type(ExcelDataType.FLOAT_PERCENT))
                 .write(Stream.of(0.25f))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -515,7 +515,7 @@ class CoverageBoostTest {
         ExcelWriter.<BigDecimal>create()
                 .column("BD", bd -> bd, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_DOUBLE))
                 .write(Stream.of(new BigDecimal("123.45")))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -534,7 +534,7 @@ class CoverageBoostTest {
         ExcelWriter.<BigDecimal>create()
                 .column("BD", bd -> bd, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_LONG))
                 .write(Stream.of(new BigDecimal("99999")))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -553,7 +553,7 @@ class CoverageBoostTest {
         ExcelWriter.<Boolean>create()
                 .column("Flag", b -> b, cfg -> cfg.type(ExcelDataType.BOOLEAN_TO_YN))
                 .write(Stream.of(true, false))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
@@ -587,7 +587,7 @@ class CoverageBoostTest {
         ExcelWriter.<String>create()
                 .column("Link", url -> new ExcelHyperlink(url), cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of("https://example.com"))
-                .write(out);
+                .writeTo(out);
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);

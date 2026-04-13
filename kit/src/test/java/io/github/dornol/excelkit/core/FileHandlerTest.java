@@ -57,7 +57,7 @@ class FileHandlerTest {
                 .write(Stream.of("Alice", "Bob"));
 
         var out = new ByteArrayOutputStream();
-        handler.write(out);
+        handler.writeTo(out);
 
         byte[] bytes = out.toByteArray();
         assertTrue(bytes.length > 0);
@@ -76,7 +76,7 @@ class FileHandlerTest {
                 .write(Stream.of("Alice", "Bob"));
 
         var out = new ByteArrayOutputStream();
-        handler.write(out);
+        handler.writeTo(out);
 
         String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
         String[] lines = csv.split("\r?\n");
@@ -112,7 +112,7 @@ class FileHandlerTest {
 
     private static byte[] writeToBytes(FileHandler handler) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            handler.write(out);
+            handler.writeTo(out);
             return out.toByteArray();
         }
     }
@@ -125,10 +125,10 @@ class FileHandlerTest {
                 .write(Stream.of("x"));
 
         // This is the Spring StreamingResponseBody pattern:
-        //   .body(handler::write)
-        // which requires handler::write to conform to OutputStream -> void (throws IOException).
+        //   .body(handler::writeTo)
+        // which requires handler::writeTo to conform to OutputStream -> void (throws IOException).
         // If FileHandler.write ever changes signature, this test fails to compile.
-        ThrowingOutputStreamConsumer sink = handler::write;
+        ThrowingOutputStreamConsumer sink = handler::writeTo;
         var out = new ByteArrayOutputStream();
         sink.accept(out);
         assertTrue(out.size() > 0);

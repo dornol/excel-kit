@@ -47,7 +47,7 @@ class ChartEdgeCaseTest {
                         .valueAxisTitle("Score")
                         .showDataLabels(true))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var drawing = wb.getSheetAt(0).getDrawingPatriarch();
@@ -69,7 +69,7 @@ class ChartEdgeCaseTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Score"))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -99,7 +99,7 @@ class ChartEdgeCaseTest {
                         .valueAxisTitle("Amount")
                         .showDataLabels(true))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var plotArea = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0).getCTChart().getPlotArea();
@@ -118,7 +118,7 @@ class ChartEdgeCaseTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Value"))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -144,7 +144,7 @@ class ChartEdgeCaseTest {
                         .valueColumn(1, "Value")
                         .showDataLabels(true))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var plotArea = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0).getCTChart().getPlotArea();
@@ -166,7 +166,7 @@ class ChartEdgeCaseTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Value"))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -190,7 +190,7 @@ class ChartEdgeCaseTest {
                         .valueColumn(1, "Value")
                         .legendPosition(position))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -213,7 +213,7 @@ class ChartEdgeCaseTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Value"))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -241,7 +241,7 @@ class ChartEdgeCaseTest {
                         .valueColumn(2, "B")
                         .barGrouping(grouping))
                 .write(Stream.of(new Data("X", 10, 20), new Data("Y", 30, 40)))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertFalse(wb.getSheetAt(0).getDrawingPatriarch().getCharts().isEmpty());
@@ -263,7 +263,7 @@ class ChartEdgeCaseTest {
                         .valueColumn(1, "Value")
                         .showDataLabels(true))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var barChart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0)
@@ -284,7 +284,7 @@ class ChartEdgeCaseTest {
                         .valueColumn(1, "Value")
                         .showDataLabels(true))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var lineChart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0)
@@ -305,7 +305,7 @@ class ChartEdgeCaseTest {
                         .valueColumn(1, "Value")
                         .showDataLabels(true))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var pieChart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0)
@@ -329,7 +329,7 @@ class ChartEdgeCaseTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Value"))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             XSSFChart chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -349,7 +349,7 @@ class ChartEdgeCaseTest {
                         .categoryColumn(0)
                         .valueColumn(1, "Value"))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var chart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0);
@@ -376,7 +376,7 @@ class ChartEdgeCaseTest {
                         .valueColumn(1, "Value")
                         .showDataLabels(false))
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var barChart = wb.getSheetAt(0).getDrawingPatriarch().getCharts().get(0)

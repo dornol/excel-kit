@@ -31,7 +31,7 @@ class MapWriterReaderTest {
         writer.write(Stream.of(
                 Map.of("Name", "Alice", "Age", 30),
                 Map.of("Name", "Bob", "Age", 25)
-        )).write(out);
+        )).writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             var sheet = wb.getSheetAt(0);
@@ -48,7 +48,7 @@ class MapWriterReaderTest {
         ExcelWriter.forMap("Name", "City").write(Stream.of(
                 Map.of("Name", "Alice", "City", "Seoul"),
                 Map.of("Name", "Bob", "City", "Tokyo")
-        )).write(out);
+        )).writeTo(out);
 
         List<Map<String, String>> results = new ArrayList<>();
         ExcelReader.forMap()
@@ -68,7 +68,7 @@ class MapWriterReaderTest {
         ExcelWriter.forMap("Name").write(Stream.of(
                 Map.of("Name", "Alice"),
                 Map.of("Name", "Bob")
-        )).write(out);
+        )).writeTo(out);
 
         var results = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))
@@ -89,7 +89,7 @@ class MapWriterReaderTest {
             wb.<Map<String, Object>>sheet("Sheet2")
                     .column("B", m -> m.get("B"))
                     .write(Stream.of(Map.of("B", "second")));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         List<Map<String, String>> results = new ArrayList<>();
@@ -108,7 +108,7 @@ class MapWriterReaderTest {
         var writer = CsvWriter.forMap("Name", "Age");
         writer.write(Stream.of(
                 Map.of("Name", "Alice", "Age", 30)
-        )).write(out);
+        )).writeTo(out);
 
         String csv = out.toString(StandardCharsets.UTF_8);
         String[] lines = csv.split("\r?\n");
@@ -127,7 +127,7 @@ class MapWriterReaderTest {
         CsvWriter.forMap("Name", "Age")
                 .dialect(CsvDialect.TSV)
                 .write(Stream.of(Map.of("Name", "Alice", "Age", 30)))
-                .write(out);
+                .writeTo(out);
 
         String tsv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
         String[] lines = tsv.split("\r?\n");
@@ -141,7 +141,7 @@ class MapWriterReaderTest {
         CsvWriter.forMap("A", "B")
                 .delimiter('|')
                 .write(Stream.of(Map.of("A", "x", "B", "y")))
-                .write(out);
+                .writeTo(out);
 
         String csv = out.toString(StandardCharsets.UTF_8).replace("\uFEFF", "");
         String[] lines = csv.split("\r?\n");
@@ -155,7 +155,7 @@ class MapWriterReaderTest {
         CsvWriter.forMap("A")
                 .bom(false)
                 .write(Stream.of(Map.of("A", "val")))
-                .write(out);
+                .writeTo(out);
 
         byte[] bytes = out.toByteArray();
         assertFalse(bytes[0] == (byte) 0xEF && bytes[1] == (byte) 0xBB && bytes[2] == (byte) 0xBF,
@@ -170,7 +170,7 @@ class MapWriterReaderTest {
         CsvWriter.forMap("Name", "City").write(Stream.of(
                 Map.of("Name", "Alice", "City", "Seoul"),
                 Map.of("Name", "Bob", "City", "Tokyo")
-        )).write(out);
+        )).writeTo(out);
 
         List<ReadResult<Map<String, String>>> results = new ArrayList<>();
         CsvReader.forMap()
@@ -201,7 +201,7 @@ class MapWriterReaderTest {
         CsvWriter.forMap("Name", "Score").write(Stream.of(
                 Map.of("Name", "Alice", "Score", 95),
                 Map.of("Name", "Bob", "Score", 80)
-        )).write(out);
+        )).writeTo(out);
 
         List<ReadResult<Map<String, String>>> results;
         try (var stream = CsvReader.forMap()
@@ -287,7 +287,7 @@ class MapWriterReaderTest {
                 Map.of("Name", "B"),
                 Map.of("Name", "C"),
                 Map.of("Name", "D")
-        )).write(out);
+        )).writeTo(out);
 
         List<Long> progressCounts = new ArrayList<>();
         List<Map<String, String>> results = new ArrayList<>();
@@ -311,7 +311,7 @@ class MapWriterReaderTest {
         CsvWriter.forMap("Name", "Age", "Email").write(Stream.of(
                 Map.of("Name", "Alice", "Age", 30, "Email", "alice@test.com"),
                 Map.of("Name", "Bob", "Age", 25, "Email", "bob@test.com")
-        )).write(out);
+        )).writeTo(out);
 
         List<ReadResult<Map<String, String>>> results = new ArrayList<>();
         CsvReader.forMap()
@@ -426,7 +426,7 @@ class MapWriterReaderTest {
 
         ExcelWriter.forMap("Name", "Age")
                 .write(Stream.of(row))
-                .write(out);
+                .writeTo(out);
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertEquals("Alice", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());

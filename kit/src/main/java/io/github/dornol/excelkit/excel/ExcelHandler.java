@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Implementing {@link AutoCloseable} would cause IDE "resource not closed" warnings
  * in this pattern, requiring {@code @SuppressWarnings("resource")} on every call site.
  * <p>
- * The workbook is always closed inside {@code write()} / {@code consumeOutputStreamWithPassword()},
+ * The workbook is always closed inside {@link #writeTo(OutputStream)} overloads,
  * and there is no realistic code path where the handler is obtained but never consumed,
  * since callers either invoke it immediately or pass it to a {@code StreamingResponseBody} lambda.
  *
@@ -58,7 +58,7 @@ public final class ExcelHandler implements FileHandler {
     /**
      * Constructs an ExcelHandler wrapping the given workbook with an optional encryption password.
      * <p>
-     * When a non-null password is provided, {@link #write(OutputStream)} will
+     * When a non-null password is provided, {@link #writeTo(OutputStream)} will
      * automatically encrypt the output using the "agile" encryption mode.
      *
      * @param wb       The SXSSFWorkbook to be written
@@ -81,7 +81,7 @@ public final class ExcelHandler implements FileHandler {
      * @throws ExcelWriteException If this method has already been called or if an I/O error occurs
      */
     @Override
-    public void write(OutputStream outputStream) {
+    public void writeTo(OutputStream outputStream) {
         try {
             if (password != null) {
                 encryptAndWrite(outputStream, password);
@@ -96,16 +96,17 @@ public final class ExcelHandler implements FileHandler {
     /**
      * Writes the workbook to the given OutputStream with Excel-compatible password encryption.
      * <p>
-     * This method encrypts the file using the "agile" encryption mode supported by modern Excel versions.
+     * This overload encrypts the file using the "agile" encryption mode supported by modern Excel versions.
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
-     * or {@link ExcelWorkbook#password(String)} — use {@link #write(OutputStream)} instead.
+     * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(OutputStream)} instead.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
      * @throws ExcelWriteException If an I/O or encryption error occurs during writing
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
+     * @since 0.16.5
      */
-    public void consumeOutputStreamWithPassword(OutputStream outputStream, String password) {
+    public void writeTo(OutputStream outputStream, String password) {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
@@ -123,14 +124,15 @@ public final class ExcelHandler implements FileHandler {
      * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
      * The array is zeroed out after encryption completes (or on failure).
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
-     * or {@link ExcelWorkbook#password(String)} — use {@link #write(OutputStream)} instead.
+     * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(OutputStream)} instead.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password as a char array (will be zeroed after use)
      * @throws ExcelWriteException If an I/O or encryption error occurs during writing
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
+     * @since 0.16.5
      */
-    public void consumeOutputStreamWithPassword(OutputStream outputStream, char[] password) {
+    public void writeTo(OutputStream outputStream, char[] password) {
         if (password == null || password.length == 0 || isBlank(password)) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
@@ -148,7 +150,7 @@ public final class ExcelHandler implements FileHandler {
         if (this.password != null) {
             throw new IllegalStateException(
                     "Password is already set via ExcelWriter.password() or ExcelWorkbook.password(). "
-                            + "Use write() instead, or remove the password() call to use consumeOutputStreamWithPassword().");
+                            + "Use writeTo(OutputStream) instead, or remove the password() call to pass the password to writeTo(OutputStream, ...).");
         }
     }
 

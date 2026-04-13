@@ -36,7 +36,7 @@ class DataBarIconSetTest {
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cfConfig)
                 .write(testData())
-                .write(out);
+                .writeTo(out);
 
         var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()));
         return wb.getSheetAt(0).getCTWorksheet();
@@ -243,7 +243,7 @@ class DataBarIconSetTest {
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .conditionalFormatting(cf -> cf.columns(1).dataBar(ExcelColor.ORANGE))
                     .write(testData());
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
@@ -265,7 +265,7 @@ class DataBarIconSetTest {
                     .conditionalFormatting(cf -> cf.columns(1)
                             .iconSet(ExcelConditionalRule.IconSetType.TRAFFIC_LIGHTS_3))
                     .write(testData());
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

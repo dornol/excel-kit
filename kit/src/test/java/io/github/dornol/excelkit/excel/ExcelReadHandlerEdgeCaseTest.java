@@ -29,7 +29,7 @@ class ExcelReadHandlerEdgeCaseTest {
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new Item("A", 10), new Item("B", 20), new Item("C", 30)))
-                .write(out);
+                .writeTo(out);
         return out.toByteArray();
     }
 
@@ -144,7 +144,7 @@ class ExcelReadHandlerEdgeCaseTest {
                 .column("Name", Item::name)
                 .column("Value", i -> i.value)
                 .write(Stream.of(new Item("x", 1)))
-                .write(out);
+                .writeTo(out);
 
         // Read back with setter mode - should work normally
         List<ReadResult<MutableItem>> results = new ArrayList<>();

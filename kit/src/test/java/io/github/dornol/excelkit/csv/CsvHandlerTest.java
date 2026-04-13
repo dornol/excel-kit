@@ -44,7 +44,7 @@ class CsvHandlerTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         // Act
-        handler.write(outputStream);
+        handler.writeTo(outputStream);
 
         // Assert
         String result = outputStream.toString(StandardCharsets.UTF_8);
@@ -63,10 +63,10 @@ class CsvHandlerTest {
         ByteArrayOutputStream outputStream2 = new ByteArrayOutputStream();
 
         // Act & Assert
-        handler.write(outputStream1); // First call should succeed
+        handler.writeTo(outputStream1); // First call should succeed
         
         assertThrows(CsvWriteException.class, () -> {
-            handler.write(outputStream2); // Second call should throw exception
+            handler.writeTo(outputStream2); // Second call should throw exception
         }, "Second call to write should throw CsvWriteException");
     }
 
@@ -81,7 +81,7 @@ class CsvHandlerTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         // Act
-        handler.write(outputStream);
+        handler.writeTo(outputStream);
 
         // Assert
         assertFalse(Files.exists(tempFile), "Temp file should be deleted after consumption");

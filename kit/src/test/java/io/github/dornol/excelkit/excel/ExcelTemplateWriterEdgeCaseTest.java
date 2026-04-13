@@ -226,7 +226,7 @@ class ExcelTemplateWriterEdgeCaseTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
             writer.cell(cellRef, value);
-            writer.finish().write(out);
+            writer.finish().writeTo(out);
         }
         return out.toByteArray();
     }
@@ -241,7 +241,7 @@ class ExcelTemplateWriterEdgeCaseTest {
         try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
             // Row 1 exists in template
             writer.cell("B2", "Alice"); // row 1, col 1
-            writer.finish().write(out);
+            writer.finish().writeTo(out);
         }
 
         // Verify overwritten value
@@ -259,7 +259,7 @@ class ExcelTemplateWriterEdgeCaseTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
             writer.cell("A10", "New Data"); // row 9, far beyond template
-            writer.finish().write(out);
+            writer.finish().writeTo(out);
         }
         assertTrue(out.size() > 100, "Output should contain valid Excel data, got " + out.size() + " bytes");
     }

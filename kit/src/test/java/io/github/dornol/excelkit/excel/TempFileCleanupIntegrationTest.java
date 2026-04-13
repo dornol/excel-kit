@@ -39,7 +39,7 @@ class TempFileCleanupIntegrationTest {
 
         Path output = tempDir.resolve("encrypted.xlsx");
         try (FileOutputStream fos = new FileOutputStream(output.toFile())) {
-            handler.consumeOutputStreamWithPassword(fos, "password123");
+            handler.writeTo(fos, "password123");
         }
 
         assertTrue(Files.exists(output));
@@ -59,7 +59,7 @@ class TempFileCleanupIntegrationTest {
         char[] password = "secret".toCharArray();
         Path output = tempDir.resolve("encrypted-char.xlsx");
         try (FileOutputStream fos = new FileOutputStream(output.toFile())) {
-            handler.consumeOutputStreamWithPassword(fos, password);
+            handler.writeTo(fos, password);
         }
 
         assertTrue(Files.exists(output));
@@ -74,10 +74,10 @@ class TempFileCleanupIntegrationTest {
         SXSSFWorkbook wb = new SXSSFWorkbook();
         ExcelHandler handler = new ExcelHandler(wb);
 
-        handler.write(new ByteArrayOutputStream());
+        handler.writeTo(new ByteArrayOutputStream());
 
         assertThrows(ExcelWriteException.class, () ->
-                handler.consumeOutputStreamWithPassword(new ByteArrayOutputStream(), "pw"));
+                handler.writeTo(new ByteArrayOutputStream(), "pw"));
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -250,7 +250,7 @@ class TempFileCleanupIntegrationTest {
                         new TestRow("Alice", 30),
                         new TestRow("Bob", 25)
                 ))
-                .write(baos);
+                .writeTo(baos);
 
         assertTrue(baos.size() > 100, "Excel output should be non-trivial");
 
@@ -281,7 +281,7 @@ class TempFileCleanupIntegrationTest {
                 .column("Name", r -> r.name, c -> c.type(ExcelDataType.STRING))
                 .column("Age", r -> r.age, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new TestRow("Secret", 99)))
-                .consumeOutputStreamWithPassword(baos, "pass123");
+                .writeTo(baos, "pass123");
 
         // Encrypted file should be different from unencrypted
         assertTrue(baos.size() > 100, "Encrypted output should be non-trivial");

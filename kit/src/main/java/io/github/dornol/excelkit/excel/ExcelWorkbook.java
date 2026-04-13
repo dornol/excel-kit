@@ -161,8 +161,8 @@ public class ExcelWorkbook implements AutoCloseable {
      * Sets the file encryption password.
      * <p>
      * When set, the resulting Excel file will be encrypted using the "agile" encryption mode,
-     * and {@link ExcelHandler#write(java.io.OutputStream)} will automatically
-     * apply encryption — no need to call {@code consumeOutputStreamWithPassword()}.
+     * and {@link ExcelHandler#writeTo(java.io.OutputStream)} will automatically
+     * apply encryption — no need to pass the password to {@link ExcelHandler#writeTo(java.io.OutputStream, String)}.
      *
      * @param password the encryption password (must not be null or blank)
      * @return this workbook for chaining

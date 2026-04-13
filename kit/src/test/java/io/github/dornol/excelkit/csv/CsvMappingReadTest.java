@@ -333,7 +333,7 @@ class CsvMappingReadTest {
                 .write(Stream.of(
                         new PersonRecord("Alice", 30, "Seoul"),
                         new PersonRecord("Bob", 25, "Busan")))
-                .write(out);
+                .writeTo(out);
 
         List<PersonRecord> results = new ArrayList<>();
         CsvReader.<PersonRecord>mapping(row -> new PersonRecord(

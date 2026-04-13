@@ -26,7 +26,7 @@ class MapReaderStreamTest {
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new Item("A", 10), new Item("B", 20), new Item("C", 30)))
-                .write(out);
+                .writeTo(out);
         return out.toByteArray();
     }
 
@@ -97,7 +97,7 @@ class MapReaderStreamTest {
         ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .write(Stream.empty())
-                .write(out);
+                .writeTo(out);
 
         List<ReadResult<Map<String, String>>> results;
         try (var stream = ExcelReader.forMap()
@@ -178,7 +178,7 @@ class MapReaderStreamTest {
                 .column("Col2", Multi::b)
                 .column("Col3", Multi::c)
                 .write(Stream.of(new Multi("x", "y", "z")))
-                .write(out);
+                .writeTo(out);
 
         try (var stream = ExcelReader.forMap()
                 .build(new ByteArrayInputStream(out.toByteArray()))

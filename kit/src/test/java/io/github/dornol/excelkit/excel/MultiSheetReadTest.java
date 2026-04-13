@@ -23,7 +23,7 @@ class MultiSheetReadTest {
             wb.<String>sheet("Orders")
                     .column("Item", s -> s)
                     .write(Stream.of("Widget"));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(
@@ -44,7 +44,7 @@ class MultiSheetReadTest {
                 .column("Second", s -> s)
                 .column("Third", s -> s)
                 .write(Stream.of("data"))
-                .write(out);
+                .writeTo(out);
 
         List<String> headers = ExcelReader.getSheetHeaders(
                 new ByteArrayInputStream(out.toByteArray()), 0, 0);
@@ -62,7 +62,7 @@ class MultiSheetReadTest {
             wb.<String>sheet("Orders")
                     .column("Item", s -> s)
                     .write(Stream.of("Widget", "Gadget"));
-            wb.finish().write(out);
+            wb.finish().writeTo(out);
         }
 
         // Read second sheet
@@ -83,7 +83,7 @@ class MultiSheetReadTest {
                 .sheetName("Data")
                 .column("Name", s -> s)
                 .write(Stream.of("Alice"))
-                .write(out);
+                .writeTo(out);
 
         List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(
                 new ByteArrayInputStream(out.toByteArray()));
@@ -105,7 +105,7 @@ class MultiSheetReadTest {
                 .column("Name", s -> s)
                 .column("Age", s -> "30")
                 .write(Stream.of("Alice"))
-                .write(out);
+                .writeTo(out);
 
         List<String> headers = ExcelReader.getSheetHeaders(
                 new ByteArrayInputStream(out.toByteArray()), 0, 1);

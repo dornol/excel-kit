@@ -79,7 +79,7 @@ class V016ImprovementsTest {
             writer.column("Name", s -> s, c -> c.nullValue("-"));
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            writer.write(Stream.of((String) null)).write(bos);
+            writer.write(Stream.of((String) null)).writeTo(bos);
 
             // Read back to verify
             List<ReadResult<String>> results = new ArrayList<>();
@@ -99,7 +99,7 @@ class V016ImprovementsTest {
             writer.column("Col", s -> s);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            writer.write(Stream.of((String) null)).write(bos);
+            writer.write(Stream.of((String) null)).writeTo(bos);
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Col").asString())
@@ -117,7 +117,7 @@ class V016ImprovementsTest {
             writer.column("Col", s -> s, c -> c.nullValue("CUSTOM"));
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            writer.write(Stream.of((String) null)).write(bos);
+            writer.write(Stream.of((String) null)).writeTo(bos);
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Col").asString())
@@ -134,7 +134,7 @@ class V016ImprovementsTest {
             writer.column("Name", s -> s, c -> c.nullValue("N/A"));
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            writer.write(Stream.of("Hello")).write(bos);
+            writer.write(Stream.of("Hello")).writeTo(bos);
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Name").asString())
@@ -150,7 +150,7 @@ class V016ImprovementsTest {
             writer.column("Name", s -> s);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            writer.write(Stream.of((String) null)).write(bos);
+            writer.write(Stream.of((String) null)).writeTo(bos);
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Name").asString())
@@ -195,7 +195,7 @@ class V016ImprovementsTest {
                     .freezePane(2, 1);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            writer.write(Stream.of("row1")).write(bos);
+            writer.write(Stream.of("row1")).writeTo(bos);
             // No exception = pane was applied during write
         }
 
@@ -205,7 +205,7 @@ class V016ImprovementsTest {
             writer.column("A", s -> s).freezePane(1);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            writer.write(Stream.of("row1")).write(bos);
+            writer.write(Stream.of("row1")).writeTo(bos);
         }
 
         @Test
@@ -216,7 +216,7 @@ class V016ImprovementsTest {
             sw.column("Col", row -> row)
                     .freezePane(1, 1);
             sw.write(Stream.of("data"));
-            wb.finish().write(bos);
+            wb.finish().writeTo(bos);
         }
     }
 
@@ -233,7 +233,7 @@ class V016ImprovementsTest {
             ExcelWriter<String[]> writer = ExcelWriter.<String[]>create();
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1]);
-            writer.write(Stream.<String[]>of(new String[]{"", "30"})).write(bos);
+            writer.write(Stream.<String[]>of(new String[]{"", "30"})).writeTo(bos);
 
             List<ReadResult<String[]>> results = new ArrayList<>();
             ExcelReader.setter(() -> new String[2])
@@ -254,7 +254,7 @@ class V016ImprovementsTest {
             ExcelWriter<String[]> writer = ExcelWriter.<String[]>create();
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1]);
-            writer.write(Stream.<String[]>of(new String[]{"Alice", "30"})).write(bos);
+            writer.write(Stream.<String[]>of(new String[]{"Alice", "30"})).writeTo(bos);
 
             List<ReadResult<String[]>> results = new ArrayList<>();
             ExcelReader.setter(() -> new String[2])
@@ -451,7 +451,7 @@ class V016ImprovementsTest {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Name", s -> s);
-            writer.write(Stream.of("Alice", "Bob", "Charlie")).write(bos);
+            writer.write(Stream.of("Alice", "Bob", "Charlie")).writeTo(bos);
 
             try (var stream = ExcelReader.<String>mapping(row -> row.get("Name").asString())
                     .build(new ByteArrayInputStream(bos.toByteArray()))
@@ -483,7 +483,7 @@ class V016ImprovementsTest {
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1])
                     .column("City", arr -> arr[2]);
-            writer.write(Stream.<String[]>of(new String[]{"Alice", "30", null})).write(bos);
+            writer.write(Stream.<String[]>of(new String[]{"Alice", "30", null})).writeTo(bos);
 
             // Read with required() on the third column (which is empty/missing)
             List<ReadResult<String[]>> results = new ArrayList<>();
@@ -506,7 +506,7 @@ class V016ImprovementsTest {
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1])
                     .column("City", arr -> arr[2]);
-            writer.write(Stream.<String[]>of(new String[]{"Alice", "30", null})).write(bos);
+            writer.write(Stream.<String[]>of(new String[]{"Alice", "30", null})).writeTo(bos);
 
             List<ReadResult<String[]>> results = new ArrayList<>();
             ExcelReader.setter(() -> new String[3])
@@ -533,7 +533,7 @@ class V016ImprovementsTest {
                 sw.column("ID", i -> i, c -> c.headerFontColor(ExcelColor.RED))
                         .maxRows(2);
                 sw.write(Stream.of(1, 2, 3, 4));
-                wb.finish().write(bos);
+                wb.finish().writeTo(bos);
             }
 
             // Verify the file is readable and has 2 sheets (rollover occurred)
@@ -563,7 +563,7 @@ class V016ImprovementsTest {
                     })
                     .summary(s -> s.sum("Amount"))
                     .write(Stream.of(new int[]{10}, new int[]{20}, new int[]{30}))
-                    .write(bos);
+                    .writeTo(bos);
 
             // Read back and verify no overlapping rows
             try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(
