@@ -187,6 +187,105 @@ class BenchmarkTest {
     }
 
     // ============================================================
+    // Excel Password Encryption
+    //
+    // POI's agile encryption buffers the entire OLE2 container in heap
+    // (no file-backed variant). These benchmarks quantify the time &
+    // memory cost vs a plain (unencrypted) write of the same data so
+    // users sizing heap for encrypted exports have a reference point.
+    // ============================================================
+
+    @Test
+    void excel_100k_rows_5_columns_encrypted() throws IOException {
+        int rows = 100_000;
+        Path file = tempDir.resolve("bench_100k_5col_encrypted.xlsx");
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+
+        ExcelWriter.<int[]>create()
+                .password("benchPw")
+                .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", r -> "User-" + r[0])
+                .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                .column("Active", r -> r[2] % 2 == 0 ? "Y" : "N")
+                .column("Note", r -> "This is a sample note for row " + r[0])
+                .write(generateRows(rows, 5))
+                .writeTo(file);
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        long peakMem = usedMemoryMB() - startMem;
+        long fileSize = Files.size(file);
+
+        printResult("Excel 100K × 5 cols ENCRYPTED", rows, elapsed, fileSize, peakMem);
+        assertTrue(Files.exists(file));
+        // Sanity-check the file is actually encrypted (OLE2 magic bytes).
+        byte[] head = Files.readAllBytes(file);
+        assertEquals((byte) 0xD0, head[0]);
+        assertEquals((byte) 0xCF, head[1]);
+    }
+
+    @Test
+    void excel_1m_rows_5_columns_encrypted() throws IOException {
+        // The encryption step buffers the whole XLSX payload in heap.
+        // For 1M rows the plain XLSX is ~30-40MB, so plan ~hundreds of
+        // MB of heap for the POIFS/Encryptor step on top of the SXSSF
+        // window. This benchmark confirms the end-to-end path completes
+        // and gives a concrete number for the guide.
+        int rows = 1_000_000;
+        Path file = tempDir.resolve("bench_1m_5col_encrypted.xlsx");
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+
+        ExcelWriter.<int[]>create()
+                .password("benchPw")
+                .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", r -> "User-" + r[0])
+                .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                .column("Active", r -> r[2] % 2 == 0 ? "Y" : "N")
+                .column("Note", r -> "Row " + r[0])
+                .write(generateRows(rows, 5))
+                .writeTo(file);
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        long peakMem = usedMemoryMB() - startMem;
+        long fileSize = Files.size(file);
+
+        printResult("Excel 1M × 5 cols ENCRYPTED", rows, elapsed, fileSize, peakMem);
+        assertTrue(Files.exists(file));
+    }
+
+    @Test
+    void excel_100k_rows_encrypted_via_handler_writeTo_path() throws IOException {
+        // Exercises the late-binding path: handler.writeTo(Path, String)
+        // added in 0.16.6. Same workload as the writer-bound encrypted
+        // benchmark so results are directly comparable.
+        int rows = 100_000;
+        Path file = tempDir.resolve("bench_100k_writeto_path.xlsx");
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+
+        ExcelHandler handler = ExcelWriter.<int[]>create()
+                .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
+                .column("Name", r -> "User-" + r[0])
+                .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
+                .column("Active", r -> r[2] % 2 == 0 ? "Y" : "N")
+                .column("Note", r -> "Row " + r[0])
+                .write(generateRows(rows, 5));
+
+        handler.writeTo(file, "benchPw");
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        long peakMem = usedMemoryMB() - startMem;
+        long fileSize = Files.size(file);
+
+        printResult("Excel 100K × 5 cols writeTo(Path,pw)", rows, elapsed, fileSize, peakMem);
+        assertTrue(Files.exists(file));
+    }
+
+    // ============================================================
     // CSV Writing
     // ============================================================
 
