@@ -61,7 +61,16 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 
 - `FileHandler.writeTo()` throws unchecked exceptions only — no `throws IOException`
 - `nullValue(Object)` on column config — default value for null cells (e.g., `c -> c.nullValue("N/A")`)
-- `freezePane(int cols, int rows)` — freeze both columns and rows
+- Freeze panes:
+  - `freezeRows(int)` — freeze N rows below the header
+  - `freezeCols(int)` — freeze N columns from the left
+  - `freezePane(int cols, int rows)` — freeze both
+- Encrypted output:
+  - `.password("pw")` on writer → `handler.writeTo(out)` auto-encrypts
+  - `handler.writeTo(out, "pw")` / `handler.writeTo(path, "pw")` — late-binding encryption
+  - `char[]` overloads zero the array after use
+- Writers use static factory `create()`: `ExcelWriter.<T>create()`, `ExcelWorkbook.create()`,
+  `CsvWriter.<T>create()` (no public constructors)
 - `required()` on reader columns — blank cells produce validation errors
 - `asBigDecimal()` parses directly without Double intermediate — full precision
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`

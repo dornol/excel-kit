@@ -1446,7 +1446,15 @@ writer
     .column("Name", p -> p.name())
     .write(data);
 
-// Freeze both columns and rows (v0.16.0+)
+// Columns-only (v0.16.6+)
+writer
+    .freezeCols(2)       // freeze 2 columns from the left
+    .column("ID", p -> p.id())
+    .column("Name", p -> p.name())
+    .column("Age", p -> p.age())
+    .write(data);
+
+// Freeze both columns and rows
 writer
     .freezePane(2, 1)    // freeze 2 columns from left + 1 row below header
     .column("ID", p -> p.id())
@@ -1454,6 +1462,16 @@ writer
     .column("Age", p -> p.age())
     .write(data);
 ```
+
+The three methods are symmetric in purpose:
+
+| Method | Vertical split (cols) | Horizontal split (rows) |
+|---|---|---|
+| `freezeRows(n)` | 0 | n |
+| `freezeCols(n)` | n | 0 |
+| `freezePane(c, r)` | c | r |
+
+All three are also available on `ExcelSheetWriter` (multi-sheet workbook API).
 
 ### Lifecycle Callbacks
 
@@ -1901,6 +1919,30 @@ public ResponseEntity<StreamingResponseBody> downloadEncrypted() {
     return ExcelResponse.of(handler, "secret");
 }
 ```
+
+### Late-Binding Password (service/presentation separation)
+
+When the service layer builds the `ExcelHandler` but the password is only known
+at the presentation layer (e.g., sent back in a response header), skip `.password()`
+on the writer and pass the password at output time:
+
+```java
+// Service layer — build handler without binding a password
+public ExcelHandler buildReport() {
+    return writer.column(...).write(dataStream);
+}
+
+// Presentation layer — late-bind password when streaming
+ExcelHandler handler = service.buildReport();
+handler.writeTo(outputStream, "P@ssw0rd!");   // OutputStream
+handler.writeTo(path, "P@ssw0rd!");           // File path (v0.16.6+)
+handler.writeTo(outputStream, pwChars);       // char[] — zeroed after use
+handler.writeTo(path, pwChars);               // Path + char[] (v0.16.6+)
+```
+
+The four `writeTo` overloads reject invocation if a password was already set
+via `ExcelWriter.password()` / `ExcelWorkbook.password()` — pick one style and
+stick with it for a given handler.
 
 ## Spring WebFlux Integration
 

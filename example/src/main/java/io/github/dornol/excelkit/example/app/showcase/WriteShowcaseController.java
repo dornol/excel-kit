@@ -695,4 +695,44 @@ public class WriteShowcaseController {
                 .body(handler::writeTo);
     }
 
+    // ========================================================================
+    // Freeze Cols (v0.16.6) - freeze leftmost columns, no rows
+    // ========================================================================
+    @GetMapping("/freeze-cols")
+    public ResponseEntity<StreamingResponseBody> downloadFreezeCols() {
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Freeze Cols Demo")
+                .autoFilter(true)
+                .freezeCols(2)                              // freeze Name + Category from the left
+                .column("Name", ProductDto::name)
+                .column("Category", ProductDto::category)
+                .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
+                .column("Discount", ProductDto::discount, c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("freeze-cols-demo", DownloadFileType.EXCEL)
+                .body(handler::writeTo);
+    }
+
+    // ========================================================================
+    // Late-binding password (v0.16.6) - handler.writeTo(OutputStream, password)
+    // Builds the handler without a password at the service layer, then the
+    // presentation layer supplies the password when streaming to the client.
+    // ========================================================================
+    @GetMapping("/late-password")
+    public ResponseEntity<StreamingResponseBody> downloadLateBoundPassword() {
+        ExcelHandler handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.CORAL)
+                .sheetName("Late Password")
+                .autoFilter(true)
+                .freezeRows(1)
+                .column("Name", ProductDto::name)
+                .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .write(sampleProducts().stream());
+
+        String password = "demo123";
+        return DownloadUtil.builder("late-password-demo", DownloadFileType.EXCEL)
+                .body(os -> handler.writeTo(os, password));
+    }
+
 }

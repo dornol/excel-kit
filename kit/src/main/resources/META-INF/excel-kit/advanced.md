@@ -126,6 +126,17 @@ Also: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights.
 ExcelValidation.integerBetween(1, 100).errorTitle("Invalid").errorMessage("Enter 1-100")
 ```
 
+## Freeze Panes
+
+```java
+writer.freezeRows(1);          // freeze 1 row below the header
+writer.freezeCols(2);          // freeze first 2 columns from the left
+writer.freezePane(2, 1);       // freeze both axes (2 cols + 1 row)
+```
+
+Same three methods are available on `ExcelSheetWriter` (multi-sheet workbooks).
+Negative values throw `IllegalArgumentException`.
+
 ## Sheet Protection
 
 ```java
@@ -145,8 +156,15 @@ writer.protectWorkbook("password123");  // prevent add/delete/rename sheets
 ## Password Encryption
 
 ```java
+// Option 1 — bind at writer level
 ExcelWriter.create().password("secret").column(...).write(data).writeTo(out);
-// Or: handler.writeTo(out, "secret");
+
+// Option 2 — late-binding (service builds handler, presentation layer applies password)
+ExcelHandler h = ExcelWriter.create().column(...).write(data);
+h.writeTo(out, "secret");                 // OutputStream
+h.writeTo(path, "secret");                // Path
+h.writeTo(out, pwChars);                  // char[] (zeroed after use)
+h.writeTo(path, pwChars);                 // Path + char[]
 ```
 
 ## Charts
