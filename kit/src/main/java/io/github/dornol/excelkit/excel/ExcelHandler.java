@@ -100,6 +100,11 @@ public final class ExcelHandler implements FileHandler {
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
      * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(OutputStream)} instead.
      *
+     * <p><b>Memory note:</b> POI's encryption API does not support file-backed buffering
+     * for the OLE container — the encrypted payload is held in heap (≈ size of the
+     * resulting XLSX) before being streamed out. For very large exports (hundreds of MB)
+     * plan heap accordingly, or prefer the plain {@link #writeTo(OutputStream)} path.
+     *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
      * @throws ExcelWriteException If an I/O or encryption error occurs during writing
@@ -125,6 +130,9 @@ public final class ExcelHandler implements FileHandler {
      * The array is zeroed out after encryption completes (or on failure).
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
      * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(OutputStream)} instead.
+     *
+     * <p><b>Memory note:</b> same as {@link #writeTo(OutputStream, String)} — POI buffers
+     * the encrypted OLE container in heap.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password as a char array (will be zeroed after use)
@@ -191,7 +199,11 @@ public final class ExcelHandler implements FileHandler {
                 wb.close();
             }
 
-            // Encrypt from temp file using file-based POIFSFileSystem (low memory)
+            // Encrypt the plain temp file into an in-memory POIFS, then stream it out.
+            // POI's encryption API buffers the OLE container in heap — there is no
+            // file-backed variant. The two-step design (temp file first, then close
+            // the SXSSF workbook, THEN encrypt) prevents the SXSSF window memory
+            // and the encryption buffer from coexisting as peak memory.
             try (POIFSFileSystem fs = new POIFSFileSystem()) {
                 EncryptionInfo info = new EncryptionInfo(EncryptionMode.agile);
                 Encryptor enc = info.getEncryptor();
