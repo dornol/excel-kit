@@ -163,7 +163,7 @@ class CoverageBoostTest {
         @Test
         void quoting_ALL_nullValue_shouldWriteEmptyQuotes() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .quoting(CsvQuoting.ALL)
                     .column("Value", r -> null)
                     .write(Stream.of(new Row("ignored")))
@@ -178,7 +178,7 @@ class CoverageBoostTest {
         @Test
         void quoting_NON_NUMERIC_shouldQuoteStrings() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .quoting(CsvQuoting.NON_NUMERIC)
                     .column("Text", Row::value)
                     .column("Num", r -> 42)
@@ -195,7 +195,7 @@ class CoverageBoostTest {
         @Test
         void injectionDefense_shouldPrefixFormulaChars() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .csvInjectionDefense(true)
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("=SUM(A1)"), new Row("+cmd"), new Row("@import")))
@@ -210,7 +210,7 @@ class CoverageBoostTest {
         @Test
         void injectionDefense_disabled_shouldNotPrefix() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .csvInjectionDefense(false)
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("=SUM(A1)")))
@@ -224,7 +224,7 @@ class CoverageBoostTest {
         @Test
         void valueWithQuotes_shouldBeEscaped() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("say \"hello\"")))
                     .writeTo(out);
@@ -236,7 +236,7 @@ class CoverageBoostTest {
         @Test
         void valueWithNewline_shouldBeQuoted() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .column("Val", Row::value)
                     .write(Stream.of(new Row("line1\nline2")))
                     .writeTo(out);
@@ -248,7 +248,7 @@ class CoverageBoostTest {
         @Test
         void columnIf_false_shouldNotIncludeColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .column("Always", Row::value)
                     .columnIf("Never", false, Row::value)
                     .write(Stream.of(new Row("test")))
@@ -262,7 +262,7 @@ class CoverageBoostTest {
         @Test
         void constColumn_shouldWriteConstantValue() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .column("Name", Row::value)
                     .constColumn("Type", "Person")
                     .write(Stream.of(new Row("Alice")))
@@ -277,7 +277,7 @@ class CoverageBoostTest {
         @Test
         void afterData_shouldAppendContent() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .column("Name", Row::value)
                     .afterData(writer -> writer.println("# Footer"))
                     .write(Stream.of(new Row("Alice")))
@@ -290,7 +290,7 @@ class CoverageBoostTest {
         @Test
         void noBom_shouldNotWriteBOM() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .bom(false)
                     .column("Name", Row::value)
                     .write(Stream.of(new Row("Alice")))
@@ -303,7 +303,7 @@ class CoverageBoostTest {
 
         @Test
         void duplicateColumnNames_shouldThrow() {
-            var writer = new CsvWriter<Row>()
+            var writer = CsvWriter.<Row>create()
                     .column("Name", Row::value)
                     .column("Name", Row::value);
 
@@ -314,7 +314,7 @@ class CoverageBoostTest {
         @Test
         void emptyColumns_shouldThrow() {
             assertThrows(Exception.class, () ->
-                    new CsvWriter<Row>().write(Stream.of(new Row("test"))));
+                    CsvWriter.<Row>create().write(Stream.of(new Row("test"))));
         }
 
         @Test
@@ -322,7 +322,7 @@ class CoverageBoostTest {
             // These exercise the isNumeric method through NON_NUMERIC quoting
             // Disable injection defense so +/- values are not prefixed
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<Row>()
+            CsvWriter.<Row>create()
                     .quoting(CsvQuoting.NON_NUMERIC)
                     .csvInjectionDefense(false)
                     .column("Val", Row::value)

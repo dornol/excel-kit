@@ -297,17 +297,38 @@ public class ExcelWriter<T> {
     }
 
     /**
-     * Sets the number of rows to freeze below the header row.
-     * The freeze pane is created starting from the header row position.
+     * Freezes the given number of rows below the header row.
+     * <p>
+     * For both-axes freezing use {@link #freezePane(int, int)};
+     * for columns-only use {@link #freezeCols(int)}.
      *
      * @param rows Number of rows to freeze (must be non-negative)
      * @return Current ExcelWriter instance for chaining
+     * @since 0.16.7
      */
-    public ExcelWriter<T> freezePane(int rows) {
+    public ExcelWriter<T> freezeRows(int rows) {
         if (rows < 0) {
             throw new IllegalArgumentException("freezePaneRows must be non-negative");
         }
         this.cfg.freezePaneRows = rows;
+        return this;
+    }
+
+    /**
+     * Freezes the given number of columns from the left edge.
+     * <p>
+     * For both-axes freezing use {@link #freezePane(int, int)};
+     * for rows-only use {@link #freezeRows(int)}.
+     *
+     * @param cols Number of columns to freeze (must be non-negative)
+     * @return Current ExcelWriter instance for chaining
+     * @since 0.16.7
+     */
+    public ExcelWriter<T> freezeCols(int cols) {
+        if (cols < 0) {
+            throw new IllegalArgumentException("freezePaneCols must be non-negative");
+        }
+        this.cfg.freezePaneCols = cols;
         return this;
     }
 

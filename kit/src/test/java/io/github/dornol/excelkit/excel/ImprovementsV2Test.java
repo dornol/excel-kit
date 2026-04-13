@@ -98,7 +98,7 @@ class ImprovementsV2Test {
     // ========================================================================
     @Test
     void csvDuplicateColumn_shouldThrow() {
-        var writer = new CsvWriter<String>()
+        var writer = CsvWriter.<String>create()
                 .column("Name", s -> s)
                 .column("Name", s -> s);
         assertThrows(CsvWriteException.class, () -> writer.write(Stream.of("test")));
@@ -107,7 +107,7 @@ class ImprovementsV2Test {
     @Test
     void csvUniqueColumns_shouldNotThrow() {
         assertDoesNotThrow(() ->
-                new CsvWriter<String>()
+                CsvWriter.<String>create()
                         .column("Name", s -> s)
                         .column("Age", s -> s)
                         .write(Stream.of("test")));

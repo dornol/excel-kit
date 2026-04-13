@@ -118,7 +118,7 @@ class ImprovementsTest {
     @Test
     void csvProgress_shouldFireAtCorrectIntervals() {
         List<Long> counts = new ArrayList<>();
-        new CsvWriter<Integer>()
+        CsvWriter.<Integer>create()
                 .column("Value", i -> i)
                 .onProgress(3, (count, cursor) -> counts.add(count))
                 .write(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9));
@@ -129,7 +129,7 @@ class ImprovementsTest {
     @Test
     void csvProgress_shouldNotFireWhenIntervalNotReached() {
         List<Long> counts = new ArrayList<>();
-        new CsvWriter<Integer>()
+        CsvWriter.<Integer>create()
                 .column("Value", i -> i)
                 .onProgress(100, (count, cursor) -> counts.add(count))
                 .write(Stream.of(1, 2, 3));

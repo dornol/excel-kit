@@ -12,7 +12,7 @@ try (var wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
         .column("Name", User::getName)
         .column("Age", User::getAge, cfg -> cfg.type(ExcelDataType.INTEGER))
         .autoFilter()
-        .freezePane(1)
+        .freezeRows(1)
         .write(userStream);
 
     wb.<Order>sheet("Orders")

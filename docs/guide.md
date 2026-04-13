@@ -115,7 +115,7 @@ without requiring any additional architectural effort.
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list("Name", T::getName).write(stream, out)` |
 | Read Excel (typed) | `ExcelReader<T>` | `ExcelReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().build(in).read(r -> r.data().get("Name"))` |
-| Write CSV (typed) | `CsvWriter<T>` | `new CsvWriter<T>().column("Name", T::getName).write(stream).writeTo(out)` |
+| Write CSV (typed) | `CsvWriter<T>` | `CsvWriter.<T>create().column("Name", T::getName).write(stream).writeTo(out)` |
 | Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).writeTo(out)` |
 | Read CSV (typed) | `CsvReader<T>` | `CsvReader.setter(T::new).column("Name", T::setName).build(in).read(r -> ...)` |
 | Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().build(in).read(r -> r.data().get("Name"))` |
@@ -230,7 +230,7 @@ record Row(long id, String name) {}
 
 var rows = Stream.of(new Row(1, "Alice"), new Row(2, "Bob"));
 
-CsvWriter<Row> csv = new CsvWriter<>();
+CsvWriter<Row> csv = CsvWriter.create();
 CsvHandler ch = csv
         .column("ID", r -> r.id())
         .column("Name", r -> r.name())
@@ -1442,7 +1442,7 @@ writer
 ```java
 writer
     .autoFilter(true)    // dropdown filter on header row
-    .freezePane(1)       // freeze 1 row below the header
+    .freezeRows(1)       // freeze 1 row below the header
     .column("Name", p -> p.name())
     .write(data);
 
@@ -1832,7 +1832,7 @@ ExcelKitSchema.<Product>builder()
 ### CSV Options
 
 ```java
-new CsvWriter<Row>()
+CsvWriter.<Row>create()
     .delimiter('\t')                   // tab-separated
     .charset(StandardCharsets.UTF_16)  // custom encoding
     .bom(false)                        // disable UTF-8 BOM
@@ -1984,7 +1984,7 @@ The library creates temporary files during read and write operations (e.g., SAX-
 The defense can be disabled when writing trusted data where the prefix would corrupt values:
 
 ```java
-new CsvWriter<Row>()
+CsvWriter.<Row>create()
     .csvInjectionDefense(false)   // disable for trusted data
     .column("Formula", r -> r.formula())
     .write(rows);

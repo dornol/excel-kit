@@ -435,7 +435,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldPreserveValuesWhenDefenseIsOff() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<DangerousRow>()
+            CsvWriter.<DangerousRow>create()
                     .csvInjectionDefense(false)
                     .bom(false)
                     .column("Value", DangerousRow::value)
@@ -474,7 +474,7 @@ class RoundTripIntegrationTest {
         @Test
         void shouldAddQuotePrefixWhenDefenseIsOn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            new CsvWriter<DangerousRow>()
+            CsvWriter.<DangerousRow>create()
                     .csvInjectionDefense(true)
                     .bom(false)
                     .column("Value", DangerousRow::value)

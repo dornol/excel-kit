@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.7] - 2026-04-13
+
+### Changed (Breaking)
+
+- **`ExcelWriter.freezePane(int rows)` renamed to `freezeRows(int)`.** Single-arg
+  `freezePane(N)` was ambiguous — a caller reading `.freezePane(3)` couldn't tell
+  whether it froze rows or columns without checking the Javadoc. The new names
+  make intent explicit:
+  - `freezeRows(int)` — freeze N rows below the header (replaces `freezePane(int)`)
+  - `freezeCols(int)` — freeze N columns from the left (new)
+  - `freezePane(int cols, int rows)` — freeze both axes (unchanged)
+  Same rename applies to `ExcelSheetWriter`.
+
+  Migration: `.freezePane(1)` → `.freezeRows(1)`.
+
+- **`new CsvWriter<T>()` replaced by `CsvWriter.<T>create()`.** The public no-arg
+  constructor is now package-private, matching the `ExcelWriter.create()` /
+  `ExcelWorkbook.create()` pattern. Users switching between Excel and CSV writers
+  now share one mental model.
+
+  Migration: `new CsvWriter<Row>()` → `CsvWriter.<Row>create()`.
+
 ## [0.16.6] - 2026-04-13
 
 ### Added

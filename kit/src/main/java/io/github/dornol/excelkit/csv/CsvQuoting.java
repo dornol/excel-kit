@@ -4,7 +4,7 @@ package io.github.dornol.excelkit.csv;
  * Quoting strategies for CSV field values.
  *
  * <pre>{@code
- * new CsvWriter<Item>()
+ * CsvWriter.<Item>create()
  *     .quoting(CsvQuoting.ALL)
  *     .column("Name", Item::name)
  *     .write(stream);

@@ -325,7 +325,7 @@ class CsvMappingReadTest {
     @Test
     void roundTrip_writeWithCsvWriter_readWithMapping() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<PersonRecord>()
+        CsvWriter.<PersonRecord>create()
                 .column("Name", PersonRecord::name)
                 .column("Age", p -> p.age())
                 .column("City", PersonRecord::city)

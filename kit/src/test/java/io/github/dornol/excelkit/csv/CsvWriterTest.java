@@ -15,9 +15,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class CsvWriterTest {
 
     @Test
+    void create_shouldReturnNewInstance() {
+        CsvWriter<TestData> w1 = CsvWriter.create();
+        CsvWriter<TestData> w2 = CsvWriter.create();
+        assertNotSame(w1, w2, "create() should return a new instance each call");
+    }
+
+    @Test
+    void create_shouldProduceWorkingWriter() throws java.io.IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CsvWriter.<TestData>create()
+                .column("Name", d -> d.name)
+                .write(Stream.of(new TestData("Alice", 30)))
+                .writeTo(out);
+        String csv = out.toString(java.nio.charset.StandardCharsets.UTF_8).replace("\uFEFF", "");
+        assertTrue(csv.contains("Alice"), "CSV should contain written data");
+    }
+
+    @Test
     void column_shouldAddColumnWithRowFunction() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         
         // Act
         CsvWriter<TestData> result = writer.column("Name", data -> data.name);
@@ -29,7 +47,7 @@ class CsvWriterTest {
     @Test
     void column_shouldAddColumnWithRowAndCursorFunction() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         
         // Act
         CsvWriter<TestData> result = writer.column("Index", (data, cursor) -> cursor.getRowOfSheet());
@@ -41,7 +59,7 @@ class CsvWriterTest {
     @Test
     void constColumn_shouldAddColumnWithConstantValue() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         
         // Act
         CsvWriter<TestData> result = writer.constColumn("Constant", "Value");
@@ -53,7 +71,7 @@ class CsvWriterTest {
     @Test
     void write_shouldCreateCsvWithCorrectContent() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.column("Name", data -> data.name)
               .column("Age", data -> data.age)
               .column("Index", (data, cursor) -> cursor.getRowOfSheet())
@@ -84,7 +102,7 @@ class CsvWriterTest {
     @Test
     void write_shouldEscapeSpecialCharacters() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.column("Name", data -> data.name);
         
         List<TestData> dataList = Arrays.asList(
@@ -112,7 +130,7 @@ class CsvWriterTest {
     @Test
     void write_shouldThrowExceptionWhenCalledTwice() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.column("Name", data -> data.name);
         
         Stream<TestData> stream = Stream.of(new TestData("Test", 0));
@@ -132,7 +150,7 @@ class CsvWriterTest {
     @Test
     void write_shouldThrowWhenNoColumns() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
 
         // Act & Assert
         assertThrows(CsvWriteException.class, () -> {
@@ -143,7 +161,7 @@ class CsvWriterTest {
     @Test
     void write_shouldDefendAgainstCsvInjection() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.column("Name", data -> data.name);
 
         List<TestData> dataList = Arrays.asList(
@@ -173,7 +191,7 @@ class CsvWriterTest {
     @Test
     void columnIf_shouldAddColumnConditionally() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.column("Name", data -> data.name)
               .columnIf("Age", false, data -> data.age)
               .column("End", data -> "end");
@@ -192,7 +210,7 @@ class CsvWriterTest {
     @Test
     void write_shouldUseTabDelimiter() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.delimiter('\t')
               .column("Name", data -> data.name)
               .column("Age", data -> data.age);
@@ -212,7 +230,7 @@ class CsvWriterTest {
     @Test
     void write_shouldRespectBomFalse() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.bom(false)
               .column("Name", data -> data.name);
 
@@ -230,7 +248,7 @@ class CsvWriterTest {
     @Test
     void write_shouldEscapeCustomDelimiterInValues() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.delimiter('\t')
               .column("Name", data -> data.name);
 
@@ -248,7 +266,7 @@ class CsvWriterTest {
     @Test
     void afterData_shouldAppendContentAfterDataRows() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.column("Name", data -> data.name)
               .column("Age", data -> data.age)
               .afterData(w -> w.println(",,subtotal"));
@@ -277,7 +295,7 @@ class CsvWriterTest {
     @Test
     void afterData_shouldNotAffectOutputWhenNotSet() {
         // Arrange
-        CsvWriter<TestData> writer = new CsvWriter<>();
+        CsvWriter<TestData> writer = CsvWriter.create();
         writer.column("Name", data -> data.name);
 
         // Act — no afterData set

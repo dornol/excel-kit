@@ -5,7 +5,7 @@
 ## CSV Writing
 
 ```java
-CsvWriter<Product> csv = new CsvWriter<>();
+CsvWriter<Product> csv = CsvWriter.create();
 CsvHandler handler = csv
     .column("Name", Product::name)
     .column("Price", Product::price)
@@ -17,7 +17,7 @@ handler.writeTo(outputStream);
 ## CSV Writing Configuration
 
 ```java
-new CsvWriter<Product>()
+CsvWriter.<Product>create()
     .delimiter('\t')                              // tab-separated (default: comma)
     .charset(StandardCharsets.UTF_8)              // default: UTF-8
     .bom(true)                                    // UTF-8 BOM for Excel (default: true)
@@ -30,11 +30,11 @@ new CsvWriter<Product>()
 ## CSV Dialects
 
 ```java
-new CsvWriter<Product>()
+CsvWriter.<Product>create()
     .dialect(CsvDialect.RFC4180)    // standard CSV
     .column(...).write(stream);
 
-new CsvWriter<Product>()
+CsvWriter.<Product>create()
     .dialect(CsvDialect.TSV)        // tab-separated
     .column(...).write(stream);
 ```
@@ -109,7 +109,7 @@ writer.delimiter('\t')
 By default, cells starting with `=`, `+`, `-`, `@`, `\t`, `\r` are prefixed with a single quote to prevent formula injection. Disable with:
 
 ```java
-new CsvWriter<>().csvInjectionDefense(false)
+CsvWriter.create().csvInjectionDefense(false)
 ```
 
 ## Progress Callback

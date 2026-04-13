@@ -36,8 +36,30 @@ import java.util.stream.Stream;
  * @since 2025-07-19
  */
 public class CsvWriter<T> {
-    /** Creates a new CSV writer with default settings. */
-    public CsvWriter() {}
+    /**
+     * Internal constructor. Use {@link #create()} or {@link #forMap(String...)}.
+     */
+    CsvWriter() {}
+
+    /**
+     * Creates a new CSV writer with default settings.
+     * <p>
+     * Mirrors {@link io.github.dornol.excelkit.excel.ExcelWriter#create()} for API symmetry.
+     *
+     * <pre>{@code
+     * CsvWriter.<User>create()
+     *     .column("Name", User::getName)
+     *     .write(users)
+     *     .writeTo(out);
+     * }</pre>
+     *
+     * @param <T> the row type
+     * @return a new CsvWriter
+     * @since 0.16.7
+     */
+    public static <T> CsvWriter<T> create() {
+        return new CsvWriter<>();
+    }
 
     private static final Logger log = LoggerFactory.getLogger(CsvWriter.class);
     private final List<CsvColumn<T>> columns = new ArrayList<>();
@@ -72,7 +94,7 @@ public class CsvWriter<T> {
      * @since 0.11.0
      */
     public static CsvWriter<Map<String, Object>> forMap(String... columnNames) {
-        CsvWriter<Map<String, Object>> writer = new CsvWriter<>();
+        CsvWriter<Map<String, Object>> writer = CsvWriter.create();
         for (String name : columnNames) {
             writer.column(name, map -> map.get(name));
         }

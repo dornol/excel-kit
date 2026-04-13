@@ -67,7 +67,7 @@ class CsvDialectTest {
     @Test
     void csvWriter_tsvDialect_shouldUseTabDelimiter() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .dialect(CsvDialect.TSV)
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
@@ -83,7 +83,7 @@ class CsvDialectTest {
     @Test
     void csvWriter_rfc4180_noBom() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .dialect(CsvDialect.RFC4180)
                 .column("Name", Item::name)
                 .write(Stream.of(new Item("A", 1)))
@@ -100,7 +100,7 @@ class CsvDialectTest {
     @Test
     void csvWriter_excelDialect_withBom() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .dialect(CsvDialect.EXCEL)
                 .column("Name", Item::name)
                 .write(Stream.of(new Item("A", 1)))
@@ -117,7 +117,7 @@ class CsvDialectTest {
     @Test
     void csvWriter_pipeDialect() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .dialect(CsvDialect.PIPE)
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
@@ -173,7 +173,7 @@ class CsvDialectTest {
     @Test
     void roundTrip_tsvDialect() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .dialect(CsvDialect.TSV)
                 .column("Name", Item::name)
                 .column("Value", i -> String.valueOf(i.value))
@@ -198,7 +198,7 @@ class CsvDialectTest {
     @Test
     void dialect_canBeOverriddenByIndividualSettings() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .dialect(CsvDialect.TSV)       // tab
                 .delimiter(';')                 // override to semicolon
                 .column("Name", Item::name)

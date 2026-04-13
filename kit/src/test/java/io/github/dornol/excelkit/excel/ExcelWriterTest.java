@@ -345,7 +345,7 @@ class ExcelWriterTest {
 
         // Act
         ExcelHandler handler = writer
-                .freezePane(1)
+                .freezeRows(1)
                 .column("A", (row, c) -> row)
                 .write(data);
 
@@ -372,7 +372,7 @@ class ExcelWriterTest {
         // Act
         ExcelHandler handler = writer
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("A", (row, c) -> row)
                 .column("B", (row, c) -> row * 10)
                 .write(data);
@@ -506,7 +506,7 @@ class ExcelWriterTest {
     @Test
     void freezePane_shouldThrowForNegativeValue() {
         ExcelWriter<String> writer = ExcelWriter.<String>create();
-        assertThrows(IllegalArgumentException.class, () -> writer.freezePane(-1),
+        assertThrows(IllegalArgumentException.class, () -> writer.freezeRows(-1),
                 "Negative freezePane value should throw IllegalArgumentException");
     }
 

@@ -24,7 +24,7 @@ ExcelWriter.<User>create()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.16.6")
+implementation("io.github.dornol:excel-kit:0.16.7")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.16.6")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.16.6</version>
+  <version>0.16.7</version>
 </dependency>
 ```
 
@@ -57,7 +57,7 @@ ExcelWriter.<Product>create().headerColor(ExcelColor.STEEL_BLUE)
     .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
     .column("Released", Product::released, c -> c.type(ExcelDataType.DATE))
     .autoFilter(true)
-    .freezePane(1)
+    .freezeRows(1)
     .write(productStream)
     .writeTo(Path.of("products.xlsx"));
 ```
@@ -93,7 +93,7 @@ ExcelReader.setter(User::new)
 
 ```java
 // Write
-new CsvWriter<Product>()
+CsvWriter.<Product>create()
     .column("Name", Product::name)
     .column("Price", Product::price)
     .write(productStream)
@@ -212,7 +212,7 @@ security details, migration guide, etc.), see:
 | Write Excel (typed) | `ExcelWriter.<T>create().column(...).write(stream)` |
 | Write Excel (map) | `ExcelWriter.forMap("A", "B").write(stream)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook.create()` → `.sheet("name")` |
-| Write CSV | `new CsvWriter<T>().column(...).write(stream)` |
+| Write CSV | `CsvWriter.<T>create().column(...).write(stream)` |
 | Read Excel (setter) | `ExcelReader.setter(T::new).column(...).build(in).read(...)` |
 | Read Excel (mapping) | `ExcelReader.mapping(row -> ...).build(in).read(...)` |
 | Read Excel (map) | `ExcelReader.forMap().build(in).read(...)` |

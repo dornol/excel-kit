@@ -29,7 +29,7 @@ class CsvTempFileCleanupTest {
 
     @Test
     void write_shouldCleanUpTempFilesAfterConsume() {
-        CsvWriter<TestItem> writer = new CsvWriter<>();
+        CsvWriter<TestItem> writer = CsvWriter.create();
         writer.column("Name", item -> item.name)
               .column("Price", item -> item.price);
 
@@ -53,7 +53,7 @@ class CsvTempFileCleanupTest {
     @Test
     void write_columnFunctionError_shouldFallbackToNullAndCleanUp() {
         // CsvColumn.applyFunction catches RuntimeException and returns null
-        CsvWriter<TestItem> writer = new CsvWriter<>();
+        CsvWriter<TestItem> writer = CsvWriter.create();
         writer.column("Name", item -> {
                     throw new RuntimeException("Intentional error");
                 })
@@ -71,7 +71,7 @@ class CsvTempFileCleanupTest {
 
     @Test
     void write_noColumns_shouldThrow() {
-        CsvWriter<TestItem> writer = new CsvWriter<>();
+        CsvWriter<TestItem> writer = CsvWriter.create();
 
         assertThrows(CsvWriteException.class, () ->
                 writer.write(Stream.of(new TestItem("Test", 100))));
@@ -79,7 +79,7 @@ class CsvTempFileCleanupTest {
 
     @Test
     void write_calledTwice_shouldThrow() {
-        CsvWriter<TestItem> writer = new CsvWriter<>();
+        CsvWriter<TestItem> writer = CsvWriter.create();
         writer.column("Name", item -> item.name);
 
         CsvHandler handler = writer.write(Stream.of(new TestItem("Test", 100)));
@@ -91,7 +91,7 @@ class CsvTempFileCleanupTest {
 
     @Test
     void write_emptyStream_shouldCleanUp() {
-        CsvWriter<TestItem> writer = new CsvWriter<>();
+        CsvWriter<TestItem> writer = CsvWriter.create();
         writer.column("Name", item -> item.name);
 
         CsvHandler handler = writer.write(Stream.empty());
@@ -108,7 +108,7 @@ class CsvTempFileCleanupTest {
 
     @Test
     void write_shouldDefendAgainstAllInjectionCharacters() {
-        CsvWriter<TestItem> writer = new CsvWriter<>();
+        CsvWriter<TestItem> writer = CsvWriter.create();
         writer.column("Name", item -> item.name);
 
         List<TestItem> items = List.of(
@@ -142,7 +142,7 @@ class CsvTempFileCleanupTest {
 
     @Test
     void write_shouldEscapeNullValues() {
-        CsvWriter<TestItem> writer = new CsvWriter<>();
+        CsvWriter<TestItem> writer = CsvWriter.create();
         writer.column("Name", item -> null)
               .column("Price", item -> item.price);
 
@@ -252,7 +252,7 @@ class CsvTempFileCleanupTest {
     void csvWriteAndRead_roundtrip_shouldCleanUpAllTempResources() throws IOException {
         // Write
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new CsvWriter<TestItem>()
+        CsvWriter.<TestItem>create()
                 .column("Name", item -> item.name)
                 .column("Price", item -> item.price)
                 .write(Stream.of(

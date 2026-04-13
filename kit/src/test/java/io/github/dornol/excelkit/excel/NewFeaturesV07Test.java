@@ -668,7 +668,7 @@ class NewFeaturesV07Test {
                     .column("A", s -> s)
                     .column("B", s -> s.toUpperCase())
                     .autoFilter(true)
-                    .freezePane(1)
+                    .freezeRows(1)
                     .printSetup(ps -> ps
                             .orientation(ExcelPrintSetup.Orientation.LANDSCAPE)
                             .fitToPageWidth()

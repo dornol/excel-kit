@@ -21,7 +21,7 @@ class CsvQuotingTest {
 
     private String writeAndGet(CsvQuoting quoting, boolean injectionDefense, Item... items) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .quoting(quoting)
                 .bom(false)
                 .csvInjectionDefense(injectionDefense)
@@ -48,7 +48,7 @@ class CsvQuotingTest {
     @Test
     void minimal_isDefault_whenNotExplicitlySet() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .bom(false)
                 .csvInjectionDefense(false)
                 .column("Name", Item::name)
@@ -111,7 +111,7 @@ class CsvQuotingTest {
     @Test
     void all_nullValue_quotedEmpty() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<String>()
+        CsvWriter.<String>create()
                 .quoting(CsvQuoting.ALL)
                 .bom(false)
                 .column("A", s -> null)
@@ -148,7 +148,7 @@ class CsvQuotingTest {
     @Test
     void nonNumeric_negativeNumber_notQuoted() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<String>()
+        CsvWriter.<String>create()
                 .quoting(CsvQuoting.NON_NUMERIC)
                 .bom(false)
                 .csvInjectionDefense(false)
@@ -163,7 +163,7 @@ class CsvQuotingTest {
     @Test
     void nonNumeric_positiveSignNumber_notQuoted() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<String>()
+        CsvWriter.<String>create()
                 .quoting(CsvQuoting.NON_NUMERIC)
                 .bom(false)
                 .csvInjectionDefense(false)
@@ -178,7 +178,7 @@ class CsvQuotingTest {
     @Test
     void nonNumeric_textThatLooksNumeric_quoted() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<String>()
+        CsvWriter.<String>create()
                 .quoting(CsvQuoting.NON_NUMERIC)
                 .bom(false)
                 .column("Val", s -> s)
@@ -192,7 +192,7 @@ class CsvQuotingTest {
     @Test
     void nonNumeric_emptyString_quoted() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<String>()
+        CsvWriter.<String>create()
                 .quoting(CsvQuoting.NON_NUMERIC)
                 .bom(false)
                 .column("Val", s -> "")
@@ -211,7 +211,7 @@ class CsvQuotingTest {
         // '-' is a formula character, so with defense ON, it gets prefixed with '
         // After prefixing, the value is no longer numeric → NON_NUMERIC will quote it
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<String>()
+        CsvWriter.<String>create()
                 .quoting(CsvQuoting.NON_NUMERIC)
                 .bom(false)
                 .csvInjectionDefense(true)
@@ -230,7 +230,7 @@ class CsvQuotingTest {
     @Test
     void roundTrip_all_shouldReadBackCorrectly() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .quoting(CsvQuoting.ALL)
                 .bom(false)
                 .csvInjectionDefense(false)
@@ -255,7 +255,7 @@ class CsvQuotingTest {
     @Test
     void roundTrip_nonNumeric_shouldReadBackCorrectly() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new CsvWriter<Item>()
+        CsvWriter.<Item>create()
                 .quoting(CsvQuoting.NON_NUMERIC)
                 .bom(false)
                 .csvInjectionDefense(false)
@@ -288,7 +288,7 @@ class CsvQuotingTest {
 
     @Test
     void quoting_returnsSameInstance() {
-        CsvWriter<String> w = new CsvWriter<>();
+        CsvWriter<String> w = CsvWriter.create();
         assertSame(w, w.quoting(CsvQuoting.ALL));
     }
 }

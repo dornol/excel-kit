@@ -42,7 +42,7 @@ class FileHandlerTest {
     @Test
     @DisplayName("CsvHandler is assignable to FileHandler")
     void csvHandler_isFileHandler() {
-        FileHandler handler = new CsvWriter<String>()
+        FileHandler handler = CsvWriter.<String>create()
                 .column("A", s -> s)
                 .write(Stream.of("x"));
         assertNotNull(handler);
@@ -71,7 +71,7 @@ class FileHandlerTest {
     @Test
     @DisplayName("FileHandler.write produces valid CSV bytes when the concrete type is CsvHandler")
     void write_viaInterface_producesCsvBytes() throws IOException {
-        FileHandler handler = new CsvWriter<String>()
+        FileHandler handler = CsvWriter.<String>create()
                 .column("Name", s -> s)
                 .write(Stream.of("Alice", "Bob"));
 
@@ -93,7 +93,7 @@ class FileHandlerTest {
         FileHandler excelH = ExcelWriter.<String>create()
                 .column("A", s -> s)
                 .write(Stream.of("excel-payload"));
-        FileHandler csvH = new CsvWriter<String>()
+        FileHandler csvH = CsvWriter.<String>create()
                 .column("A", s -> s)
                 .write(Stream.of("csv-payload"));
 

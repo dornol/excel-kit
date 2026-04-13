@@ -202,10 +202,33 @@ class V016ImprovementsTest {
         @Test
         void freezePane_singleArg_backwardsCompatible() throws IOException {
             ExcelWriter<String> writer = ExcelWriter.<String>create();
-            writer.column("A", s -> s).freezePane(1);
+            writer.column("A", s -> s).freezeRows(1);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             writer.write(Stream.of("row1")).writeTo(bos);
+        }
+
+        @Test
+        void freezeCols_shouldFreezeColumnsFromLeft() throws IOException {
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
+            writer.column("A", s -> s).column("B", s -> s).freezeCols(2);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            writer.write(Stream.of("row1")).writeTo(bos);
+            try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(
+                    new java.io.ByteArrayInputStream(bos.toByteArray()))) {
+                var pane = wb.getSheetAt(0).getPaneInformation();
+                assertNotNull(pane, "freezeCols should create a pane");
+                assertEquals(2, pane.getVerticalSplitPosition(),
+                        "freezeCols(2) should split at column 2");
+                assertEquals(0, pane.getHorizontalSplitPosition(),
+                        "freezeCols alone should leave horizontal split at 0");
+            }
+        }
+
+        @Test
+        void freezeCols_negative_shouldThrow() {
+            ExcelWriter<String> w = ExcelWriter.<String>create();
+            assertThrows(IllegalArgumentException.class, () -> w.freezeCols(-1));
         }
 
         @Test

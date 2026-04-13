@@ -43,7 +43,7 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
 
     @Override
     public StreamingContent exportCsv(Stream<BookDto> data) {
-        var handler = new CsvWriter<BookDto>()
+        var handler = CsvWriter.<BookDto>create()
                 .column("no", (rowData, cursor) -> cursor.getCurrentTotal())
                 .column("id", BookDto::id)
                 .column("title", BookDto::title)

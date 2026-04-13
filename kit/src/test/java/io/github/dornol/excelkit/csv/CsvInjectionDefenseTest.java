@@ -22,7 +22,7 @@ class CsvInjectionDefenseTest {
     }
 
     private CsvWriter<String> defaultWriter() {
-        return new CsvWriter<String>()
+        return CsvWriter.<String>create()
                 .bom(false)
                 .column("Value", s -> s);
     }
@@ -33,7 +33,7 @@ class CsvInjectionDefenseTest {
     }
 
     private CsvWriter<String> defenseDisabledWriter() {
-        return new CsvWriter<String>()
+        return CsvWriter.<String>create()
                 .bom(false)
                 .csvInjectionDefense(false)
                 .column("Value", s -> s);
@@ -93,7 +93,7 @@ class CsvInjectionDefenseTest {
 
         @Test
         void handlesNullValues_gracefully() throws Exception {
-            var writer = new CsvWriter<String>()
+            var writer = CsvWriter.<String>create()
                     .bom(false)
                     .column("Value", s -> null);
             String csv = writeCsv(writer, "anything");
@@ -120,7 +120,7 @@ class CsvInjectionDefenseTest {
 
         @Test
         void multiColumn_defenseAppliesToAllColumns() throws Exception {
-            var writer = new CsvWriter<String[]>()
+            var writer = CsvWriter.<String[]>create()
                     .bom(false)
                     .column("Col1", arr -> arr[0])
                     .column("Col2", arr -> arr[1]);
@@ -174,7 +174,7 @@ class CsvInjectionDefenseTest {
 
         @Test
         void canBeToggledBackOn() throws Exception {
-            var writer = new CsvWriter<String>()
+            var writer = CsvWriter.<String>create()
                     .bom(false)
                     .csvInjectionDefense(false)
                     .csvInjectionDefense(true)  // re-enable

@@ -40,7 +40,7 @@ public class ReadShowcaseController {
         var handler = PRODUCT_SCHEMA.excelWriter()
                 .sheetName("Schema Demo")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .write(ShowcaseData.sampleProducts().stream().map(ShowcaseData::toReadDto));
 
         return DownloadUtil.builder("schema-excel-demo", DownloadFileType.EXCEL)

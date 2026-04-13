@@ -84,7 +84,7 @@ class NewFeaturesV014Test {
         void csvHandler_toFile_writesValidCsv(@TempDir Path tempDir) throws IOException {
             Path target = tempDir.resolve("output.csv");
 
-            new CsvWriter<String>()
+            CsvWriter.<String>create()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice", "Bob"))
                     .writeTo(target);
@@ -113,7 +113,7 @@ class NewFeaturesV014Test {
         @Test
         @DisplayName("Calling toFile() twice on CsvHandler throws (one-shot contract)")
         void csvHandler_toFile_twice_throws(@TempDir Path tempDir) throws IOException {
-            FileHandler handler = new CsvWriter<String>()
+            FileHandler handler = CsvWriter.<String>create()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
 
@@ -154,14 +154,14 @@ class NewFeaturesV014Test {
         void csvHandler_toFile_matcheWriteOutput(@TempDir Path tempDir) throws IOException {
             // Write via OutputStream
             var out = new ByteArrayOutputStream();
-            new CsvWriter<String>()
+            CsvWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
                     .writeTo(out);
 
             // Write via toFile
             Path target = tempDir.resolve("out.csv");
-            new CsvWriter<String>()
+            CsvWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
                     .writeTo(target);
@@ -301,7 +301,7 @@ class NewFeaturesV014Test {
         @DisplayName("condition=true adds the constant column")
         void conditionTrue_addsColumn() throws IOException {
             var out = new ByteArrayOutputStream();
-            new CsvWriter<String>()
+            CsvWriter.<String>create()
                     .column("Name", s -> s)
                     .constColumnIf("Type", true, "USER")
                     .write(Stream.of("Alice"))
@@ -317,7 +317,7 @@ class NewFeaturesV014Test {
         @DisplayName("condition=false skips the constant column")
         void conditionFalse_skipsColumn() throws IOException {
             var out = new ByteArrayOutputStream();
-            new CsvWriter<String>()
+            CsvWriter.<String>create()
                     .column("Name", s -> s)
                     .constColumnIf("Type", false, "USER")
                     .write(Stream.of("Alice"))
@@ -333,7 +333,7 @@ class NewFeaturesV014Test {
         @DisplayName("constColumnIf with null value produces empty cell")
         void conditionTrue_nullValue() throws IOException {
             var out = new ByteArrayOutputStream();
-            new CsvWriter<String>()
+            CsvWriter.<String>create()
                     .column("Name", s -> s)
                     .constColumnIf("Extra", true, null)
                     .write(Stream.of("Alice"))

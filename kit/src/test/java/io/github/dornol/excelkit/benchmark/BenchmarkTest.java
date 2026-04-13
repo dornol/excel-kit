@@ -198,7 +198,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        var handler = new CsvWriter<int[]>()
+        var handler = CsvWriter.<int[]>create()
                 .column("ID", r -> r[0])
                 .column("Name", r -> "User-" + r[0])
                 .column("Score", r -> r[1])
@@ -226,7 +226,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        var handler = new CsvWriter<int[]>()
+        var handler = CsvWriter.<int[]>create()
                 .column("ID", r -> r[0])
                 .column("Name", r -> "User-" + r[0])
                 .column("Score", r -> r[1])
@@ -322,7 +322,7 @@ class BenchmarkTest {
         Path file = tempDir.resolve("read_1m.csv");
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            new CsvWriter<int[]>()
+            CsvWriter.<int[]>create()
                     .column("ID", r -> r[0])
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1])
@@ -351,7 +351,7 @@ class BenchmarkTest {
         Path file = tempDir.resolve("read_typed_1m.csv");
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            new CsvWriter<int[]>()
+            CsvWriter.<int[]>create()
                     .column("ID", r -> r[0])
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1])

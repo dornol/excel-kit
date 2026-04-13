@@ -81,7 +81,7 @@ class ExcelKitSchemaTest {
         // Act
         ExcelHandler handler = schema.excelWriter()
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .write(Stream.of(new TestPerson("Alice", 30)));
 
         // Assert

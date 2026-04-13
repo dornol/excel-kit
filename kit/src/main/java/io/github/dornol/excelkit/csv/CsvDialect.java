@@ -11,13 +11,13 @@ import java.nio.charset.StandardCharsets;
  *
  * <pre>{@code
  * // Tab-separated values
- * new CsvWriter<Item>()
+ * CsvWriter.<Item>create()
  *     .dialect(CsvDialect.TSV)
  *     .column("Name", Item::name)
  *     .write(stream);
  *
  * // Excel-compatible CSV (UTF-8 BOM)
- * new CsvWriter<Item>()
+ * CsvWriter.<Item>create()
  *     .dialect(CsvDialect.EXCEL)
  *     .column("Name", Item::name)
  *     .write(stream);

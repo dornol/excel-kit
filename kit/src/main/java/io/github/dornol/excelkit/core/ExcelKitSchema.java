@@ -83,7 +83,7 @@ public class ExcelKitSchema<T> {
      * @return A configured CsvWriter instance
      */
     public CsvWriter<T> csvWriter() {
-        CsvWriter<T> writer = new CsvWriter<>();
+        CsvWriter<T> writer = CsvWriter.create();
         for (SchemaColumn<T> col : columns) {
             writer.column(col.name(), col.writeFunction());
         }

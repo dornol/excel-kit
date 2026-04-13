@@ -40,7 +40,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
                 .sheetName("Formula Demo")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("No.", (row, cursor) -> cursor.getCurrentTotal(), cfg -> cfg.type(ExcelDataType.LONG))
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
@@ -107,7 +107,7 @@ public class WriteShowcaseController {
         try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.CORAL)) {
             wb.<ProductDto>sheet("Electronics")
                     .autoFilter()
-                    .freezePane(1)
+                    .freezeRows(1)
                     .column("Name", ProductDto::name)
                     .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                     .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
@@ -150,7 +150,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
                 .sheetName("Cell Color")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("Name", ProductDto::name)
                 .column("Price", ProductDto::price, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
@@ -185,7 +185,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.CORAL)
                 .sheetName("Group Header")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("No.", (row, cursor) -> cursor.getCurrentTotal(), cfg -> cfg.type(ExcelDataType.LONG))
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
@@ -220,7 +220,7 @@ public class WriteShowcaseController {
                     .maxRows(8)
                     .sheetName(idx -> "Products-Page" + (idx + 1))
                     .autoFilter()
-                    .freezePane(1)
+                    .freezeRows(1)
                     .column("Name", ProductDto::name)
                     .column("Category", ProductDto::category)
                     .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
@@ -243,7 +243,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.GOLD)
                 .sheetName("Outline Demo")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
                 .column("Price", ProductDto::price, cfg -> cfg.type(ExcelDataType.INTEGER).format("#,##0").outline(1))
@@ -271,7 +271,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
                 .sheetName("Full Showcase")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .rowHeight(22)
                 .rowColor(p -> {
                     if (p.quantity() <= 10) return ExcelColor.LIGHT_RED;
@@ -407,7 +407,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.GOLD)
                 .sheetName("Conditional Formatting")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("Name", ProductDto::name)
                 .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
@@ -514,7 +514,7 @@ public class WriteShowcaseController {
             wb.<ProductDto>sheet("Protected Data")
                     .protectSheet("1234")
                     .autoFilter()
-                    .freezePane(1)
+                    .freezeRows(1)
                     .column("Name (locked)", ProductDto::name, c -> c.locked(true))
                     .column("Category (locked)", ProductDto::category, c -> c.locked(true))
                     .column("Price (editable)", p -> p.price(), c -> c
@@ -547,7 +547,7 @@ public class WriteShowcaseController {
                 .headerFontName("Arial")
                 .headerFontSize(14)
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
                 .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
@@ -571,7 +571,7 @@ public class WriteShowcaseController {
                 .headerFontName("Arial")
                 .headerFontSize(13)
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("Name", ProductDto::name)
                 .column("Category", ProductDto::category)
                 .column("Price", p -> p.price(), c -> c
@@ -597,7 +597,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.FOREST_GREEN)
                 .sheetName("Default Style Demo")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .defaultStyle(d -> d
                         .fontName("Arial")
                         .fontSize(10)
@@ -626,7 +626,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.GOLD)
                 .sheetName("Summary Demo")
                 .autoFilter(true)
-                .freezePane(1)
+                .freezeRows(1)
                 .column("Name", ProductDto::name)
                 .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .column("Quantity", p -> p.quantity(), c -> c.type(ExcelDataType.INTEGER))
@@ -658,7 +658,7 @@ public class WriteShowcaseController {
 
             wb.<ProductDto>sheet("Data")
                     .autoFilter()
-                    .freezePane(1)
+                    .freezeRows(1)
                     .column("Name", ProductDto::name)
                     .column("Category", ProductDto::category, c -> c
                             .validation(ExcelValidation.listFromRange("Options!$A$2:$A$5")))
@@ -680,7 +680,7 @@ public class WriteShowcaseController {
         var writer = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
                 .sheetName("Data Bar Demo")
                 .autoFilter(true)
-                .freezePane(1);
+                .freezeRows(1);
         writer.column("Name", ProductDto::name);
         writer.column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
         writer.column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER));

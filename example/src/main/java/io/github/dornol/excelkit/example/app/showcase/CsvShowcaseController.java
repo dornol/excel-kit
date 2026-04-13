@@ -51,7 +51,7 @@ public class CsvShowcaseController {
     // ========================================================================
     @GetMapping("/csv-defense-off")
     public ResponseEntity<StreamingResponseBody> downloadCsvDefenseOff() {
-        var handler = new CsvWriter<String[]>()
+        var handler = CsvWriter.<String[]>create()
                 .csvInjectionDefense(false)
                 .column("Label", row -> row[0])
                 .column("Value", row -> row[1])
@@ -72,7 +72,7 @@ public class CsvShowcaseController {
     // ========================================================================
     @GetMapping("/csv-defense-on")
     public ResponseEntity<StreamingResponseBody> downloadCsvDefenseOn() {
-        var handler = new CsvWriter<String[]>()
+        var handler = CsvWriter.<String[]>create()
                 .csvInjectionDefense(true)
                 .column("Label", row -> row[0])
                 .column("Value", row -> row[1])
@@ -116,7 +116,7 @@ public class CsvShowcaseController {
     // ========================================================================
     @GetMapping("/csv-dialect-tsv")
     public ResponseEntity<StreamingResponseBody> downloadCsvDialectTsv() {
-        var handler = new CsvWriter<ProductDto>()
+        var handler = CsvWriter.<ProductDto>create()
                 .dialect(CsvDialect.TSV)
                 .column("Name", (ProductDto p) -> p.name())
                 .column("Category", (ProductDto p) -> p.category())
@@ -133,7 +133,7 @@ public class CsvShowcaseController {
     // ========================================================================
     @GetMapping("/csv-quoting-all")
     public ResponseEntity<StreamingResponseBody> downloadCsvQuotingAll() {
-        var handler = new CsvWriter<ProductDto>()
+        var handler = CsvWriter.<ProductDto>create()
                 .quoting(CsvQuoting.ALL)
                 .column("Name", (ProductDto p) -> p.name())
                 .column("Category", (ProductDto p) -> p.category())

@@ -196,7 +196,7 @@ class ExcelWorkbookTest {
         workbook.<String>sheet("Filtered")
                 .column("Col", s -> s)
                 .autoFilter()
-                .freezePane(1)
+                .freezeRows(1)
                 .write(Stream.of("a", "b"));
 
         ExcelHandler handler = workbook.finish();

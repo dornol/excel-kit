@@ -154,7 +154,7 @@ class ComprehensiveFeatureTest {
         try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Data")
                     .maxRows(2)
-                    .freezePane(1)
+                    .freezeRows(1)
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4));
             wb.finish().writeTo(out);
@@ -214,9 +214,9 @@ class ComprehensiveFeatureTest {
     @Test
     void csvProgress_invalidInterval_shouldThrow() {
         assertThrows(IllegalArgumentException.class, () ->
-                new CsvWriter<String>().column("A", s -> s).onProgress(0, (c, cur) -> {}));
+                CsvWriter.<String>create().column("A", s -> s).onProgress(0, (c, cur) -> {}));
         assertThrows(IllegalArgumentException.class, () ->
-                new CsvWriter<String>().column("A", s -> s).onProgress(-1, (c, cur) -> {}));
+                CsvWriter.<String>create().column("A", s -> s).onProgress(-1, (c, cur) -> {}));
     }
 
     @Test
@@ -224,7 +224,7 @@ class ComprehensiveFeatureTest {
         List<Long> totals = new ArrayList<>();
         List<Integer> rowOfSheets = new ArrayList<>();
 
-        new CsvWriter<Integer>()
+        CsvWriter.<Integer>create()
                 .column("V", i -> i)
                 .onProgress(2, (count, cursor) -> {
                     totals.add(count);

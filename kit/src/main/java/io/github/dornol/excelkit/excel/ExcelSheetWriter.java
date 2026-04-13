@@ -193,10 +193,26 @@ public class ExcelSheetWriter<T> {
     }
 
     /** Freezes the specified number of top rows.
+     * For both-axes freezing use {@link #freezePane(int, int)};
+     * for columns-only use {@link #freezeCols(int)}.
      * @param rows number of rows to freeze
-     * @return this writer for chaining */
-    public ExcelSheetWriter<T> freezePane(int rows) {
+     * @return this writer for chaining
+     * @since 0.16.7 */
+    public ExcelSheetWriter<T> freezeRows(int rows) {
+        if (rows < 0) throw new IllegalArgumentException("freezePaneRows must be non-negative");
         this.cfg.freezePaneRows = rows;
+        return this;
+    }
+
+    /** Freezes the specified number of left columns.
+     * For both-axes freezing use {@link #freezePane(int, int)};
+     * for rows-only use {@link #freezeRows(int)}.
+     * @param cols number of columns to freeze
+     * @return this writer for chaining
+     * @since 0.16.7 */
+    public ExcelSheetWriter<T> freezeCols(int cols) {
+        if (cols < 0) throw new IllegalArgumentException("freezePaneCols must be non-negative");
+        this.cfg.freezePaneCols = cols;
         return this;
     }
 

@@ -78,7 +78,7 @@ ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
 ## CSV Writing
 
 ```java
-CsvWriter<Row> csv = new CsvWriter<>();
+CsvWriter<Row> csv = CsvWriter.create();
 csv.column("ID", r -> r.id())
    .column("Name", r -> r.name())
    .write(rows)
