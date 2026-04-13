@@ -517,7 +517,7 @@ class ColumnStyleConfigTest {
 
         @Test
         void excelWriter_addColumn_withAllConfigMethods() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             var result = writer.column("Col", s -> s, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .format("#,##0")

@@ -16,7 +16,7 @@ class MultiSheetReadTest {
     @Test
     void getSheetNames_shouldReturnAllSheetNames() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<String>sheet("Users")
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
@@ -39,7 +39,7 @@ class MultiSheetReadTest {
     @Test
     void getSheetHeaders_shouldReturnHeaderNames() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("First", s -> s)
                 .column("Second", s -> s)
                 .column("Third", s -> s)
@@ -55,7 +55,7 @@ class MultiSheetReadTest {
     @Test
     void readSpecificSheet_shouldReadCorrectSheet() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<String>sheet("Users")
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
@@ -79,7 +79,7 @@ class MultiSheetReadTest {
     @Test
     void getSheetNames_singleSheet() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .sheetName("Data")
                 .column("Name", s -> s)
                 .write(Stream.of("Alice"))
@@ -96,7 +96,7 @@ class MultiSheetReadTest {
     void getSheetHeaders_withHeaderRowIndex() throws IOException {
         // Create a file with content before the header
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .beforeHeader(ctx -> {
                     var row = ctx.getSheet().createRow(0);
                     row.createCell(0).setCellValue("Title Row");

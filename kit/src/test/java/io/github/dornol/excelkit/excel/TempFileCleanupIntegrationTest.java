@@ -243,7 +243,7 @@ class TempFileCleanupIntegrationTest {
     void writeAndRead_roundtrip_shouldCleanUpAllTempResources() throws IOException {
         // Write
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ExcelWriter.<TestRow>builder().build()
+        ExcelWriter.<TestRow>create()
                 .column("Name", r -> r.name, c -> c.type(ExcelDataType.STRING))
                 .column("Age", r -> r.age, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(
@@ -277,7 +277,7 @@ class TempFileCleanupIntegrationTest {
     @Test
     void encryptedWriteAndVerify_roundtrip() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ExcelWriter.<TestRow>builder().build()
+        ExcelWriter.<TestRow>create()
                 .column("Name", r -> r.name, c -> c.type(ExcelDataType.STRING))
                 .column("Age", r -> r.age, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new TestRow("Secret", 99)))

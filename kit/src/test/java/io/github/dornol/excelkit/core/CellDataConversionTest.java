@@ -312,7 +312,7 @@ class CellDataConversionTest {
         void roundTrip_writeAndReadWithMappingModeUsingAsAndAsInt() throws IOException {
             // Write Excel
             var baos = new ByteArrayOutputStream();
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Name", Product::name)
                     .column("Quantity", p -> p.quantity())
                     .column("Price", p -> p.price())
@@ -358,7 +358,7 @@ class CellDataConversionTest {
 
             // Write Excel with UUID strings
             var baos = new ByteArrayOutputStream();
-            ExcelWriter.<UUID>builder().build()
+            ExcelWriter.<UUID>create()
                     .column("ID", UUID::toString)
                     .write(Stream.of(uuid1, uuid2))
                     .write(baos);

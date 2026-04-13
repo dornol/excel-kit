@@ -82,7 +82,7 @@ All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`
 
 ### ExcelWriter
 ```java
-ExcelWriter.<Product>builder().color(ExcelColor.STEEL_BLUE).build()
+ExcelWriter.<Product>create().headerColor(ExcelColor.STEEL_BLUE)
     .column("Name", Product::name)
     .column("Price", Product::price, cfg -> cfg
         .type(ExcelDataType.INTEGER)
@@ -119,7 +119,7 @@ writer.column("Amount", Product::amount, cfg -> cfg
 
 ### Default Column Style
 ```java
-ExcelWriter.<Product>builder().build()
+ExcelWriter.<Product>create()
     .defaultStyle(d -> d.fontName("Arial").fontSize(10).alignment(HorizontalAlignment.LEFT))
     .column("Name", Product::name)           // inherits defaults
     .column("Price", Product::price, cfg -> cfg
@@ -146,7 +146,7 @@ Priority: `cellColor` > `rowColor` > `backgroundColor`
 
 ```java
 // Background color for all headers
-ExcelWriter.<>builder().color(ExcelColor.STEEL_BLUE).build();
+ExcelWriter.create().headerColor(ExcelColor.STEEL_BLUE);
 
 // Font name and size for all headers
 writer.headerFontName("Arial").headerFontSize(14);

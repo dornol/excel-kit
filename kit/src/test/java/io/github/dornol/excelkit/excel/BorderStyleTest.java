@@ -16,7 +16,7 @@ class BorderStyleTest {
     @Test
     void border_shouldApplyConfiguredBorderStyle() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.MEDIUM))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -33,7 +33,7 @@ class BorderStyleTest {
     @Test
     void border_none_shouldRemoveBorders() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.NONE))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -47,7 +47,7 @@ class BorderStyleTest {
     @Test
     void border_thick_shouldApply() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.THICK))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -61,7 +61,7 @@ class BorderStyleTest {
     @Test
     void border_dashed_shouldApply() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s, c -> c.border(ExcelBorderStyle.DASHED))
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -75,7 +75,7 @@ class BorderStyleTest {
     @Test
     void defaultBorder_shouldBeThin() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s)
                 .write(Stream.of("Alice"))
                 .write(out);
@@ -89,7 +89,7 @@ class BorderStyleTest {
     @Test
     void border_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook workbook = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook workbook = ExcelWorkbook.create()) {
             workbook.<String>sheet("Sheet1")
                     .column("Name", s -> s, c -> c.border(ExcelBorderStyle.DOUBLE))
                     .write(Stream.of("Alice"));

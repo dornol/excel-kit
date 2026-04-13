@@ -13,7 +13,7 @@ Column mappings live in the adapter layer via a fluent API — not on domain obj
 No `@ExcelColumn` annotations, no infrastructure leaking into your models.
 
 ```java
-ExcelWriter.<User>builder().build()
+ExcelWriter.<User>create()
     .column("Name", User::name)
     .column("Age", User::age, c -> c.type(ExcelDataType.INTEGER))
     .write(userStream)
@@ -24,7 +24,7 @@ ExcelWriter.<User>builder().build()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.16.3")
+implementation("io.github.dornol:excel-kit:0.16.4")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.16.3")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.16.3</version>
+  <version>0.16.4</version>
 </dependency>
 ```
 
@@ -52,9 +52,7 @@ Runtime dependencies (declared as `compileOnly`):
 ```java
 record Product(String name, int price, LocalDate released) {}
 
-ExcelWriter.<Product>builder()
-    .color(ExcelColor.STEEL_BLUE)
-    .build()
+ExcelWriter.<Product>create().headerColor(ExcelColor.STEEL_BLUE)
     .column("Name", Product::name)
     .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
     .column("Released", Product::released, c -> c.type(ExcelDataType.DATE))
@@ -127,7 +125,7 @@ ExcelReader.forMap()
 ### Multi-Sheet Workbook
 
 ```java
-try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
+try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
     wb.<User>sheet("Users")
         .column("Name", User::name)
         .column("Email", User::email)
@@ -211,9 +209,9 @@ security details, migration guide, etc.), see:
 
 | Task | Entry Point |
 |------|------------|
-| Write Excel (typed) | `ExcelWriter.<T>builder().build().column(...).write(stream)` |
+| Write Excel (typed) | `ExcelWriter.<T>create().column(...).write(stream)` |
 | Write Excel (map) | `ExcelWriter.forMap("A", "B").write(stream)` |
-| Write Excel (multi-sheet) | `ExcelWorkbook.builder().build()` → `.sheet("name")` |
+| Write Excel (multi-sheet) | `ExcelWorkbook.create()` → `.sheet("name")` |
 | Write CSV | `new CsvWriter<T>().column(...).write(stream)` |
 | Read Excel (setter) | `ExcelReader.setter(T::new).column(...).build(in).read(...)` |
 | Read Excel (mapping) | `ExcelReader.mapping(row -> ...).build(in).read(...)` |

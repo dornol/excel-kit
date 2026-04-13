@@ -79,7 +79,7 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
     }
 
     private ExcelHandler createExcelHandler(Stream<BookDto> data, String password) {
-        var writer = ExcelWriter.<BookDto>builder().color(ExcelColor.of(0xCC, 0xFF, 0x99)).build()
+        var writer = ExcelWriter.<BookDto>create().headerColor(ExcelColor.of(0xCC, 0xFF, 0x99))
                 .tabColor(ExcelColor.STEEL_BLUE)
                 .column("no", (rowData, cursor) -> cursor.getCurrentTotal(), cfg -> cfg
                     .type(ExcelDataType.LONG)

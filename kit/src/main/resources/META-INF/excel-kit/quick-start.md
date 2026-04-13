@@ -9,7 +9,7 @@ record Person(long id, String name, int age) {}
 
 var data = Stream.of(new Person(1, "Alice", 30), new Person(2, "Bob", 28));
 
-ExcelHandler handler = ExcelWriter.<Person>builder().build()
+ExcelHandler handler = ExcelWriter.<Person>create()
         .column("ID", p -> p.id())
             .type(ExcelDataType.LONG)
             .alignment(HorizontalAlignment.RIGHT)
@@ -26,7 +26,7 @@ try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
 ## Excel Writing (Multi-Sheet)
 
 ```java
-try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
+try (var wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
     wb.<User>sheet("Users")
         .column("Name", User::getName)
         .column("Age", User::getAge)

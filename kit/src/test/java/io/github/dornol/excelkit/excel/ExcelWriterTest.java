@@ -24,7 +24,7 @@ class ExcelWriterTest {
     @Test
     void write_shouldThrowWhenNoColumns() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
 
         // Act & Assert
         assertThrows(ExcelWriteException.class, () -> {
@@ -35,7 +35,7 @@ class ExcelWriterTest {
     @Test
     void write_shouldSucceedWithSingleColumn() throws IOException {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a", "b");
 
         // Act
@@ -54,7 +54,7 @@ class ExcelWriterTest {
     @Test
     void write_shouldReturnHandlerAndBeConsumable() throws IOException {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = List.of("row1", "row2").stream();
 
         // Act
@@ -74,7 +74,7 @@ class ExcelWriterTest {
     @Test
     void write_shouldRolloverSheets_whenMaxRowsSmall() {
         // Arrange: max 2 rows per sheet
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
 
         // Act
@@ -106,7 +106,7 @@ class ExcelWriterTest {
     @Test
     void columnIf_falseConditionShouldNotAddColumn() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a");
 
         // Act
@@ -132,7 +132,7 @@ class ExcelWriterTest {
     @Test
     void constColumn_shouldWriteConstantValue() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("hello");
 
         // Act
@@ -156,7 +156,7 @@ class ExcelWriterTest {
 
     @Test
     void columnIf_trueCondition_withExcelRowFunction_shouldAddColumn() {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .columnIf("B", true, (RowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
@@ -175,7 +175,7 @@ class ExcelWriterTest {
 
     @Test
     void columnIf_falseCondition_withExcelRowFunction_shouldNotAddColumn() {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .columnIf("B", false, (RowFunction<String, Object>) (row, c) -> c.getCurrentTotal())
@@ -193,7 +193,7 @@ class ExcelWriterTest {
 
     @Test
     void columnIf_withConfigurer_shouldApplyConfig() {
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create();
         ExcelHandler handler = writer
                 .column("A", i -> i)
                 .columnIf("B", true, i -> i * 2,
@@ -215,7 +215,7 @@ class ExcelWriterTest {
 
     @Test
     void columnIf_withExcelRowFunctionAndConfigurer_shouldApplyConfig() {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .columnIf("B", true, (RowFunction<String, Object>) (row, c) -> c.getCurrentTotal(),
@@ -236,7 +236,7 @@ class ExcelWriterTest {
 
     @Test
     void constColumn_withConfigurer_shouldApplyConfig() {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .constColumn("Const", 42, cfg -> cfg.type(ExcelDataType.INTEGER))
@@ -255,7 +255,7 @@ class ExcelWriterTest {
 
     @Test
     void constColumnIf_trueCondition_shouldAddColumn() {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .constColumnIf("Const", true, "YES")
@@ -275,7 +275,7 @@ class ExcelWriterTest {
 
     @Test
     void constColumnIf_falseCondition_shouldNotAddColumn() {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         ExcelHandler handler = writer
                 .column("A", (row, c) -> row)
                 .constColumnIf("Const", false, "NO")
@@ -294,7 +294,7 @@ class ExcelWriterTest {
     @Test
     void constructor_withRowAccessWindowSize_shouldCreateWriter() throws IOException {
         // Arrange: use a small buffer size
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.WHITE).maxRows(1_000_000).rowAccessWindowSize(100).build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create(opts -> opts.rowAccessWindowSize(100)).headerColor(ExcelColor.WHITE).maxRows(1_000_000);
         Stream<String> data = Stream.of("a", "b", "c");
 
         // Act
@@ -313,7 +313,7 @@ class ExcelWriterTest {
     @Test
     void write_shouldApplyAutoFilter() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a", "b");
 
         // Act
@@ -340,7 +340,7 @@ class ExcelWriterTest {
     @Test
     void write_shouldApplyFreezePane() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a", "b");
 
         // Act
@@ -366,7 +366,7 @@ class ExcelWriterTest {
     @Test
     void write_shouldApplyOptionsOnRolloverSheets() {
         // Arrange: max 2 rows per sheet with auto-filter and freeze pane
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
 
         // Act
@@ -400,7 +400,7 @@ class ExcelWriterTest {
     @Test
     void beforeHeader_shouldWriteCustomRowsBeforeHeader() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a", "b");
 
         // Act
@@ -435,7 +435,7 @@ class ExcelWriterTest {
     @Test
     void beforeHeader_shouldBeCalledOnEveryRolloverSheet() {
         // Arrange: max 2 rows per sheet
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
 
         // Act
@@ -470,7 +470,7 @@ class ExcelWriterTest {
     @Test
     void beforeHeader_shouldBeChainableFromColumnBuilder() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a", "b");
 
         // Act — call beforeHeader via builder chaining
@@ -505,7 +505,7 @@ class ExcelWriterTest {
 
     @Test
     void freezePane_shouldThrowForNegativeValue() {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         assertThrows(IllegalArgumentException.class, () -> writer.freezePane(-1),
                 "Negative freezePane value should throw IllegalArgumentException");
     }
@@ -513,7 +513,7 @@ class ExcelWriterTest {
     @Test
     void applyColumnWidth_shouldApplySameWidthsAcrossSheets() {
         // Arrange: small max rows to force rollover and values with different lengths
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().maxRows(2).build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create().maxRows(2);
         Stream<String> data = Stream.of("short", "a bit longer", "short again");
 
         // Act
@@ -544,7 +544,7 @@ class ExcelWriterTest {
     @Test
     void afterData_shouldWriteSubtotalAfterDataRows() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a", "b");
 
         // Act
@@ -575,7 +575,7 @@ class ExcelWriterTest {
     @Test
     void afterAll_shouldWriteTotalOnLastSheetOnly() {
         // Arrange: max 2 rows per sheet → 2 sheets for 3 data rows
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3);
 
         // Act
@@ -611,7 +611,7 @@ class ExcelWriterTest {
     @Test
     void afterData_and_afterAll_shouldBeCalledInOrder() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a");
 
         // Act
@@ -647,7 +647,7 @@ class ExcelWriterTest {
     @Test
     void width_shouldFixColumnWidth() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("short", "a very long string that would normally expand the column");
 
         // Act
@@ -670,7 +670,7 @@ class ExcelWriterTest {
     @Test
     void minWidth_shouldEnforceMinimumColumnWidth() {
         // Arrange: use a large minWidth so auto-fit can't go below it
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("x");
 
         // Act
@@ -694,7 +694,7 @@ class ExcelWriterTest {
     @Test
     void maxWidth_shouldCapColumnWidth() {
         // Arrange: use a small maxWidth to cap auto-fit
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("This is a very long string value that would normally cause a very wide column");
 
         // Act
@@ -718,7 +718,7 @@ class ExcelWriterTest {
     @Test
     void sheetName_shouldSetCustomSheetName() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a", "b");
 
         // Act
@@ -742,7 +742,7 @@ class ExcelWriterTest {
     @Test
     void sheetName_shouldNameRolloverSheets() {
         // Arrange: max 2 rows per sheet
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
 
         // Act
@@ -769,7 +769,7 @@ class ExcelWriterTest {
     @Test
     void sheetName_withFunction_shouldApplyCustomNaming() {
         // Arrange: max 2 rows per sheet
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3);
 
         // Act
@@ -795,7 +795,7 @@ class ExcelWriterTest {
     @Test
     void afterData_shouldBeCalledOnEverySheetDuringRollover() {
         // Arrange: max 2 rows per sheet → 3 sheets for 5 data rows
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
 
         // Act
@@ -835,7 +835,7 @@ class ExcelWriterTest {
     @Test
     void dropdown_shouldApplyDataValidation() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("Active", "Inactive");
 
         // Act
@@ -862,7 +862,7 @@ class ExcelWriterTest {
     @Test
     void dropdown_shouldApplyToCorrectColumnOnly() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("test");
 
         // Act
@@ -887,7 +887,7 @@ class ExcelWriterTest {
     @Test
     void rowColor_shouldApplyBackgroundColor() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("error", "ok");
 
         // Act
@@ -925,7 +925,7 @@ class ExcelWriterTest {
     @Test
     void rowColor_shouldOverrideColumnBackgroundColor() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("highlight");
 
         // Act
@@ -956,7 +956,7 @@ class ExcelWriterTest {
     @Test
     void sheetContext_shouldProvideColumnCountAndNames() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a");
         SheetContext[] captured = new SheetContext[1];
 
@@ -988,7 +988,7 @@ class ExcelWriterTest {
     @Test
     void sheetContext_shouldProvideSheetAndWorkbook() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a");
         SheetContext[] captured = new SheetContext[1];
 
@@ -1019,7 +1019,7 @@ class ExcelWriterTest {
     @Test
     void sheetContext_shouldProvideCorrectCurrentRow() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a");
         int[] capturedRows = new int[2];
 
@@ -1051,7 +1051,7 @@ class ExcelWriterTest {
     @Test
     void sheetContext_shouldUpdateSheetOnRollover() {
         // Arrange: max 2 rows per sheet → 2 sheets for 3 data rows
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3);
         SXSSFSheet[] capturedSheets = new SXSSFSheet[2];
         int[] callIndex = {0};
@@ -1088,7 +1088,7 @@ class ExcelWriterTest {
     @Test
     void beforeHeader_and_afterData_shouldWorkTogetherOnRollover() {
         // Arrange: max 2 rows per sheet → 3 sheets for 5 data rows
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
 
         // Act — use both callbacks together
@@ -1133,7 +1133,7 @@ class ExcelWriterTest {
     @Test
     void beforeHeader_afterData_afterAll_shouldAllWorkOnRollover() {
         // Arrange: max 2 rows per sheet → 2 sheets for 3 data rows
-        ExcelWriter<Integer> writer = ExcelWriter.<Integer>builder().maxRows(2).build();
+        ExcelWriter<Integer> writer = ExcelWriter.<Integer>create().maxRows(2);
         Stream<Integer> data = Stream.of(1, 2, 3);
 
         // Act
@@ -1180,7 +1180,7 @@ class ExcelWriterTest {
     @Test
     void write_withEmptyStream_shouldProduceHeaderOnly() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.empty();
 
         // Act
@@ -1206,7 +1206,7 @@ class ExcelWriterTest {
     @Test
     void sheetContext_columnNamesShouldBeUnmodifiable() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         Stream<String> data = Stream.of("a");
         SheetContext[] captured = new SheetContext[1];
 

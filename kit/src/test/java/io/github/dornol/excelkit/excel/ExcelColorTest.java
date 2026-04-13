@@ -1,7 +1,11 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.stream.Stream;
@@ -76,88 +80,93 @@ class ExcelColorTest {
         assertArrayEquals(new int[]{10, 20, 30}, rgb);
     }
 
-    @Test
-    void excelWriter_shouldAcceptExcelColor() throws IOException {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.STEEL_BLUE).build();
-        Stream<String> data = Stream.of("a", "b");
+    // ---- helpers -----------------------------------------------------------
 
-        ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .write(data);
+    private static byte[] writeOne(ExcelWriter<String> writer) throws IOException {
+        var out = new ByteArrayOutputStream();
+        writer.column("A", (row, c) -> row).write(Stream.of("a")).write(out);
+        return out.toByteArray();
+    }
 
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
-            assertTrue(bos.toByteArray().length > 0);
+    private static void assertHeaderRgb(byte[] xlsx, int r, int g, int b) throws IOException {
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
+            XSSFCellStyle style = (XSSFCellStyle) wb.getSheetAt(0).getRow(0).getCell(0).getCellStyle();
+            XSSFColor color = style.getFillForegroundColorColor();
+            assertNotNull(color, "header cell should have a fill color");
+            byte[] rgb = color.getRGB();
+            assertEquals(r & 0xFF, rgb[0] & 0xFF, "R");
+            assertEquals(g & 0xFF, rgb[1] & 0xFF, "G");
+            assertEquals(b & 0xFF, rgb[2] & 0xFF, "B");
         }
     }
 
+    // ---- ExcelWriter headerColor integration -------------------------------
+
     @Test
-    void excelWriter_shouldAcceptCustomColor() throws IOException {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.of(100, 150, 200)).build();
-        Stream<String> data = Stream.of("a");
-
-        ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .write(data);
-
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
-            assertTrue(bos.toByteArray().length > 0);
-        }
+    void headerColor_steelBluePreset_producesExactRgb() throws IOException {
+        byte[] xlsx = writeOne(ExcelWriter.<String>create().headerColor(ExcelColor.STEEL_BLUE));
+        assertHeaderRgb(xlsx,
+                ExcelColor.STEEL_BLUE.getR(),
+                ExcelColor.STEEL_BLUE.getG(),
+                ExcelColor.STEEL_BLUE.getB());
     }
 
     @Test
-    void excelWriter_shouldAcceptExcelColorWithMaxRowsAndWindowSize() throws IOException {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.LIGHT_BLUE).maxRows(1_000_000).rowAccessWindowSize(100).build();
-        Stream<String> data = Stream.of("a");
-
-        ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .write(data);
-
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
-            assertTrue(bos.toByteArray().length > 0);
-        }
+    void headerColor_customRgb_producesExactRgb() throws IOException {
+        byte[] xlsx = writeOne(ExcelWriter.<String>create().headerColor(ExcelColor.of(100, 150, 200)));
+        assertHeaderRgb(xlsx, 100, 150, 200);
     }
 
     @Test
-    void excelWriter_maxRowsOnly() throws IOException {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().maxRows(500_000).build();
-        ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .write(Stream.of("a"));
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
-            assertTrue(bos.toByteArray().length > 0);
-        }
+    void headerColor_worksWithRowAccessWindowAndMaxRows() throws IOException {
+        byte[] xlsx = writeOne(
+                ExcelWriter.<String>create(opts -> opts.rowAccessWindowSize(100))
+                        .headerColor(ExcelColor.LIGHT_BLUE)
+                        .maxRows(1_000_000));
+        assertHeaderRgb(xlsx,
+                ExcelColor.LIGHT_BLUE.getR(),
+                ExcelColor.LIGHT_BLUE.getG(),
+                ExcelColor.LIGHT_BLUE.getB());
     }
 
     @Test
-    void excelWriter_colorAndMaxRows() throws IOException {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().color(ExcelColor.CORAL).maxRows(500_000).build();
-        ExcelHandler handler = writer
-                .column("A", (row, c) -> row)
-                .write(Stream.of("a"));
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
-            assertTrue(bos.toByteArray().length > 0);
-        }
+    void maxRowsOnly_keepsDefaultWhiteHeader() throws IOException {
+        // maxRows fluent setter must not affect header color — default remains white.
+        byte[] xlsx = writeOne(ExcelWriter.<String>create().maxRows(500_000));
+        assertHeaderRgb(xlsx, 255, 255, 255);
     }
 
     @Test
-    void backgroundColor_shouldAcceptExcelColor() throws IOException {
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
-        Stream<String> data = Stream.of("a", "b");
+    void headerColorAndMaxRows_composeIndependently() throws IOException {
+        byte[] xlsx = writeOne(
+                ExcelWriter.<String>create().headerColor(ExcelColor.CORAL).maxRows(500_000));
+        assertHeaderRgb(xlsx,
+                ExcelColor.CORAL.getR(),
+                ExcelColor.CORAL.getG(),
+                ExcelColor.CORAL.getB());
+    }
 
-        ExcelHandler handler = writer
-                .column("A", (row, c) -> row, cfg -> cfg.backgroundColor(ExcelColor.LIGHT_YELLOW))
+    @Test
+    void columnBackgroundColor_appliedPerColumn() throws IOException {
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
+        var out = new ByteArrayOutputStream();
+        writer.column("A", (row, c) -> row, cfg -> cfg.backgroundColor(ExcelColor.LIGHT_YELLOW))
                 .column("B", (row, c) -> row.length(), cfg -> cfg.backgroundColor(ExcelColor.LIGHT_RED))
-                .write(data);
+                .write(Stream.of("a", "b"))
+                .write(out);
 
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            handler.write(bos);
-            assertTrue(bos.toByteArray().length > 0);
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+            // Data cell (row 1, not header row 0) should carry per-column bg color.
+            XSSFCellStyle colA = (XSSFCellStyle) wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
+            XSSFCellStyle colB = (XSSFCellStyle) wb.getSheetAt(0).getRow(1).getCell(1).getCellStyle();
+            byte[] rgbA = colA.getFillForegroundColorColor().getRGB();
+            byte[] rgbB = colB.getFillForegroundColorColor().getRGB();
+            assertEquals(ExcelColor.LIGHT_YELLOW.getR(), rgbA[0] & 0xFF);
+            assertEquals(ExcelColor.LIGHT_YELLOW.getG(), rgbA[1] & 0xFF);
+            assertEquals(ExcelColor.LIGHT_YELLOW.getB(), rgbA[2] & 0xFF);
+            assertEquals(ExcelColor.LIGHT_RED.getR(), rgbB[0] & 0xFF);
+            assertEquals(ExcelColor.LIGHT_RED.getG(), rgbB[1] & 0xFF);
+            assertEquals(ExcelColor.LIGHT_RED.getB(), rgbB[2] & 0xFF);
         }
     }
 }

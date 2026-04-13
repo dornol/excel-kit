@@ -22,7 +22,7 @@ class MapReaderStreamTest {
 
     private byte[] writeTestExcel() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .write(Stream.of(new Item("A", 10), new Item("B", 20), new Item("C", 30)))
@@ -94,7 +94,7 @@ class MapReaderStreamTest {
     @Test
     void readAsStream_emptyData_shouldReturnEmptyStream() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .write(Stream.empty())
                 .write(out);
@@ -173,7 +173,7 @@ class MapReaderStreamTest {
     void readAsStream_multipleColumns_shouldMapCorrectly() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         record Multi(String a, String b, String c) {}
-        ExcelWriter.<Multi>builder().build()
+        ExcelWriter.<Multi>create()
                 .column("Col1", Multi::a)
                 .column("Col2", Multi::b)
                 .column("Col3", Multi::c)

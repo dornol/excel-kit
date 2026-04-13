@@ -65,7 +65,7 @@ class NewFeaturesV014Test {
         void excelHandler_toFile_writesValidXlsx(@TempDir Path tempDir) throws IOException {
             Path target = tempDir.resolve("output.xlsx");
 
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice", "Bob"))
                     .toFile(target);
@@ -100,7 +100,7 @@ class NewFeaturesV014Test {
         @Test
         @DisplayName("Calling toFile() twice on ExcelHandler throws (one-shot contract)")
         void excelHandler_toFile_twice_throws(@TempDir Path tempDir) throws IOException {
-            FileHandler handler = ExcelWriter.<String>builder().build()
+            FileHandler handler = ExcelWriter.<String>create()
                     .column("Name", s -> s)
                     .write(Stream.of("Alice"));
 
@@ -128,14 +128,14 @@ class NewFeaturesV014Test {
         void excelHandler_toFile_matchesWriteOutput(@TempDir Path tempDir) throws IOException {
             // Write via OutputStream
             var out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
                     .write(out);
 
             // Write via toFile
             Path target = tempDir.resolve("out.xlsx");
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("X"))
                     .toFile(target);
@@ -174,7 +174,7 @@ class NewFeaturesV014Test {
         @Test
         @DisplayName("Calling write() after toFile() throws (one-shot)")
         void writeAfterToFile_throws(@TempDir Path tempDir) throws IOException {
-            FileHandler handler = ExcelWriter.<String>builder().build()
+            FileHandler handler = ExcelWriter.<String>create()
                     .column("A", s -> s)
                     .write(Stream.of("x"));
 
@@ -187,7 +187,7 @@ class NewFeaturesV014Test {
         @Test
         @DisplayName("Calling toFile() after write() throws (one-shot)")
         void toFileAfterWrite_throws(@TempDir Path tempDir) throws IOException {
-            FileHandler handler = ExcelWriter.<String>builder().build()
+            FileHandler handler = ExcelWriter.<String>create()
                     .column("A", s -> s)
                     .write(Stream.of("x"));
 
@@ -208,7 +208,7 @@ class NewFeaturesV014Test {
 
         private byte[] writeEncryptedExcel(String password) throws IOException {
             var out = new ByteArrayOutputStream();
-            ExcelWriter.<User>builder().build()
+            ExcelWriter.<User>create()
                     .password(password)
                     .column("Name", u -> u.name)
                     .column("Age", u -> u.age)
@@ -272,7 +272,7 @@ class NewFeaturesV014Test {
         void passwordOnNonEncryptedFile_throws() throws IOException {
             // Write a plain (non-encrypted) Excel file
             var out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Val", s -> s)
                     .write(Stream.of("hello"))
                     .write(out);
@@ -359,7 +359,7 @@ class NewFeaturesV014Test {
         void excelReader_setter_worksLikeConstructor() throws IOException {
             // Write test data
             var out = new ByteArrayOutputStream();
-            ExcelWriter.<User>builder().build()
+            ExcelWriter.<User>create()
                     .column("Name", u -> u.name)
                     .column("Age", u -> u.age)
                     .write(Stream.of(makeUser("Alice", 30)))
@@ -418,7 +418,7 @@ class NewFeaturesV014Test {
         @DisplayName("ExcelReader.setter() supports name-based columns")
         void excelReader_setter_withNamedColumns() throws IOException {
             var out = new ByteArrayOutputStream();
-            ExcelWriter.<User>builder().build()
+            ExcelWriter.<User>create()
                     .column("Name", u -> u.name)
                     .column("Age", u -> u.age)
                     .write(Stream.of(makeUser("Bob", 42)))
@@ -449,7 +449,7 @@ class NewFeaturesV014Test {
         @DisplayName("ExcelReader(Supplier) works same as passing null validator")
         void excelReader_noValidatorConstructor() throws IOException {
             var out = new ByteArrayOutputStream();
-            ExcelWriter.<User>builder().build()
+            ExcelWriter.<User>create()
                     .column("Name", u -> u.name)
                     .write(Stream.of(makeUser("Alice", 30)))
                     .write(out);

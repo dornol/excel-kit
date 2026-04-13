@@ -65,7 +65,7 @@ public class ExcelKitSchema<T> {
      * @return A configured ExcelWriter instance
      */
     public ExcelWriter<T> excelWriter() {
-        ExcelWriter<T> writer = ExcelWriter.<T>builder().build();
+        ExcelWriter<T> writer = ExcelWriter.<T>create();
         for (SchemaColumn<T> col : columns) {
             if (col.writeConfigurer() != null) {
                 writer.column(col.name(), col.writeFunction(), col.writeConfigurer());

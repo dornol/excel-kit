@@ -22,7 +22,7 @@ class FormulaInjectionTest {
     @Test
     void normalFormula_shouldWork() throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Val", s -> "100")
                 .column("Calc", s -> "SUM(A2:A2)", c -> c.type(ExcelDataType.FORMULA))
                 .write(Stream.of("test"))
@@ -40,7 +40,7 @@ class FormulaInjectionTest {
         // POI accepts DDE formulas — this is by design (Bloomberg, Reuters use cases).
         // Security is the developer's responsibility per javadoc warning.
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Calc", s -> s, c -> c.type(ExcelDataType.FORMULA))
                 .write(Stream.of("cmd|'/c calc'"))
                 .write(bos);

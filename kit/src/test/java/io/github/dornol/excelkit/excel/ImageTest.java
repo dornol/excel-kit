@@ -31,7 +31,7 @@ class ImageTest {
     @Test
     void image_shouldEmbedInExcel() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s)
                 .column("Photo", s -> ExcelImage.png(TINY_PNG), c -> c.type(ExcelDataType.IMAGE))
                 .write(Stream.of("Alice"))
@@ -75,7 +75,7 @@ class ImageTest {
     @Test
     void image_nonImageValue_shouldFallbackToString() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Data", s -> s, c -> c.type(ExcelDataType.IMAGE))
                 .write(Stream.of("not-an-image"))
                 .write(out);

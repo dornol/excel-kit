@@ -5,7 +5,7 @@
 ## Multi-Sheet Workbook
 
 ```java
-try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
+try (var wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
     wb.headerFontName("Arial").headerFontSize(12);
 
     wb.<User>sheet("Users")
@@ -28,7 +28,7 @@ try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
 
 ```java
 // ExcelWriter: auto-split at 500K rows
-ExcelWriter.<Product>builder().build()
+ExcelWriter.<Product>create()
     .maxRows(500_000)
     .column("Name", Product::name)
     .write(millionRows);  // creates "Sheet", "Sheet (2)", etc.
@@ -145,7 +145,7 @@ writer.protectWorkbook("password123");  // prevent add/delete/rename sheets
 ## Password Encryption
 
 ```java
-ExcelWriter.<>builder().build().password("secret").column(...).write(data).write(out);
+ExcelWriter.create().password("secret").column(...).write(data).write(out);
 // Or: handler.consumeOutputStreamWithPassword(out, "secret");
 ```
 

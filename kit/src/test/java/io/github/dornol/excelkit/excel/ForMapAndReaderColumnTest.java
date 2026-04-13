@@ -200,7 +200,7 @@ class ForMapAndReaderColumnTest {
         void excelReader_chainReturnsReader() throws IOException {
             // Write a test file
             var out = new ByteArrayOutputStream();
-            ExcelWriter.<Person>builder().build()
+            ExcelWriter.<Person>create()
                     .column("Name", p -> p.name)
                     .column("Age", p -> p.age)
                     .column("City", p -> p.city)
@@ -231,7 +231,7 @@ class ForMapAndReaderColumnTest {
             // Header: Name, Age, City, Note
             var out = new ByteArrayOutputStream();
             String[] row = {"Alice", "30", "Seoul", "SKIP"};
-            ExcelWriter.<String[]>builder().build()
+            ExcelWriter.<String[]>create()
                     .column("Name", a -> a[0])
                     .column("Age", a -> a[1])
                     .column("City", a -> a[2])

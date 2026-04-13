@@ -51,7 +51,7 @@ public interface FileHandler {
      * The one-shot contract applies — this method can only be called once.
      *
      * <pre>{@code
-     * ExcelWriter.<User>builder().build()
+     * ExcelWriter.<User>create()
      *     .column("Name", User::getName)
      *     .write(stream)
      *     .toFile(Path.of("users.xlsx"));

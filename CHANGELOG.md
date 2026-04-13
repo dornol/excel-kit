@@ -2,6 +2,71 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.4] - 2026-04-13
+
+### Changed (Breaking)
+
+- **`ExcelWriter.builder()` / `ExcelWorkbook.builder()` removed** — use
+  `ExcelWriter.create()` / `ExcelWriter.create(opts -> ...)` and
+  `ExcelWorkbook.create()` / `ExcelWorkbook.create(opts -> ...)` instead.
+  The two-step `builder().xxx.build()` pattern was awkward because most
+  configuration (columns, filters, callbacks, etc.) was already a fluent chain
+  on the writer itself — `build()` served no real boundary.
+- **`InitOptions` is now scoped to what POI forces at construction time.** Only
+  `rowAccessWindowSize` remains in `InitOptions` (SXSSFWorkbook's constructor
+  argument — cannot be changed after the workbook is created). The former
+  `color` and `maxRows` builder methods are now fluent setters on the
+  writer/workbook itself.
+- **`color()` renamed to `headerColor()`** on both `ExcelWriter` and
+  `ExcelWorkbook`, for consistency with the existing `tabColor()` and
+  `rowColor()` methods and to make the target of the color unambiguous.
+- **`ExcelWriter.forMap(Builder, String...)` → `forMap(Consumer<InitOptions>, String...)`.**
+  Header color / max rows for a map writer are now set via fluent
+  `.headerColor()` / `.maxRows()` on the returned writer.
+
+Migration:
+
+```java
+// Before
+ExcelWriter.<User>builder()
+    .color(ExcelColor.STEEL_BLUE)
+    .maxRows(500_000)
+    .rowAccessWindowSize(500)
+    .build()
+    .column("Name", User::name)
+    .write(stream);
+
+// After
+ExcelWriter.<User>create(opts -> opts.rowAccessWindowSize(500))
+    .headerColor(ExcelColor.STEEL_BLUE)
+    .maxRows(500_000)
+    .column("Name", User::name)
+    .write(stream);
+
+// Or, when the default row window (1000) is fine — the common case:
+ExcelWriter.<User>create()
+    .headerColor(ExcelColor.STEEL_BLUE)
+    .maxRows(500_000)
+    .column("Name", User::name)
+    .write(stream);
+```
+
+### Added
+
+- **`ExcelWriter.headerColor(ExcelColor)` / `ExcelWorkbook.headerColor(ExcelColor)`**
+  fluent setters (rebuild header style, preserving already-configured font
+  settings).
+- **`ExcelWriter.maxRows(int)`** fluent setter.
+
+### Tests
+
+- Strengthened header-color tests to verify exact RGB values instead of merely
+  asserting "some fill color is present" (which passed even for the default
+  white header).
+- Added regression tests for the new `headerColor()` setter composition with
+  `headerFontName/Size` (ensures font settings survive the internal
+  `headerStyle` rebuild).
+
 ## [0.16.3] - 2026-04-12
 
 ### Fixed
@@ -236,7 +301,7 @@ writer.write(stream, (WriteRowCallback<User>) (row, cursor) -> log(row));
 // Before
 new ExcelWorkbook(ExcelColor.STEEL_BLUE)
 // After
-ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()
+ExcelWorkbook.create(opts -> opts.color(ExcelColor.STEEL_BLUE))
 
 // ─── Reader setter mode ───
 // Before
@@ -395,8 +460,8 @@ new ExcelWriter<User>()
 new ExcelWriter<User>(ExcelColor.STEEL_BLUE)
 new ExcelWriter<User>(ExcelColor.STEEL_BLUE, 500_000, 500)
 // After
-ExcelWriter.<User>builder().build()
-ExcelWriter.<User>builder().color(ExcelColor.STEEL_BLUE).build()
+ExcelWriter.<User>create()
+ExcelWriter.<User>create(opts -> opts.color(ExcelColor.STEEL_BLUE))
 ExcelWriter.<User>builder()
     .color(ExcelColor.STEEL_BLUE).maxRows(500_000).rowAccessWindowSize(500).build()
 

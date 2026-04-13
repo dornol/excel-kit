@@ -148,7 +148,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_format_shouldApplyCustomFormat() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
+        ExcelWorkbook workbook = ExcelWorkbook.create();
 
         workbook.<Integer>sheet("Data")
                 .column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER).format("#,##0.00"))
@@ -168,7 +168,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_alignment_shouldApplyAlignment() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
+        ExcelWorkbook workbook = ExcelWorkbook.create();
 
         workbook.<String>sheet("Data")
                 .column("Left", s -> s, c -> c.alignment(HorizontalAlignment.LEFT))
@@ -189,7 +189,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_bold_shouldApplyBoldFont() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
+        ExcelWorkbook workbook = ExcelWorkbook.create();
 
         workbook.<String>sheet("Data")
                 .column("Bold", s -> s, c -> c.bold(true))
@@ -212,7 +212,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_fontSize_shouldApplyFontSize() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
+        ExcelWorkbook workbook = ExcelWorkbook.create();
 
         workbook.<String>sheet("Data")
                 .column("Big", s -> s, c -> c.fontSize(18))
@@ -238,7 +238,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_width_shouldSetFixedWidth() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
+        ExcelWorkbook workbook = ExcelWorkbook.create();
 
         workbook.<String>sheet("Data")
                 .column("Fixed", s -> s, c -> c.width(30))
@@ -254,7 +254,7 @@ class CoverageBoostTest {
     @Test
     void columnConfig_minWidth_maxWidth_shouldWrite() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWorkbook workbook = ExcelWorkbook.builder().build();
+        ExcelWorkbook workbook = ExcelWorkbook.create();
 
         workbook.<String>sheet("Data")
                 .column("Bounded", s -> s, c -> c.minWidth(10).maxWidth(50))
@@ -455,7 +455,7 @@ class CoverageBoostTest {
     void excelDataType_TIME_writeAndReadBack() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        ExcelWriter.<LocalTime>builder().build()
+        ExcelWriter.<LocalTime>create()
                 .column("Time", t -> t, cfg -> cfg.type(ExcelDataType.TIME))
                 .write(Stream.of(LocalTime.of(14, 30, 15)))
                 .write(out);
@@ -474,7 +474,7 @@ class CoverageBoostTest {
     void excelDataType_FLOAT_writeAndReadBack() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        ExcelWriter.<Float>builder().build()
+        ExcelWriter.<Float>create()
                 .column("Float", f -> f, cfg -> cfg.type(ExcelDataType.FLOAT))
                 .write(Stream.of(3.14f))
                 .write(out);
@@ -493,7 +493,7 @@ class CoverageBoostTest {
     void excelDataType_FLOAT_PERCENT_writeAndReadBack() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        ExcelWriter.<Float>builder().build()
+        ExcelWriter.<Float>create()
                 .column("Pct", f -> f, cfg -> cfg.type(ExcelDataType.FLOAT_PERCENT))
                 .write(Stream.of(0.25f))
                 .write(out);
@@ -512,7 +512,7 @@ class CoverageBoostTest {
     void excelDataType_BIG_DECIMAL_TO_DOUBLE_writeAndReadBack() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        ExcelWriter.<BigDecimal>builder().build()
+        ExcelWriter.<BigDecimal>create()
                 .column("BD", bd -> bd, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_DOUBLE))
                 .write(Stream.of(new BigDecimal("123.45")))
                 .write(out);
@@ -531,7 +531,7 @@ class CoverageBoostTest {
     void excelDataType_BIG_DECIMAL_TO_LONG_writeAndReadBack() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        ExcelWriter.<BigDecimal>builder().build()
+        ExcelWriter.<BigDecimal>create()
                 .column("BD", bd -> bd, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_LONG))
                 .write(Stream.of(new BigDecimal("99999")))
                 .write(out);
@@ -550,7 +550,7 @@ class CoverageBoostTest {
     void excelDataType_BOOLEAN_TO_YN_writeAndReadBack() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        ExcelWriter.<Boolean>builder().build()
+        ExcelWriter.<Boolean>create()
                 .column("Flag", b -> b, cfg -> cfg.type(ExcelDataType.BOOLEAN_TO_YN))
                 .write(Stream.of(true, false))
                 .write(out);
@@ -584,7 +584,7 @@ class CoverageBoostTest {
     void excelHyperlink_singleArg_writeAndReadBack() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Link", url -> new ExcelHyperlink(url), cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(Stream.of("https://example.com"))
                 .write(out);

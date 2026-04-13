@@ -39,7 +39,7 @@ The following files are located in `META-INF/excel-kit/` within this JAR:
 
 `ExcelWriter<T>` (single-type, auto-rollover):
 ```java
-ExcelWriter.<Person>builder().build()
+ExcelWriter.<Person>create()
     .column("Name", Person::name)
     .column("Age", Person::age, cfg -> cfg.type(ExcelDataType.INTEGER))
     .write(stream)
@@ -48,7 +48,7 @@ ExcelWriter.<Person>builder().build()
 
 `ExcelWorkbook` (multi-sheet, different types per sheet):
 ```java
-try (var wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
+try (var wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
     wb.<User>sheet("Users").column("Name", User::getName).write(userStream);
     wb.<Order>sheet("Orders").column("ID", Order::getId).write(orderStream);
     wb.finish().write(out);

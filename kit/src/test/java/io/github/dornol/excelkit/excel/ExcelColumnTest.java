@@ -220,7 +220,7 @@ class ExcelColumnTest {
     @Test
     void excelColumnBuilder_shouldBuildColumnWithDefaultValues() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         String name = "Test Column";
         Function<String, Object> func = data -> data;
 
@@ -239,7 +239,7 @@ class ExcelColumnTest {
     @Test
     void excelColumnBuilder_shouldSetTypeAndFormat() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         String name = "Test Column";
         Function<String, Object> func = data -> data;
 
@@ -257,7 +257,7 @@ class ExcelColumnTest {
     @Test
     void excelColumnBuilder_shouldSetAlignment() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         String name = "Test Column";
         Function<String, Object> func = data -> data;
 
@@ -274,7 +274,7 @@ class ExcelColumnTest {
     @Test
     void excelColumnBuilder_shouldSetCustomStyle() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         String name = "Test Column";
         Function<String, Object> func = data -> data;
         CellStyle customStyle = workbook.createCellStyle();
@@ -293,7 +293,7 @@ class ExcelColumnTest {
     @Test
     void builder_shouldApplyBackgroundColor() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
 
         // Act
         ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
@@ -309,7 +309,7 @@ class ExcelColumnTest {
     @Test
     void builder_shouldApplyBoldFont() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
 
         // Act
         ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
@@ -325,7 +325,7 @@ class ExcelColumnTest {
     @Test
     void builder_shouldApplyFontSize() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
 
         // Act
         ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
@@ -341,7 +341,7 @@ class ExcelColumnTest {
     @Test
     void fontSizeShouldThrowForNonPositive() {
         // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
 
         // Act & Assert
         ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r);

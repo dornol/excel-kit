@@ -29,7 +29,7 @@ class NewFeaturesTest {
     void progress_shouldFireAtCorrectIntervals() {
         List<Long> progressCounts = new ArrayList<>();
 
-        ExcelWriter.<Integer>builder().build()
+        ExcelWriter.<Integer>create()
                 .column("Value", i -> i, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .onProgress(3, (count, cursor) -> progressCounts.add(count))
                 .write(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
@@ -42,7 +42,7 @@ class NewFeaturesTest {
     void progress_shouldNotFireWhenIntervalNotReached() {
         List<Long> progressCounts = new ArrayList<>();
 
-        ExcelWriter.<Integer>builder().build()
+        ExcelWriter.<Integer>create()
                 .column("Value", i -> i, cfg -> cfg.type(ExcelDataType.INTEGER))
                 .onProgress(100, (count, cursor) -> progressCounts.add(count))
                 .write(Stream.of(1, 2, 3));
@@ -54,7 +54,7 @@ class NewFeaturesTest {
     void progress_shouldWorkInExcelSheetWriter() {
         List<Long> progressCounts = new ArrayList<>();
 
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Test")
                     .column("Value", i -> i)
                     .onProgress(2, (count, cursor) -> progressCounts.add(count))
@@ -69,7 +69,7 @@ class NewFeaturesTest {
     void progress_shouldWorkWithColumnBuilderChain() {
         AtomicInteger callCount = new AtomicInteger();
 
-        ExcelWriter.<Integer>builder().build()
+        ExcelWriter.<Integer>create()
                 .column("A", i -> i)
                 .column("B", i -> i * 2)
                 .onProgress(5, (count, cursor) -> callCount.incrementAndGet())
@@ -84,7 +84,7 @@ class NewFeaturesTest {
     @Test
     void cellColor_shouldApplyPerCellColor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Integer>builder().build()
+        ExcelWriter.<Integer>create()
                 .column("Value", i -> i, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
                     .cellColor((value, row) -> {
@@ -114,7 +114,7 @@ class NewFeaturesTest {
     @Test
     void cellColor_shouldOverrideRowColor() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Integer>builder().build()
+        ExcelWriter.<Integer>create()
                 .rowColor(i -> ExcelColor.LIGHT_YELLOW) // all rows yellow
                 .column("Value", i -> i, cfg -> cfg
                     .type(ExcelDataType.INTEGER)
@@ -140,7 +140,7 @@ class NewFeaturesTest {
     @Test
     void cellColor_shouldWorkInExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Test")
                     .column("Value", i -> i, c -> c
                             .type(ExcelDataType.INTEGER)
@@ -167,7 +167,7 @@ class NewFeaturesTest {
     @Test
     void rollover_shouldCreateMultipleSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Data")
                     .maxRows(3)
                     .column("Value", i -> i)
@@ -191,7 +191,7 @@ class NewFeaturesTest {
     @Test
     void rollover_shouldUseCustomSheetNameFunction() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Orders")
                     .maxRows(2)
                     .sheetName(idx -> "Orders-Page" + (idx + 1))
@@ -211,7 +211,7 @@ class NewFeaturesTest {
     @Test
     void rollover_withoutMaxRows_shouldWriteToSingleSheet() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Single")
                     .column("Value", i -> i)
                     .write(Stream.of(1, 2, 3, 4, 5));
@@ -227,7 +227,7 @@ class NewFeaturesTest {
     @Test
     void rollover_shouldNotConflictWithOtherSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("A")
                     .maxRows(2)
                     .column("Value", i -> i)
@@ -254,7 +254,7 @@ class NewFeaturesTest {
     @Test
     void groupHeader_shouldCreateMergedGroupRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<int[]>builder().build()
+        ExcelWriter.<int[]>create()
                 .column("Name", r -> "Item")
                 .column("Price", r -> r[0], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
                 .column("Qty", r -> r[1], cfg -> cfg.type(ExcelDataType.INTEGER).group("Financial"))
@@ -299,7 +299,7 @@ class NewFeaturesTest {
     @Test
     void groupHeader_withNoGroups_shouldCreateSingleHeaderRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("A", s -> s)
                 .column("B", s -> s)
                 .write(Stream.of("test"))
@@ -315,7 +315,7 @@ class NewFeaturesTest {
     @Test
     void groupHeader_shouldWorkInExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<int[]>sheet("Test")
                     .column("Name", r -> "Item")
                     .column("Price", r -> r[0], c -> c.type(ExcelDataType.INTEGER).group("Financial"))

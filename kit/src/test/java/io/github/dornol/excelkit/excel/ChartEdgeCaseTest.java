@@ -36,7 +36,7 @@ class ChartEdgeCaseTest {
     @Test
     void scatterChart_withDataLabels_shouldBeCreated() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("X", i -> i.value, c -> c.type(ExcelDataType.DOUBLE))
                 .column("Y", i -> i.score, c -> c.type(ExcelDataType.DOUBLE))
                 .chart(chart -> chart
@@ -61,7 +61,7 @@ class ChartEdgeCaseTest {
     @Test
     void scatterChart_withoutAxisTitles_shouldHaveNoAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("X", i -> i.value, c -> c.type(ExcelDataType.DOUBLE))
                 .column("Y", i -> i.score, c -> c.type(ExcelDataType.DOUBLE))
                 .chart(chart -> chart
@@ -88,7 +88,7 @@ class ChartEdgeCaseTest {
     @Test
     void areaChart_withDataLabels_shouldBeCreated() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -110,7 +110,7 @@ class ChartEdgeCaseTest {
     @Test
     void areaChart_withoutAxisTitles_shouldHaveNoAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -135,7 +135,7 @@ class ChartEdgeCaseTest {
     @Test
     void doughnutChart_withDataLabels_shouldBeCreated() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -158,7 +158,7 @@ class ChartEdgeCaseTest {
     @Test
     void chart_withoutTitle_shouldNotHaveTitle() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -181,7 +181,7 @@ class ChartEdgeCaseTest {
     @EnumSource(ExcelChartConfig.LegendPosition.class)
     void chart_allLegendPositions(ExcelChartConfig.LegendPosition position) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -204,7 +204,7 @@ class ChartEdgeCaseTest {
     @Test
     void chart_withoutLegend_shouldNotHaveLegend() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -230,7 +230,7 @@ class ChartEdgeCaseTest {
         record Data(String name, int a, int b) {}
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Data>builder().build()
+        ExcelWriter.<Data>create()
                 .column("Name", Data::name)
                 .column("A", d -> d.a, c -> c.type(ExcelDataType.INTEGER))
                 .column("B", d -> d.b, c -> c.type(ExcelDataType.INTEGER))
@@ -254,7 +254,7 @@ class ChartEdgeCaseTest {
     @Test
     void barChart_showDataLabels() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -275,7 +275,7 @@ class ChartEdgeCaseTest {
     @Test
     void lineChart_showDataLabels() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -296,7 +296,7 @@ class ChartEdgeCaseTest {
     @Test
     void pieChart_showDataLabels() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -320,7 +320,7 @@ class ChartEdgeCaseTest {
     @Test
     void barChart_withoutAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -341,7 +341,7 @@ class ChartEdgeCaseTest {
     @Test
     void lineChart_withoutAxisTitles_shouldHaveNoAxisTitles() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart
@@ -367,7 +367,7 @@ class ChartEdgeCaseTest {
     @Test
     void chart_showDataLabelsFalse_noDataLabels() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>builder().build()
+        ExcelWriter.<Item>create()
                 .column("Name", Item::name)
                 .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                 .chart(chart -> chart

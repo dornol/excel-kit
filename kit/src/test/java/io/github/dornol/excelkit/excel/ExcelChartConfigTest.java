@@ -220,7 +220,7 @@ class ExcelChartConfigTest {
 
         @Test
         void barChart_viaExcelWriter_doesNotThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Name", s -> s);
             writer.column("Value", s -> s.length(), c -> c.type(ExcelDataType.INTEGER));
             writer.chart(c -> c
@@ -233,7 +233,7 @@ class ExcelChartConfigTest {
 
         @Test
         void lineChart_viaExcelWriter_doesNotThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("X", s -> s);
             writer.column("Y", s -> s.length(), c -> c.type(ExcelDataType.INTEGER));
             writer.chart(c -> c
@@ -245,7 +245,7 @@ class ExcelChartConfigTest {
 
         @Test
         void pieChart_viaExcelWriter_doesNotThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Category", s -> s);
             writer.column("Amount", s -> s.length(), c -> c.type(ExcelDataType.INTEGER));
             writer.chart(c -> c
@@ -257,7 +257,7 @@ class ExcelChartConfigTest {
 
         @Test
         void scatterChart_viaExcelWriter_doesNotThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("X", s -> (double) s.length(), c -> c.type(ExcelDataType.DOUBLE));
             writer.column("Y", s -> (double) s.hashCode(), c -> c.type(ExcelDataType.DOUBLE));
             writer.chart(c -> c
@@ -269,7 +269,7 @@ class ExcelChartConfigTest {
 
         @Test
         void areaChart_viaExcelWriter_doesNotThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Month", s -> s);
             writer.column("Sales", s -> s.length(), c -> c.type(ExcelDataType.INTEGER));
             writer.chart(c -> c
@@ -281,7 +281,7 @@ class ExcelChartConfigTest {
 
         @Test
         void doughnutChart_viaExcelWriter_doesNotThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Type", s -> s);
             writer.column("Count", s -> s.length(), c -> c.type(ExcelDataType.INTEGER));
             writer.chart(c -> c

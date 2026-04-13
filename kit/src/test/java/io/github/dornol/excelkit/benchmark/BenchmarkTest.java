@@ -50,7 +50,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelHandler handler = ExcelWriter.<int[]>builder().build()
+        ExcelHandler handler = ExcelWriter.<int[]>create()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                 .column("Name", r -> "User-" + r[0])
                 .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -78,7 +78,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelHandler handler = ExcelWriter.<int[]>builder().build()
+        ExcelHandler handler = ExcelWriter.<int[]>create()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                 .column("Name", r -> "User-" + r[0])
                 .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -107,7 +107,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelWriter<int[]> writer = ExcelWriter.<int[]>builder().build();
+        ExcelWriter<int[]> writer = ExcelWriter.<int[]>create();
         for (int i = 0; i < cols; i++) {
             final int idx = i;
             writer.column("Col" + i, r -> r[idx % r.length], c -> c.type(ExcelDataType.INTEGER));
@@ -135,7 +135,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        ExcelHandler handler = ExcelWriter.<int[]>builder().maxRows(rowsPerSheet).build()
+        ExcelHandler handler = ExcelWriter.<int[]>create().maxRows(rowsPerSheet)
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                 .column("Name", r -> "User-" + r[0])
                 .column("Value", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -161,7 +161,7 @@ class BenchmarkTest {
         long startMem = usedMemoryMB();
         long startTime = System.currentTimeMillis();
 
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
             wb.<int[]>sheet("Numbers")
                     .column("ID", r -> r[0])
                     .column("Value", r -> r[1])
@@ -257,7 +257,7 @@ class BenchmarkTest {
 
         // Write test file
         try (OutputStream os = Files.newOutputStream(file)) {
-            ExcelWriter.<int[]>builder().build()
+            ExcelWriter.<int[]>create()
                     .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))
@@ -286,7 +286,7 @@ class BenchmarkTest {
         Path file = tempDir.resolve("read_typed_100k.xlsx");
 
         try (OutputStream os = Files.newOutputStream(file)) {
-            ExcelWriter.<int[]>builder().build()
+            ExcelWriter.<int[]>create()
                     .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
                     .column("Name", r -> "User-" + r[0])
                     .column("Score", r -> r[1], c -> c.type(ExcelDataType.DOUBLE))

@@ -32,7 +32,7 @@ class FileHandlerTest {
     @Test
     @DisplayName("ExcelHandler is assignable to FileHandler")
     void excelHandler_isFileHandler() {
-        FileHandler handler = ExcelWriter.<String>builder().build()
+        FileHandler handler = ExcelWriter.<String>create()
                 .column("A", s -> s)
                 .write(Stream.of("x"));
         assertNotNull(handler);
@@ -52,7 +52,7 @@ class FileHandlerTest {
     @Test
     @DisplayName("FileHandler.write produces valid Excel bytes when the concrete type is ExcelHandler")
     void write_viaInterface_producesExcelBytes() throws IOException {
-        FileHandler handler = ExcelWriter.<String>builder().color(ExcelColor.STEEL_BLUE).build()
+        FileHandler handler = ExcelWriter.<String>create().headerColor(ExcelColor.STEEL_BLUE)
                 .column("Name", s -> s)
                 .write(Stream.of("Alice", "Bob"));
 
@@ -90,7 +90,7 @@ class FileHandlerTest {
     void polymorphicConsumer_writesEitherFormat() throws IOException {
         // Simulate what a Spring controller would do: receive a FileHandler and hand
         // it off to a lambda. This is exactly the use case the interface was introduced for.
-        FileHandler excelH = ExcelWriter.<String>builder().build()
+        FileHandler excelH = ExcelWriter.<String>create()
                 .column("A", s -> s)
                 .write(Stream.of("excel-payload"));
         FileHandler csvH = new CsvWriter<String>()
@@ -120,7 +120,7 @@ class FileHandlerTest {
     @Test
     @DisplayName("FileHandler interface is accepted as OutputStream target via method reference")
     void methodReference_asConsumer() throws IOException {
-        FileHandler handler = ExcelWriter.<String>builder().build()
+        FileHandler handler = ExcelWriter.<String>create()
                 .column("A", s -> s)
                 .write(Stream.of("x"));
 

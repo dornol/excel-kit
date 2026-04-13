@@ -35,7 +35,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_positive45_appliesCorrectly() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Rotated", s -> s, c -> c.rotation(45))
                     .write(Stream.of("test"))
                     .write(out);
@@ -49,7 +49,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_negative45_convertsToPOIFormat() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Rotated", s -> s, c -> c.rotation(-45))
                     .write(Stream.of("test"))
                     .write(out);
@@ -64,7 +64,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_zero_noRotation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("NoRotation", s -> s, c -> c.rotation(0))
                     .write(Stream.of("test"))
                     .write(out);
@@ -78,7 +78,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_90_vertical() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Vertical", s -> s, c -> c.rotation(90))
                     .write(Stream.of("test"))
                     .write(out);
@@ -92,7 +92,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_negative90_vertical() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Vertical", s -> s, c -> c.rotation(-90))
                     .write(Stream.of("test"))
                     .write(out);
@@ -106,7 +106,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_negative1_conversionBoundary() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("BoundaryNeg", s -> s, c -> c.rotation(-1))
                     .write(Stream.of("test"))
                     .write(out);
@@ -120,7 +120,7 @@ class NewFeaturesV08Test {
 
         @Test
         void rotation_outOfRange_throws() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             assertThrows(IllegalArgumentException.class, () ->
                     writer.column("Col", s -> s, c -> c.rotation(91)),
                     "Rotation 91 should throw IllegalArgumentException");
@@ -132,7 +132,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_viaAddColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Rotated", s -> s, c -> c.rotation(60))
                     .write(Stream.of("test"))
                     .write(out);
@@ -146,7 +146,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("Test")
                         .column("Rotated", s -> s, c -> c.rotation(30))
                         .write(Stream.of("test"));
@@ -169,7 +169,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_withOtherStyling() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("StyledRotated", s -> s, c -> c
                         .rotation(45)
                         .bold(true)
@@ -188,7 +188,7 @@ class NewFeaturesV08Test {
         @Test
         void rotation_multipleColumns_differentAngles() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Col1", s -> s, c -> c.rotation(0))
                     .column("Col2", s -> s, c -> c.rotation(45))
                     .column("Col3", s -> s, c -> c.rotation(-45))
@@ -213,7 +213,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_allDifferentStyles() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Borders", s -> s, c -> c
                         .borderTop(ExcelBorderStyle.THICK)
                         .borderBottom(ExcelBorderStyle.THIN)
@@ -234,7 +234,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_partialOverride_uniformFallback() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Borders", s -> s, c -> c
                         .border(ExcelBorderStyle.MEDIUM)
                         .borderTop(ExcelBorderStyle.THICK))
@@ -253,7 +253,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_noUniform_defaultThin() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Borders", s -> s, c -> c
                         .borderTop(ExcelBorderStyle.DOUBLE))
                     .write(Stream.of("test"))
@@ -271,7 +271,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_noneOnSomeSides() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Borders", s -> s, c -> c
                         .borderTop(ExcelBorderStyle.NONE)
                         .borderBottom(ExcelBorderStyle.NONE)
@@ -292,7 +292,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_viaAddColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Col", s -> s, c -> c
                             .borderTop(ExcelBorderStyle.MEDIUM)
                             .borderBottom(ExcelBorderStyle.DASHED))
@@ -309,7 +309,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("Test")
                         .column("Col", s -> s, c -> c
                                 .borderTop(ExcelBorderStyle.DOUBLE)
@@ -330,7 +330,7 @@ class NewFeaturesV08Test {
         @Test
         void perSideBorders_multipleColumns_mixedStyles() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("A", s -> s, c -> c
                         .borderTop(ExcelBorderStyle.THICK))
                     .column("B", s -> s, c -> c
@@ -361,7 +361,7 @@ class NewFeaturesV08Test {
         @Test
         void groupRows_basic() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Data", s -> s)
                     .afterData(ctx -> {
                         ctx.groupRows(1, 3);
@@ -383,7 +383,7 @@ class NewFeaturesV08Test {
         @Test
         void groupRows_collapsed() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Data", s -> s)
                     .afterData(ctx -> {
                         ctx.groupRows(1, 3, true);
@@ -403,7 +403,7 @@ class NewFeaturesV08Test {
         @Test
         void groupRows_multipleGroups() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Data", s -> s)
                     .afterData(ctx -> {
                         ctx.groupRows(1, 2);
@@ -426,7 +426,7 @@ class NewFeaturesV08Test {
         @Test
         void groupRows_chainingReturnsContext() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Data", s -> s)
                     .afterData(ctx -> {
                         // Verify chaining works
@@ -445,7 +445,7 @@ class NewFeaturesV08Test {
         @Test
         void groupRows_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("Test")
                         .column("Data", s -> s)
                         .afterData(ctx -> {
@@ -474,7 +474,7 @@ class NewFeaturesV08Test {
         @Test
         void integerBetween_appliesValidation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Score", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(1, 100)))
                     .write(Stream.of("50"))
@@ -489,7 +489,7 @@ class NewFeaturesV08Test {
         @Test
         void decimalBetween_appliesValidation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("GPA", s -> s, c -> c
                         .validation(ExcelValidation.decimalBetween(0.0, 4.0)))
                     .write(Stream.of("3.5"))
@@ -504,7 +504,7 @@ class NewFeaturesV08Test {
         @Test
         void textLength_appliesValidation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Name", s -> s, c -> c
                         .validation(ExcelValidation.textLength(1, 50)))
                     .write(Stream.of("John"))
@@ -519,7 +519,7 @@ class NewFeaturesV08Test {
         @Test
         void formula_appliesValidation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Value", s -> s, c -> c
                         .validation(ExcelValidation.formula("AND(A2>0,A2<100)")))
                     .write(Stream.of("50"))
@@ -534,7 +534,7 @@ class NewFeaturesV08Test {
         @Test
         void integerGreaterThan_appliesValidation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Qty", s -> s, c -> c
                         .validation(ExcelValidation.integerGreaterThan(0)))
                     .write(Stream.of("5"))
@@ -549,7 +549,7 @@ class NewFeaturesV08Test {
         @Test
         void integerLessThan_appliesValidation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Val", s -> s, c -> c
                         .validation(ExcelValidation.integerLessThan(1000)))
                     .write(Stream.of("500"))
@@ -564,7 +564,7 @@ class NewFeaturesV08Test {
         @Test
         void dateRange_appliesValidation() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Date", s -> s, c -> c
                         .validation(ExcelValidation.dateRange(
                                 LocalDate.of(2024, 1, 1),
@@ -581,7 +581,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_withErrorMessage() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Age", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(0, 150)
                                 .errorTitle("Invalid Age")
@@ -598,7 +598,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_withOnlyErrorMessage() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Field", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(1, 10)
                                 .errorMessage("Must be 1–10")))
@@ -614,7 +614,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_showErrorDisabled() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Soft", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(1, 100).showError(false)))
                     .write(Stream.of("50"))
@@ -629,7 +629,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_viaAddColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Score", s -> s, c -> c
                             .validation(ExcelValidation.integerBetween(1, 100)))
                     .write(Stream.of("50"))
@@ -644,7 +644,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("Test")
                         .column("Score", s -> s, c -> c
                                 .validation(ExcelValidation.integerBetween(1, 100)))
@@ -661,7 +661,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_withDropdown_coexist() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Status", s -> s, c -> c
                         .dropdown("Active", "Inactive"))
                     .column("Score", s -> s, c -> c
@@ -678,7 +678,7 @@ class NewFeaturesV08Test {
         @Test
         void validation_multipleColumns() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Age", s -> s, c -> c
                         .validation(ExcelValidation.integerBetween(0, 150)))
                     .column("GPA", s -> s, c -> c
@@ -704,7 +704,7 @@ class NewFeaturesV08Test {
         @Test
         void fontColor_rgb_appliesCorrectly() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Colored", s -> s, c -> c.fontColor(255, 0, 0))
                     .write(Stream.of("red text"))
                     .write(out);
@@ -725,7 +725,7 @@ class NewFeaturesV08Test {
         @Test
         void fontColor_preset_appliesCorrectly() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Blue", s -> s, c -> c.fontColor(ExcelColor.BLUE))
                     .write(Stream.of("blue text"))
                     .write(out);
@@ -746,7 +746,7 @@ class NewFeaturesV08Test {
         @Test
         void fontColor_green_rgb() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Green", s -> s, c -> c.fontColor(0, 128, 0))
                     .write(Stream.of("green"))
                     .write(out);
@@ -764,7 +764,7 @@ class NewFeaturesV08Test {
         @Test
         void strikethrough_enabled() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Strike", s -> s, c -> c.strikethrough())
                     .write(Stream.of("struck out"))
                     .write(out);
@@ -778,7 +778,7 @@ class NewFeaturesV08Test {
         @Test
         void strikethrough_explicitTrue() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Strike", s -> s, c -> c.strikethrough(true))
                     .write(Stream.of("struck"))
                     .write(out);
@@ -792,7 +792,7 @@ class NewFeaturesV08Test {
         @Test
         void strikethrough_disabled() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("NoStrike", s -> s, c -> c.strikethrough(false))
                     .write(Stream.of("normal text"))
                     .write(out);
@@ -806,7 +806,7 @@ class NewFeaturesV08Test {
         @Test
         void underline_enabled() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Underlined", s -> s, c -> c.underline())
                     .write(Stream.of("underlined text"))
                     .write(out);
@@ -820,7 +820,7 @@ class NewFeaturesV08Test {
         @Test
         void underline_explicitTrue() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("UL", s -> s, c -> c.underline(true))
                     .write(Stream.of("test"))
                     .write(out);
@@ -834,7 +834,7 @@ class NewFeaturesV08Test {
         @Test
         void underline_disabled() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("NoUL", s -> s, c -> c.underline(false))
                     .write(Stream.of("test"))
                     .write(out);
@@ -848,7 +848,7 @@ class NewFeaturesV08Test {
         @Test
         void combined_allFontStyling() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Styled", s -> s, c -> c
                         .fontColor(255, 0, 0)
                         .bold(true)
@@ -872,7 +872,7 @@ class NewFeaturesV08Test {
         @Test
         void fontStyling_viaAddColumn() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Styled", s -> s, c -> c
                             .fontColor(ExcelColor.RED)
                             .strikethrough()
@@ -890,7 +890,7 @@ class NewFeaturesV08Test {
         @Test
         void fontStyling_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("Test")
                         .column("Colored", s -> s, c -> c
                                 .fontColor(0, 128, 0)
@@ -912,7 +912,7 @@ class NewFeaturesV08Test {
         @Test
         void fontColor_withBackgroundColor_bothApply() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Both", s -> s, c -> c
                         .fontColor(ExcelColor.RED)
                         .backgroundColor(ExcelColor.LIGHT_YELLOW))
@@ -930,7 +930,7 @@ class NewFeaturesV08Test {
         @Test
         void multipleColumns_differentFontStyles() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Red", s -> s, c -> c.fontColor(255, 0, 0))
                     .column("Strike", s -> s, c -> c.strikethrough())
                     .column("Under", s -> s, c -> c.underline())
@@ -962,7 +962,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_rgb_appliesCorrectly() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .tabColor(255, 0, 0)
                     .column("Data", s -> s)
                     .write(Stream.of("test"))
@@ -982,7 +982,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_preset_appliesCorrectly() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .tabColor(ExcelColor.BLUE)
                     .column("Data", s -> s)
                     .write(Stream.of("test"))
@@ -1002,7 +1002,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_noColor_tabColorIsNull() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .column("Data", s -> s)
                     .write(Stream.of("test"))
                     .write(out);
@@ -1016,7 +1016,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_multipleSheets_applied() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().maxRows(2).build()
+            ExcelWriter.<String>create().maxRows(2)
                     .tabColor(0, 255, 0)
                     .column("Data", s -> s)
                     .write(Stream.of("a", "b", "c"))
@@ -1034,7 +1034,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_viaSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("TabTest")
                         .tabColor(ExcelColor.RED)
                         .column("Data", s -> s)
@@ -1055,7 +1055,7 @@ class NewFeaturesV08Test {
         @Test
         void tabColor_differentPerSheet() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("Red")
                         .tabColor(ExcelColor.RED)
                         .column("Data", s -> s)
@@ -1094,7 +1094,7 @@ class NewFeaturesV08Test {
                     new Product("C", 150, 15.7)
             );
 
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Price", p -> p.price(), c -> c.type(ExcelDataType.DOUBLE))
                     .chart(chart -> chart
@@ -1126,7 +1126,7 @@ class NewFeaturesV08Test {
                     new Product("Q3", 150, 15.7)
             );
 
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Quarter", Product::name)
                     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                     .chart(chart -> chart
@@ -1157,7 +1157,7 @@ class NewFeaturesV08Test {
                     new Product("Tablet", 100, 0)
             );
 
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Category", Product::name)
                     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                     .chart(chart -> chart
@@ -1187,7 +1187,7 @@ class NewFeaturesV08Test {
                     new Product("Q2", 200, 20.3)
             );
 
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Quarter", Product::name)
                     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                     .chart(chart -> chart
@@ -1216,7 +1216,7 @@ class NewFeaturesV08Test {
                     new Product("B", 200, 20.3)
             );
 
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Price", p -> p.price(), c -> c.type(ExcelDataType.DOUBLE))
                     .chart(chart -> chart
@@ -1244,7 +1244,7 @@ class NewFeaturesV08Test {
                     new Product("B", 200, 20.3)
             );
 
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Price", p -> p.price(), c -> c.type(ExcelDataType.DOUBLE))
                     .column("Volume", p -> p.sales() * 2, c -> c.type(ExcelDataType.INTEGER))
@@ -1274,7 +1274,7 @@ class NewFeaturesV08Test {
                     new Product("Q2", 200, 20.3)
             );
 
-            ExcelWriter.<Product>builder().build()
+            ExcelWriter.<Product>create()
                     .column("Quarter", Product::name)
                     .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                     .column("Price", p -> p.price(), c -> c.type(ExcelDataType.DOUBLE))
@@ -1296,7 +1296,7 @@ class NewFeaturesV08Test {
         @Test
         void newChartTypes_inExcelWorkbook() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<Product>sheet("Scatter")
                         .column("Sales", p -> p.sales(), c -> c.type(ExcelDataType.INTEGER))
                         .column("Price", p -> p.price(), c -> c.type(ExcelDataType.DOUBLE))
@@ -1357,7 +1357,7 @@ class NewFeaturesV08Test {
         @Test
         void allNewFeatures_viaSheetWriter_combined() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().color(ExcelColor.STEEL_BLUE).build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
                 wb.<String>sheet("Styled")
                         .tabColor(ExcelColor.RED)
                         .column("Rotated", s -> s, c -> c
@@ -1420,7 +1420,7 @@ class NewFeaturesV08Test {
         @Test
         void sheetWriter_noConfig_defaultsWork() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 wb.<String>sheet("Default")
                         .column("Plain", s -> s)
                         .write(Stream.of("a", "b"));
@@ -1437,7 +1437,7 @@ class NewFeaturesV08Test {
         @Test
         void allNewFeatures_combined() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>builder().build()
+            ExcelWriter.<String>create()
                     .tabColor(ExcelColor.STEEL_BLUE)
                     .column("Rotated", s -> s, c -> c
                         .rotation(45)

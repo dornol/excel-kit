@@ -75,7 +75,7 @@ class V016ImprovementsTest {
 
         @Test
         void nullValue_throughColumnBuilder_shouldWork() throws IOException {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Name", s -> s, c -> c.nullValue("-"));
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -94,7 +94,7 @@ class V016ImprovementsTest {
 
         @Test
         void nullValue_throughDefaultStyle_shouldFallback() throws IOException {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.defaultStyle(d -> d.nullValue("DEFAULT"));
             writer.column("Col", s -> s);
 
@@ -112,7 +112,7 @@ class V016ImprovementsTest {
 
         @Test
         void nullValue_perColumn_overridesDefault() throws IOException {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.defaultStyle(d -> d.nullValue("DEFAULT"));
             writer.column("Col", s -> s, c -> c.nullValue("CUSTOM"));
 
@@ -130,7 +130,7 @@ class V016ImprovementsTest {
 
         @Test
         void nullValue_nonNullData_shouldUseActualData() throws IOException {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Name", s -> s, c -> c.nullValue("N/A"));
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -146,7 +146,7 @@ class V016ImprovementsTest {
 
         @Test
         void nullValue_withoutSetting_shouldWriteEmpty() throws IOException {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Name", s -> s);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -170,25 +170,25 @@ class V016ImprovementsTest {
 
         @Test
         void freezePane_colsAndRows_shouldNotThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             assertDoesNotThrow(() -> writer.freezePane(2, 1));
         }
 
         @Test
         void freezePane_negativeCol_shouldThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             assertThrows(IllegalArgumentException.class, () -> writer.freezePane(-1, 0));
         }
 
         @Test
         void freezePane_negativeRow_shouldThrow() {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             assertThrows(IllegalArgumentException.class, () -> writer.freezePane(0, -1));
         }
 
         @Test
         void freezePane_colsAndRows_shouldApplyToSheet() throws IOException {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("A", s -> s)
                     .column("B", s -> s)
                     .column("C", s -> s)
@@ -201,7 +201,7 @@ class V016ImprovementsTest {
 
         @Test
         void freezePane_singleArg_backwardsCompatible() throws IOException {
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("A", s -> s).freezePane(1);
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -211,7 +211,7 @@ class V016ImprovementsTest {
         @Test
         void freezePane_onExcelSheetWriter_shouldWork() throws IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWorkbook wb = ExcelWorkbook.builder().build();
+            ExcelWorkbook wb = ExcelWorkbook.create();
             ExcelSheetWriter<String> sw = wb.sheet("test");
             sw.column("Col", row -> row)
                     .freezePane(1, 1);
@@ -230,7 +230,7 @@ class V016ImprovementsTest {
         @Test
         void required_excelReader_emptyCell_shouldFail() throws Exception {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWriter<String[]> writer = ExcelWriter.<String[]>builder().build();
+            ExcelWriter<String[]> writer = ExcelWriter.<String[]>create();
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1]);
             writer.write(Stream.<String[]>of(new String[]{"", "30"})).write(bos);
@@ -251,7 +251,7 @@ class V016ImprovementsTest {
         @Test
         void required_excelReader_nonEmptyCell_shouldSucceed() throws Exception {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWriter<String[]> writer = ExcelWriter.<String[]>builder().build();
+            ExcelWriter<String[]> writer = ExcelWriter.<String[]>create();
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1]);
             writer.write(Stream.<String[]>of(new String[]{"Alice", "30"})).write(bos);
@@ -449,7 +449,7 @@ class V016ImprovementsTest {
         @Test
         void excelReadAsStream_withLimit_shouldWork() throws Exception {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWriter<String> writer = ExcelWriter.<String>builder().build();
+            ExcelWriter<String> writer = ExcelWriter.<String>create();
             writer.column("Name", s -> s);
             writer.write(Stream.of("Alice", "Bob", "Charlie")).write(bos);
 
@@ -479,7 +479,7 @@ class V016ImprovementsTest {
         void required_sparseRow_missingColumn_shouldFail() throws Exception {
             // Write Excel with 3 columns, but third column is null (SAX won't emit it)
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWriter<String[]> writer = ExcelWriter.<String[]>builder().build();
+            ExcelWriter<String[]> writer = ExcelWriter.<String[]>create();
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1])
                     .column("City", arr -> arr[2]);
@@ -502,7 +502,7 @@ class V016ImprovementsTest {
         @Test
         void nonRequired_sparseRow_missingColumn_shouldSucceed() throws Exception {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWriter<String[]> writer = ExcelWriter.<String[]>builder().build();
+            ExcelWriter<String[]> writer = ExcelWriter.<String[]>create();
             writer.column("Name", arr -> arr[0])
                     .column("Age", arr -> arr[1])
                     .column("City", arr -> arr[2]);
@@ -528,7 +528,7 @@ class V016ImprovementsTest {
         @Test
         void rollover_shouldPreserveHeaderFontColor() throws Exception {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+            try (ExcelWorkbook wb = ExcelWorkbook.create()) {
                 ExcelSheetWriter<Integer> sw = wb.sheet("test");
                 sw.column("ID", i -> i, c -> c.headerFontColor(ExcelColor.RED))
                         .maxRows(2);
@@ -552,7 +552,7 @@ class V016ImprovementsTest {
         @Test
         void summary_afterData_shouldNotOverlapRows() throws Exception {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWriter.<int[]>builder().build()
+            ExcelWriter.<int[]>create()
                     .column("Name", arr -> "Item" + arr[0])
                     .column("Amount", arr -> arr[0], c -> c.type(ExcelDataType.INTEGER))
                     .afterData((ctx) -> {

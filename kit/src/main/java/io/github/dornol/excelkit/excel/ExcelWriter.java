@@ -34,9 +34,9 @@ public class ExcelWriter<T> {
 
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final int maxRows;
+    private int maxRows = DEFAULT_MAX_ROWS;
     private CellStyle headerStyle;
-    private final XSSFColor headerColor;
+    private XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private final SheetConfig<T> cfg = new SheetConfig<>();
     private @Nullable AfterDataWriter afterAllWriter;
@@ -54,22 +54,37 @@ public class ExcelWriter<T> {
     private static final int DEFAULT_MAX_ROWS = 1_000_000;
 
     /**
-     * Creates a new builder for configuring an ExcelWriter.
-     * <p>
-     * Example:
-     * <pre>{@code
-     * ExcelWriter<User> writer = ExcelWriter.<User>builder()
-     *     .color(ExcelColor.STEEL_BLUE)
-     *     .maxRows(500_000)
-     *     .rowAccessWindowSize(500)
-     *     .build();
-     * }</pre>
+     * Creates a new ExcelWriter with default initialization (white header, 1,000,000 max rows, 1000 row window).
      *
      * @param <T> the row data type
-     * @return a new builder seeded with default values (white header, 1,000,000 max rows, 1000 row window)
+     * @return a new ExcelWriter instance
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> ExcelWriter<T> create() {
+        return create(opts -> {});
+    }
+
+    /**
+     * Creates a new ExcelWriter with initialization options.
+     * <p>
+     * The {@link InitOptions} passed to the configurer contains settings that must be
+     * fixed at workbook creation time — currently only {@code rowAccessWindowSize}
+     * (SXSSF's in-memory row window, which cannot be changed after the workbook exists).
+     * All other configuration (header color, max rows, columns, filters, callbacks, etc.)
+     * is set via fluent methods on the returned writer.
+     *
+     * <pre>{@code
+     * ExcelWriter<User> writer = ExcelWriter.<User>create(opts -> opts
+     *     .rowAccessWindowSize(500));
+     * }</pre>
+     *
+     * @param configurer consumer that configures {@link InitOptions}
+     * @param <T>        the row data type
+     * @return a new ExcelWriter instance
+     */
+    public static <T> ExcelWriter<T> create(Consumer<InitOptions> configurer) {
+        InitOptions opts = new InitOptions();
+        configurer.accept(opts);
+        return new ExcelWriter<>(opts);
     }
 
     /**
@@ -95,29 +110,32 @@ public class ExcelWriter<T> {
      * @since 0.11.0
      */
     public static ExcelWriter<Map<String, Object>> forMap(String... columnNames) {
-        return forMap(ExcelWriter.<Map<String, Object>>builder(), columnNames);
+        return forMap(opts -> {}, columnNames);
     }
 
     /**
-     * Creates a map-valued ExcelWriter using a pre-configured builder for color,
-     * maxRows, or rowAccessWindowSize.
+     * Creates a map-valued ExcelWriter with initialization options
+     * (currently only {@code rowAccessWindowSize}). Header color and max rows are set
+     * via fluent methods on the returned writer.
      *
      * <pre>{@code
      * ExcelWriter.forMap(
-     *         ExcelWriter.<Map<String, Object>>builder().color(ExcelColor.STEEL_BLUE).maxRows(500_000),
+     *         opts -> opts.rowAccessWindowSize(500),
      *         "Name", "Age", "City")
+     *     .headerColor(ExcelColor.STEEL_BLUE)
+     *     .maxRows(500_000)
      *     .autoFilter(true)
      *     .write(stream)
      *     .write(out);
      * }</pre>
      *
-     * @param builder     a pre-configured builder (color, maxRows, rowAccessWindowSize)
+     * @param configurer  consumer that configures {@link InitOptions}
      * @param columnNames the column names (used as both header labels and map keys)
      * @return a new ExcelWriter with the columns registered
      * @since 0.13.0
      */
-    public static ExcelWriter<Map<String, Object>> forMap(Builder<Map<String, Object>> builder, String... columnNames) {
-        ExcelWriter<Map<String, Object>> writer = builder.build();
+    public static ExcelWriter<Map<String, Object>> forMap(Consumer<InitOptions> configurer, String... columnNames) {
+        ExcelWriter<Map<String, Object>> writer = create(configurer);
         for (String name : columnNames) {
             writer.column(name, map -> map.get(name));
         }
@@ -156,7 +174,7 @@ public class ExcelWriter<T> {
                     "configurers length (" + configurers.length
                             + ") exceeds columnNames length (" + columnNames.length + ")");
         }
-        ExcelWriter<Map<String, Object>> writer = ExcelWriter.<Map<String, Object>>builder().build();
+        ExcelWriter<Map<String, Object>> writer = ExcelWriter.create();
         for (int i = 0; i < columnNames.length; i++) {
             String name = columnNames[i];
             Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>> cfg =
@@ -166,89 +184,90 @@ public class ExcelWriter<T> {
         return writer;
     }
 
-    private ExcelWriter(Builder<T> builder) {
-        this.wb = new SXSSFWorkbook(builder.rowAccessWindowSize);
-        this.maxRows = builder.maxRows;
+    private ExcelWriter(InitOptions opts) {
+        this.wb = new SXSSFWorkbook(opts.rowAccessWindowSize);
+        ExcelColor defaultColor = ExcelColor.WHITE;
         this.headerColor = new XSSFColor(new byte[]{
-                (byte) builder.color.getR(),
-                (byte) builder.color.getG(),
-                (byte) builder.color.getB()
+                (byte) defaultColor.getR(),
+                (byte) defaultColor.getG(),
+                (byte) defaultColor.getB()
         });
         this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
     }
 
     /**
-     * Builder for {@link ExcelWriter}. Obtained via {@link ExcelWriter#builder()}.
+     * Initialization options for {@link ExcelWriter}. Passed to the configurer given to
+     * {@link ExcelWriter#create(Consumer)}.
      * <p>
-     * All fields have sensible defaults, so callers only need to set what they want to override.
+     * These options are restricted to settings that cannot be changed after the underlying
+     * {@link SXSSFWorkbook} is constructed (currently just {@code rowAccessWindowSize}).
+     * All other configuration is available as fluent methods on {@link ExcelWriter}.
      *
-     * @param <T> the row data type
-     * @since 0.11.0
+     * @since 0.17.0
      */
-    public static final class Builder<T> {
-        private ExcelColor color = ExcelColor.WHITE;
-        private int maxRows = DEFAULT_MAX_ROWS;
+    public static final class InitOptions {
         private int rowAccessWindowSize = DEFAULT_ROW_ACCESS_WINDOW_SIZE;
 
-        private Builder() {
-        }
-
-        /**
-         * Sets the header background color.
-         * <p>
-         * Use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)}.
-         * Defaults to {@link ExcelColor#WHITE}.
-         *
-         * @param color header color (must not be null)
-         * @return this builder for chaining
-         */
-        public Builder<T> color(ExcelColor color) {
-            if (color == null) {
-                throw new IllegalArgumentException("color must not be null");
-            }
-            this.color = color;
-            return this;
-        }
-
-        /**
-         * Sets the maximum number of rows per sheet before a new sheet is created.
-         * Defaults to 1,000,000.
-         *
-         * @param maxRows maximum rows per sheet (must be positive)
-         * @return this builder for chaining
-         */
-        public Builder<T> maxRows(int maxRows) {
-            if (maxRows <= 0) {
-                throw new IllegalArgumentException("maxRows must be positive");
-            }
-            this.maxRows = maxRows;
-            return this;
+        private InitOptions() {
         }
 
         /**
          * Sets the number of rows kept in memory by the underlying SXSSFWorkbook.
          * Higher values use more memory but reduce disk I/O; lower values are the inverse.
          * Defaults to 1000.
+         * <p>
+         * This must be set at construction time because POI's SXSSFWorkbook takes it as
+         * a constructor argument and does not support changing it afterwards.
          *
          * @param size row access window size (must be positive)
-         * @return this builder for chaining
+         * @return this options object for chaining
          */
-        public Builder<T> rowAccessWindowSize(int size) {
+        public InitOptions rowAccessWindowSize(int size) {
             if (size <= 0) {
                 throw new IllegalArgumentException("rowAccessWindowSize must be positive");
             }
             this.rowAccessWindowSize = size;
             return this;
         }
+    }
 
-        /**
-         * Builds a new ExcelWriter with the configured settings.
-         *
-         * @return a new ExcelWriter instance
-         */
-        public ExcelWriter<T> build() {
-            return new ExcelWriter<>(this);
+    /**
+     * Sets the header background color. Must be called before {@link #write(Stream)}.
+     * <p>
+     * Use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)}.
+     * Defaults to {@link ExcelColor#WHITE}.
+     *
+     * @param color header color (must not be null)
+     * @return Current ExcelWriter instance for chaining
+     * @since 0.17.0
+     */
+    public ExcelWriter<T> headerColor(ExcelColor color) {
+        if (color == null) {
+            throw new IllegalArgumentException("color must not be null");
         }
+        this.headerColor = new XSSFColor(new byte[]{
+                (byte) color.getR(),
+                (byte) color.getG(),
+                (byte) color.getB()
+        });
+        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize);
+        return this;
+    }
+
+    /**
+     * Sets the maximum number of rows per sheet before a new sheet is created.
+     * Must be called before {@link #write(Stream)}. Defaults to 1,000,000.
+     *
+     * @param maxRows maximum rows per sheet (must be positive)
+     * @return Current ExcelWriter instance for chaining
+     * @since 0.17.0
+     */
+    public ExcelWriter<T> maxRows(int maxRows) {
+        if (maxRows <= 0) {
+            throw new IllegalArgumentException("maxRows must be positive");
+        }
+        this.maxRows = maxRows;
+        return this;
     }
 
     /**

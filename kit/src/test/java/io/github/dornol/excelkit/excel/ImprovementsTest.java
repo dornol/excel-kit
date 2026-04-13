@@ -23,7 +23,7 @@ class ImprovementsTest {
     // ========================================================================
     @Test
     void duplicateColumnName_shouldThrowInExcelWriter() {
-        var writer = ExcelWriter.<String>builder().build()
+        var writer = ExcelWriter.<String>create()
                 .column("Name", s -> s)
                 .column("Name", s -> s);
         assertThrows(ExcelWriteException.class, () -> writer.write(Stream.of("test")));
@@ -31,7 +31,7 @@ class ImprovementsTest {
 
     @Test
     void duplicateColumnName_shouldThrowInExcelSheetWriter() {
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             var sheet = wb.<String>sheet("Test")
                     .column("Name", s -> s)
                     .column("Name", s -> s);
@@ -42,7 +42,7 @@ class ImprovementsTest {
     @Test
     void uniqueColumnNames_shouldNotThrow() {
         assertDoesNotThrow(() ->
-                ExcelWriter.<String>builder().build()
+                ExcelWriter.<String>create()
                         .column("Name", s -> s)
                         .column("Age", s -> s)
                         .write(Stream.of("test")));
@@ -54,7 +54,7 @@ class ImprovementsTest {
     @Test
     void autoFilterBoolean_shouldWorkInExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<String>sheet("Test")
                     .autoFilter(true)
                     .column("Name", s -> s)
@@ -67,7 +67,7 @@ class ImprovementsTest {
     @Test
     void autoFilterFalse_shouldNotApplyFilter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<String>sheet("Test")
                     .autoFilter(false)
                     .column("Name", s -> s)
@@ -83,7 +83,7 @@ class ImprovementsTest {
     @Test
     void columnIf_shouldAddColumnWhenTrue() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<String>sheet("Test")
                     .column("Name", s -> s)
                     .columnIf("Age", true, s -> "30")
@@ -99,7 +99,7 @@ class ImprovementsTest {
     @Test
     void columnIf_shouldSkipColumnWhenFalse() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<String>sheet("Test")
                     .column("Name", s -> s)
                     .columnIf("Age", false, s -> "30")
@@ -144,7 +144,7 @@ class ImprovementsTest {
     void emptyStream_withAfterData_shouldStillCallback() throws IOException {
         boolean[] called = {false};
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s)
                 .afterData(ctx -> {
                     called[0] = true;
@@ -160,7 +160,7 @@ class ImprovementsTest {
     void emptyStream_withBeforeHeader_shouldStillCallback() throws IOException {
         boolean[] called = {false};
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String>builder().build()
+        ExcelWriter.<String>create()
                 .column("Name", s -> s)
                 .beforeHeader(ctx -> {
                     called[0] = true;
@@ -178,7 +178,7 @@ class ImprovementsTest {
     @Test
     void rollover_maxRowsTwo_shouldCreateMultipleSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Data")
                     .maxRows(2)
                     .column("Value", i -> i)
@@ -198,7 +198,7 @@ class ImprovementsTest {
     void rollover_withCallbacks_shouldCallPerSheet() throws IOException {
         List<String> callbackLog = new ArrayList<>();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Data")
                     .maxRows(2)
                     .beforeHeader(ctx -> {
@@ -224,7 +224,7 @@ class ImprovementsTest {
     @Test
     void rollover_emptyStream_shouldNotCreateExtraSheets() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Data")
                     .maxRows(5)
                     .column("Value", i -> i)
@@ -240,7 +240,7 @@ class ImprovementsTest {
     @Test
     void rollover_progressShouldContinueAcrossSheets() {
         List<Long> counts = new ArrayList<>();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Integer>sheet("Data")
                     .maxRows(3)
                     .column("Value", i -> i)

@@ -19,7 +19,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_greaterThan() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Name", Product::name)
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
@@ -37,7 +37,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_rangeEndsAtLastDataRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Name", Product::name)
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
@@ -60,7 +60,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_multipleRules() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Name", Product::name)
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
@@ -80,7 +80,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_equalTo() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Name", Product::name)
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
@@ -98,7 +98,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_notEqualTo() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
                         .notEqualTo("0", ExcelColor.LIGHT_ORANGE))
@@ -114,7 +114,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_greaterThanOrEqual() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
                         .greaterThanOrEqual("100", ExcelColor.LIGHT_RED))
@@ -130,7 +130,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_lessThanOrEqual() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
                         .lessThanOrEqual("50", ExcelColor.LIGHT_GREEN))
@@ -146,7 +146,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_notBetween() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
                         .notBetween("10", "90", ExcelColor.CORAL))
@@ -162,7 +162,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_inExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<Product>sheet("Products")
                     .column("Name", Product::name)
                     .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
@@ -182,7 +182,7 @@ class ConditionalFormattingTest {
     @Test
     void conditionalFormatting_withStartRow() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Product>builder().build()
+        ExcelWriter.<Product>create()
                 .column("Price", p -> p.price, c -> c.type(ExcelDataType.INTEGER))
                 .conditionalFormatting(cf -> cf
                         .startRow(2)

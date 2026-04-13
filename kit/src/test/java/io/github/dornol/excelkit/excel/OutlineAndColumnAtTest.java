@@ -33,7 +33,7 @@ class OutlineAndColumnAtTest {
     @Test
     void outline_shouldGroupColumns() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<String[]>builder().build()
+        ExcelWriter.<String[]>create()
                 .column("Name", r -> r[0])
                 .column("Detail1", r -> r[1], c -> c.outline(1))
                 .column("Detail2", r -> r[2], c -> c.outline(1))
@@ -57,7 +57,7 @@ class OutlineAndColumnAtTest {
     @Test
     void outline_shouldWorkInExcelSheetWriter() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ExcelWorkbook wb = ExcelWorkbook.builder().build()) {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
             wb.<String[]>sheet("Test")
                     .column("A", r -> r[0])
                     .column("B", r -> r[1], c -> c.outline(1))
@@ -78,9 +78,9 @@ class OutlineAndColumnAtTest {
     @Test
     void outline_invalidLevel_shouldThrow() {
         assertThrows(IllegalArgumentException.class, () ->
-                ExcelWriter.<String>builder().build().column("A", s -> s, c -> c.outline(8)));
+                ExcelWriter.<String>create().column("A", s -> s, c -> c.outline(8)));
         assertThrows(IllegalArgumentException.class, () ->
-                ExcelWriter.<String>builder().build().column("A", s -> s, c -> c.outline(-1)));
+                ExcelWriter.<String>create().column("A", s -> s, c -> c.outline(-1)));
     }
 
     // ========================================================================
