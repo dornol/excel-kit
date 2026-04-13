@@ -197,7 +197,7 @@ public class ExcelSheetWriter<T> {
      * for columns-only use {@link #freezeCols(int)}.
      * @param rows number of rows to freeze
      * @return this writer for chaining
-     * @since 0.16.7 */
+     * @since 0.16.6 */
     public ExcelSheetWriter<T> freezeRows(int rows) {
         if (rows < 0) throw new IllegalArgumentException("freezePaneRows must be non-negative");
         this.cfg.freezePaneRows = rows;
@@ -209,7 +209,7 @@ public class ExcelSheetWriter<T> {
      * for rows-only use {@link #freezeRows(int)}.
      * @param cols number of columns to freeze
      * @return this writer for chaining
-     * @since 0.16.7 */
+     * @since 0.16.6 */
     public ExcelSheetWriter<T> freezeCols(int cols) {
         if (cols < 0) throw new IllegalArgumentException("freezePaneCols must be non-negative");
         this.cfg.freezePaneCols = cols;

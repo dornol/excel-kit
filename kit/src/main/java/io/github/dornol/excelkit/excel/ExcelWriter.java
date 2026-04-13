@@ -304,7 +304,7 @@ public class ExcelWriter<T> {
      *
      * @param rows Number of rows to freeze (must be non-negative)
      * @return Current ExcelWriter instance for chaining
-     * @since 0.16.7
+     * @since 0.16.6
      */
     public ExcelWriter<T> freezeRows(int rows) {
         if (rows < 0) {
@@ -322,7 +322,7 @@ public class ExcelWriter<T> {
      *
      * @param cols Number of columns to freeze (must be non-negative)
      * @return Current ExcelWriter instance for chaining
-     * @since 0.16.7
+     * @since 0.16.6
      */
     public ExcelWriter<T> freezeCols(int cols) {
         if (cols < 0) {

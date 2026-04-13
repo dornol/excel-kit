@@ -55,7 +55,7 @@ public class CsvWriter<T> {
      *
      * @param <T> the row type
      * @return a new CsvWriter
-     * @since 0.16.7
+     * @since 0.16.6
      */
     public static <T> CsvWriter<T> create() {
         return new CsvWriter<>();

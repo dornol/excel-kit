@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.16.7] - 2026-04-13
+## [0.16.6] - 2026-04-13
+
+### Added
+
+- `ExcelHandler.writeTo(Path, String)` and `ExcelHandler.writeTo(Path, char[])` —
+  convenience overloads that encrypt and write directly to a file path, mirroring
+  the existing `writeTo(OutputStream, String/char[])` overloads. Useful for CLI/batch
+  tools that don't need a Spring `StreamingResponseBody`. The `char[]` variant zeroes
+  the password array after use.
+- `ExcelWriter.freezeCols(int)` / `ExcelSheetWriter.freezeCols(int)` — freeze N
+  columns from the left. Previously required `freezePane(N, 0)`.
 
 ### Changed (Breaking)
 
@@ -23,16 +33,6 @@ All notable changes to this project will be documented in this file.
   now share one mental model.
 
   Migration: `new CsvWriter<Row>()` → `CsvWriter.<Row>create()`.
-
-## [0.16.6] - 2026-04-13
-
-### Added
-
-- `ExcelHandler.writeTo(Path, String)` and `ExcelHandler.writeTo(Path, char[])` —
-  convenience overloads that encrypt and write directly to a file path, mirroring
-  the existing `writeTo(OutputStream, String/char[])` overloads. Useful for CLI/batch
-  tools that don't need a Spring `StreamingResponseBody`. The `char[]` variant zeroes
-  the password array after use.
 
 ### Changed
 
