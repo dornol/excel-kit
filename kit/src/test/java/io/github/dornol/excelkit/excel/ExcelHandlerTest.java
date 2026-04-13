@@ -190,6 +190,59 @@ class ExcelHandlerTest {
     }
 
     @Test
+    void writeToPath_withPassword_roundTripViaExcelReader() throws IOException {
+        // End-to-end: write encrypted file to disk, then ExcelReader with matching password
+        // should decrypt and read the data back verbatim. Proves the file isn't just OLE2-shaped
+        // but actually contains the data we wrote.
+        SXSSFWorkbook wb = new SXSSFWorkbook();
+        var sheet = wb.createSheet("Data");
+        var r0 = sheet.createRow(0);
+        r0.createCell(0).setCellValue("Name");
+        r0.createCell(1).setCellValue("Age");
+        var r1 = sheet.createRow(1);
+        r1.createCell(0).setCellValue("Alice");
+        r1.createCell(1).setCellValue(30);
+        var r2 = sheet.createRow(2);
+        r2.createCell(0).setCellValue("Bob");
+        r2.createCell(1).setCellValue(25);
+
+        ExcelHandler h = new ExcelHandler(wb);
+        Path excelFile = tempDir.resolve("round-trip.xlsx");
+
+        h.writeTo(excelFile, "roundTripPw");
+
+        // Read back with the password
+        java.util.List<String> names = new java.util.ArrayList<>();
+        java.util.List<Integer> ages = new java.util.ArrayList<>();
+        ExcelReader.mapping(row -> {
+                    names.add(row.get("Name").asString());
+                    ages.add(row.get("Age").asInt());
+                    return row;
+                })
+                .password("roundTripPw")
+                .build(Files.newInputStream(excelFile))
+                .read(r -> {});
+
+        assertEquals(java.util.List.of("Alice", "Bob"), names);
+        assertEquals(java.util.List.of(30, 25), ages);
+    }
+
+    @Test
+    void writeToPath_withPassword_wrongPasswordRejected() throws IOException {
+        createSampleWorkbookContent();
+        Path excelFile = tempDir.resolve("wrong-pw.xlsx");
+        handler.writeTo(excelFile, "correct");
+
+        var ex = assertThrows(ExcelReadException.class, () ->
+                ExcelReader.mapping(row -> row)
+                        .password("wrong")
+                        .build(Files.newInputStream(excelFile))
+                        .read(r -> {}));
+        assertTrue(ex.getMessage().toLowerCase().contains("invalid password"),
+                "Expected 'invalid password' in message: " + ex.getMessage());
+    }
+
+    @Test
     void writeToPathWithPassword_shouldWriteEncryptedFile() throws IOException {
         // Arrange
         createSampleWorkbookContent();

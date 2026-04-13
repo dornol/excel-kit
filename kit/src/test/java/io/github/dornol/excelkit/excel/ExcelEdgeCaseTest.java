@@ -253,6 +253,49 @@ class ExcelEdgeCaseTest {
         }
 
         @Test
+        void password_multiSheet_roundTripViaExcelReader() throws IOException {
+            // Write a multi-sheet encrypted workbook, then read each sheet back with the password
+            // to verify end-to-end that different sheet writers share the encryption correctly.
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (ExcelWorkbook workbook = ExcelWorkbook.create()) {
+                workbook.password("multiPass!");
+                workbook.<Item>sheet("Items")
+                        .column("Name", Item::name)
+                        .column("Value", Item::value)
+                        .write(Stream.of(new Item("A", 1), new Item("B", 2)));
+                workbook.<Item>sheet("More")
+                        .column("Name", Item::name)
+                        .column("Value", Item::value)
+                        .write(Stream.of(new Item("X", 9)));
+                workbook.finish().writeTo(out);
+            }
+
+            byte[] bytes = out.toByteArray();
+
+            // Sheet 0
+            List<Item> sheet0 = new ArrayList<>();
+            ExcelReader.<Item>mapping(row -> new Item(
+                    row.get("Name").asString(),
+                    row.get("Value").asInt()))
+                    .password("multiPass!")
+                    .sheetIndex(0)
+                    .build(new ByteArrayInputStream(bytes))
+                    .readStrict(sheet0::add);
+            assertEquals(List.of(new Item("A", 1), new Item("B", 2)), sheet0);
+
+            // Sheet 1
+            List<Item> sheet1 = new ArrayList<>();
+            ExcelReader.<Item>mapping(row -> new Item(
+                    row.get("Name").asString(),
+                    row.get("Value").asInt()))
+                    .password("multiPass!")
+                    .sheetIndex(1)
+                    .build(new ByteArrayInputStream(bytes))
+                    .readStrict(sheet1::add);
+            assertEquals(List.of(new Item("X", 9)), sheet1);
+        }
+
+        @Test
         void password_combinedWithProtectWorkbook() throws IOException, GeneralSecurityException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             try (ExcelWorkbook workbook = ExcelWorkbook.create()) {
