@@ -190,6 +190,69 @@ class ExcelHandlerTest {
     }
 
     @Test
+    void writeToPathWithPassword_shouldWriteEncryptedFile() throws IOException {
+        // Arrange
+        createSampleWorkbookContent();
+        Path excelFile = tempDir.resolve("path-encrypted.xlsx");
+
+        // Act
+        handler.writeTo(excelFile, "test123");
+
+        // Assert
+        assertTrue(Files.exists(excelFile));
+        assertTrue(Files.size(excelFile) > 0);
+        // Verify OLE2 format (encrypted)
+        byte[] bytes = Files.readAllBytes(excelFile);
+        assertEquals((byte) 0xD0, bytes[0]);
+        assertEquals((byte) 0xCF, bytes[1]);
+    }
+
+    @Test
+    void writeToPathWithCharArrayPassword_shouldWriteEncryptedAndZero() throws IOException {
+        // Arrange
+        createSampleWorkbookContent();
+        Path excelFile = tempDir.resolve("path-encrypted-char.xlsx");
+        char[] password = "test123".toCharArray();
+
+        // Act
+        handler.writeTo(excelFile, password);
+
+        // Assert
+        assertTrue(Files.exists(excelFile));
+        assertTrue(Files.size(excelFile) > 0);
+        for (char c : password) {
+            assertEquals('\0', c, "password char[] must be zeroed");
+        }
+    }
+
+    @Test
+    void writeToPathWithPassword_nullOrBlank_throws() {
+        Path target = tempDir.resolve("x.xlsx");
+        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, (String) null));
+        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, ""));
+        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, "   "));
+        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, (char[]) null));
+        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, new char[0]));
+        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, new char[]{' ', ' '}));
+    }
+
+    @Test
+    void writeToPathWithPassword_afterConsumed_throws() throws IOException {
+        handler.writeTo(outputStream);
+        Path target = tempDir.resolve("after.xlsx");
+        assertThrows(ExcelWriteException.class, () -> handler.writeTo(target, "test123"));
+    }
+
+    @Test
+    void writeToPathWithPassword_whenHandlerPasswordSet_throwsIllegalState() {
+        SXSSFWorkbook wb2 = new SXSSFWorkbook();
+        wb2.createSheet("S").createRow(0).createCell(0).setCellValue("x");
+        ExcelHandler h = new ExcelHandler(wb2, "pw1");
+        Path target = tempDir.resolve("conflict.xlsx");
+        assertThrows(IllegalStateException.class, () -> h.writeTo(target, "pw2"));
+    }
+
+    @Test
     void write_shouldCloseWorkbookAfterWriting() throws IOException {
         // Arrange
         SXSSFWorkbook testWorkbook = new SXSSFWorkbook();

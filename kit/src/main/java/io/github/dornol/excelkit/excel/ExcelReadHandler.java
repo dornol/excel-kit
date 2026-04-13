@@ -53,7 +53,25 @@ import java.util.stream.StreamSupport;
  * <p>
  * This handler parses sheet data row by row, maps values to Java objects, and performs optional validation.
  * It is optimized for large files and avoids loading the entire workbook into memory.
- * <p>
+ *
+ * <h2>Resource management</h2>
+ * On construction, the handler copies the input stream to a temporary file on disk so that
+ * the underlying POI API can read it. These temp resources (and, if applicable, the decrypted
+ * copy of an encrypted file) are released when:
+ * <ul>
+ *     <li>{@link #read(Consumer)} / {@link #readStrict(Consumer)} returns or throws — cleanup is automatic.</li>
+ *     <li>The stream returned by {@link #readAsStream()} is closed — <strong>always use
+ *         try-with-resources</strong>, since this stream also holds a background producer thread:
+ *         <pre>{@code
+ * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
+ *     stream.forEach(result -> ...);
+ * }
+ *         }</pre>
+ *         Abandoning the stream without closing it leaks the temp file until the JVM exits
+ *         (the producer thread is a daemon and will eventually self-terminate).</li>
+ * </ul>
+ *
+ * <h2>Large file tuning</h2>
  * For large or complex Excel files, you may need to adjust POI's internal limits via
  * {@link ExcelKitConfig#configureLargeFileSupport()} before reading. This adjusts:
  * <ul>

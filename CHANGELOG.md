@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.6] - 2026-04-13
+
+### Added
+
+- `ExcelHandler.writeTo(Path, String)` and `ExcelHandler.writeTo(Path, char[])` —
+  convenience overloads that encrypt and write directly to a file path, mirroring
+  the existing `writeTo(OutputStream, String/char[])` overloads. Useful for CLI/batch
+  tools that don't need a Spring `StreamingResponseBody`. The `char[]` variant zeroes
+  the password array after use.
+
+### Changed
+
+- Strengthened Javadoc on `ExcelReadHandler` and `CsvReadHandler` with an explicit
+  "Resource management" section, clarifying when temp files are released and why
+  `readAsStream()` must be used with try-with-resources.
+
 ## [0.16.5] - 2026-04-13
 
 ### Changed (Breaking)

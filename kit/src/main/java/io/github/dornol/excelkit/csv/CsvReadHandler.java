@@ -37,6 +37,22 @@ import java.util.stream.StreamSupport;
 /**
  * Reads CSV files and maps rows to Java objects.
  *
+ * <h2>Resource management</h2>
+ * On construction, the handler copies the input stream to a temporary file on disk.
+ * These temp resources are released when:
+ * <ul>
+ *     <li>{@link #read(java.util.function.Consumer)} / {@link #readStrict(java.util.function.Consumer)}
+ *         returns or throws — cleanup is automatic.</li>
+ *     <li>The stream returned by {@link #readAsStream()} is closed — <strong>always use
+ *         try-with-resources</strong>, since this stream also holds a background producer thread:
+ *         <pre>{@code
+ * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
+ *     stream.forEach(result -> ...);
+ * }
+ *         }</pre>
+ *         Abandoning the stream without closing it leaks the temp file until the JVM exits.</li>
+ * </ul>
+ *
  * @param <T> The target row data type
  * @author dhkim
  * @since 2025-07-19

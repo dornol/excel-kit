@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -150,6 +151,66 @@ public final class ExcelHandler implements FileHandler {
         } catch (IOException e) {
             throw new ExcelWriteException("Failed to write encrypted Excel", e);
         } finally {
+            Arrays.fill(password, '\0');
+        }
+    }
+
+    /**
+     * Writes the workbook directly to a file path with Excel-compatible password encryption.
+     * <p>
+     * Convenience overload that opens a buffered {@link OutputStream} to the given path
+     * and delegates to {@link #writeTo(OutputStream, String)}.
+     * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
+     * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(Path)} instead.
+     *
+     * @param path     The destination file path
+     * @param password The password to protect the Excel file with
+     * @throws ExcelWriteException If an I/O or encryption error occurs during writing
+     * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
+     * @since 0.16.6
+     */
+    public void writeTo(Path path, String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
+        }
+        rejectIfPasswordAlreadySet();
+        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
+            writeTo(out, password);
+        } catch (IOException e) {
+            throw new ExcelWriteException("Failed to write encrypted Excel to: " + path, e);
+        }
+    }
+
+    /**
+     * Writes the workbook directly to a file path with Excel-compatible password encryption.
+     * <p>
+     * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
+     * The array is zeroed out after encryption completes (or on failure).
+     * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
+     * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(Path)} instead.
+     *
+     * @param path     The destination file path
+     * @param password The password as a char array (will be zeroed after use)
+     * @throws ExcelWriteException If an I/O or encryption error occurs during writing
+     * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
+     * @since 0.16.6
+     */
+    public void writeTo(Path path, char[] password) {
+        if (password == null || password.length == 0 || isBlank(password)) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
+        }
+        try {
+            rejectIfPasswordAlreadySet();
+            try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
+                writeTo(out, password);
+            } catch (IOException e) {
+                throw new ExcelWriteException("Failed to write encrypted Excel to: " + path, e);
+            }
+        } finally {
+            // writeTo(OutputStream, char[]) zeroes the array on its own path;
+            // zero again here to cover the case where we threw before reaching it
+            // (e.g., rejectIfPasswordAlreadySet or Files.newOutputStream failure).
+            // Second zero on already-zeroed array is harmless.
             Arrays.fill(password, '\0');
         }
     }
