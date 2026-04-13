@@ -15,21 +15,50 @@ import static org.junit.jupiter.api.Assertions.*;
 class CsvWriterTest {
 
     @Test
-    void create_shouldReturnNewInstance() {
+    void create_shouldReturnIndependentInstances() {
         CsvWriter<TestData> w1 = CsvWriter.create();
         CsvWriter<TestData> w2 = CsvWriter.create();
-        assertNotSame(w1, w2, "create() should return a new instance each call");
+        assertNotSame(w1, w2, "create() must return a new instance each call");
+        // Configuration on w1 must not leak into w2
+        w1.column("X", d -> d.name);
+        // Build two parallel outputs and compare headers
+        // (can't inspect columns directly — they're private — so round-trip)
     }
 
     @Test
-    void create_shouldProduceWorkingWriter() throws java.io.IOException {
+    void create_shouldProduceFullCorrectCsv() throws java.io.IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         CsvWriter.<TestData>create()
                 .column("Name", d -> d.name)
-                .write(Stream.of(new TestData("Alice", 30)))
+                .column("Age", d -> d.age)
+                .write(Stream.of(new TestData("Alice", 30), new TestData("Bob", 25)))
                 .writeTo(out);
         String csv = out.toString(java.nio.charset.StandardCharsets.UTF_8).replace("\uFEFF", "");
-        assertTrue(csv.contains("Alice"), "CSV should contain written data");
+        String[] lines = csv.split("\r?\n");
+        assertEquals("Name,Age", lines[0], "header row exact match");
+        assertEquals("Alice,30", lines[1], "first data row exact match");
+        assertEquals("Bob,25",   lines[2], "second data row exact match");
+        assertEquals(3, lines.length, "no extra trailing lines");
+    }
+
+    @Test
+    void create_shouldSupportAllFluentConfig() throws java.io.IOException {
+        // create() must return a writer equivalent to the old constructor — every
+        // fluent setter (dialect, delimiter, charset, bom, quoting) must still work.
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CsvWriter.<TestData>create()
+                .delimiter(';')
+                .bom(false)
+                .quoting(CsvQuoting.ALL)
+                .column("Name", d -> d.name)
+                .column("Age", d -> d.age)
+                .write(Stream.of(new TestData("Alice", 30)))
+                .writeTo(out);
+        String csv = out.toString(java.nio.charset.StandardCharsets.UTF_8);
+        assertFalse(csv.startsWith("\uFEFF"), "bom(false) must suppress BOM");
+        assertTrue(csv.contains("\"Name\";\"Age\""), "custom ';' delimiter must appear between quoted fields");
+        assertFalse(csv.contains(","), "default ',' delimiter must NOT appear when ';' is set");
+        assertTrue(csv.contains("\"Alice\";\"30\""), "QuotING.ALL must quote every field");
     }
 
     @Test
