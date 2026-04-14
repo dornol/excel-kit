@@ -121,6 +121,10 @@ class ExcelWriteSupport {
             SXSSFCell cell = headRow.createCell(j);
             cell.setCellValue(col.getName());
             cell.setCellStyle(resolveHeaderStyle(col, headerStyle, wb, headerStyleCache));
+            String headerComment = col.getHeaderComment();
+            if (headerComment != null) {
+                addCellComment(cell, headerComment, sheet.getWorkbook());
+            }
         }
     }
 
@@ -144,6 +148,10 @@ class ExcelWriteSupport {
             SXSSFCell colCell = columnRow.createCell(j);
             colCell.setCellValue(col.getName());
             colCell.setCellStyle(colHeaderStyle);
+            String headerComment = col.getHeaderComment();
+            if (headerComment != null) {
+                addCellComment(colCell, headerComment, sheet.getWorkbook());
+            }
 
             // Group header row
             SXSSFCell grpCell = groupRow.createCell(j);

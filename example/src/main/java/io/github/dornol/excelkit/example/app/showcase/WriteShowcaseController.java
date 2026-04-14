@@ -400,6 +400,32 @@ public class WriteShowcaseController {
     }
 
     // ========================================================================
+    // 13b. Header Comment - static notes on header cells (v0.16.7)
+    // ========================================================================
+    @GetMapping("/header-comment")
+    public ResponseEntity<StreamingResponseBody> downloadHeaderComment() {
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Header Comments")
+                .autoFilter(true)
+                .column("Name", ProductDto::name, cfg -> cfg
+                    .headerComment("Product name (max 50 chars)"))
+                .column("Price", ProductDto::price, cfg -> cfg
+                    .type(ExcelDataType.INTEGER)
+                    .format("#,##0")
+                    .headerComment("Unit price in KRW (no decimals)"))
+                .column("Quantity", ProductDto::quantity, cfg -> cfg
+                    .type(ExcelDataType.INTEGER)
+                    .headerComment("Stock quantity (integer only)"))
+                .column("Discount", ProductDto::discount, cfg -> cfg
+                    .type(ExcelDataType.DOUBLE_PERCENT)
+                    .headerComment("Discount rate (0.0 - 1.0)"))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("header-comment-demo", DownloadFileType.EXCEL)
+                .body(handler::writeTo);
+    }
+
+    // ========================================================================
     // 14. Conditional Formatting - Excel native rules
     // ========================================================================
     @GetMapping("/conditional-format")

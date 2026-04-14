@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.7] - 2026-04-14
+
+### Added
+
+- `ColumnStyleConfig.headerComment(String)` — attach a static comment (note) to
+  a column's header cell. Useful for documenting expected input format or units
+  (e.g., `"YYYY-MM-DD format"`, `"In KRW"`) as an Excel cell comment visible on
+  hover. Complements the existing per-row `comment(Function)` targeting data
+  cells.
+  ```java
+  .column("Birth Date", User::birth, c -> c
+      .type(ExcelDataType.DATE)
+      .headerComment("Enter in YYYY-MM-DD format"))
+  ```
+  With group headers, the comment attaches to the column header row (not the
+  group row).
+
 ## [0.16.6] - 2026-04-13
 
 ### Added

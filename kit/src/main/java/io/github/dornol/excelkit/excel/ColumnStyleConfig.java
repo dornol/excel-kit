@@ -69,6 +69,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     String @Nullable [] dropdownOptions;
     @Nullable ExcelValidation validation;
     @Nullable Function<T, @Nullable String> commentFunction;
+    @Nullable String headerComment;
 
     // ── Protection & visibility ──
     @Nullable Boolean locked;
@@ -270,6 +271,21 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      */
     public SELF comment(Function<T, @Nullable String> commentFunction) {
         this.commentFunction = commentFunction;
+        return self();
+    }
+
+    /**
+     * Sets a static comment (note) on this column's header cell.
+     * <p>
+     * Useful for documenting the column's expected input format or meaning
+     * (e.g., {@code "YYYY-MM-DD"}, {@code "원 단위, 소수점 없음"}).
+     *
+     * @param text the header comment text, or {@code null} to remove
+     * @return this instance for chaining
+     * @since 0.16.7
+     */
+    public SELF headerComment(@Nullable String text) {
+        this.headerComment = text;
         return self();
     }
 

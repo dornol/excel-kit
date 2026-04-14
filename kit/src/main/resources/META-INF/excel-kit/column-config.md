@@ -73,6 +73,7 @@ All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`
 | `.validation(ExcelValidation)` | Advanced data validation |
 | `.cellColor(CellColorFunction)` | Per-cell conditional background |
 | `.comment(Function<T, String>)` | Per-cell comment/note |
+| `.headerComment(String)` | Static comment on the column's header cell |
 | `.group(String)` | Group header (merged row above) |
 | `.outline(int)` | Column outline level 1-7 |
 | `.hidden()` | Hide column |

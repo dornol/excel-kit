@@ -1173,6 +1173,24 @@ writer
 
 The comment function receives the row data and returns a comment string, or `null` to skip. Comments appear as yellow note icons in Excel.
 
+### Header Comments (Notes)
+
+Attach a static comment to a column's **header** cell — useful for documenting
+expected input format or units:
+
+```java
+writer
+    .column("Birth Date", User::birth, cfg -> cfg
+        .type(ExcelDataType.DATE)
+        .headerComment("Enter in YYYY-MM-DD format"))
+    .column("Amount", User::amount, cfg -> cfg
+        .type(ExcelDataType.INTEGER)
+        .headerComment("In KRW, whole numbers only"));
+```
+
+When combined with group headers, the comment attaches to the column header row
+(not the group row).
+
 ### Conditional Formatting
 
 Apply Excel conditional formatting rules:

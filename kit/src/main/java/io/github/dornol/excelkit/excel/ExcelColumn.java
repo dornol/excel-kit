@@ -50,13 +50,14 @@ public class ExcelColumn<T> {
     private final boolean hidden;
     private final @Nullable ExcelValidation validation;
     private final int @Nullable [] headerFontColor;
+    private final @Nullable String headerComment;
     private final @Nullable Object nullValue;
     private int columnWidth = 1;
 
     static <T> ExcelColumn<T> of(String name, RowFunction<T, @Nullable Object> function,
                                   @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
         return new ExcelColumn<>(name, function, style, columnSetter,
-                0, 0, false, null, null, null, 0, null, null, null, false, null, null, null);
+                0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, null);
     }
 
     ExcelColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
@@ -64,6 +65,7 @@ public class ExcelColumn<T> {
                 @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
                 boolean hidden, @Nullable ExcelValidation validation, int @Nullable [] headerFontColor,
+                @Nullable String headerComment,
                 @Nullable Object nullValue) {
         this.name = name;
         this.function = function;
@@ -82,6 +84,7 @@ public class ExcelColumn<T> {
         this.hidden = hidden;
         this.validation = validation;
         this.headerFontColor = headerFontColor;
+        this.headerComment = headerComment;
         this.nullValue = nullValue;
         this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
     }
@@ -214,6 +217,10 @@ public class ExcelColumn<T> {
         return headerFontColor != null ? headerFontColor.clone() : null;
     }
 
+    @Nullable String getHeaderComment() {
+        return headerComment;
+    }
+
     /**
      * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
      *
@@ -277,7 +284,7 @@ public class ExcelColumn<T> {
                     this.minWidth, this.maxWidth, this.fixedWidth, this.dropdownOptions,
                     this.cellColorFunction, this.groupName, this.outlineLevel,
                     this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation,
-                    this.headerFontColor, this.nullValue);
+                    this.headerFontColor, this.headerComment, this.nullValue);
         }
 
     }
