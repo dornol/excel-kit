@@ -426,6 +426,31 @@ public class WriteShowcaseController {
     }
 
     // ========================================================================
+    // 13c. Comment Size/Author - ExcelCellComment + commentSize (v0.16.8)
+    // ========================================================================
+    @GetMapping("/comment-size")
+    public ResponseEntity<StreamingResponseBody> downloadCommentSize() {
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Comment Size")
+                .autoFilter(true)
+                .column("Name", ProductDto::name, cfg -> cfg
+                    // Rich header comment: author + explicit box size 4x3
+                    .headerComment(ExcelCellComment.of("Product name (max 50 chars)")
+                            .author("System").size(4, 3))
+                    // Per-row comment, shares column-level size
+                    .comment(p -> "Category: " + p.category())
+                    .commentSize(5, 4))
+                .column("Price", ProductDto::price, cfg -> cfg
+                    .type(ExcelDataType.INTEGER)
+                    .format("#,##0")
+                    .headerComment(ExcelCellComment.of("KRW, no decimals").size(3, 2)))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("comment-size-demo", DownloadFileType.EXCEL)
+                .body(handler::writeTo);
+    }
+
+    // ========================================================================
     // 14. Conditional Formatting - Excel native rules
     // ========================================================================
     @GetMapping("/conditional-format")

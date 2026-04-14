@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.8] - 2026-04-14
+
+### Added
+
+- `ColumnStyleConfig.headerComment(ExcelCellComment)` — overload for full
+  customization of header comment (author, width, height) via the
+  `ExcelCellComment` record.
+- `ColumnStyleConfig.commentSize(int width, int height)` — column-level
+  comment box size applied to both header and data-cell comments.
+- `ExcelCellComment` fluent builders: `ExcelCellComment.of(text)`,
+  `.author(String)`, `.size(int, int)`.
+- `Comment.setAuthor(...)` is now actually propagated to POI (previously
+  stored in the record but never written out).
+
+  Precedence: `ExcelCellComment.size()` > `commentSize()` > POI default (2×3).
+
+  ```java
+  // Simple
+  .headerComment("Enter in YYYY-MM-DD format")
+
+  // Column-level size for all comments in the column
+  .column(..., c -> c.comment(p -> "note").commentSize(4, 5))
+
+  // Full customization
+  .headerComment(ExcelCellComment.of("Reviewed").author("System").size(4, 3))
+  ```
+
+### Changed (Breaking)
+
+- **`ExcelCellComment` record canonical constructor signature changed** from
+  `(String text, String author)` to `(String text, String author, int width, int height)`.
+  The old convenience constructor `new ExcelCellComment(text)` / `(text, author)`
+  were removed. Use `ExcelCellComment.of(text)` going forward.
+
+  This record was previously dead code (never instantiated outside its own
+  file), so real-world impact is nil.
+
 ## [0.16.7] - 2026-04-14
 
 ### Added
