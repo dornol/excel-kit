@@ -284,7 +284,9 @@ public class TemplateListWriter<T> {
                 c.minWidth, c.maxWidth, c.fixedWidth, c.dropdownOptions,
                 c.cellColorFunction, c.groupName, c.outlineLevel,
                 c.commentFunction, c.borderStyle, c.locked, c.hidden, c.validation,
-                c.headerFontColor, c.headerComment, c.nullValue);
+                c.headerFontColor, c.headerComment,
+                c.commentWidth, c.commentHeight,
+                c.nullValue);
     }
 
 }

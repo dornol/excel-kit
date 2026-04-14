@@ -69,7 +69,9 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     String @Nullable [] dropdownOptions;
     @Nullable ExcelValidation validation;
     @Nullable Function<T, @Nullable String> commentFunction;
-    @Nullable String headerComment;
+    @Nullable ExcelCellComment headerComment;
+    int commentWidth;
+    int commentHeight;
 
     // ── Protection & visibility ──
     @Nullable Boolean locked;
@@ -278,14 +280,50 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * Sets a static comment (note) on this column's header cell.
      * <p>
      * Useful for documenting the column's expected input format or meaning
-     * (e.g., {@code "YYYY-MM-DD"}, {@code "원 단위, 소수점 없음"}).
+     * (e.g., {@code "YYYY-MM-DD format"}, {@code "KRW, whole numbers only"}).
      *
      * @param text the header comment text, or {@code null} to remove
      * @return this instance for chaining
      * @since 0.16.7
      */
     public SELF headerComment(@Nullable String text) {
-        this.headerComment = text;
+        this.headerComment = text == null ? null : ExcelCellComment.of(text);
+        return self();
+    }
+
+    /**
+     * Sets a static comment (note) on this column's header cell with full
+     * customization (author, size).
+     *
+     * @param comment the header comment, or {@code null} to remove
+     * @return this instance for chaining
+     * @since 0.16.8
+     */
+    public SELF headerComment(@Nullable ExcelCellComment comment) {
+        this.headerComment = comment;
+        return self();
+    }
+
+    /**
+     * Sets the comment box size (width in cells, height in rows) for this column.
+     * <p>
+     * Applies to comments produced by both {@link #comment(Function)} (data cells)
+     * and {@link #headerComment(String)} (header cell). When {@link #headerComment(ExcelCellComment)}
+     * supplies a size via {@link ExcelCellComment#size(int, int)}, that size wins.
+     * <p>
+     * POI's default is 2 cols × 3 rows.
+     *
+     * @param width  width in cells (must be &gt; 0)
+     * @param height height in rows (must be &gt; 0)
+     * @return this instance for chaining
+     * @since 0.16.8
+     */
+    public SELF commentSize(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("width/height must be positive");
+        }
+        this.commentWidth = width;
+        this.commentHeight = height;
         return self();
     }
 

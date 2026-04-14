@@ -141,7 +141,7 @@ class CellCommentTest {
     void headerComment_null_shouldNotAddComment() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<String>create()
-                .column("Name", s -> s, c -> c.headerComment(null))
+                .column("Name", s -> s, c -> c.headerComment((String) null))
                 .write(Stream.of("Alice"))
                 .writeTo(out);
 
@@ -152,12 +152,101 @@ class CellCommentTest {
 
     @Test
     void excelCellComment_record() {
-        ExcelCellComment c1 = new ExcelCellComment("text");
+        ExcelCellComment c1 = ExcelCellComment.of("text");
         assertEquals("text", c1.text());
         assertNull(c1.author());
+        assertEquals(0, c1.width());
+        assertEquals(0, c1.height());
 
-        ExcelCellComment c2 = new ExcelCellComment("text", "author");
+        ExcelCellComment c2 = ExcelCellComment.of("text").author("bob").size(4, 6);
         assertEquals("text", c2.text());
-        assertEquals("author", c2.author());
+        assertEquals("bob", c2.author());
+        assertEquals(4, c2.width());
+        assertEquals(6, c2.height());
+
+        // Record should remain immutable — withers return new instances
+        assertNotSame(c1, c1.author("x"));
+    }
+
+    @Test
+    void headerComment_excelCellCommentOverload_appliesSizeAndAuthor() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ExcelWriter.<String>create()
+                .column("Col", s -> s, c -> c.headerComment(
+                        ExcelCellComment.of("detailed note").author("System").size(4, 5)))
+                .write(Stream.of("v"))
+                .writeTo(out);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+            var headerCell = wb.getSheetAt(0).getRow(0).getCell(0);
+            var comment = headerCell.getCellComment();
+            assertNotNull(comment);
+            assertEquals("detailed note", comment.getString().getString());
+            assertEquals("System", comment.getAuthor());
+            // Size: col2 = col1 + width, row2 = row1 + height
+            var anchor = comment.getClientAnchor();
+            assertEquals(0, anchor.getCol1());
+            assertEquals(4, anchor.getCol2());
+            assertEquals(0, anchor.getRow1());
+            assertEquals(5, anchor.getRow2());
+        }
+    }
+
+    @Test
+    void commentSize_columnLevel_appliesToDataAndHeader() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ExcelWriter.<String>create()
+                .column("Col", s -> s, c -> c
+                        .headerComment("hdr")
+                        .comment(s -> "cell")
+                        .commentSize(3, 6))
+                .write(Stream.of("v"))
+                .writeTo(out);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+            var sheet = wb.getSheetAt(0);
+            var headerAnchor = sheet.getRow(0).getCell(0).getCellComment().getClientAnchor();
+            assertEquals(3, headerAnchor.getCol2() - headerAnchor.getCol1());
+            assertEquals(6, headerAnchor.getRow2() - headerAnchor.getRow1());
+
+            var dataAnchor = sheet.getRow(1).getCell(0).getCellComment().getClientAnchor();
+            assertEquals(3, dataAnchor.getCol2() - dataAnchor.getCol1());
+            assertEquals(6, dataAnchor.getRow2() - dataAnchor.getRow1());
+        }
+    }
+
+    @Test
+    void excelCellComment_sizeWins_overColumnCommentSize() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ExcelWriter.<String>create()
+                .column("Col", s -> s, c -> c
+                        .headerComment(ExcelCellComment.of("x").size(7, 8))
+                        .commentSize(3, 3))
+                .write(Stream.of("v"))
+                .writeTo(out);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+            var anchor = wb.getSheetAt(0).getRow(0).getCell(0).getCellComment().getClientAnchor();
+            assertEquals(7, anchor.getCol2() - anchor.getCol1());
+            assertEquals(8, anchor.getRow2() - anchor.getRow1());
+        }
+    }
+
+    @Test
+    void commentSize_negativeOrZero_throws() {
+        assertThrows(IllegalArgumentException.class, () ->
+                ExcelWriter.<String>create().column("C", s -> s, c -> c.commentSize(0, 3)));
+        assertThrows(IllegalArgumentException.class, () ->
+                ExcelWriter.<String>create().column("C", s -> s, c -> c.commentSize(3, -1)));
+    }
+
+    @Test
+    void excelCellComment_nullText_throws() {
+        assertThrows(IllegalArgumentException.class, () -> new ExcelCellComment(null, null, 0, 0));
+    }
+
+    @Test
+    void excelCellComment_negativeSize_throws() {
+        assertThrows(IllegalArgumentException.class, () -> ExcelCellComment.of("x").size(-1, 0));
     }
 }

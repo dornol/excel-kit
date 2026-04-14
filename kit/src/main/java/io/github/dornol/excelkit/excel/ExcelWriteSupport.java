@@ -121,11 +121,16 @@ class ExcelWriteSupport {
             SXSSFCell cell = headRow.createCell(j);
             cell.setCellValue(col.getName());
             cell.setCellStyle(resolveHeaderStyle(col, headerStyle, wb, headerStyleCache));
-            String headerComment = col.getHeaderComment();
-            if (headerComment != null) {
-                addCellComment(cell, headerComment, sheet.getWorkbook());
-            }
+            applyHeaderComment(cell, col, sheet.getWorkbook());
         }
+    }
+
+    private static <T> void applyHeaderComment(SXSSFCell cell, ExcelColumn<T> col, SXSSFWorkbook wb) {
+        ExcelCellComment hc = col.getHeaderComment();
+        if (hc == null) return;
+        int w = hc.width() > 0 ? hc.width() : col.getCommentWidth();
+        int h = hc.height() > 0 ? hc.height() : col.getCommentHeight();
+        addCellComment(cell, hc.text(), hc.author(), w, h, wb);
     }
 
     private static <T> void writeGroupAndColumnHeaders(SXSSFSheet sheet, Cursor cursor,
@@ -148,10 +153,7 @@ class ExcelWriteSupport {
             SXSSFCell colCell = columnRow.createCell(j);
             colCell.setCellValue(col.getName());
             colCell.setCellStyle(colHeaderStyle);
-            String headerComment = col.getHeaderComment();
-            if (headerComment != null) {
-                addCellComment(colCell, headerComment, sheet.getWorkbook());
-            }
+            applyHeaderComment(colCell, col, sheet.getWorkbook());
 
             // Group header row
             SXSSFCell grpCell = groupRow.createCell(j);
@@ -233,22 +235,33 @@ class ExcelWriteSupport {
             if (commentFn != null) {
                 String commentText = commentFn.apply(rowData);
                 if (commentText != null) {
-                    addCellComment(cell, commentText, wb);
+                    addCellComment(cell, commentText, null,
+                            column.getCommentWidth(), column.getCommentHeight(), wb);
                 }
             }
         }
     }
 
     static void addCellComment(SXSSFCell cell, String text, SXSSFWorkbook wb) {
+        addCellComment(cell, text, null, 0, 0, wb);
+    }
+
+    static void addCellComment(SXSSFCell cell, String text, @Nullable String author,
+                                int width, int height, SXSSFWorkbook wb) {
         Drawing<?> drawing = cell.getSheet().createDrawingPatriarch();
         CreationHelper factory = wb.getCreationHelper();
         ClientAnchor anchor = factory.createClientAnchor();
+        int w = width > 0 ? width : 2;
+        int h = height > 0 ? height : 3;
         anchor.setCol1(cell.getColumnIndex());
-        anchor.setCol2(cell.getColumnIndex() + 2);
+        anchor.setCol2(cell.getColumnIndex() + w);
         anchor.setRow1(cell.getRowIndex());
-        anchor.setRow2(cell.getRowIndex() + 3);
+        anchor.setRow2(cell.getRowIndex() + h);
         Comment comment = drawing.createCellComment(anchor);
         comment.setString(factory.createRichTextString(text));
+        if (author != null) {
+            comment.setAuthor(author);
+        }
         cell.setCellComment(comment);
     }
 
