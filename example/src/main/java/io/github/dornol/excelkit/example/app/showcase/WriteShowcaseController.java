@@ -426,6 +426,32 @@ public class WriteShowcaseController {
     }
 
     // ========================================================================
+    // 12b. Multi-Level Group Headers - N-depth group(String...) (v0.16.9)
+    // ========================================================================
+    @GetMapping("/group-header-multi")
+    public ResponseEntity<StreamingResponseBody> downloadMultiLevelGroupHeader() {
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Multi-Level Group")
+                .autoFilter(true)
+                .column("Name", ProductDto::name)                              // no group
+                .column("Category", ProductDto::category, c -> c.group("Meta"))
+                .column("Price", ProductDto::price, c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .format("#,##0")
+                        .group("Financial", "Revenue"))
+                .column("Quantity", ProductDto::quantity, c -> c
+                        .type(ExcelDataType.INTEGER)
+                        .group("Financial", "Revenue"))
+                .column("Discount", ProductDto::discount, c -> c
+                        .type(ExcelDataType.DOUBLE_PERCENT)
+                        .group("Financial"))
+                .write(sampleProducts().stream());
+
+        return DownloadUtil.builder("group-header-multi-demo", DownloadFileType.EXCEL)
+                .body(handler::writeTo);
+    }
+
+    // ========================================================================
     // 13c. Comment Size/Author - ExcelCellComment + commentSize (v0.16.8)
     // ========================================================================
     @GetMapping("/comment-size")

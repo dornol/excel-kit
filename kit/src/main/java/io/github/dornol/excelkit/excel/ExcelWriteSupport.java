@@ -69,7 +69,7 @@ class ExcelWriteSupport {
     }
 
     /**
-     * Writes column headers, with optional group header row if any column has a groupName.
+     * Writes column headers, with 0..N optional group header rows if any column has groups.
      */
     static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
                                         List<ExcelColumn<T>> columns, CellStyle headerStyle) {
@@ -79,11 +79,15 @@ class ExcelWriteSupport {
     static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
                                         List<ExcelColumn<T>> columns, CellStyle headerStyle,
                                         @Nullable SXSSFWorkbook wb, @Nullable Map<String, CellStyle> headerStyleCache) {
-        boolean hasGroups = columns.stream().anyMatch(c -> c.getGroupName() != null);
-        if (hasGroups) {
-            writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
-        } else {
+        int maxDepth = 0;
+        for (ExcelColumn<T> c : columns) {
+            int d = c.getGroupNames().length;
+            if (d > maxDepth) maxDepth = d;
+        }
+        if (maxDepth == 0) {
             writeSingleHeaderRow(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
+        } else {
+            writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, maxDepth);
         }
     }
 
@@ -133,55 +137,89 @@ class ExcelWriteSupport {
         addCellComment(cell, hc.text(), hc.author(), w, h, wb);
     }
 
+    /**
+     * Writes N group header rows + 1 column header row.
+     * <p>
+     * For each column, its group levels (outermost→innermost) are top-aligned from the
+     * first group row; missing levels at the bottom become {@code null} and merge
+     * vertically into the column header cell.
+     * Horizontal merges join adjacent columns with equal non-null values on the same row.
+     */
     private static <T> void writeGroupAndColumnHeaders(SXSSFSheet sheet, Cursor cursor,
                                                         List<ExcelColumn<T>> columns, CellStyle headerStyle,
                                                         @Nullable SXSSFWorkbook wb,
-                                                        @Nullable Map<String, CellStyle> headerStyleCache) {
-        int groupRowIdx = cursor.getRowOfSheet();
-        SXSSFRow groupRow = sheet.createRow(groupRowIdx);
-        cursor.plusRow();
-        int columnRowIdx = cursor.getRowOfSheet();
-        SXSSFRow columnRow = sheet.createRow(columnRowIdx);
-        cursor.plusRow();
+                                                        @Nullable Map<String, CellStyle> headerStyleCache,
+                                                        int maxDepth) {
+        int numCols = columns.size();
+        int startRow = cursor.getRowOfSheet();
+        int columnHeaderRowIdx = startRow + maxDepth;
 
-        for (int j = 0; j < columns.size(); j++) {
-            ExcelColumn<T> col = columns.get(j);
-            String group = col.getGroupName();
-            CellStyle colHeaderStyle = resolveHeaderStyle(col, headerStyle, wb, headerStyleCache);
+        // 1. Create rows (maxDepth group rows + 1 column header row)
+        SXSSFRow[] rows = new SXSSFRow[maxDepth + 1];
+        for (int r = 0; r <= maxDepth; r++) {
+            rows[r] = sheet.createRow(startRow + r);
+            cursor.plusRow();
+        }
 
-            // Column header row (always written)
-            SXSSFCell colCell = columnRow.createCell(j);
-            colCell.setCellValue(col.getName());
-            colCell.setCellStyle(colHeaderStyle);
-            applyHeaderComment(colCell, col, sheet.getWorkbook());
-
-            // Group header row
-            SXSSFCell grpCell = groupRow.createCell(j);
-            grpCell.setCellStyle(colHeaderStyle);
-
-            if (group != null) {
-                grpCell.setCellValue(group);
+        // 2. Build grid[maxDepth][numCols] with top-aligned levels
+        String[][] grid = new String[maxDepth][numCols];
+        for (int c = 0; c < numCols; c++) {
+            String[] levels = columns.get(c).getGroupNames();
+            for (int l = 0; l < levels.length; l++) {
+                grid[l][c] = levels[l];
             }
         }
 
-        // Merge adjacent group cells with the same name
-        int i = 0;
-        while (i < columns.size()) {
-            String group = columns.get(i).getGroupName();
-            if (group != null) {
-                int start = i;
-                while (i < columns.size() && Objects.equals(group, columns.get(i).getGroupName())) {
-                    i++;
+        // 3. Style + populate all cells
+        for (int c = 0; c < numCols; c++) {
+            ExcelColumn<T> col = columns.get(c);
+            CellStyle colHeaderStyle = resolveHeaderStyle(col, headerStyle, wb, headerStyleCache);
+            for (int r = 0; r < maxDepth; r++) {
+                SXSSFCell cell = rows[r].createCell(c);
+                cell.setCellStyle(colHeaderStyle);
+                if (grid[r][c] != null) {
+                    cell.setCellValue(grid[r][c]);
                 }
-                if (i - start > 1) {
-                    sheet.addMergedRegion(new CellRangeAddress(groupRowIdx, groupRowIdx, start, i - 1));
-                }
-            } else {
-                // No group: merge vertically (group row + column row)
-                sheet.addMergedRegion(new CellRangeAddress(groupRowIdx, columnRowIdx, i, i));
-                groupRow.getCell(i).setCellValue(columns.get(i).getName());
-                i++;
             }
+            SXSSFCell colCell = rows[maxDepth].createCell(c);
+            colCell.setCellStyle(colHeaderStyle);
+            colCell.setCellValue(col.getName());
+        }
+
+        // 4. Horizontal merges per group row
+        for (int r = 0; r < maxDepth; r++) {
+            int c = 0;
+            while (c < numCols) {
+                String v = grid[r][c];
+                if (v == null) { c++; continue; }
+                int start = c;
+                while (c < numCols && Objects.equals(v, grid[r][c])) c++;
+                if (c - start > 1) {
+                    sheet.addMergedRegion(new CellRangeAddress(startRow + r, startRow + r, start, c - 1));
+                }
+            }
+        }
+
+        // 5. Vertical merges: trailing null rows (per column) merge down into column header cell.
+        //    The column header value (col.getName()) is moved up to the top-left cell of the merge.
+        //    Header comment is attached to that same top-left cell.
+        for (int c = 0; c < numCols; c++) {
+            int firstNullRow = maxDepth; // = column header row if no null trail
+            for (int r = maxDepth - 1; r >= 0; r--) {
+                if (grid[r][c] == null) firstNullRow = r;
+                else break;
+            }
+            SXSSFCell topCell;
+            if (firstNullRow < maxDepth) {
+                // Vertical merge from firstNullRow through columnHeaderRow
+                topCell = rows[firstNullRow].getCell(c);
+                topCell.setCellValue(columns.get(c).getName());
+                sheet.addMergedRegion(
+                        new CellRangeAddress(startRow + firstNullRow, columnHeaderRowIdx, c, c));
+            } else {
+                topCell = rows[maxDepth].getCell(c);
+            }
+            applyHeaderComment(topCell, columns.get(c), sheet.getWorkbook());
         }
     }
 

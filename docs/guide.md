@@ -619,6 +619,32 @@ This produces:
 
 Adjacent columns with the same group name are merged horizontally. Ungrouped columns are merged vertically across both header rows.
 
+#### Multi-level groups (v0.16.9+)
+
+Pass multiple level names to `group(String...)`, ordered outermost (top) to
+innermost (just above the column header):
+
+```java
+writer
+    .column("Name", Row::name)
+    .column("Q1", Row::q1, c -> c.group("Financial", "Revenue"))
+    .column("Q2", Row::q2, c -> c.group("Financial", "Revenue"))
+    .column("Profit", Row::profit, c -> c.group("Financial"))
+    .write(data);
+```
+
+Produces 3 header rows (2 group + 1 column):
+
+| Name |            Financial             |
+|------|----------------------------------|
+| Name | Revenue         | Profit         |
+| Name | Q1 | Q2         | Profit         |
+
+- Adjacent columns with equal non-null values on the same row are merged horizontally.
+- Columns with fewer levels are padded with `null` at the bottom and merged
+  vertically into the column header cell.
+- Columns with no group span the full header depth.
+
 For `ExcelSheetWriter`:
 ```java
 workbook.<Item>sheet("Report")

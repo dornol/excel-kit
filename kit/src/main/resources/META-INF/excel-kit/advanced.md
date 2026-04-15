@@ -54,6 +54,23 @@ writer
 //           | Name | Price | Qty         | Notes |
 ```
 
+### Multi-level groups
+
+`group(String...)` accepts N levels, outermost first:
+
+```java
+.column("Q1", Row::q1, c -> c.group("Financial", "Revenue"))
+.column("Q2", Row::q2, c -> c.group("Financial", "Revenue"))
+.column("Profit", Row::profit, c -> c.group("Financial"))
+.column("Name", Row::name)
+// | Name |        Financial         |
+// | Name |   Revenue    |  Profit   |
+// | Name |  Q1  |  Q2   |  Profit   |
+```
+
+Columns with fewer levels merge vertically down into the column header cell.
+Columns with no group span the full header depth.
+
 ## Formula Columns
 
 ```java

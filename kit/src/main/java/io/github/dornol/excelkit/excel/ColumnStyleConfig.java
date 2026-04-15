@@ -78,7 +78,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     boolean hidden;
 
     // ── Grouping ──
-    @Nullable String groupName;
+    /** Group header levels from outermost to innermost. Empty = no grouping. */
+    String @Nullable [] groupNames;
     int outlineLevel;
 
     // ── Null handling ──
@@ -232,16 +233,26 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     }
 
     /**
-     * Sets the group header name for this column.
+     * Sets group header levels for this column, ordered from outermost to innermost.
      * <p>
-     * Adjacent columns with the same group name will share a merged group header row
-     * above the regular column header row.
+     * Adjacent columns that share the same value at a given level produce a horizontal
+     * merge on that row. Columns with fewer levels than the workbook-wide maximum are
+     * vertically merged with the column header cell.
      *
-     * @param groupName the group header label
+     * <pre>{@code
+     * .column("Q1 Revenue", Row::q1Revenue).group("Financial", "Revenue")
+     * .column("Q1 Profit",  Row::q1Profit ).group("Financial", "Profit")
+     * .column("Name",       Row::name)                                       // spans all rows
+     * }</pre>
+     *
+     * Passing no arguments (or {@code null}) removes grouping.
+     *
+     * @param levels group labels from outermost (top) to innermost (just above the
+     *               column header); may be empty or {@code null}
      * @return this instance for chaining
      */
-    public SELF group(String groupName) {
-        this.groupName = groupName;
+    public SELF group(String @Nullable ... levels) {
+        this.groupNames = (levels == null || levels.length == 0) ? null : levels.clone();
         return self();
     }
 

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.9] - 2026-04-15
+
+### Added
+
+- **Multi-level group headers** — `group(String... levels)` accepts N levels,
+  ordered outermost (top) to innermost (just above the column header). Previously
+  only one level was supported.
+
+  ```java
+  .column("Q1", Row::q1, c -> c.group("Financial", "Revenue", "2025"))
+  ```
+  Produces 3 group rows + 1 column header row. Adjacent columns with equal values
+  on the same row are horizontally merged; columns with fewer levels are vertically
+  merged with the column header cell. Header comments attach to the top-left cell
+  of the merged region.
+
+### Changed (Breaking)
+
+- `ColumnStyleConfig.group(String)` signature changed to `group(String... levels)`.
+  Source-compatible — existing `.group("X")` calls still work unchanged. The
+  internal field `groupName` (String) became `groupNames` (String[]); if you
+  reflected on it or read `ExcelColumn.getGroupName()`, use `getGroupNames()`
+  instead.
+
 ## [0.16.8] - 2026-04-14
 
 ### Added

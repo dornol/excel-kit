@@ -282,7 +282,7 @@ public class TemplateListWriter<T> {
 
         return new ExcelColumn<>(name, function, style, dataType.getSetter(),
                 c.minWidth, c.maxWidth, c.fixedWidth, c.dropdownOptions,
-                c.cellColorFunction, c.groupName, c.outlineLevel,
+                c.cellColorFunction, c.groupNames, c.outlineLevel,
                 c.commentFunction, c.borderStyle, c.locked, c.hidden, c.validation,
                 c.headerFontColor, c.headerComment,
                 c.commentWidth, c.commentHeight,

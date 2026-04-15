@@ -42,7 +42,7 @@ public class ExcelColumn<T> {
     private final boolean fixedWidth;
     private final String @Nullable [] dropdownOptions;
     private final @Nullable CellColorFunction<T> cellColorFunction;
-    private final @Nullable String groupName;
+    private final String @Nullable [] groupNames;
     private final int outlineLevel;
     private final @Nullable Function<T, @Nullable String> commentFunction;
     private final @Nullable ExcelBorderStyle borderStyle;
@@ -64,7 +64,7 @@ public class ExcelColumn<T> {
 
     ExcelColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
                 int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
-                @Nullable CellColorFunction<T> cellColorFunction, @Nullable String groupName, int outlineLevel,
+                @Nullable CellColorFunction<T> cellColorFunction, String @Nullable [] groupNames, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
                 boolean hidden, @Nullable ExcelValidation validation, int @Nullable [] headerFontColor,
                 @Nullable ExcelCellComment headerComment,
@@ -79,7 +79,7 @@ public class ExcelColumn<T> {
         this.fixedWidth = fixedWidth;
         this.dropdownOptions = dropdownOptions;
         this.cellColorFunction = cellColorFunction;
-        this.groupName = groupName;
+        this.groupNames = groupNames;
         this.outlineLevel = outlineLevel;
         this.commentFunction = commentFunction;
         this.borderStyle = borderStyle;
@@ -190,8 +190,12 @@ public class ExcelColumn<T> {
         return cellColorFunction;
     }
 
-    @Nullable String getGroupName() {
-        return groupName;
+    /**
+     * Returns group header levels (outermost first), or an empty array if this column
+     * is not grouped. Never {@code null}.
+     */
+    String[] getGroupNames() {
+        return groupNames != null ? groupNames.clone() : new String[0];
     }
 
     int getOutlineLevel() {
@@ -295,7 +299,7 @@ public class ExcelColumn<T> {
             }
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
                     this.minWidth, this.maxWidth, this.fixedWidth, this.dropdownOptions,
-                    this.cellColorFunction, this.groupName, this.outlineLevel,
+                    this.cellColorFunction, this.groupNames, this.outlineLevel,
                     this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation,
                     this.headerFontColor, this.headerComment,
                     this.commentWidth, this.commentHeight,

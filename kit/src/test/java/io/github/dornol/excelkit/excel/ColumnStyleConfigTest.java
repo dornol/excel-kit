@@ -218,7 +218,7 @@ class ColumnStyleConfigTest {
             assertFalse(c.fixedWidth);
             assertNull(c.dropdownOptions);
             assertNull(c.cellColorFunction);
-            assertNull(c.groupName);
+            assertNull(c.groupNames);
             assertEquals(0, c.outlineLevel);
             assertNull(c.commentFunction);
             assertNull(c.borderStyle);
