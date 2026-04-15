@@ -76,3 +76,38 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time
 - CSV injection defense covers leading whitespace + formula characters (e.g., `" =cmd"`)
+
+## Key API Notes (v0.16.9+)
+
+- **Multi-level group headers** — `group(String... levels)` takes N levels, outermost first.
+  `.column("Q1", Row::q1, c -> c.group("Financial", "Revenue", "2025"))` produces 3 group rows + 1 header row.
+  Source-compatible with single-level `.group("X")`. Reflective readers: field renamed `groupName` → `groupNames`,
+  getter `getGroupNames()` replaces `getGroupName()`.
+- **Header customization** (writer-level):
+  - `.headerRowHeight(float points)` — applies to every header row including group rows; `0` = default
+  - `.headerFontName(String)` / `.headerFontSize(int)`
+  - `.rowNumberColumn(String name)` — 1-based sequential column; shorthand for
+    `column(name, (r, cur) -> cur.getCurrentTotal(), c -> c.type(ExcelDataType.LONG))`, rolls over with `maxRows()`
+- **Per-column header background** — `headerBackgroundColor(ExcelColor)` or `(int r, int g, int b)` on column config.
+  Overrides workbook-wide `headerColor` for one column only.
+- **Group header comments** — `writer.groupComment(String text, String... path)` or
+  `groupComment(ExcelCellComment, String... path)`. Path is outermost-first and must match a declared
+  `group(...)`; no-op otherwise.
+
+## Key API Notes (v0.16.12+) — Reading
+
+- **Split success/error callbacks** — `read(Consumer<T> onSuccess, Consumer<RowError> onError)` routes
+  validated rows vs failed rows. Library buffers nothing — caller decides error memory policy.
+- **`RowError`** record — `rowNum` (1-based, header excluded), `type` (`VALIDATION` / `MAPPING`),
+  `messages`, nullable `cause`.
+- **`ReadResult<T>.cause()`** — nullable throwable from mapping stage. 3-arg constructor retained for
+  backward compatibility.
+
+## Key API Notes (v0.16.13+) — Reading
+
+- **Multi-row header** — `ExcelReader.headerRows(int)` combines N header rows into effective column
+  names, taking the bottom-most non-blank per column. Use with files written via multi-level `group(...)`:
+  ```java
+  reader.headerRowIndex(1).headerRows(2).build(in).read(r -> ...);
+  ```
+  Default `headerRows(1)` preserves existing single-row behavior including empty-string headers.

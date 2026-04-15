@@ -63,6 +63,11 @@ All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`
 | `.headerFontColor(ExcelColor)` | Override header font color for this column |
 | `.headerFontColor(int r, int g, int b)` | Override header font color (RGB) |
 | `.headerFontColor(null)` | Use default header style |
+| `.headerBackgroundColor(ExcelColor)` | Override header background for this column only (v0.16.11+) |
+| `.headerBackgroundColor(int r, int g, int b)` | Override header background (RGB) |
+| `.headerBackgroundColor(null)` | Fall back to writer-level `headerColor` |
+| `.headerComment(String)` | Static comment on the column's header cell |
+| `.group(String... levels)` | Group header (merged rows above). N levels = N group rows (v0.16.9+) |
 
 ### Data & Behavior
 | Method | Description |
@@ -73,8 +78,6 @@ All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`
 | `.validation(ExcelValidation)` | Advanced data validation |
 | `.cellColor(CellColorFunction)` | Per-cell conditional background |
 | `.comment(Function<T, String>)` | Per-cell comment/note |
-| `.headerComment(String)` | Static comment on the column's header cell |
-| `.group(String)` | Group header (merged row above) |
 | `.outline(int)` | Column outline level 1-7 |
 | `.hidden()` | Hide column |
 | `.locked(boolean)` | Lock/unlock for sheet protection |
@@ -151,7 +154,23 @@ ExcelWriter.create().headerColor(ExcelColor.STEEL_BLUE);
 
 // Font name and size for all headers
 writer.headerFontName("Arial").headerFontSize(14);
+
+// Explicit height for every header row (including group rows, v0.16.11+)
+writer.headerRowHeight(24f);  // points; 0 = default
 ```
+
+### Per-column background override (v0.16.11+)
+
+```java
+writer
+    .headerColor(ExcelColor.STEEL_BLUE)                             // default for all headers
+    .column("Name", Product::name)
+    .column("Amount", Product::amount, c -> c.type(ExcelDataType.INTEGER)
+        .headerBackgroundColor(ExcelColor.LIGHT_RED))               // this header only: red
+    .write(data);
+```
+
+Useful for highlighting required / alert columns against the baseline header color.
 
 Presets: `WHITE`, `BLACK`, `LIGHT_GRAY`, `GRAY`, `RED`, `GREEN`, `BLUE`, `YELLOW`, `ORANGE`, `LIGHT_RED`, `LIGHT_GREEN`, `LIGHT_BLUE`, `LIGHT_YELLOW`, `CORAL`, `STEEL_BLUE`, `FOREST_GREEN`, `GOLD`, etc.
 

@@ -71,6 +71,31 @@ writer
 Columns with fewer levels merge vertically down into the column header cell.
 Columns with no group span the full header depth.
 
+### Group header comments (v0.16.11+)
+
+Attach a comment to a merged group header cell, identified by its path (outermost first).
+No-op if no column declares that path.
+
+```java
+writer
+    .column("Q1", Row::q1, c -> c.group("Financial", "Revenue"))
+    .column("Q2", Row::q2, c -> c.group("Financial", "Revenue"))
+    .groupComment("Quarterly revenue breakdown", "Financial", "Revenue")
+    .groupComment(new ExcelCellComment("Auto-generated", "system"), "Financial");
+```
+
+## Row Number Column (v0.16.11+)
+
+Convenience shortcut for a 1-based sequential row-number column, works across auto-rollover sheets:
+
+```java
+writer
+    .rowNumberColumn("No.")           // equivalent to:
+    //  .column("No.", (r, cur) -> cur.getCurrentTotal(), c -> c.type(ExcelDataType.LONG))
+    .column("Name", Product::name)
+    .write(data);
+```
+
 ## Formula Columns
 
 ```java

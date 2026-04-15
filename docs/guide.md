@@ -653,6 +653,60 @@ workbook.<Item>sheet("Report")
     .write(stream);
 ```
 
+#### Group header comments (v0.16.11+)
+
+Attach a comment/note to a merged group header cell, identified by its path
+(outermost first). No-op if no column declares that path.
+
+```java
+writer
+    .column("Name", Row::name)
+    .column("Q1", Row::q1, c -> c.group("Financial", "Revenue"))
+    .column("Q2", Row::q2, c -> c.group("Financial", "Revenue"))
+    .groupComment("Quarterly revenue", "Financial", "Revenue")
+    .groupComment(new ExcelCellComment("Owner: Finance team", "system"), "Financial")
+    .write(data);
+```
+
+### Header Customization (v0.16.11+)
+
+Per-column header background override and writer-level header row height.
+
+```java
+writer
+    .headerColor(ExcelColor.STEEL_BLUE)         // default for all headers
+    .headerRowHeight(24f)                        // applies to every header row (points; 0 = default)
+    .column("Name", Product::name)
+    .column("Amount", Product::amount, c -> c
+        .type(ExcelDataType.INTEGER)
+        .headerBackgroundColor(ExcelColor.LIGHT_RED))  // this header only
+    .write(data);
+```
+
+- `.headerBackgroundColor(ExcelColor)` / `(int r, int g, int b)` / `(null)` — on column config.
+  Overrides writer-wide `headerColor`. `null` restores default.
+- `.headerRowHeight(float points)` — on writer. Applies to every header row including
+  group header rows in multi-level setups. Pass `0` for default.
+
+### Row Number Column (v0.16.11+)
+
+Convenience shortcut for a 1-based sequential row-number column:
+
+```java
+writer
+    .rowNumberColumn("No.")
+    .column("Name", Product::name)
+    .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
+    .write(data);
+```
+
+Equivalent to:
+```java
+.column("No.", (r, cursor) -> cursor.getCurrentTotal(), c -> c.type(ExcelDataType.LONG))
+```
+
+Numbering continues correctly across auto-rollover sheets (`maxRows()`).
+
 ### Column Outline (Grouping)
 
 Group columns so they can be collapsed/expanded in Excel:
@@ -1702,6 +1756,26 @@ ExcelReader.setter(User::new)
         .build(inputStream);
 ```
 
+**Multi-row headers** (v0.16.13+, Excel only):
+
+Files written with multi-level `group(...)` have blank column-header cells because
+they're part of vertical merges. Use `headerRows(int)` to combine N header rows into
+effective column names, taking the bottom-most non-blank value per column.
+
+```java
+ExcelReader.<Row>mapping(row -> new Row(
+        row.get("Q1").asInt(),
+        row.get("Q2").asInt(),
+        row.get("Profit").asInt()))
+    .headerRowIndex(2)  // last header row is row index 2 (0-based)
+    .headerRows(3)      // 3 header rows total: 2 group rows + 1 column header
+    .build(in)
+    .read(result -> ...);
+```
+
+Default `headerRows(1)` preserves existing single-row behavior. Empty-string headers remain
+`""` so name-based mapping stays backward-compatible.
+
 **Specific sheet:**
 ```java
 ExcelReader.setter(User::new)
@@ -1728,6 +1802,33 @@ try (Stream<ReadResult<User>> stream = rh.readAsStream()) {
           .forEach(user -> { /* process */ });
 }
 ```
+
+**Split success / error callbacks (v0.16.12+):**
+
+Route valid rows and failed rows to separate callbacks. The library buffers nothing — the
+caller decides how to manage error memory (log, keep top N, stream elsewhere, or abort by
+throwing):
+
+```java
+reader.read(
+    record -> process(record),
+    err -> {
+        switch (err.type()) {
+            case VALIDATION -> log.warn("row {} invalid: {}", err.rowNum(), err.messages());
+            case MAPPING    -> log.error("row {} mapping failed", err.rowNum(), err.cause());
+        }
+    });
+```
+
+`RowError` fields:
+- `rowNum()` — 1-based row ordinal, header rows excluded
+- `type()` — `VALIDATION` or `MAPPING`
+- `messages()` — human-readable messages (list)
+- `cause()` — nullable throwable (for `MAPPING` errors)
+
+The unified `read(Consumer<ReadResult<T>>)` form still works — `ReadResult<T>.cause()` is
+also nullable so mapping-stage exceptions are preserved there too (3-arg constructor
+retained for backward compatibility).
 
 **Large file support:**
 ```java

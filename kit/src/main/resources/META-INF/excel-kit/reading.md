@@ -91,18 +91,57 @@ Can be mixed: name-based + index-based in same reader.
 ```java
 reader
     .sheetIndex(0)          // default: 0
-    .headerRowIndex(0)      // default: 0
+    .headerRowIndex(0)      // default: 0 — 0-based index of the LAST header row
+    .headerRows(1)          // default: 1 — total header row count (v0.16.13+, Excel only)
     .onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count))
     .build(inputStream);
 ```
+
+### Multi-row headers (v0.16.13+, Excel)
+
+Files written with multi-level `group(...)` have blank column-header cells due to vertical merges.
+`headerRows(int)` combines N header rows per column, taking the bottom-most non-blank value:
+
+```java
+ExcelReader.<Record>mapping(row -> ...)
+    .headerRowIndex(1)     // last header row is row index 1
+    .headerRows(2)         // 2 header rows (group row + column header row)
+    .build(in)
+    .read(result -> ...);
+```
+
+Default `headerRows(1)` = existing single-row behavior. Empty-string headers preserved.
 
 ## Read Methods
 
 | Method | Description |
 |--------|-------------|
 | `.read(Consumer<ReadResult<T>>)` | Process each row (skips failures) |
+| `.read(Consumer<T> onSuccess, Consumer<RowError> onError)` | Split success/error callbacks (v0.16.12+) |
 | `.readStrict(Consumer<ReadResult<T>>)` | Throws on first validation failure |
 | `.readAsStream()` | Returns `Stream<ReadResult<T>>` |
+
+### Split success/error callbacks (v0.16.12+)
+
+Route valid rows and failed rows to separate callbacks. The library buffers nothing — caller decides
+error memory policy (log, keep top N, abort by throwing):
+
+```java
+reader.read(
+    record -> process(record),
+    err -> {
+        if (err.type() == RowError.Type.VALIDATION) {
+            log.warn("row {} invalid: {}", err.rowNum(), err.messages());
+        } else {  // MAPPING
+            log.error("row {} mapping failed", err.rowNum(), err.cause());
+        }
+    });
+```
+
+**`RowError` fields**: `rowNum()` (1-based, header excluded), `type()` (`VALIDATION` / `MAPPING`),
+`messages()` (human-readable), `cause()` (nullable throwable from mapping stage).
+
+`ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 
 ## Multi-Sheet Discovery
 

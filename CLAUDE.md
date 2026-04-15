@@ -21,7 +21,23 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
    - Quick Start 코드가 최신 API 사용하는지 확인
 5. 문서 최신화 (새 기능이 있으면):
    - `docs/guide.md` — 상세 가이드에 새 기능 사용법 추가
-   - `META-INF/AI.md` 및 `META-INF/excel-kit/*.md` — JAR 내 AI 문서 반영
+   - `META-INF/AI.md` — Quick Reference / Key API Notes 에 새 API 반영
+   - `META-INF/excel-kit/*.md` — 해당 카테고리 파일 반영
+     - 쓰기 스타일/컬럼 → `column-config.md`
+     - 읽기 → `reading.md`
+     - group/formula/protection/chart/validation → `advanced.md`
+     - CSV 전용 → `csv.md`
+     - 기본 예제 → `quick-start.md`
+   - **검증**: 이번 버전 CHANGELOG Added 항목의 API 이름(예: `headerRows`, `rowNumberColumn`)이
+     아래 grep 에서 모든 문서군에 최소 1회 이상 hit 해야 함
+     ```sh
+     for api in <이번-버전-신규-API-이름들>; do
+       echo "=== $api ==="
+       grep -l "$api" README.md docs/guide.md \
+         kit/src/main/resources/META-INF/AI.md \
+         kit/src/main/resources/META-INF/excel-kit/*.md || echo "MISSING: $api"
+     done
+     ```
 6. `example/` 최신화 (showcase할 기능이 있으면):
    - `WriteShowcaseController` — 새 기능 엔드포인트 추가
    - `index.html` — 해당 다운로드 버튼 추가

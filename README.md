@@ -161,7 +161,8 @@ public ResponseEntity<StreamingResponseBody> download() {
 |----------|-----------|
 | Column DSL | Type, format, alignment, width, font, color, rotation, indentation |
 | Styling | Row/cell conditional colors, borders (per-side), bold, strikethrough, underline |
-| Layout | Auto-filter, freeze panes (row + column), group headers, column outline, hiding |
+| Layout | Auto-filter, freeze panes (row + column), multi-level group headers, column outline, hiding |
+| Header | Global/per-column header color, per-column header background, header row height, group header comments, row-number column |
 | Validation | Dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
 | Content | Formulas, hyperlinks, rich text, images, cell comments |
 | Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |
@@ -177,7 +178,9 @@ public ResponseEntity<StreamingResponseBody> download() {
 |----------|-----------|
 | Column matching | By name, by index, positional with skip |
 | Read modes | Setter (mutable), Mapping (records), Map (schema-less) |
+| Headers | Single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
+| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError` |
 | Stream | `readAsStream()` with lazy evaluation, `readStrict()` for fail-fast |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
 | Config | Sheet index, header row index, progress callback, password-encrypted files |
