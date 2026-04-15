@@ -150,6 +150,33 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     /**
+     * Reads the file and routes each row to one of two callbacks.
+     * <p>
+     * Successful rows are passed to {@code onSuccess}; failed rows (validation,
+     * mapping, or cell-conversion errors) are described in a {@link RowError}
+     * and passed to {@code onError}. The library buffers nothing — memory
+     * management is entirely up to the caller. Reading continues past errors.
+     * To abort, throw from {@code onError}.
+     *
+     * @param onSuccess callback for each successfully parsed and validated row
+     * @param onError   callback for each failed row
+     * @since 0.16.12
+     */
+    public void read(Consumer<T> onSuccess, Consumer<RowError> onError) {
+        AtomicLong rowNum = new AtomicLong(0);
+        read(result -> {
+            long n = rowNum.incrementAndGet();
+            if (result.success()) {
+                onSuccess.accept(result.data());
+            } else {
+                List<String> msgs = result.messages() != null ? result.messages() : List.of();
+                RowError.Type type = result.cause() != null ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
+                onError.accept(new RowError(n, type, msgs, result.cause()));
+            }
+        });
+    }
+
+    /**
      * Reads the file and returns a lazy stream of row results.
      * <p>
      * <strong>Important:</strong> The returned stream holds file and thread resources.
@@ -284,7 +311,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             log.warn("Row mapping failed", e);
             List<String> messages = new ArrayList<>();
             messages.add("Row mapping failed: " + e.getMessage());
-            return new ReadResult<>(null, false, messages);
+            return new ReadResult<>(null, false, messages, e);
         }
         List<String> messages = new ArrayList<>();
         boolean valid = validateIfNeeded(instance, messages);

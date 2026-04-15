@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.12] - 2026-04-15
+
+### Added
+
+- **Split success/error read callbacks** — `read(Consumer<T> onSuccess,
+  Consumer<RowError> onError)` delivers successfully parsed rows to one
+  callback and failed rows (validation or mapping) to another. The library
+  buffers nothing — the caller decides how to manage error memory (log,
+  keep top N, stream to elsewhere, or abort by throwing).
+  ```java
+  reader.read(
+      record -> process(record),
+      err -> {
+          if (err.type() == RowError.Type.VALIDATION) { ... }
+          else { log.warn("row {} mapping failed", err.rowNum(), err.cause()); }
+      });
+  ```
+- **`RowError` record** — carries row ordinal (1-based, excluding header),
+  category (`VALIDATION` / `MAPPING`), human-readable messages, and the
+  original cause when available.
+
+### Changed
+
+- `ReadResult<T>` record gains a nullable `cause` field so mapping-stage
+  exceptions are preserved alongside the usual messages. The 3-arg
+  constructor is retained for backward compatibility.
+
 ## [0.16.11] - 2026-04-15
 
 ### Added

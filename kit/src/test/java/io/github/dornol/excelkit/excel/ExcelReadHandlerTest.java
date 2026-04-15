@@ -141,6 +141,49 @@ class ExcelReadHandlerTest {
     }
     
     @Test
+    void read_withSuccessAndErrorCallbacks_routesFailuresToErrorHandler() throws IOException {
+        Path invalidExcelFile = tempDir.resolve("invalid-cb.xlsx");
+        createInvalidTestExcelFile(invalidExcelFile);
+
+        List<TestPerson> successes = new ArrayList<>();
+        List<io.github.dornol.excelkit.core.RowError> errors = new ArrayList<>();
+
+        try (InputStream is = Files.newInputStream(invalidExcelFile)) {
+            new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is)
+                    .read(successes::add, errors::add);
+        }
+
+        assertEquals(1, successes.size());
+        assertEquals(2, errors.size());
+        // Row numbers are 1-based data-row ordinals; first failure is data row 2 (blank name)
+        assertEquals(2L, errors.get(0).rowNum());
+        assertEquals(3L, errors.get(1).rowNum());
+        // Validation violations have no cause, classified as VALIDATION
+        assertEquals(io.github.dornol.excelkit.core.RowError.Type.VALIDATION, errors.get(0).type());
+        assertNull(errors.get(0).cause());
+        assertFalse(errors.get(0).messages().isEmpty());
+    }
+
+    @Test
+    void read_errorCallbackCanAbortByThrowing() throws IOException {
+        Path invalidExcelFile = tempDir.resolve("invalid-abort.xlsx");
+        createInvalidTestExcelFile(invalidExcelFile);
+
+        try (InputStream is = Files.newInputStream(invalidExcelFile)) {
+            var handler = new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is);
+
+            assertThrows(RuntimeException.class, () ->
+                    handler.read(p -> {}, e -> { throw new RuntimeException("abort"); }));
+        }
+    }
+
+    @Test
     void read_shouldReadSecondSheet() throws IOException {
         Path multiSheetFile = tempDir.resolve("multi-sheet.xlsx");
         createMultiSheetExcelFile(multiSheetFile);
