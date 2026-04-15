@@ -50,6 +50,7 @@ public class ExcelColumn<T> {
     private final boolean hidden;
     private final @Nullable ExcelValidation validation;
     private final int @Nullable [] headerFontColor;
+    private final int @Nullable [] headerBackgroundColor;
     private final @Nullable ExcelCellComment headerComment;
     private final int commentWidth;
     private final int commentHeight;
@@ -59,7 +60,7 @@ public class ExcelColumn<T> {
     static <T> ExcelColumn<T> of(String name, RowFunction<T, @Nullable Object> function,
                                   @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
         return new ExcelColumn<>(name, function, style, columnSetter,
-                0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, 0, 0, null);
+                0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, null, 0, 0, null);
     }
 
     ExcelColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
@@ -67,6 +68,7 @@ public class ExcelColumn<T> {
                 @Nullable CellColorFunction<T> cellColorFunction, String @Nullable [] groupNames, int outlineLevel,
                 @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
                 boolean hidden, @Nullable ExcelValidation validation, int @Nullable [] headerFontColor,
+                int @Nullable [] headerBackgroundColor,
                 @Nullable ExcelCellComment headerComment,
                 int commentWidth, int commentHeight,
                 @Nullable Object nullValue) {
@@ -87,6 +89,7 @@ public class ExcelColumn<T> {
         this.hidden = hidden;
         this.validation = validation;
         this.headerFontColor = headerFontColor;
+        this.headerBackgroundColor = headerBackgroundColor;
         this.headerComment = headerComment;
         this.commentWidth = commentWidth;
         this.commentHeight = commentHeight;
@@ -226,6 +229,10 @@ public class ExcelColumn<T> {
         return headerFontColor != null ? headerFontColor.clone() : null;
     }
 
+    int @Nullable [] getHeaderBackgroundColor() {
+        return headerBackgroundColor != null ? headerBackgroundColor.clone() : null;
+    }
+
     @Nullable ExcelCellComment getHeaderComment() {
         return headerComment;
     }
@@ -301,7 +308,7 @@ public class ExcelColumn<T> {
                     this.minWidth, this.maxWidth, this.fixedWidth, this.dropdownOptions,
                     this.cellColorFunction, this.groupNames, this.outlineLevel,
                     this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation,
-                    this.headerFontColor, this.headerComment,
+                    this.headerFontColor, this.headerBackgroundColor, this.headerComment,
                     this.commentWidth, this.commentHeight,
                     this.nullValue);
         }

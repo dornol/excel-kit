@@ -297,6 +297,63 @@ public class ExcelWriter<T> {
     }
 
     /**
+     * Attaches a comment (note) to a group header cell identified by its path
+     * (outermost label first).
+     * <p>
+     * The comment is rendered on the top-left cell of the merged group region.
+     * If no column declares this path via {@code .group(...)}, this call is a no-op.
+     *
+     * @param text the comment text
+     * @param path group header path, outermost first (e.g. {@code "Financial", "Revenue"})
+     * @return this writer for chaining
+     * @since 0.16.11
+     */
+    public ExcelWriter<T> groupComment(String text, String... path) {
+        return groupComment(ExcelCellComment.of(text), path);
+    }
+
+    /**
+     * Attaches a rich comment (with author / size) to a group header cell identified by path.
+     *
+     * @param comment the comment configuration
+     * @param path group header path, outermost first
+     * @return this writer for chaining
+     * @since 0.16.11
+     */
+    /**
+     * Sets the height (in points) applied to every header row (including group header rows).
+     * Pass {@code 0} to revert to Excel's default.
+     *
+     * @since 0.16.11
+     */
+    public ExcelWriter<T> headerRowHeight(float points) {
+        if (points < 0) throw new IllegalArgumentException("points must be >= 0");
+        this.cfg.headerRowHeightInPoints = points;
+        return this;
+    }
+
+    /**
+     * Adds a 1-based sequential row-number column (spans all sheets when auto-rolled).
+     *
+     * @param name the column header name (e.g. {@code "No."})
+     * @return this writer for chaining
+     * @since 0.16.11
+     */
+    public ExcelWriter<T> rowNumberColumn(String name) {
+        column(name, (row, cursor) -> cursor.getCurrentTotal(),
+                c -> c.type(ExcelDataType.LONG));
+        return this;
+    }
+
+    public ExcelWriter<T> groupComment(ExcelCellComment comment, String... path) {
+        if (path == null || path.length == 0) {
+            throw new IllegalArgumentException("path must not be empty");
+        }
+        this.cfg.putGroupComment(java.util.Arrays.asList(path), comment);
+        return this;
+    }
+
+    /**
      * Freezes the given number of rows below the header row.
      * <p>
      * For both-axes freezing use {@link #freezePane(int, int)};
@@ -845,7 +902,7 @@ public class ExcelWriter<T> {
         this.cursor = new Cursor(headerStartRow);
         this.headerRowIndex = headerStartRow;
 
-        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
+        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
         applySheetOptions();
 
         try {
@@ -910,7 +967,7 @@ public class ExcelWriter<T> {
             int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
             cursor.setRowOfSheet(preambleRow);
             headerRowIndex = preambleRow;
-            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
+            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
             applySheetOptions();
         }
         ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);

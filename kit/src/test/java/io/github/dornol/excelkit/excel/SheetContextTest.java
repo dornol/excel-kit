@@ -41,11 +41,11 @@ class SheetContextTest {
     private List<ExcelColumn<String>> sampleColumns() {
         return List.of(
                 new ExcelColumn<>("Name", (r, c) -> r, null, ExcelDataType.STRING.getSetter(),
-                        0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, 0, 0, null),
+                        0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, null, 0, 0, null),
                 new ExcelColumn<>("Age", (r, c) -> r, null, ExcelDataType.INTEGER.getSetter(),
-                        0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, 0, 0, null),
+                        0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, null, 0, 0, null),
                 new ExcelColumn<>("Score", (r, c) -> r, null, ExcelDataType.DOUBLE.getSetter(),
-                        0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, 0, 0, null)
+                        0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, null, 0, 0, null)
         );
     }
 

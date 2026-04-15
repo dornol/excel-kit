@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.11] - 2026-04-15
+
+### Added
+
+- **Group header comments** — `writer.groupComment(String text, String... path)`
+  and `groupComment(ExcelCellComment, String... path)` attach a note to a
+  merged group header cell, identified by its path (outermost first). No-op
+  if no column declares that path.
+  ```java
+  .column("Q1", Row::q1, c -> c.group("Financial", "Revenue"))
+  .groupComment("Quarterly revenue", "Financial", "Revenue")
+  ```
+- **Per-column header background color** — `headerBackgroundColor(ExcelColor)` /
+  `headerBackgroundColor(int r, int g, int b)`. Overrides the workbook-wide
+  `headerColor` for a single column only. Useful for highlighting alert or
+  required columns.
+- **`headerRowHeight(float points)`** — writer-level setter that applies the
+  given height to every header row (including group header rows in multi-level
+  setups). Pass `0` for default.
+- **`rowNumberColumn(String name)`** — convenience for a 1-based sequential
+  row-number column. Equivalent to a manual `column(name, (r, cursor) ->
+  cursor.getCurrentTotal(), c -> c.type(ExcelDataType.LONG))` call. Works
+  across auto-rollover sheets.
+
 ## [0.16.10] - 2026-04-15
 
 ### Fixed

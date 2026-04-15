@@ -4,7 +4,7 @@ plugins {
 allprojects {
 
     group = "io.github.dornol"
-    version = "0.16.10"
+    version = "0.16.11"
 
     repositories {
         mavenCentral()

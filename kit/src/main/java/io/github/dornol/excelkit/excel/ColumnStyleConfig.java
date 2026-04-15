@@ -53,6 +53,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable Boolean strikethrough;
     @Nullable Boolean underline;
     int @Nullable [] headerFontColor;
+    int @Nullable [] headerBackgroundColor;
 
     // ── Color & background ──
     int @Nullable [] backgroundColor;
@@ -601,6 +602,29 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      */
     public SELF headerFontColor(@Nullable ExcelColor color) {
         this.headerFontColor = color != null ? color.toRgb() : null;
+        return self();
+    }
+
+    /**
+     * Sets the background color for this column's header cell using RGB values.
+     * Overrides the workbook-wide header color for this column only.
+     *
+     * @return this instance for chaining
+     * @since 0.16.11
+     */
+    public SELF headerBackgroundColor(int r, int g, int b) {
+        this.headerBackgroundColor = new int[]{r, g, b};
+        return self();
+    }
+
+    /**
+     * Sets the background color for this column's header cell using a preset color.
+     *
+     * @return this instance for chaining
+     * @since 0.16.11
+     */
+    public SELF headerBackgroundColor(@Nullable ExcelColor color) {
+        this.headerBackgroundColor = color != null ? color.toRgb() : null;
         return self();
     }
 

@@ -73,21 +73,30 @@ class ExcelWriteSupport {
      */
     static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
                                         List<ExcelColumn<T>> columns, CellStyle headerStyle) {
-        writeColumnHeaders(sheet, cursor, columns, headerStyle, null, null);
+        writeColumnHeaders(sheet, cursor, columns, headerStyle, null, null, null, 0f);
     }
 
     static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
                                         List<ExcelColumn<T>> columns, CellStyle headerStyle,
                                         @Nullable SXSSFWorkbook wb, @Nullable Map<String, CellStyle> headerStyleCache) {
+        writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, null, 0f);
+    }
+
+    static <T> void writeColumnHeaders(SXSSFSheet sheet, Cursor cursor,
+                                        List<ExcelColumn<T>> columns, CellStyle headerStyle,
+                                        @Nullable SXSSFWorkbook wb, @Nullable Map<String, CellStyle> headerStyleCache,
+                                        @Nullable Map<List<String>, ExcelCellComment> groupComments,
+                                        float headerRowHeight) {
         int maxDepth = 0;
         for (ExcelColumn<T> c : columns) {
             int d = c.getGroupNames().length;
             if (d > maxDepth) maxDepth = d;
         }
         if (maxDepth == 0) {
-            writeSingleHeaderRow(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
+            writeSingleHeaderRow(sheet, cursor, columns, headerStyle, wb, headerStyleCache, headerRowHeight);
         } else {
-            writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, maxDepth);
+            writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache,
+                    maxDepth, groupComments, headerRowHeight);
         }
     }
 
@@ -95,13 +104,24 @@ class ExcelWriteSupport {
                                                      @Nullable SXSSFWorkbook wb,
                                                      @Nullable Map<String, CellStyle> cache) {
         int[] fontColor = col.getHeaderFontColor();
-        if (fontColor == null || wb == null || cache == null) {
+        int[] bgColor = col.getHeaderBackgroundColor();
+        if ((fontColor == null && bgColor == null) || wb == null || cache == null) {
             return baseStyle;
         }
-        String key = "hdr_" + baseStyle.getIndex() + "_" + fontColor[0] + "_" + fontColor[1] + "_" + fontColor[2];
+        String key = "hdr_" + baseStyle.getIndex()
+                + "_f" + (fontColor == null ? "-" : fontColor[0] + "_" + fontColor[1] + "_" + fontColor[2])
+                + "_b" + (bgColor == null ? "-" : bgColor[0] + "_" + bgColor[1] + "_" + bgColor[2]);
         return cache.computeIfAbsent(key, k -> {
             CellStyle style = wb.createCellStyle();
             style.cloneStyleFrom(baseStyle);
+            if (bgColor != null) {
+                style.setFillForegroundColor(new XSSFColor(new byte[]{
+                        (byte) bgColor[0], (byte) bgColor[1], (byte) bgColor[2]}));
+                style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            }
+            if (fontColor == null) {
+                return style;
+            }
             Font font = wb.createFont();
             Font baseFont = wb.getFontAt(baseStyle.getFontIndex());
             font.setBold(baseFont.getBold());
@@ -117,8 +137,10 @@ class ExcelWriteSupport {
     private static <T> void writeSingleHeaderRow(SXSSFSheet sheet, Cursor cursor,
                                                   List<ExcelColumn<T>> columns, CellStyle headerStyle,
                                                   @Nullable SXSSFWorkbook wb,
-                                                  @Nullable Map<String, CellStyle> headerStyleCache) {
+                                                  @Nullable Map<String, CellStyle> headerStyleCache,
+                                                  float headerRowHeight) {
         SXSSFRow headRow = sheet.createRow(cursor.getRowOfSheet());
+        if (headerRowHeight > 0) headRow.setHeightInPoints(headerRowHeight);
         cursor.plusRow();
         for (int j = 0; j < columns.size(); j++) {
             ExcelColumn<T> col = columns.get(j);
@@ -149,7 +171,9 @@ class ExcelWriteSupport {
                                                         List<ExcelColumn<T>> columns, CellStyle headerStyle,
                                                         @Nullable SXSSFWorkbook wb,
                                                         @Nullable Map<String, CellStyle> headerStyleCache,
-                                                        int maxDepth) {
+                                                        int maxDepth,
+                                                        @Nullable Map<List<String>, ExcelCellComment> groupComments,
+                                                        float headerRowHeight) {
         int numCols = columns.size();
         int startRow = cursor.getRowOfSheet();
         int columnHeaderRowIdx = startRow + maxDepth;
@@ -158,6 +182,7 @@ class ExcelWriteSupport {
         SXSSFRow[] rows = new SXSSFRow[maxDepth + 1];
         for (int r = 0; r <= maxDepth; r++) {
             rows[r] = sheet.createRow(startRow + r);
+            if (headerRowHeight > 0) rows[r].setHeightInPoints(headerRowHeight);
             cursor.plusRow();
         }
 
@@ -186,7 +211,7 @@ class ExcelWriteSupport {
             colCell.setCellValue(col.getName());
         }
 
-        // 4. Horizontal merges per group row
+        // 4. Horizontal merges per group row + group comment attachment
         for (int r = 0; r < maxDepth; r++) {
             int c = 0;
             while (c < numCols) {
@@ -196,6 +221,24 @@ class ExcelWriteSupport {
                 while (c < numCols && Objects.equals(v, grid[r][c])) c++;
                 if (c - start > 1) {
                     sheet.addMergedRegion(new CellRangeAddress(startRow + r, startRow + r, start, c - 1));
+                }
+                // Group comment: match by full path from row 0 through row r at column `start`
+                if (groupComments != null && !groupComments.isEmpty()) {
+                    List<String> path = new java.util.ArrayList<>(r + 1);
+                    boolean valid = true;
+                    for (int k = 0; k <= r; k++) {
+                        String s = grid[k][start];
+                        if (s == null) { valid = false; break; }
+                        path.add(s);
+                    }
+                    if (valid) {
+                        ExcelCellComment ec = groupComments.get(path);
+                        if (ec != null) {
+                            SXSSFCell top = rows[r].getCell(start);
+                            addCellComment(top, ec.text(), ec.author(), ec.width(), ec.height(),
+                                    sheet.getWorkbook());
+                        }
+                    }
                 }
             }
         }

@@ -156,6 +156,50 @@ public class ExcelSheetWriter<T> {
      * @param autoFilter Whether to apply auto-filter
      * @return this writer for chaining
      */
+    /**
+     * Attaches a comment (note) to a group header cell identified by its path
+     * (outermost label first). No-op if no column declares this path.
+     *
+     * @since 0.16.11
+     */
+    public ExcelSheetWriter<T> groupComment(String text, String... path) {
+        return groupComment(ExcelCellComment.of(text), path);
+    }
+
+    /**
+     * Attaches a rich comment (author / size) to a group header cell identified by path.
+     *
+     * @since 0.16.11
+     */
+    /**
+     * Sets the height (in points) applied to every header row (including group header rows).
+     *
+     * @since 0.16.11
+     */
+    /**
+     * Adds a 1-based sequential row-number column.
+     *
+     * @since 0.16.11
+     */
+    public ExcelSheetWriter<T> rowNumberColumn(String name) {
+        return column(name, (row, cursor) -> cursor.getCurrentTotal(),
+                c -> c.type(ExcelDataType.LONG));
+    }
+
+    public ExcelSheetWriter<T> headerRowHeight(float points) {
+        if (points < 0) throw new IllegalArgumentException("points must be >= 0");
+        this.cfg.headerRowHeightInPoints = points;
+        return this;
+    }
+
+    public ExcelSheetWriter<T> groupComment(ExcelCellComment comment, String... path) {
+        if (path == null || path.length == 0) {
+            throw new IllegalArgumentException("path must not be empty");
+        }
+        this.cfg.putGroupComment(java.util.Arrays.asList(path), comment);
+        return this;
+    }
+
     public ExcelSheetWriter<T> autoFilter(boolean autoFilter) {
         this.cfg.autoFilter = autoFilter;
         return this;
@@ -436,7 +480,7 @@ public class ExcelSheetWriter<T> {
         Cursor cursor = new Cursor(currentRow);
         int headerRowIndex = currentRow;
 
-        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache);
+        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
         int headerRowIdx = cursor.getRowOfSheet() - 1;
         ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
 
@@ -456,7 +500,7 @@ public class ExcelSheetWriter<T> {
                     int preambleRow = ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
                     cursor.setRowOfSheet(preambleRow);
                     headerRowIndex = preambleRow;
-                    ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache);
+                    ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
                 }
@@ -510,7 +554,7 @@ public class ExcelSheetWriter<T> {
                 c.minWidth, c.maxWidth, c.fixedWidth, c.dropdownOptions,
                 c.cellColorFunction, c.groupNames, c.outlineLevel,
                 c.commentFunction, c.borderStyle, c.locked, c.hidden, c.validation,
-                c.headerFontColor, c.headerComment,
+                c.headerFontColor, c.headerBackgroundColor, c.headerComment,
                 c.commentWidth, c.commentHeight,
                 c.nullValue);
     }

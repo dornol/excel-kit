@@ -173,6 +173,78 @@ class MultiLevelGroupHeaderTest {
     }
 
     @Nested
+    class GroupComments {
+        @Test
+        void groupComment_byPath_attachesToTopLeftOfMerge() throws Exception {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ExcelWriter.<String[]>create()
+                    .column("Q1", r -> r[0], c -> c.group("Financial", "Revenue"))
+                    .column("Q2", r -> r[1], c -> c.group("Financial", "Revenue"))
+                    .column("Profit", r -> r[2], c -> c.group("Financial"))
+                    .groupComment("Top-level financial section", "Financial")
+                    .groupComment("Quarterly revenue", "Financial", "Revenue")
+                    .write(Stream.<String[]>of(new String[]{"1", "2", "3"}))
+                    .writeTo(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var sheet = wb.getSheetAt(0);
+                // Financial spans row 0 cols 0-2 — comment on row 0 col 0 (top-left)
+                var finComment = sheet.getRow(0).getCell(0).getCellComment();
+                assertNotNull(finComment);
+                assertEquals("Top-level financial section", finComment.getString().getString());
+
+                // Revenue spans row 1 cols 0-1 — comment on row 1 col 0
+                var revComment = sheet.getRow(1).getCell(0).getCellComment();
+                assertNotNull(revComment);
+                assertEquals("Quarterly revenue", revComment.getString().getString());
+
+                // Profit has no comment set — row 1 col 2 (top-left of its vertical merge) should be null
+                assertNull(sheet.getRow(1).getCell(2).getCellComment());
+            }
+        }
+
+        @Test
+        void groupComment_unknownPath_isNoOp() throws Exception {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ExcelWriter.<String[]>create()
+                    .column("Q1", r -> r[0], c -> c.group("Financial"))
+                    .groupComment("should be ignored", "NonExistent")
+                    .write(Stream.<String[]>of(new String[]{"1"}))
+                    .writeTo(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var sheet = wb.getSheetAt(0);
+                assertNull(sheet.getRow(0).getCell(0).getCellComment());
+            }
+        }
+
+        @Test
+        void groupComment_rich_withSizeAndAuthor() throws Exception {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ExcelWriter.<String[]>create()
+                    .column("Q1", r -> r[0], c -> c.group("Financial"))
+                    .groupComment(ExcelCellComment.of("Rich").author("QA").size(4, 2), "Financial")
+                    .write(Stream.<String[]>of(new String[]{"1"}))
+                    .writeTo(out);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var comment = wb.getSheetAt(0).getRow(0).getCell(0).getCellComment();
+                assertNotNull(comment);
+                assertEquals("QA", comment.getAuthor());
+                var anchor = comment.getClientAnchor();
+                assertEquals(4, anchor.getCol2() - anchor.getCol1());
+                assertEquals(2, anchor.getRow2() - anchor.getRow1());
+            }
+        }
+
+        @Test
+        void groupComment_emptyPath_throws() {
+            var w = ExcelWriter.<String>create();
+            assertThrows(IllegalArgumentException.class, () -> w.groupComment("x"));
+        }
+    }
+
+    @Nested
     class EdgeCases {
         @Test
         void emptyVarargsIsTreatedAsNoGroup() throws Exception {

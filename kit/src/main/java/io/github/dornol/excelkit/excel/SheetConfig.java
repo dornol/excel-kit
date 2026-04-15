@@ -4,7 +4,9 @@ import io.github.dornol.excelkit.core.ProgressCallback;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -23,6 +25,8 @@ class SheetConfig<T> {
     static final float DEFAULT_ROW_HEIGHT_POINTS = 20f;
 
     float rowHeightInPoints = DEFAULT_ROW_HEIGHT_POINTS;
+    /** Per-header-row height in points; 0 means use Excel default. */
+    float headerRowHeightInPoints = 0f;
     boolean autoFilter = false;
     int freezePaneCols = 0;
     int freezePaneRows = 0;
@@ -40,6 +44,15 @@ class SheetConfig<T> {
     ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyleConfig;
     @Nullable ExcelSummary summaryConfig;
     @Nullable Function<Integer, String> sheetNameFunction;
+    /** Map from group header path (outermost-first) to its comment. */
+    @Nullable Map<List<String>, ExcelCellComment> groupComments;
+
+    void putGroupComment(List<String> path, ExcelCellComment comment) {
+        if (groupComments == null) {
+            groupComments = new HashMap<>();
+        }
+        groupComments.put(List.copyOf(path), comment);
+    }
 
     void addConditionalRule(Consumer<ExcelConditionalRule> configurer) {
         if (conditionalRules == null) {
