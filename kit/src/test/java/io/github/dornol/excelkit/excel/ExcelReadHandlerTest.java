@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -180,6 +181,62 @@ class ExcelReadHandlerTest {
 
             assertThrows(RuntimeException.class, () ->
                     handler.read(p -> {}, e -> { throw new RuntimeException("abort"); }));
+        }
+    }
+
+    @Test
+    void read_multiRowHeaders_roundTripsWrittenGroupHeader() throws IOException {
+        // Round-trip scenario: a file written with multi-level group headers. The column
+        // header row contains blanks where cells are part of a vertical merge with a group
+        // label above. headerRows(N) aggregates bottom-most non-blank to recover names.
+        Path file = tempDir.resolve("multi-header.xlsx");
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("Data");
+            // Row 0: group row — "Name" is at col 0 (merged down), "Financial" at col 1 (spanning 1-2)
+            Row r0 = sheet.createRow(0);
+            r0.createCell(0).setCellValue("Name");
+            r0.createCell(1).setCellValue("Financial");
+            // Row 1: column header row — blank at col 0 (merged with above), "Price"/"Qty" for 1,2
+            Row r1 = sheet.createRow(1);
+            // col 0 intentionally blank (represents vertical merge)
+            r1.createCell(1).setCellValue("Price");
+            r1.createCell(2).setCellValue("Qty");
+            // Data
+            Row d = sheet.createRow(2);
+            d.createCell(0).setCellValue("Alice");
+            d.createCell(1).setCellValue("100");
+            d.createCell(2).setCellValue("5");
+
+            try (FileOutputStream fos = new FileOutputStream(file.toFile())) {
+                wb.write(fos);
+            }
+        }
+
+        List<Map<String, String>> results = new ArrayList<>();
+        try (InputStream is = Files.newInputStream(file)) {
+            ExcelReader.forMap()
+                    .headerRowIndex(1)
+                    .headerRows(2)
+                    .build(is)
+                    .read(r -> results.add(r.data()));
+        }
+
+        assertEquals(1, results.size());
+        // "Name" recovered from group row because column header row cell was blank
+        assertEquals("Alice", results.get(0).get("Name"));
+        // Price/Qty came from the column header row directly
+        assertEquals("100", results.get(0).get("Price"));
+        assertEquals("5",   results.get(0).get("Qty"));
+    }
+
+    @Test
+    void headerRows_invalidValue_throws() throws IOException {
+        try (InputStream is = Files.newInputStream(excelFile)) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> new ExcelReader<>(TestPerson::new, validator)
+                            .headerRows(0)
+                            .column(createNameSetter())
+                            .build(is));
         }
     }
 

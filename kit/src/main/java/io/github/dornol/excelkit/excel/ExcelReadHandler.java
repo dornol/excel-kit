@@ -89,6 +89,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final @Nullable List<ReadColumn<T>> columns;
     private final int sheetIndex;
     private final int headerRowIndex;
+    private final int headerRows;
     private final int progressInterval;
     private final @Nullable ProgressCallback progressCallback;
     private final @Nullable String password;
@@ -102,7 +103,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param validator        Optional bean validator for validating mapped instances
      */
     ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0, 0, 0, null);
+        this(inputStream, columns, instanceSupplier, validator, 0, 0, 1, 0, null, null);
     }
 
     /**
@@ -115,7 +116,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param sheetIndex       The zero-based index of the sheet to read
      */
     ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, 0, 0, null);
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, 0, 1, 0, null, null);
     }
 
     /**
@@ -129,26 +130,29 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      * @param headerRowIndex   The zero-based index of the header row (rows before this are skipped)
      */
     ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex, int headerRowIndex) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, 0, null);
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, 1, 0, null, null);
     }
 
     ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
                      Validator validator, int sheetIndex, int headerRowIndex,
                      int progressInterval, @Nullable ProgressCallback progressCallback) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, progressInterval, progressCallback, null);
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, 1, progressInterval, progressCallback, (String) null);
     }
 
     ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
                      Validator validator, int sheetIndex, int headerRowIndex,
+                     int headerRows,
                      int progressInterval, @Nullable ProgressCallback progressCallback,
                      @Nullable String password) {
         super(inputStream, instanceSupplier, validator, ".xlsx");
         validateColumns(columns);
         validateSheetIndex(sheetIndex);
         validateHeaderRowIndex(headerRowIndex);
+        validateHeaderRows(headerRows);
         this.columns = columns;
         this.sheetIndex = sheetIndex;
         this.headerRowIndex = headerRowIndex;
+        this.headerRows = headerRows;
         this.progressInterval = progressInterval;
         this.progressCallback = progressCallback;
         this.password = password;
@@ -160,22 +164,31 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
                      @Nullable Validator validator, int sheetIndex, int headerRowIndex,
                      int progressInterval, @Nullable ProgressCallback progressCallback) {
-        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, progressInterval, progressCallback, null);
+        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, 1, progressInterval, progressCallback, (String) null);
     }
 
     ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
                      @Nullable Validator validator, int sheetIndex, int headerRowIndex,
+                     int headerRows,
                      int progressInterval, @Nullable ProgressCallback progressCallback,
                      @Nullable String password) {
         super(inputStream, rowMapper, validator, ".xlsx");
         validateSheetIndex(sheetIndex);
         validateHeaderRowIndex(headerRowIndex);
+        validateHeaderRows(headerRows);
         this.columns = null;
         this.sheetIndex = sheetIndex;
         this.headerRowIndex = headerRowIndex;
+        this.headerRows = headerRows;
         this.progressInterval = progressInterval;
         this.progressCallback = progressCallback;
         this.password = password;
+    }
+
+    private static void validateHeaderRows(int headerRows) {
+        if (headerRows < 1) {
+            throw new IllegalArgumentException("headerRows must be >= 1");
+        }
     }
 
     private static void validateSheetIndex(int sheetIndex) {
@@ -361,6 +374,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private @Nullable T currentInstance;
         private final List<CellData> currentRow = new ArrayList<>();
         private final List<String> headerNames = new ArrayList<>();
+        /** Accumulates bottom-most non-blank header value per column across multi-row headers. */
+        private final List<@Nullable String> headerAccumulator = new ArrayList<>();
         private final Consumer<ReadResult<T>> consumer;
         private @Nullable List<String> messages;
         private int @Nullable [] resolvedIndices;
@@ -391,15 +406,19 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          */
         @Override
         public void endRow(int rowNum) {
-            if (rowNum < headerRowIndex) {
+            int firstHeaderRow = headerRowIndex - headerRows + 1;
+            if (rowNum < firstHeaderRow) {
                 return;
             }
-            if (rowNum == headerRowIndex) {
-                extractHeaderNames();
-                if (rowMapper != null) {
-                    buildHeaderIndex();
-                } else {
-                    resolveColumnIndices();
+            if (rowNum >= firstHeaderRow && rowNum <= headerRowIndex) {
+                accumulateHeaderRow();
+                if (rowNum == headerRowIndex) {
+                    finalizeHeaderNames();
+                    if (rowMapper != null) {
+                        buildHeaderIndex();
+                    } else {
+                        resolveColumnIndices();
+                    }
                 }
                 return;
             }
@@ -436,16 +455,39 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         /**
-         * Extracts header names from the first row and warns about duplicates.
+         * Merges the current header row's cells into {@link #headerAccumulator}, keeping
+         * the bottom-most non-blank value per column (so a row below overrides a row above
+         * only when it carries a value — preserving group labels whose column header cell
+         * is blank due to a vertical merge in the source file).
          */
-        private void extractHeaderNames() {
-            List<String> names = currentRow.stream()
-                    .map(CellData::formattedValue)
-                    .toList();
-            headerNames.addAll(names);
+        private void accumulateHeaderRow() {
+            for (CellData cell : currentRow) {
+                int idx = cell.columnIndex();
+                while (headerAccumulator.size() <= idx) {
+                    headerAccumulator.add(null);
+                }
+                String v = cell.formattedValue();
+                if (headerRows == 1) {
+                    // Single-row: preserve legacy behavior — record every value (including "").
+                    if (v != null) {
+                        headerAccumulator.set(idx, v);
+                    }
+                } else if (v != null && !v.isEmpty()) {
+                    // Multi-row: non-blank overrides only, so vertically merged group labels
+                    // survive when the column header cell below is emitted as blank.
+                    headerAccumulator.set(idx, v);
+                }
+            }
+        }
+
+        /**
+         * Finalizes the accumulated header names and warns about duplicates.
+         */
+        private void finalizeHeaderNames() {
+            headerNames.addAll(headerAccumulator);
 
             Set<String> seen = new HashSet<>();
-            for (String name : names) {
+            for (String name : headerNames) {
                 if (name != null && !seen.add(name)) {
                     log.warn("Duplicate header name '{}' found in sheet (headerRowIndex={}). "
                             + "Only the first occurrence will be used in mapping mode.", name, headerRowIndex);

@@ -49,6 +49,7 @@ public class ExcelReader<T> {
     private final @Nullable Validator validator;
     private int sheetIndex = 0;
     private int headerRowIndex = 0;
+    private int headerRows = 1;
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private boolean mapMode = false;
@@ -251,6 +252,29 @@ public class ExcelReader<T> {
     }
 
     /**
+     * Sets how many rows make up the header block, anchored at {@link #headerRowIndex(int)}
+     * as the last (column header) row. Previous rows are treated as group header rows.
+     * <p>
+     * For each column, the effective header name is the bottom-most non-blank value within the
+     * header block. This accommodates Excel files whose column header cells are part of a
+     * vertical merge with a group label above (common when the file was produced by
+     * multi-level {@code group(...)} on the writer side).
+     * <p>
+     * Default: {@code 1} (single header row — existing behavior).
+     *
+     * @param headerRows total header row count (must be &gt;= 1)
+     * @return this reader for chaining
+     * @since 0.16.13
+     */
+    public ExcelReader<T> headerRows(int headerRows) {
+        if (headerRows < 1) {
+            throw new IllegalArgumentException("headerRows must be >= 1");
+        }
+        this.headerRows = headerRows;
+        return this;
+    }
+
+    /**
      * Sets the password for reading encrypted Excel files.
      * <p>
      * If the file is encrypted with the "agile" encryption mode (as produced by
@@ -396,10 +420,10 @@ public class ExcelReader<T> {
     public ExcelReadHandler<T> build(InputStream inputStream) {
         if (rowMapper != null) {
             return new ExcelReadHandler<>(inputStream, rowMapper, validator,
-                    sheetIndex, headerRowIndex, progressInterval, progressCallback, password);
+                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password);
         }
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
-                sheetIndex, headerRowIndex, progressInterval, progressCallback, password);
+                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password);
     }
 
     /**

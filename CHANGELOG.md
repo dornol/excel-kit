@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.13] - 2026-04-15
+
+### Added
+
+- **Multi-row header support** — `ExcelReader.headerRows(int)` lets the reader
+  combine N header rows into the effective column names, using the bottom-most
+  non-blank value per column. This round-trips files written with multi-level
+  `group(...)` on the writer side (where column header cells are often blank
+  because they're part of a vertical merge with a group label above).
+  ```java
+  reader
+      .headerRowIndex(1)     // last header row (0-based)
+      .headerRows(2)         // 2 header rows total (group row + column header row)
+      .build(in)
+      .read(record -> ...);
+  ```
+  Default remains `headerRows(1)`; existing single-row behavior unchanged
+  (including preserving empty-string headers).
+
 ## [0.16.12] - 2026-04-15
 
 ### Added
