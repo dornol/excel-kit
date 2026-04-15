@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.10] - 2026-04-15
+
+### Fixed
+
+- Vertically merged group header cells rendered with bottom-aligned text
+  because the column name value existed in both the top-left and the
+  original column header row cell of the merge region. Non-top cells in
+  a vertical merge are now explicitly blanked so Excel honors the
+  header style's `VerticalAlignment.CENTER`.
+
 ## [0.16.9] - 2026-04-15
 
 ### Added

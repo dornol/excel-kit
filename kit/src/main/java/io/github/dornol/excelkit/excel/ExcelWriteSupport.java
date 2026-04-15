@@ -211,9 +211,15 @@ class ExcelWriteSupport {
             }
             SXSSFCell topCell;
             if (firstNullRow < maxDepth) {
-                // Vertical merge from firstNullRow through columnHeaderRow
+                // Vertical merge from firstNullRow through columnHeaderRow.
+                // Move the column name onto the merge's top-left cell and blank the
+                // other cells in the merge range — otherwise Excel sees multiple
+                // non-empty cells in a merged region and renders with bottom alignment.
                 topCell = rows[firstNullRow].getCell(c);
                 topCell.setCellValue(columns.get(c).getName());
+                for (int r = firstNullRow + 1; r <= maxDepth; r++) {
+                    rows[r].getCell(c).setBlank();
+                }
                 sheet.addMergedRegion(
                         new CellRangeAddress(startRow + firstNullRow, columnHeaderRowIdx, c, c));
             } else {

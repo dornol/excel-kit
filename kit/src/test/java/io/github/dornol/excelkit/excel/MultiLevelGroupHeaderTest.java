@@ -206,6 +206,26 @@ class MultiLevelGroupHeaderTest {
         }
 
         @Test
+        void verticalMerge_valueOnTopLeftOnly_othersBlank() throws Exception {
+            // When a shallow column is vertically merged, only the top-left cell of
+            // the merge range should carry the column name. The other merged cells
+            // must be blank — otherwise Excel renders with bottom alignment.
+            byte[] bytes = write(
+                    List.<String[]>of(new String[]{"n", "1"}),
+                    new ColumnSpec("Name", 0),                               // no group → merged 0-2
+                    new ColumnSpec("Q1",   1, "Financial", "Revenue"));
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+                var sheet = wb.getSheetAt(0);
+                assertEquals("Name", sheet.getRow(0).getCell(0).getStringCellValue());
+                assertEquals(org.apache.poi.ss.usermodel.CellType.BLANK,
+                        sheet.getRow(1).getCell(0).getCellType());
+                assertEquals(org.apache.poi.ss.usermodel.CellType.BLANK,
+                        sheet.getRow(2).getCell(0).getCellType());
+            }
+        }
+
+        @Test
         void headerCommentOnShallowColumn_attachesToTopOfMergedRegion() throws Exception {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ExcelWriter.<String>create()
