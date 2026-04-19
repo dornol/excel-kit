@@ -2,7 +2,6 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -28,7 +27,7 @@ import java.util.stream.Stream;
  * @param <T> The data type of each row to be written into the Excel file
  * @since 2025-07-19
  */
-public class ExcelWriter<T> {
+public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
@@ -38,7 +37,6 @@ public class ExcelWriter<T> {
     private CellStyle headerStyle;
     private XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
-    private final SheetConfig<T> cfg = new SheetConfig<>();
     private @Nullable AfterDataWriter afterAllWriter;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
@@ -271,68 +269,6 @@ public class ExcelWriter<T> {
     }
 
     /**
-     * Sets the row height for data rows in points.
-     * Defaults to 20 points.
-     *
-     * @param rowHeightInPoints Row height in points (must be positive)
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> rowHeight(float rowHeightInPoints) {
-        if (rowHeightInPoints <= 0) {
-            throw new IllegalArgumentException("rowHeightInPoints must be positive");
-        }
-        this.cfg.rowHeightInPoints = rowHeightInPoints;
-        return this;
-    }
-
-    /**
-     * Enables or disables auto-filter on the header row.
-     *
-     * @param autoFilter Whether to apply auto-filter
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> autoFilter(boolean autoFilter) {
-        this.cfg.autoFilter = autoFilter;
-        return this;
-    }
-
-    /**
-     * Attaches a comment (note) to a group header cell identified by its path
-     * (outermost label first).
-     * <p>
-     * The comment is rendered on the top-left cell of the merged group region.
-     * If no column declares this path via {@code .group(...)}, this call is a no-op.
-     *
-     * @param text the comment text
-     * @param path group header path, outermost first (e.g. {@code "Financial", "Revenue"})
-     * @return this writer for chaining
-     * @since 0.16.11
-     */
-    public ExcelWriter<T> groupComment(String text, String... path) {
-        return groupComment(ExcelCellComment.of(text), path);
-    }
-
-    /**
-     * Attaches a rich comment (with author / size) to a group header cell identified by path.
-     *
-     * @param comment the comment configuration
-     * @param path group header path, outermost first
-     * @return this writer for chaining
-     * @since 0.16.11
-     */
-    /**
-     * Sets the height (in points) applied to every header row (including group header rows).
-     * Pass {@code 0} to revert to Excel's default.
-     *
-     * @since 0.16.11
-     */
-    public ExcelWriter<T> headerRowHeight(float points) {
-        if (points < 0) throw new IllegalArgumentException("points must be >= 0");
-        this.cfg.headerRowHeightInPoints = points;
-        return this;
-    }
-
-    /**
      * Adds a 1-based sequential row-number column (spans all sheets when auto-rolled).
      *
      * @param name the column header name (e.g. {@code "No."})
@@ -342,101 +278,6 @@ public class ExcelWriter<T> {
     public ExcelWriter<T> rowNumberColumn(String name) {
         column(name, (row, cursor) -> cursor.getCurrentTotal(),
                 c -> c.type(ExcelDataType.LONG));
-        return this;
-    }
-
-    public ExcelWriter<T> groupComment(ExcelCellComment comment, String... path) {
-        if (path == null || path.length == 0) {
-            throw new IllegalArgumentException("path must not be empty");
-        }
-        this.cfg.putGroupComment(java.util.Arrays.asList(path), comment);
-        return this;
-    }
-
-    /**
-     * Freezes the given number of rows below the header row.
-     * <p>
-     * For both-axes freezing use {@link #freezePane(int, int)};
-     * for columns-only use {@link #freezeCols(int)}.
-     *
-     * @param rows Number of rows to freeze (must be non-negative)
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.16.6
-     */
-    public ExcelWriter<T> freezeRows(int rows) {
-        if (rows < 0) {
-            throw new IllegalArgumentException("freezePaneRows must be non-negative");
-        }
-        this.cfg.freezePaneRows = rows;
-        return this;
-    }
-
-    /**
-     * Freezes the given number of columns from the left edge.
-     * <p>
-     * For both-axes freezing use {@link #freezePane(int, int)};
-     * for rows-only use {@link #freezeRows(int)}.
-     *
-     * @param cols Number of columns to freeze (must be non-negative)
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.16.6
-     */
-    public ExcelWriter<T> freezeCols(int cols) {
-        if (cols < 0) {
-            throw new IllegalArgumentException("freezePaneCols must be non-negative");
-        }
-        this.cfg.freezePaneCols = cols;
-        return this;
-    }
-
-    /**
-     * Sets the number of columns and rows to freeze.
-     * <p>
-     * Columns are frozen from the left edge, rows are frozen below the header row.
-     * This is useful for data entry forms and ledgers where both ID columns and
-     * header rows should remain visible while scrolling.
-     *
-     * @param cols Number of columns to freeze from the left (must be non-negative)
-     * @param rows Number of rows to freeze below the header (must be non-negative)
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> freezePane(int cols, int rows) {
-        if (cols < 0) {
-            throw new IllegalArgumentException("freezePaneCols must be non-negative");
-        }
-        if (rows < 0) {
-            throw new IllegalArgumentException("freezePaneRows must be non-negative");
-        }
-        this.cfg.freezePaneCols = cols;
-        this.cfg.freezePaneRows = rows;
-        return this;
-    }
-
-    /**
-     * Registers a callback that writes custom content before the column header row.
-     * <p>
-     * The callback is invoked on every sheet, including rollover sheets,
-     * so it must always produce the same number of rows.
-     *
-     * @param beforeHeaderWriter the callback to invoke before writing column headers
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> beforeHeader(BeforeHeaderWriter beforeHeaderWriter) {
-        this.cfg.beforeHeaderWriter = beforeHeaderWriter;
-        return this;
-    }
-
-    /**
-     * Registers a callback that writes custom content after all data rows on each sheet.
-     * <p>
-     * Called on every sheet (including rollover sheets) after its data rows are written.
-     * On the last sheet, this is called before {@code afterAll}.
-     *
-     * @param afterDataWriter the callback to invoke after data rows
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> afterData(AfterDataWriter afterDataWriter) {
-        this.cfg.afterDataWriter = afterDataWriter;
         return this;
     }
 
@@ -455,17 +296,6 @@ public class ExcelWriter<T> {
     }
 
     /**
-     * Sets a function that generates sheet names based on the sheet index (0-based).
-     *
-     * @param sheetNameFunction a function that takes the sheet index and returns the sheet name
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> sheetName(Function<Integer, String> sheetNameFunction) {
-        this.cfg.sheetNameFunction = sheetNameFunction;
-        return this;
-    }
-
-    /**
      * Sets a fixed sheet name. When sheets roll over, subsequent sheets are named
      * "{name} (2)", "{name} (3)", etc.
      *
@@ -475,133 +305,6 @@ public class ExcelWriter<T> {
     public ExcelWriter<T> sheetName(String name) {
         this.cfg.sheetNameFunction = index -> index == 0 ? name : name + " (" + (index + 1) + ")";
         return this;
-    }
-
-    /**
-     * Sets a function that determines the background color for each row.
-     * <p>
-     * When set, the function is called for each row of data. If it returns a non-null
-     * {@link ExcelColor}, that color is applied as the background to all cells in the row,
-     * overriding any column-level background color.
-     *
-     * @param rowColorFunction function that takes row data and returns an ExcelColor (or null for no override)
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> rowColor(Function<T, @Nullable ExcelColor> rowColorFunction) {
-        this.cfg.rowColorFunction = rowColorFunction;
-        return this;
-    }
-
-    /**
-     * Registers a progress callback that fires every {@code interval} rows.
-     *
-     * @param interval the number of rows between each callback invocation (must be positive)
-     * @param callback the callback to invoke
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> onProgress(int interval, ProgressCallback callback) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("progress interval must be positive");
-        }
-        this.cfg.progressInterval = interval;
-        this.cfg.progressCallback = callback;
-        return this;
-    }
-
-    /**
-     * Sets the number of rows sampled for auto column width calculation.
-     * <p>
-     * Only the first N data rows are measured to determine column widths.
-     * Set to 0 to disable auto-width (all columns use minimum width).
-     * Defaults to 100.
-     *
-     * @param rows number of rows to sample (0 to disable)
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> autoWidthSampleRows(int rows) {
-        if (rows < 0) {
-            throw new IllegalArgumentException("autoWidthSampleRows must be non-negative");
-        }
-        this.cfg.autoWidthSampleRows = rows;
-        return this;
-    }
-
-    /**
-     * Protects all sheets with the given password.
-     * <p>
-     * When sheet protection is enabled, cells are locked by default.
-     * Use {@link ExcelColumn.ExcelColumnBuilder#locked(boolean)} to allow editing specific columns.
-     *
-     * @param password the protection password
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> protectSheet(String password) {
-        this.cfg.sheetPassword = password;
-        return this;
-    }
-
-    /**
-     * Adds a conditional formatting rule.
-     *
-     * @param configurer consumer to configure the rule
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> conditionalFormatting(Consumer<ExcelConditionalRule> configurer) {
-        cfg.addConditionalRule(configurer);
-        return this;
-    }
-
-    /**
-     * Configures a chart to be added after all data is written.
-     *
-     * @param configurer consumer to configure the chart
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> chart(Consumer<ExcelChartConfig> configurer) {
-        ExcelChartConfig config = new ExcelChartConfig();
-        configurer.accept(config);
-        this.cfg.chartConfig = config;
-        return this;
-    }
-
-    /**
-     * Configures print setup (page layout) for all sheets.
-     * <p>
-     * Controls orientation, paper size, margins, headers/footers, repeat rows, and fit-to-page.
-     *
-     * @param configurer consumer to configure the print setup
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> printSetup(Consumer<ExcelPrintSetup> configurer) {
-        ExcelPrintSetup config = new ExcelPrintSetup();
-        configurer.accept(config);
-        this.cfg.printSetup = config;
-        return this;
-    }
-
-    /**
-     * Sets the sheet tab color using RGB values.
-     *
-     * @param r Red component (0–255)
-     * @param g Green component (0–255)
-     * @param b Blue component (0–255)
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.7.0
-     */
-    public ExcelWriter<T> tabColor(int r, int g, int b) {
-        this.cfg.tabColor = new int[]{r, g, b};
-        return this;
-    }
-
-    /**
-     * Sets the sheet tab color using a preset color.
-     *
-     * @param color Preset color
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.7.0
-     */
-    public ExcelWriter<T> tabColor(ExcelColor color) {
-        return tabColor(color.getR(), color.getG(), color.getB());
     }
 
     /**
@@ -657,34 +360,6 @@ public class ExcelWriter<T> {
             throw new IllegalArgumentException("fontSize must be positive");
         }
         this.headerFontSize = fontSize;
-        return this;
-    }
-
-    /**
-     * Sets default column styles that apply to all columns unless overridden per-column.
-     *
-     * @param configurer consumer to configure default style properties
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
-        ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
-        configurer.accept(config);
-        this.cfg.defaultStyleConfig = config;
-        return this;
-    }
-
-    /**
-     * Configures summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
-     * <p>
-     * Summary rows are appended after data rows on each sheet.
-     *
-     * @param configurer consumer to configure the summary
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> summary(Consumer<ExcelSummary> configurer) {
-        ExcelSummary summary = new ExcelSummary();
-        configurer.accept(summary);
-        this.cfg.summaryConfig = summary;
         return this;
     }
 

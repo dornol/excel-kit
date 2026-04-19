@@ -55,7 +55,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 
 - 테스트: JUnit 5 + `@Nested` 클래스로 기능별 그룹핑
 - 컬럼 설정: `ColumnStyleConfig`를 상속하는 `ExcelColumnBuilder`(체이닝)와 `ColumnConfig`(람다) 두 API 유지
-- `ExcelColumn` 생성자 변경 시 테스트 파일의 `ExcelColumn.of()` 호출도 함께 확인
+- `ExcelColumn` 생성자는 `ColumnStyleConfig`를 통째로 받음 — 새 필드 추가 시 `ColumnStyleConfig`에 필드+setter 추가 후 `ExcelColumn` 내부에서 복사
 - 패키지 구조: `core/` (공통 타입), `excel/` (Excel), `csv/` (CSV)
 - 생성 진입점: `ExcelWriter.create()` / `ExcelWriter.create(opts -> ...)`, `ExcelWorkbook.create()` / `ExcelWorkbook.create(opts -> ...)` — `InitOptions` Consumer 로 초기 설정만 받고, 그 외 설정은 fluent 메서드
 - Reader 진입점: `setter()`, `mapping()`, `forMap()` 정적 팩토리

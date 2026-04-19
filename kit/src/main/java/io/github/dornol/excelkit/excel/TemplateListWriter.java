@@ -280,13 +280,7 @@ public class TemplateListWriter<T> {
                 c.verticalAlignment, c.wrapText, c.fontName, c.indentation);
         CellStyle style = ExcelStyleSupporter.cellStyle(wb, params, cellStyleCache);
 
-        return new ExcelColumn<>(name, function, style, dataType.getSetter(),
-                c.minWidth, c.maxWidth, c.fixedWidth, c.dropdownOptions,
-                c.cellColorFunction, c.groupNames, c.outlineLevel,
-                c.commentFunction, c.borderStyle, c.locked, c.hidden, c.validation,
-                c.headerFontColor, c.headerBackgroundColor, c.headerComment,
-                c.commentWidth, c.commentHeight,
-                c.nullValue);
+        return new ExcelColumn<>(name, function, style, dataType.getSetter(), c);
     }
 
 }

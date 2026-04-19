@@ -59,42 +59,34 @@ public class ExcelColumn<T> {
 
     static <T> ExcelColumn<T> of(String name, RowFunction<T, @Nullable Object> function,
                                   @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
-        return new ExcelColumn<>(name, function, style, columnSetter,
-                0, 0, false, null, null, null, 0, null, null, null, false, null, null, null, null, 0, 0, null);
+        return new ExcelColumn<>(name, function, style, columnSetter, new ColumnStyleConfig.DefaultStyleConfig<>());
     }
 
-    ExcelColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable CellStyle style, ExcelColumnSetter columnSetter,
-                int minWidth, int maxWidth, boolean fixedWidth, String @Nullable [] dropdownOptions,
-                @Nullable CellColorFunction<T> cellColorFunction, String @Nullable [] groupNames, int outlineLevel,
-                @Nullable Function<T, @Nullable String> commentFunction, @Nullable ExcelBorderStyle borderStyle, @Nullable Boolean locked,
-                boolean hidden, @Nullable ExcelValidation validation, int @Nullable [] headerFontColor,
-                int @Nullable [] headerBackgroundColor,
-                @Nullable ExcelCellComment headerComment,
-                int commentWidth, int commentHeight,
-                @Nullable Object nullValue) {
+    ExcelColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable CellStyle style,
+                ExcelColumnSetter columnSetter, ColumnStyleConfig<T, ?> config) {
         this.name = name;
         this.function = function;
         this.style = style;
         this.columnSetter = columnSetter;
-        this.minWidth = minWidth;
-        this.maxWidth = maxWidth;
-        this.fixedWidth = fixedWidth;
-        this.dropdownOptions = dropdownOptions;
-        this.cellColorFunction = cellColorFunction;
-        this.groupNames = groupNames;
-        this.outlineLevel = outlineLevel;
-        this.commentFunction = commentFunction;
-        this.borderStyle = borderStyle;
-        this.locked = locked;
-        this.hidden = hidden;
-        this.validation = validation;
-        this.headerFontColor = headerFontColor;
-        this.headerBackgroundColor = headerBackgroundColor;
-        this.headerComment = headerComment;
-        this.commentWidth = commentWidth;
-        this.commentHeight = commentHeight;
-        this.nullValue = nullValue;
-        this.columnWidth = fixedWidth ? minWidth : Math.max(getLogicalLength(name), minWidth);
+        this.minWidth = config.minWidth;
+        this.maxWidth = config.maxWidth;
+        this.fixedWidth = config.fixedWidth;
+        this.dropdownOptions = config.dropdownOptions;
+        this.cellColorFunction = config.cellColorFunction;
+        this.groupNames = config.groupNames;
+        this.outlineLevel = config.outlineLevel;
+        this.commentFunction = config.commentFunction;
+        this.borderStyle = config.borderStyle;
+        this.locked = config.locked;
+        this.hidden = config.hidden;
+        this.validation = config.validation;
+        this.headerFontColor = config.headerFontColor;
+        this.headerBackgroundColor = config.headerBackgroundColor;
+        this.headerComment = config.headerComment;
+        this.commentWidth = config.commentWidth;
+        this.commentHeight = config.commentHeight;
+        this.nullValue = config.nullValue;
+        this.columnWidth = config.fixedWidth ? config.minWidth : Math.max(getLogicalLength(name), config.minWidth);
     }
 
     /**
@@ -304,13 +296,7 @@ public class ExcelColumn<T> {
             if (this.columnSetter == null) {
                 this.columnSetter = this.dataType.getSetter();
             }
-            return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter,
-                    this.minWidth, this.maxWidth, this.fixedWidth, this.dropdownOptions,
-                    this.cellColorFunction, this.groupNames, this.outlineLevel,
-                    this.commentFunction, this.borderStyle, this.locked, this.hidden, this.validation,
-                    this.headerFontColor, this.headerBackgroundColor, this.headerComment,
-                    this.commentWidth, this.commentHeight,
-                    this.nullValue);
+            return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter, this);
         }
 
     }

@@ -176,27 +176,45 @@ class ExcelWriteSupport {
                                                         float headerRowHeight) {
         int numCols = columns.size();
         int startRow = cursor.getRowOfSheet();
-        int columnHeaderRowIdx = startRow + maxDepth;
 
-        // 1. Create rows (maxDepth group rows + 1 column header row)
+        SXSSFRow[] rows = createHeaderRows(sheet, cursor, maxDepth, headerRowHeight);
+        String[][] grid = buildGroupGrid(columns, maxDepth);
+        populateHeaderCells(rows, grid, columns, headerStyle, wb, headerStyleCache, maxDepth);
+        applyHorizontalMerges(sheet, rows, grid, startRow, maxDepth, numCols, groupComments);
+        applyVerticalMerges(sheet, rows, grid, columns, startRow, maxDepth, numCols);
+    }
+
+    /** Creates (maxDepth + 1) rows and advances the cursor. */
+    private static SXSSFRow[] createHeaderRows(SXSSFSheet sheet, Cursor cursor,
+                                                int maxDepth, float headerRowHeight) {
         SXSSFRow[] rows = new SXSSFRow[maxDepth + 1];
         for (int r = 0; r <= maxDepth; r++) {
-            rows[r] = sheet.createRow(startRow + r);
+            rows[r] = sheet.createRow(cursor.getRowOfSheet());
             if (headerRowHeight > 0) rows[r].setHeightInPoints(headerRowHeight);
             cursor.plusRow();
         }
+        return rows;
+    }
 
-        // 2. Build grid[maxDepth][numCols] with top-aligned levels
-        String[][] grid = new String[maxDepth][numCols];
-        for (int c = 0; c < numCols; c++) {
+    /** Builds grid[depth][col] with group levels top-aligned. Unfilled slots are null. */
+    private static <T> String[][] buildGroupGrid(List<ExcelColumn<T>> columns, int maxDepth) {
+        String[][] grid = new String[maxDepth][columns.size()];
+        for (int c = 0; c < columns.size(); c++) {
             String[] levels = columns.get(c).getGroupNames();
             for (int l = 0; l < levels.length; l++) {
                 grid[l][c] = levels[l];
             }
         }
+        return grid;
+    }
 
-        // 3. Style + populate all cells
-        for (int c = 0; c < numCols; c++) {
+    /** Styles and populates all header cells (group rows + column header row). */
+    private static <T> void populateHeaderCells(SXSSFRow[] rows, String[][] grid,
+                                                 List<ExcelColumn<T>> columns, CellStyle headerStyle,
+                                                 @Nullable SXSSFWorkbook wb,
+                                                 @Nullable Map<String, CellStyle> headerStyleCache,
+                                                 int maxDepth) {
+        for (int c = 0; c < columns.size(); c++) {
             ExcelColumn<T> col = columns.get(c);
             CellStyle colHeaderStyle = resolveHeaderStyle(col, headerStyle, wb, headerStyleCache);
             for (int r = 0; r < maxDepth; r++) {
@@ -210,8 +228,12 @@ class ExcelWriteSupport {
             colCell.setCellStyle(colHeaderStyle);
             colCell.setCellValue(col.getName());
         }
+    }
 
-        // 4. Horizontal merges per group row + group comment attachment
+    /** Merges adjacent columns with equal values per group row and attaches group comments. */
+    private static void applyHorizontalMerges(SXSSFSheet sheet, SXSSFRow[] rows, String[][] grid,
+                                               int startRow, int maxDepth, int numCols,
+                                               @Nullable Map<List<String>, ExcelCellComment> groupComments) {
         for (int r = 0; r < maxDepth; r++) {
             int c = 0;
             while (c < numCols) {
@@ -222,7 +244,6 @@ class ExcelWriteSupport {
                 if (c - start > 1) {
                     sheet.addMergedRegion(new CellRangeAddress(startRow + r, startRow + r, start, c - 1));
                 }
-                // Group comment: match by full path from row 0 through row r at column `start`
                 if (groupComments != null && !groupComments.isEmpty()) {
                     List<String> path = new java.util.ArrayList<>(r + 1);
                     boolean valid = true;
@@ -234,30 +255,31 @@ class ExcelWriteSupport {
                     if (valid) {
                         ExcelCellComment ec = groupComments.get(path);
                         if (ec != null) {
-                            SXSSFCell top = rows[r].getCell(start);
-                            addCellComment(top, ec.text(), ec.author(), ec.width(), ec.height(),
-                                    sheet.getWorkbook());
+                            addCellComment(rows[r].getCell(start), ec.text(), ec.author(),
+                                    ec.width(), ec.height(), sheet.getWorkbook());
                         }
                     }
                 }
             }
         }
+    }
 
-        // 5. Vertical merges: trailing null rows (per column) merge down into column header cell.
-        //    The column header value (col.getName()) is moved up to the top-left cell of the merge.
-        //    Header comment is attached to that same top-left cell.
+    /**
+     * Merges trailing-null columns vertically into the column header cell.
+     * Moves the column name to the top-left cell and blanks others to avoid bottom alignment.
+     */
+    private static <T> void applyVerticalMerges(SXSSFSheet sheet, SXSSFRow[] rows, String[][] grid,
+                                                  List<ExcelColumn<T>> columns,
+                                                  int startRow, int maxDepth, int numCols) {
+        int columnHeaderRowIdx = startRow + maxDepth;
         for (int c = 0; c < numCols; c++) {
-            int firstNullRow = maxDepth; // = column header row if no null trail
+            int firstNullRow = maxDepth;
             for (int r = maxDepth - 1; r >= 0; r--) {
                 if (grid[r][c] == null) firstNullRow = r;
                 else break;
             }
             SXSSFCell topCell;
             if (firstNullRow < maxDepth) {
-                // Vertical merge from firstNullRow through columnHeaderRow.
-                // Move the column name onto the merge's top-left cell and blank the
-                // other cells in the merge range — otherwise Excel sees multiple
-                // non-empty cells in a merged region and renders with bottom alignment.
                 topCell = rows[firstNullRow].getCell(c);
                 topCell.setCellValue(columns.get(c).getName());
                 for (int r = firstNullRow + 1; r <= maxDepth; r++) {
