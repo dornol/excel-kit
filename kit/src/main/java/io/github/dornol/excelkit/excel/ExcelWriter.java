@@ -230,6 +230,23 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     /**
+     * Sets a document property on the generated Excel file.
+     * <p>
+     * Standard keys ({@code title}, {@code subject}, {@code author}, {@code keywords},
+     * {@code description}, {@code category}) are mapped to Excel core properties.
+     * Other keys are stored as custom properties.
+     *
+     * @param key   the property name (case-insensitive for standard keys)
+     * @param value the property value
+     * @return Current ExcelWriter instance for chaining
+     * @since 0.17.0
+     */
+    public ExcelWriter<T> documentProperty(String key, String value) {
+        ExcelWriteSupport.applyDocumentProperty(wb, key, value);
+        return this;
+    }
+
+    /**
      * Sets the header background color. Must be called before {@link #write(Stream)}.
      * <p>
      * Use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)}.

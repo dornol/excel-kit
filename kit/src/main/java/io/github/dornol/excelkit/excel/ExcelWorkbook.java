@@ -126,6 +126,23 @@ public class ExcelWorkbook implements AutoCloseable {
     }
 
     /**
+     * Sets a document property on the generated Excel file.
+     * <p>
+     * Standard keys ({@code title}, {@code subject}, {@code author}, {@code keywords},
+     * {@code description}, {@code category}) are mapped to Excel core properties.
+     * Other keys are stored as custom properties.
+     *
+     * @param key   the property name (case-insensitive for standard keys)
+     * @param value the property value
+     * @return this workbook for chaining
+     * @since 0.17.0
+     */
+    public ExcelWorkbook documentProperty(String key, String value) {
+        ExcelWriteSupport.applyDocumentProperty(wb, key, value);
+        return this;
+    }
+
+    /**
      * Sets the header background color for all sheets. Must be called before any
      * {@link #sheet(String)} that relies on the header style.
      *
