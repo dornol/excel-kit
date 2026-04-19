@@ -1,9 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
 
-import io.github.dornol.excelkit.core.ReadColumn;
-import io.github.dornol.excelkit.core.CellData;
-import io.github.dornol.excelkit.core.ProgressCallback;
+import io.github.dornol.excelkit.core.AbstractReader;
 import io.github.dornol.excelkit.core.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
@@ -11,14 +9,11 @@ import org.jspecify.annotations.Nullable;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -33,34 +28,19 @@ import java.util.function.Supplier;
  * @author dhkim
  * @since 2025-07-19
  */
-public class CsvReader<T> {
-    private final List<ReadColumn<T>> columns = new ArrayList<>();
-    private final @Nullable Supplier<T> instanceSupplier;
-    private final @Nullable Function<RowData, T> rowMapper;
-    private final @Nullable Validator validator;
-    private int headerRowIndex = 0;
+public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
-    private @Nullable ProgressCallback progressCallback;
-    private int progressInterval;
-    private boolean mapMode = false;
 
     /**
      * Constructs a CsvReader in setter mode with instance supplier and optional validator.
-     *
-     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
-     * @param validator        Optional Bean Validation validator (nullable)
      */
     public CsvReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
-        this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
-        this.rowMapper = null;
-        this.validator = validator;
+        super(instanceSupplier, validator);
     }
 
     /**
      * Constructs a CsvReader in setter mode without Bean Validation.
-     *
-     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      */
     public CsvReader(Supplier<T> instanceSupplier) {
         this(instanceSupplier, null);
@@ -92,9 +72,7 @@ public class CsvReader<T> {
     }
 
     private CsvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        this.instanceSupplier = null;
-        this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
-        this.validator = validator;
+        super(rowMapper, validator);
     }
 
     /**
@@ -198,14 +176,6 @@ public class CsvReader<T> {
         return reader;
     }
 
-    private void requireNotMapMode(String method) {
-        if (mapMode) {
-            throw new IllegalStateException(
-                    method + " cannot be called on a forMap() reader; "
-                            + "map mode auto-discovers columns from the header row");
-        }
-    }
-
     /**
      * Applies a predefined CSV dialect configuration.
      * <p>
@@ -219,19 +189,6 @@ public class CsvReader<T> {
     public CsvReader<T> dialect(CsvDialect dialect) {
         this.delimiter = dialect.getDelimiter();
         this.charset = dialect.getCharset();
-        return this;
-    }
-
-    /**
-     * Sets the zero-based row index of the header row.
-     * Rows before this index will be skipped during reading.
-     * Defaults to 0 (the first row).
-     *
-     * @param headerRowIndex The zero-based index of the header row
-     * @return This CsvReader instance for chaining
-     */
-    public CsvReader<T> headerRowIndex(int headerRowIndex) {
-        this.headerRowIndex = headerRowIndex;
         return this;
     }
 
@@ -256,117 +213,6 @@ public class CsvReader<T> {
      */
     public CsvReader<T> charset(Charset charset) {
         this.charset = charset;
-        return this;
-    }
-
-    /**
-     * Adds a column mapping to the internal list.
-     *
-     * @param column A CSV column with setter logic
-     */
-    void addColumn(ReadColumn<T> column) {
-        columns.add(column);
-    }
-
-    /**
-     * Registers a positional column mapping. Columns are matched to the CSV in the order
-     * they are registered (after {@link #headerRowIndex(int)} is accounted for).
-     *
-     * @param setter a {@code BiConsumer} that writes a cell value into the row object
-     * @return this reader for chaining
-     */
-    public CsvReader<T> column(BiConsumer<T, CellData> setter) {
-        requireNotMapMode("column(BiConsumer)");
-        columns.add(new ReadColumn<>(setter));
-        return this;
-    }
-
-    /**
-     * Registers a name-based column mapping. The column is matched to the CSV column
-     * whose header equals {@code headerName}.
-     *
-     * @param headerName the header name to match
-     * @param setter     a {@code BiConsumer} that writes a cell value into the row object
-     * @return this reader for chaining
-     */
-    public CsvReader<T> column(String headerName, BiConsumer<T, CellData> setter) {
-        requireNotMapMode("column(String, BiConsumer)");
-        columns.add(new ReadColumn<>(headerName, setter));
-        return this;
-    }
-
-    /**
-     * Registers an index-based column mapping. The column is matched to the CSV column
-     * at the given 0-based index.
-     *
-     * @param columnIndex 0-based column index
-     * @param setter      a {@code BiConsumer} that writes a cell value into the row object
-     * @return this reader for chaining
-     */
-    public CsvReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
-        requireNotMapMode("columnAt(int, BiConsumer)");
-        columns.add(new ReadColumn<>(null, columnIndex, setter));
-        return this;
-    }
-
-    /**
-     * Marks the last registered column as required.
-     * A required column produces a validation error if its cell value is blank or empty.
-     *
-     * @return this reader for chaining
-     * @throws IllegalStateException if no columns have been registered
-     */
-    public CsvReader<T> required() {
-        if (columns.isEmpty()) {
-            throw new IllegalStateException("required() must be called after column()");
-        }
-        int lastIndex = columns.size() - 1;
-        columns.set(lastIndex, columns.get(lastIndex).required());
-        return this;
-    }
-
-    /**
-     * Skips one column during reading by registering a no-op mapping.
-     *
-     * @return this reader for chaining
-     */
-    public CsvReader<T> skipColumn() {
-        requireNotMapMode("skipColumn()");
-        columns.add(new ReadColumn<>((instance, cellData) -> {}));
-        return this;
-    }
-
-    /**
-     * Skips the specified number of positional columns.
-     *
-     * @param count the number of columns to skip (must be non-negative)
-     * @return this reader for chaining
-     * @throws IllegalArgumentException if {@code count} is negative
-     */
-    public CsvReader<T> skipColumns(int count) {
-        requireNotMapMode("skipColumns(int)");
-        if (count < 0) {
-            throw new IllegalArgumentException("skipColumns count must be non-negative");
-        }
-        for (int i = 0; i < count; i++) {
-            columns.add(new ReadColumn<>((instance, cellData) -> {}));
-        }
-        return this;
-    }
-
-    /**
-     * Registers a progress callback that fires every {@code interval} rows during reading.
-     *
-     * @param interval the number of rows between each callback invocation (must be positive)
-     * @param callback the callback to invoke
-     * @return This CsvReader instance for chaining
-     */
-    public CsvReader<T> onProgress(int interval, ProgressCallback callback) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("progress interval must be positive");
-        }
-        this.progressInterval = interval;
-        this.progressCallback = callback;
         return this;
     }
 

@@ -1,8 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadColumn;
-import io.github.dornol.excelkit.core.CellData;
-import io.github.dornol.excelkit.core.ExcelKitException;
+import io.github.dornol.excelkit.core.AbstractReader;
 import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import jakarta.validation.Validator;
@@ -18,15 +16,12 @@ import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import io.github.dornol.excelkit.core.ProgressCallback;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -42,44 +37,27 @@ import java.util.function.Supplier;
  * @author dhkim
  * @since 2025-07-19
  */
-public class ExcelReader<T> {
-    private final List<ReadColumn<T>> columns = new ArrayList<>();
-    private final @Nullable Supplier<T> instanceSupplier;
-    private final @Nullable Function<RowData, T> rowMapper;
-    private final @Nullable Validator validator;
+public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private int sheetIndex = 0;
-    private int headerRowIndex = 0;
     private int headerRows = 1;
-    private @Nullable ProgressCallback progressCallback;
-    private int progressInterval;
-    private boolean mapMode = false;
     private @Nullable String password;
 
     /**
      * Constructs an ExcelReader in setter mode with instance supplier and optional validator.
-     *
-     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
-     * @param validator        Optional Bean Validation validator (nullable)
      */
     public ExcelReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
-        this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
-        this.rowMapper = null;
-        this.validator = validator;
+        super(instanceSupplier, validator);
     }
 
     /**
      * Constructs an ExcelReader in setter mode without Bean Validation.
-     *
-     * @param instanceSupplier A supplier to create new instances of {@code T} for each row
      */
     public ExcelReader(Supplier<T> instanceSupplier) {
         this(instanceSupplier, null);
     }
 
     private ExcelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        this.instanceSupplier = null;
-        this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
-        this.validator = validator;
+        super(rowMapper, validator);
     }
 
     /**
@@ -218,36 +196,11 @@ public class ExcelReader<T> {
         return reader;
     }
 
-    private void requireNotMapMode(String method) {
-        if (mapMode) {
-            throw new IllegalStateException(
-                    method + " cannot be called on a forMap() reader; "
-                            + "map mode auto-discovers columns from the header row");
-        }
-    }
-
     /**
-     * Sets the zero-based sheet index to read from.
-     * Defaults to 0 (the first sheet).
-     *
-     * @param sheetIndex The zero-based index of the sheet to read
-     * @return This ExcelReader instance for chaining
+     * Sets the zero-based sheet index to read from. Defaults to 0.
      */
     public ExcelReader<T> sheetIndex(int sheetIndex) {
         this.sheetIndex = sheetIndex;
-        return this;
-    }
-
-    /**
-     * Sets the zero-based row index of the header row.
-     * Rows before this index will be skipped during reading.
-     * Defaults to 0 (the first row).
-     *
-     * @param headerRowIndex The zero-based index of the header row
-     * @return This ExcelReader instance for chaining
-     */
-    public ExcelReader<T> headerRowIndex(int headerRowIndex) {
-        this.headerRowIndex = headerRowIndex;
         return this;
     }
 
@@ -287,127 +240,6 @@ public class ExcelReader<T> {
      */
     public ExcelReader<T> password(String password) {
         this.password = password;
-        return this;
-    }
-
-    /**
-     * Adds a column mapping to the internal list.
-     *
-     * @param column An Excel column with setter logic
-     */
-    void addColumn(ReadColumn<T> column) {
-        columns.add(column);
-    }
-
-    /**
-     * Registers a positional column mapping. Columns are matched to the spreadsheet in
-     * the order they are registered (after {@link #headerRowIndex(int)} is accounted for).
-     *
-     * @param setter a {@code BiConsumer} that writes a cell value into the row object
-     * @return this reader for chaining
-     */
-    public ExcelReader<T> column(BiConsumer<T, CellData> setter) {
-        requireNotMapMode("column(BiConsumer)");
-        columns.add(new ReadColumn<>(setter));
-        return this;
-    }
-
-    /**
-     * Registers a name-based column mapping. The column is matched to the spreadsheet
-     * column whose header cell equals {@code headerName} in the header row.
-     *
-     * @param headerName the header name to match
-     * @param setter     a {@code BiConsumer} that writes a cell value into the row object
-     * @return this reader for chaining
-     */
-    public ExcelReader<T> column(String headerName, BiConsumer<T, CellData> setter) {
-        requireNotMapMode("column(String, BiConsumer)");
-        columns.add(new ReadColumn<>(headerName, setter));
-        return this;
-    }
-
-    /**
-     * Registers an index-based column mapping. The column is matched to the spreadsheet
-     * column at the given 0-based index, regardless of header or registration order.
-     *
-     * @param columnIndex 0-based column index in the Excel file
-     * @param setter      a {@code BiConsumer} that writes a cell value into the row object
-     * @return this reader for chaining
-     */
-    public ExcelReader<T> columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
-        requireNotMapMode("columnAt(int, BiConsumer)");
-        columns.add(new ReadColumn<>(null, columnIndex, setter));
-        return this;
-    }
-
-    /**
-     * Marks the last registered column as required.
-     * <p>
-     * A required column will produce a validation error if its cell value is blank or empty.
-     *
-     * <pre>{@code
-     * ExcelReader.setter(Person::new)
-     *     .column("Name", (p, c) -> p.setName(c.asString())).required()
-     *     .column("Age", (p, c) -> p.setAge(c.asInt()))
-     *     .build(inputStream)
-     *     .read(result -> { ... });
-     * }</pre>
-     *
-     * @return this reader for chaining
-     * @throws IllegalStateException if no columns have been registered
-     */
-    public ExcelReader<T> required() {
-        if (columns.isEmpty()) {
-            throw new IllegalStateException("required() must be called after column()");
-        }
-        int lastIndex = columns.size() - 1;
-        columns.set(lastIndex, columns.get(lastIndex).required());
-        return this;
-    }
-
-    /**
-     * Skips one column during reading by registering a no-op mapping at the next
-     * positional slot.
-     *
-     * @return this reader for chaining
-     */
-    public ExcelReader<T> skipColumn() {
-        requireNotMapMode("skipColumn()");
-        columns.add(new ReadColumn<>((instance, cellData) -> {}));
-        return this;
-    }
-
-    /**
-     * Skips the specified number of positional columns.
-     *
-     * @param count the number of columns to skip (must be non-negative)
-     * @return this reader for chaining
-     * @throws IllegalArgumentException if {@code count} is negative
-     */
-    public ExcelReader<T> skipColumns(int count) {
-        requireNotMapMode("skipColumns(int)");
-        if (count < 0) {
-            throw new IllegalArgumentException("skipColumns count must be non-negative");
-        }
-        for (int i = 0; i < count; i++) {
-            columns.add(new ReadColumn<>((instance, cellData) -> {}));
-        }
-        return this;
-    }
-
-    /**
-     * Registers a progress callback that fires every {@code interval} rows during reading.
-     *
-     * @param interval the number of rows between each callback invocation (must be positive)
-     * @param callback the callback to invoke
-     * @return This ExcelReader instance for chaining
-     */
-    public ExcelReader<T> onProgress(int interval, ProgressCallback callback) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("progress interval must be positive");
-        }
-        this.progressInterval = interval;
-        this.progressCallback = callback;
         return this;
     }
 
