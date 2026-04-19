@@ -1,9 +1,13 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -190,6 +194,66 @@ class ExcelValidationTest {
                             .errorTitle("Invalid Age")
                             .errorMessage("Age must be between 0 and 150")));
             assertNotNull(writer);
+        }
+    }
+
+    // ============================================================
+    // Round-trip: validation persisted in output file
+    // ============================================================
+    @Nested
+    class RoundTripTests {
+
+        @Test
+        void errorTitle_and_errorMessage_persistInFile() throws Exception {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ExcelWriter.<String>create()
+                    .column("Age", s -> s, c -> c
+                            .validation(ExcelValidation.integerBetween(1, 100)
+                                    .errorTitle("Invalid")
+                                    .errorMessage("Enter 1-100")))
+                    .write(Stream.of("50"))
+                    .writeTo(out);
+
+            try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var validations = wb.getSheetAt(0).getDataValidations();
+                assertFalse(validations.isEmpty());
+                var v = validations.get(0);
+                assertEquals("Invalid", v.getErrorBoxTitle());
+                assertEquals("Enter 1-100", v.getErrorBoxText());
+            }
+        }
+
+        @Test
+        void showError_false_persistsInFile() throws Exception {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ExcelWriter.<String>create()
+                    .column("Val", s -> s, c -> c
+                            .validation(ExcelValidation.integerBetween(1, 10)
+                                    .showError(false)))
+                    .write(Stream.of("5"))
+                    .writeTo(out);
+
+            try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var v = wb.getSheetAt(0).getDataValidations().get(0);
+                assertFalse(v.getShowErrorBox());
+            }
+        }
+
+        @Test
+        void allValidationTypes_produceValidOutput() throws Exception {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ExcelWriter.<String>create()
+                    .column("Int", s -> s, c -> c.validation(ExcelValidation.integerBetween(0, 100)))
+                    .column("Dec", s -> s, c -> c.validation(ExcelValidation.decimalBetween(0.0, 9.9)))
+                    .column("Len", s -> s, c -> c.validation(ExcelValidation.textLength(1, 50)))
+                    .column("Fml", s -> s, c -> c.validation(ExcelValidation.formula("A2>0")))
+                    .column("Lst", s -> s, c -> c.validation(ExcelValidation.listFromRange("Sheet2!$A$1:$A$5")))
+                    .write(Stream.of("1"))
+                    .writeTo(out);
+
+            try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                assertEquals(5, wb.getSheetAt(0).getDataValidations().size());
+            }
         }
     }
 }

@@ -71,12 +71,42 @@ handler.writeTo(path, pwChars);               // Path + char[]
 
 ## Security Notes
 
+### Reading Untrusted Files
+
+When reading Excel files from untrusted sources (user uploads, external systems),
+call `configureLargeFileSupport()` at application startup to protect against
+ZIP bomb and decompression attacks:
+
+```java
+// Call once at startup — sets JVM-global POI limits
+ExcelReader.configureLargeFileSupport();
+```
+
+Without this, the default POI limits may allow malicious `.xlsx` files to
+consume excessive memory or disk during decompression.
+
+### Encrypted File Decryption
+
+When reading password-encrypted files, the library decrypts to a temporary file
+on disk before parsing. The plaintext temp file is deleted immediately after use
+but is not cryptographically overwritten.
+
+For sensitive data, deploy on systems with full-disk encryption (LUKS, BitLocker,
+FileVault) so that temp files are encrypted at rest.
+
 ### Temporary File Handling
 
 - Temp directories: POSIX `rwx------`, Windows ACL restricted to current user
 - Automatic cleanup after each operation (success or failure)
 - Fallback: `deleteOnExit()` if immediate deletion fails
 - UUID-based naming to prevent path prediction
+- On Windows, ACL restriction may silently fall back to a warning log if the
+  filesystem does not support ACLs. Use NTFS for reliable access control.
+
+### XXE Protection
+
+XML parsing is delegated to Apache POI, which disables external entity resolution
+by default since version 5.0. Ensure your POI dependency is 5.0 or later.
 
 ### CSV Injection Defense
 

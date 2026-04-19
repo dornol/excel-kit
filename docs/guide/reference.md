@@ -103,8 +103,12 @@ schema.excelReader(row -> new BookRecord(
 
 ### Large file configuration is JVM-global
 
-`ExcelReader.configureLargeFileSupport()` adjusts Apache POI's internal limits.
+`ExcelReader.configureLargeFileSupport()` adjusts Apache POI's internal limits
+(`ZipSecureFile.maxFileCount`, `IOUtils.byteArrayMaxOverride`).
 These are JVM-global static settings — call once at application startup.
+
+> **Security:** When reading untrusted files, always call this method to enforce
+> safe decompression limits. See [Protection — Reading Untrusted Files](protection.md#reading-untrusted-files).
 
 ### `readAsStream()` requires try-with-resources
 
