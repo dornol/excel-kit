@@ -66,6 +66,7 @@ class ExcelWriteSupport {
                 columns.size(), sheet.getLastRowNum());
         applyPrintSetup(sheet, cfg.printSetup, headerRowIndex);
         applyTabColor(sheet, cfg.tabColor);
+        applyNamedRanges(sheet, cfg.namedRanges, headerRowIndex);
     }
 
     /**
@@ -525,6 +526,23 @@ class ExcelWriteSupport {
         if (xssfSheet != null) {
             xssfSheet.setTabColor(new XSSFColor(new byte[]{
                     (byte) tabColor[0], (byte) tabColor[1], (byte) tabColor[2]}));
+        }
+    }
+
+    static void applyNamedRanges(SXSSFSheet sheet, @Nullable Map<String, Integer> namedRanges,
+                                  int headerRowIndex) {
+        if (namedRanges == null || namedRanges.isEmpty()) return;
+        int lastRow = sheet.getLastRowNum();
+        if (lastRow <= headerRowIndex) return; // no data rows
+        String sheetName = sheet.getSheetName();
+        var wb = sheet.getWorkbook();
+        for (var entry : namedRanges.entrySet()) {
+            String col = SheetContext.columnLetter(entry.getValue());
+            int dataStart = headerRowIndex + 2; // 1-based, after header
+            String ref = "'%s'!$%s$%d:$%s$%d".formatted(sheetName, col, dataStart, col, lastRow + 1);
+            var name = wb.createName();
+            name.setNameName(entry.getKey());
+            name.setRefersToFormula(ref);
         }
     }
 }

@@ -273,4 +273,32 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         cfg.putGroupComment(Arrays.asList(path), comment);
         return self();
     }
+
+    // ── Named ranges ──
+
+    /**
+     * Registers a named range for the given column. After data is written,
+     * the range covers all data rows in that column (header excluded).
+     * <p>
+     * The named range can be referenced in formulas on other sheets
+     * (e.g., {@code =SUM(PriceData)}).
+     *
+     * @param name        the named range name
+     * @param columnIndex 0-based column index
+     * @return this writer for chaining
+     * @since 0.17.0
+     */
+    public SELF namedRange(String name, int columnIndex) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name must not be blank");
+        }
+        if (columnIndex < 0) {
+            throw new IllegalArgumentException("columnIndex must be non-negative");
+        }
+        if (cfg.namedRanges == null) {
+            cfg.namedRanges = new java.util.LinkedHashMap<>();
+        }
+        cfg.namedRanges.put(name, columnIndex);
+        return self();
+    }
 }

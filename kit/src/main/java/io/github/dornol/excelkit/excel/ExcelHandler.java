@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ExcelHandler implements FileHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
     private final SXSSFWorkbook wb;
-    private final @Nullable String password;
+    private final char @Nullable [] password;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -53,21 +53,32 @@ public final class ExcelHandler implements FileHandler {
      * @param wb The SXSSFWorkbook to be written
      */
     ExcelHandler(SXSSFWorkbook wb) {
-        this(wb, null);
+        this.wb = wb;
+        this.password = null;
     }
 
     /**
      * Constructs an ExcelHandler wrapping the given workbook with an optional encryption password.
-     * <p>
-     * When a non-null password is provided, {@link #writeTo(OutputStream)} will
-     * automatically encrypt the output using the "agile" encryption mode.
      *
      * @param wb       The SXSSFWorkbook to be written
      * @param password The password for file encryption, or null for no encryption
      */
     ExcelHandler(SXSSFWorkbook wb, @Nullable String password) {
         this.wb = wb;
-        this.password = password;
+        this.password = password != null ? password.toCharArray() : null;
+    }
+
+    /**
+     * Constructs an ExcelHandler wrapping the given workbook with a char[] encryption password.
+     * <p>
+     * The array is copied internally; the caller may zero the original after this call.
+     *
+     * @param wb       The SXSSFWorkbook to be written
+     * @param password The password as a char array (copied internally), or null for no encryption
+     */
+    ExcelHandler(SXSSFWorkbook wb, char @Nullable [] password) {
+        this.wb = wb;
+        this.password = password != null ? password.clone() : null;
     }
 
     /**
@@ -85,7 +96,11 @@ public final class ExcelHandler implements FileHandler {
     public void writeTo(OutputStream outputStream) {
         try {
             if (password != null) {
-                encryptAndWrite(outputStream, password);
+                try {
+                    encryptAndWrite(outputStream, new String(password));
+                } finally {
+                    Arrays.fill(password, '\0');
+                }
             } else {
                 writePlain(outputStream);
             }

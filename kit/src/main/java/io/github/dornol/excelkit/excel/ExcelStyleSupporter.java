@@ -46,17 +46,32 @@ class ExcelStyleSupporter {
 
     static CellStyle headerStyle(SXSSFWorkbook wb, XSSFColor headerColor,
                                   @Nullable String fontName, @Nullable Integer fontSize) {
+        return headerStyle(wb, headerColor, fontName, fontSize, null);
+    }
+
+    static CellStyle headerStyle(SXSSFWorkbook wb, XSSFColor headerColor,
+                                  @Nullable String fontName, @Nullable Integer fontSize,
+                                  @Nullable HeaderStyleConfig hdrCfg) {
         CellStyle headerStyle = wb.createCellStyle();
         Font headerFont = wb.createFont();
-        headerStyle.setAlignment(HorizontalAlignment.CENTER);
-        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        HorizontalAlignment hAlign = (hdrCfg != null && hdrCfg.alignment != null) ? hdrCfg.alignment : HorizontalAlignment.CENTER;
+        VerticalAlignment vAlign = (hdrCfg != null && hdrCfg.verticalAlignment != null) ? hdrCfg.verticalAlignment : VerticalAlignment.CENTER;
+        boolean bold = (hdrCfg != null && hdrCfg.bold != null) ? hdrCfg.bold : true;
+        BorderStyle border = (hdrCfg != null && hdrCfg.borderStyle != null) ? hdrCfg.borderStyle.toPoiBorderStyle() : BorderStyle.THIN;
+
+        headerStyle.setAlignment(hAlign);
+        headerStyle.setVerticalAlignment(vAlign);
         headerStyle.setFillForegroundColor(headerColor);
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        headerStyle.setBorderTop(BorderStyle.THIN);
-        headerStyle.setBorderBottom(BorderStyle.THIN);
-        headerStyle.setBorderLeft(BorderStyle.THIN);
-        headerStyle.setBorderRight(BorderStyle.THIN);
-        headerFont.setBold(true);
+        headerStyle.setBorderTop(border);
+        headerStyle.setBorderBottom(border);
+        headerStyle.setBorderLeft(border);
+        headerStyle.setBorderRight(border);
+        if (hdrCfg != null && hdrCfg.wrapText != null) {
+            headerStyle.setWrapText(hdrCfg.wrapText);
+        }
+        headerFont.setBold(bold);
         headerFont.setFontHeight((short) ((fontSize != null ? fontSize : DEFAULT_FONT_SIZE) * FONT_HEIGHT_MULTIPLIER));
         if (fontName != null) {
             headerFont.setFontName(fontName);

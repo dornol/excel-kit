@@ -46,6 +46,8 @@ class SheetConfig<T> {
     @Nullable Function<Integer, String> sheetNameFunction;
     /** Map from group header path (outermost-first) to its comment. */
     @Nullable Map<List<String>, ExcelCellComment> groupComments;
+    /** Named ranges: name → column index. Applied after data is written. */
+    @Nullable Map<String, Integer> namedRanges;
 
     void putGroupComment(List<String> path, ExcelCellComment comment) {
         if (groupComments == null) {

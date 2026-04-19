@@ -50,10 +50,11 @@ public class ExcelWorkbook implements AutoCloseable {
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private final Set<String> usedSheetNames = new HashSet<>();
     private boolean finished = false;
-    private @Nullable String password;
+    private char @Nullable [] password;
     private @Nullable String workbookPassword;
     private @Nullable String headerFontName;
     private @Nullable Integer headerFontSize;
+    private @Nullable HeaderStyleConfig headerStyleConfig;
 
     /**
      * Creates a new ExcelWorkbook with default initialization (white header, 1000 row window).
@@ -94,7 +95,11 @@ public class ExcelWorkbook implements AutoCloseable {
                 (byte) defaultColor.getG(),
                 (byte) defaultColor.getB()
         });
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor);
+        this.headerStyle = rebuildHeaderStyle();
+    }
+
+    private CellStyle rebuildHeaderStyle() {
+        return ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize, headerStyleConfig);
     }
 
     /**
@@ -157,7 +162,7 @@ public class ExcelWorkbook implements AutoCloseable {
                 (byte) color.getG(),
                 (byte) color.getB()
         });
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize);
+        this.headerStyle = rebuildHeaderStyle();
         return this;
     }
 
@@ -188,7 +193,24 @@ public class ExcelWorkbook implements AutoCloseable {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
-        this.password = password;
+        this.password = password.toCharArray();
+        return this;
+    }
+
+    /**
+     * Sets the file encryption password using a char array.
+     * <p>
+     * The array is copied internally; the caller may zero the original after this call.
+     *
+     * @param password the encryption password (copied internally; must not be null or empty)
+     * @return this workbook for chaining
+     * @since 0.17.0
+     */
+    public ExcelWorkbook password(char[] password) {
+        if (password == null || password.length == 0) {
+            throw new IllegalArgumentException("Password cannot be null or empty");
+        }
+        this.password = password.clone();
         return this;
     }
 
@@ -200,7 +222,7 @@ public class ExcelWorkbook implements AutoCloseable {
      */
     public ExcelWorkbook headerFontName(String fontName) {
         this.headerFontName = fontName;
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize);
+        this.headerStyle = rebuildHeaderStyle();
         return this;
     }
 
@@ -215,7 +237,22 @@ public class ExcelWorkbook implements AutoCloseable {
             throw new IllegalArgumentException("fontSize must be positive");
         }
         this.headerFontSize = fontSize;
-        this.headerStyle = ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize);
+        this.headerStyle = rebuildHeaderStyle();
+        return this;
+    }
+
+    /**
+     * Configures the global header cell style (alignment, bold, border, wrap text).
+     *
+     * @param configurer consumer to configure header style properties
+     * @return this workbook for chaining
+     * @since 0.17.0
+     */
+    public ExcelWorkbook headerStyle(java.util.function.Consumer<HeaderStyleConfig> configurer) {
+        HeaderStyleConfig config = new HeaderStyleConfig();
+        configurer.accept(config);
+        this.headerStyleConfig = config;
+        this.headerStyle = rebuildHeaderStyle();
         return this;
     }
 

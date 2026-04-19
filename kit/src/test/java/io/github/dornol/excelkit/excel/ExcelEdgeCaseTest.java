@@ -206,7 +206,7 @@ class ExcelEdgeCaseTest {
         @Test
         void password_nullValue_shouldThrow() {
             var ex = assertThrows(IllegalArgumentException.class, () ->
-                    ExcelWriter.<Item>create().password(null));
+                    ExcelWriter.<Item>create().password((String) null));
             assertTrue(ex.getMessage().toLowerCase().contains("password"));
         }
 
@@ -323,7 +323,7 @@ class ExcelEdgeCaseTest {
         @Test
         void password_nullValue_shouldThrow() {
             try (ExcelWorkbook wb = ExcelWorkbook.create()) {
-                var ex = assertThrows(IllegalArgumentException.class, () -> wb.password(null));
+                var ex = assertThrows(IllegalArgumentException.class, () -> wb.password((String) null));
                 assertTrue(ex.getMessage().toLowerCase().contains("password"));
             }
         }
