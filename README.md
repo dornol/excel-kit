@@ -24,7 +24,7 @@ ExcelWriter.<User>create()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.16.13")
+implementation("io.github.dornol:excel-kit:0.16.14")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.16.13")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.16.13</version>
+  <version>0.16.14</version>
 </dependency>
 ```
 
@@ -162,7 +162,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Column DSL | Type, format, alignment, width, font, color, rotation, indentation |
 | Styling | Row/cell conditional colors, borders (per-side), bold, strikethrough, underline |
 | Layout | Auto-filter, freeze panes (row + column), multi-level group headers, column outline, hiding |
-| Header | Global/per-column header color, per-column header background, header row height, group header comments, row-number column |
+| Header | Global/per-column header color, per-column header background, header row height, header style config, group header comments, row-number column |
 | Validation | Dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
 | Content | Formulas, hyperlinks, rich text, images, cell comments |
 | Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |
@@ -170,7 +170,8 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Multi-sheet | `ExcelWorkbook` for typed multi-sheet, auto-rollover via `maxRows()` |
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |
 | Null handling | `nullValue()` default for null cells, `defaultStyle()` for writer-level defaults |
-| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, named ranges |
+| Metadata | Document properties (title, author, subject, keywords), named ranges (fluent API) |
+| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup |
 
 **Reading (Excel & CSV)**
 

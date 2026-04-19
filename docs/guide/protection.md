@@ -43,6 +43,12 @@ ExcelHandler handler = ExcelWriter.<Product>create()
 handler.writeTo(outputStream);
 ```
 
+**char[] overload** (v0.16.14+) — password is copied internally and zeroed after encryption:
+```java
+char[] pw = getPasswordFromUser();
+writer.password(pw);  // array copied; caller may zero original
+```
+
 Works the same with `ExcelWorkbook`:
 ```java
 try (var wb = ExcelWorkbook.create()) {

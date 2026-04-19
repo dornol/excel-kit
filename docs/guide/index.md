@@ -146,6 +146,29 @@ public ResponseEntity<StreamingResponseBody> download() {
 
 > Details: [Spring](spring.md)
 
+## Document Properties — Quick Example
+
+```java
+ExcelWriter.<Product>create()
+    .documentProperty("title", "Sales Report Q4")
+    .documentProperty("author", "Finance Team")
+    .column("Name", Product::name)
+    .write(data);
+```
+
+> Details: [Writing](writing.md)
+
+## Header Style — Quick Example
+
+```java
+writer
+    .headerColor(ExcelColor.STEEL_BLUE)
+    .headerStyle(h -> h.alignment(HorizontalAlignment.LEFT).border(ExcelBorderStyle.MEDIUM))
+    .headerFontName("Arial").headerFontSize(14)
+```
+
+> Details: [Headers](headers.md)
+
 ## Performance
 
 Measured on Apple M-series, JDK 21. Pure write throughput (excludes DB/network I/O).

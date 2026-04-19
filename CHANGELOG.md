@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.14] - 2026-04-19
+
+### Added
+
+- **`documentProperty(key, value)`** — set Excel document metadata (title, author,
+  subject, keywords, description, category) on `ExcelWriter` and `ExcelWorkbook`.
+  Standard keys map to core properties; other keys become custom properties.
+- **`namedRange(name, columnIndex)`** — fluent named range registration on any writer.
+  Automatically creates a workbook-scoped named range covering all data rows in the
+  specified column, replacing manual `afterData` callback usage.
+- **`headerStyle(cfg -> ...)`** — configure header cell alignment, bold, border style,
+  and wrap text via `HeaderStyleConfig`. Available on `ExcelWriter` and `ExcelWorkbook`.
+- **`password(char[])`** — char-array overload for `ExcelWriter.password()` and
+  `ExcelWorkbook.password()`. The array is copied internally and zeroed after encryption,
+  preventing password from lingering in heap as an immutable String.
+
+### Changed
+
+- **Internal: `ExcelColumn` constructor** simplified from 22 positional parameters to
+  `(name, function, style, setter, ColumnStyleConfig)`. Adding new column fields now
+  requires changes in only 2 places instead of 5+.
+- **Internal: `AbstractSheetWriter` base class** extracted from `ExcelWriter` and
+  `ExcelSheetWriter`, eliminating 22 duplicated sheet-config methods (~320 lines removed).
+- **Internal: `AbstractReader` base class** extracted from `ExcelReader` and `CsvReader`,
+  eliminating 10 duplicated column-registration methods (~177 lines removed).
+- **Internal: `writeGroupAndColumnHeaders`** split into 5 focused helpers
+  (`createHeaderRows`, `buildGroupGrid`, `populateHeaderCells`,
+  `applyHorizontalMerges`, `applyVerticalMerges`).
+- **Internal: `ExcelHandler`** stores password as `char[]` internally (zeroed after use).
+
+### Documentation
+
+- **Guide restructured** — `docs/guide.md` (2219 lines) split into `docs/guide/` directory
+  with 13 topic files. `index.md` contains inline code examples covering 80% of use cases;
+  topic files provide full details.
+- **AI/LLM integration section** added to README with classpath vs HTTP agent guidance.
+- **Security notes** expanded in `docs/guide/protection.md`: ZIP bomb protection,
+  encrypted temp file handling, Windows ACL fallback, XXE delegation to POI.
+
 ## [0.16.13] - 2026-04-15
 
 ### Added

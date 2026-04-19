@@ -111,3 +111,15 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   reader.headerRowIndex(1).headerRows(2).build(in).read(r -> ...);
   ```
   Default `headerRows(1)` preserves existing single-row behavior including empty-string headers.
+
+## Key API Notes (v0.16.14+)
+
+- **Document properties** — `documentProperty(key, value)` on `ExcelWriter` / `ExcelWorkbook`.
+  Standard keys (`title`, `subject`, `author`/`creator`, `keywords`, `description`, `category`)
+  map to core properties; others become custom properties.
+- **Fluent named ranges** — `namedRange(name, columnIndex)` registers a workbook-scoped named
+  range covering all data rows in the given column. Replaces manual `afterData` callback usage.
+- **Header style config** — `headerStyle(cfg -> cfg.alignment(...).border(...).bold(...).wrapText(...))`
+  on `ExcelWriter` / `ExcelWorkbook`. Overrides default header alignment/bold/border/wrap.
+- **`password(char[])`** — char-array overload on `ExcelWriter` / `ExcelWorkbook`. Array is copied
+  internally and zeroed after encryption.

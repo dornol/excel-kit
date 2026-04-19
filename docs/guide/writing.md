@@ -220,3 +220,36 @@ writer.onProgress(10_000, (count, cursor) -> log.info("Processed {} rows", count
 ```
 
 > The callback runs on the writing thread — keep it fast and non-blocking.
+
+## Document Properties (v0.16.14+)
+
+Set Excel document metadata (visible in File > Properties):
+
+```java
+ExcelWriter.<Product>create()
+    .documentProperty("title", "Sales Report Q4")
+    .documentProperty("author", "Finance Team")
+    .documentProperty("keywords", "sales,revenue,2024")
+    .documentProperty("department", "Engineering")  // custom property
+    .column("Name", Product::name)
+    .write(data);
+```
+
+Standard keys (`title`, `subject`, `author`/`creator`, `keywords`, `description`, `category`)
+map to Excel core properties. Other keys become custom properties.
+
+Also available on `ExcelWorkbook`.
+
+## Named Ranges — Fluent API (v0.16.14+)
+
+Register named ranges directly on the writer — no `afterData` callback needed:
+
+```java
+writer
+    .column("Price", Product::price, c -> c.type(ExcelDataType.DOUBLE))
+    .namedRange("PriceData", 0)  // column 0, covers all data rows
+    .write(data);
+// Other sheets can reference: =SUM(PriceData)
+```
+
+For manual control, use `SheetContext.namedRange()` in `afterData` callbacks.

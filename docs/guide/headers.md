@@ -14,6 +14,24 @@ ExcelWriter.create().headerColor(ExcelColor.STEEL_BLUE);
 writer.headerFontName("Arial").headerFontSize(14);
 ```
 
+## Header Style (v0.16.14+)
+
+Configure header cell alignment, bold, border, and wrap text:
+
+```java
+writer
+    .headerColor(ExcelColor.STEEL_BLUE)
+    .headerStyle(h -> h
+        .bold(true)
+        .alignment(HorizontalAlignment.LEFT)
+        .border(ExcelBorderStyle.MEDIUM)
+        .wrapText(true))
+    .headerFontName("Arial").headerFontSize(14)
+```
+
+Font name, font size, and background color are set separately via their dedicated methods.
+Available on both `ExcelWriter` and `ExcelWorkbook`.
+
 ## Header Row Height (v0.16.11+)
 
 ```java
