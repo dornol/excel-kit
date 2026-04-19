@@ -204,9 +204,26 @@ Measured on Apple M-series, JDK 21. Pure write throughput (excludes DB/network I
 For the full feature guide (all column options, styling, validation, Spring WebFlux integration,
 security details, migration guide, etc.), see:
 
-- **[Full Guide](docs/guide.md)** — complete API reference with code examples
+- **[Full Guide](docs/guide/index.md)** — complete API reference with code examples
 - **[Changelog](CHANGELOG.md)** — version history
 - **[Example App](example/)** — Spring Boot showcase with all features
+
+## AI / LLM Integration
+
+**In-JAR docs** — `META-INF/excel-kit/` is included in the published artifact.
+AI agents with classpath access (IDE plugins, code assistants) can read these
+files directly without network requests.
+
+**Remote docs** — for HTTP-based agents, start with the
+[guide index](docs/guide/index.md). It contains a summary table with key APIs
+per topic, plus inline code examples that cover most common use cases.
+Follow links to individual topic files only when you need full details.
+
+| Source | Path | When to use |
+|--------|------|-------------|
+| JAR | `META-INF/excel-kit/*.md` | IDE-integrated agents (classpath access) |
+| GitHub | `docs/guide/index.md` | HTTP-based agents (fetch via raw URL) |
+| GitHub | `docs/guide/{topic}.md` | Deep-dive into specific feature areas |
 
 ## Quick Reference
 

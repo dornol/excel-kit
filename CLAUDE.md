@@ -6,7 +6,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 
 - `kit/` — 라이브러리 본체 (Maven Central 배포 대상)
 - `example/` — Spring Boot 예제 앱 (showcase 엔드포인트)
-- `docs/` — 문서 (`guide.md` 상세 가이드)
+- `docs/guide/` — 문서 (기능별 분리된 가이드, `index.md`가 진입점)
 
 ## 릴리스 체크리스트
 
@@ -20,7 +20,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
    - Features at a Glance 테이블에 새 기능 반영
    - Quick Start 코드가 최신 API 사용하는지 확인
 5. 문서 최신화 (새 기능이 있으면):
-   - `docs/guide.md` — 상세 가이드에 새 기능 사용법 추가
+   - `docs/guide/*.md` — 해당 카테고리의 가이드 파일에 새 기능 사용법 추가
    - `META-INF/AI.md` — Quick Reference / Key API Notes 에 새 API 반영
    - `META-INF/excel-kit/*.md` — 해당 카테고리 파일 반영
      - 쓰기 스타일/컬럼 → `column-config.md`
@@ -33,7 +33,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
      ```sh
      for api in <이번-버전-신규-API-이름들>; do
        echo "=== $api ==="
-       grep -l "$api" README.md docs/guide.md \
+       grep -rl "$api" README.md docs/guide/ \
          kit/src/main/resources/META-INF/AI.md \
          kit/src/main/resources/META-INF/excel-kit/*.md || echo "MISSING: $api"
      done
