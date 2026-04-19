@@ -141,6 +141,21 @@ public class TemplateListWriter<T> {
     }
 
     /**
+     * Adds a conditional row style that applies to all cells in a row when the predicate matches.
+     *
+     * @param predicate  condition to test each row
+     * @param configurer style configuration to apply when the condition is true
+     * @return this writer for chaining
+     */
+    public TemplateListWriter<T> rowStyle(java.util.function.Predicate<T> predicate,
+                                           java.util.function.Consumer<RowStyleConfig> configurer) {
+        RowStyleConfig style = new RowStyleConfig();
+        configurer.accept(style);
+        cfg.rowStyleEntries.add(new SheetConfig.RowStyleEntry<>(predicate, style));
+        return this;
+    }
+
+    /**
      * Registers a progress callback that fires every {@code interval} rows.
      *
      * @param interval rows between each callback

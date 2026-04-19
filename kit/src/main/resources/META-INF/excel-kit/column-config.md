@@ -144,7 +144,13 @@ writer
     .write(data);
 ```
 
-Priority: `cellColor` > `rowColor` > `backgroundColor`
+**Conditional row style** (bold, font, etc. — not just background):
+```java
+writer.rowStyle(p -> p.price() > 10000,
+    style -> style.bold(true).backgroundColor(ExcelColor.LIGHT_YELLOW));
+```
+
+Priority: `cellColor` > `rowStyle` bg > `rowColor` > `backgroundColor`
 
 ## Header Color (Global)
 

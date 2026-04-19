@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.15] - 2026-04-19
+
+### Added
+
+- **`countRows()`** on `ExcelReader` — opt-in pre-scan that counts data rows before
+  parsing, making percentage-based progress reporting possible (e.g., via SSE).
+  The total is available via `Cursor.getTotalRows()` in the `ProgressCallback`.
+  ```java
+  ExcelReader.setter(MyDto::new)
+      .countRows()
+      .onProgress(500, (processed, cursor) -> {
+          int percent = (int) (processed * 100 / cursor.getTotalRows());
+      })
+      .build(inputStream).read(result -> { ... });
+  ```
+- **`rowStyle(predicate, config)`** — conditional row-level styling on `ExcelWriter`,
+  `ExcelSheetWriter`, and `TemplateListWriter`. Unlike `rowColor()` (background only),
+  supports bold, italic, strikethrough, font size, font color, and background color.
+  Multiple rules can be registered; the first matching predicate wins.
+  ```java
+  writer.rowStyle(p -> p.price() > 10000,
+      style -> style.bold(true).backgroundColor(ExcelColor.LIGHT_YELLOW));
+  ```
+- **`ExcelImage.size(width, height)`** — control image cell span (columns × rows).
+  Default remains 1×1. Previously images were always anchored to a single cell.
+- **`ExcelImage.fromUrl(url)`** — download an image from a URL and embed it directly.
+  Auto-detects PNG/JPEG from URL extension or magic bytes. 10-second timeout.
+  ```java
+  .column("Photo", user -> ExcelImage.fromUrl(user.getPhotoUrl()),
+      c -> c.type(ExcelDataType.IMAGE))
+  ```
+- **`Cursor.getTotalRows()`** — returns the total row count when known (via
+  `countRows()`), or `-1` if unknown.
+
+### Changed
+
+- **`ExcelImage`** refactored from `record` to `class` to support `size()` chaining
+  and `fromUrl()` factory. The constructor signature and `data()`/`imageType()` accessors
+  are unchanged — existing code compiles without modification.
+
 ## [0.16.14] - 2026-04-19
 
 ### Added

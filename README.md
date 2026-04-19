@@ -24,7 +24,7 @@ ExcelWriter.<User>create()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.16.14")
+implementation("io.github.dornol:excel-kit:0.16.15")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.16.14")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.16.14</version>
+  <version>0.16.15</version>
 </dependency>
 ```
 
@@ -160,11 +160,11 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Category | Highlights |
 |----------|-----------|
 | Column DSL | Type, format, alignment, width, font, color, rotation, indentation |
-| Styling | Row/cell conditional colors, borders (per-side), bold, strikethrough, underline |
+| Styling | Row/cell conditional colors, conditional row style (bold/font/color), borders (per-side), bold, strikethrough, underline |
 | Layout | Auto-filter, freeze panes (row + column), multi-level group headers, column outline, hiding |
 | Header | Global/per-column header color, per-column header background, header row height, header style config, group header comments, row-number column |
 | Validation | Dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
-| Content | Formulas, hyperlinks, rich text, images, cell comments |
+| Content | Formulas, hyperlinks, rich text, images (byte[] or URL, custom size), cell comments |
 | Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |
 | Protection | Sheet/workbook protection, per-column lock, password encryption (AES-256) |
 | Multi-sheet | `ExcelWorkbook` for typed multi-sheet, auto-rollover via `maxRows()` |
@@ -184,7 +184,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError` |
 | Stream | `readAsStream()` with lazy evaluation, `readStrict()` for fail-fast |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
-| Config | Sheet index, header row index, progress callback, password-encrypted files |
+| Config | Sheet index, header row index, progress callback, `countRows()` for total row pre-scan, password-encrypted files |
 
 ## Performance
 

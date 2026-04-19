@@ -33,6 +33,7 @@ class SheetConfig<T> {
     @Nullable BeforeHeaderWriter beforeHeaderWriter;
     @Nullable AfterDataWriter afterDataWriter;
     @Nullable Function<T, @Nullable ExcelColor> rowColorFunction;
+    final List<RowStyleEntry<T>> rowStyleEntries = new ArrayList<>();
     @Nullable ProgressCallback progressCallback;
     int progressInterval;
     int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
@@ -48,6 +49,8 @@ class SheetConfig<T> {
     @Nullable Map<List<String>, ExcelCellComment> groupComments;
     /** Named ranges: name → column index. Applied after data is written. */
     @Nullable Map<String, Integer> namedRanges;
+
+    record RowStyleEntry<T>(java.util.function.Predicate<T> predicate, RowStyleConfig style) {}
 
     void putGroupComment(List<String> path, ExcelCellComment comment) {
         if (groupComments == null) {

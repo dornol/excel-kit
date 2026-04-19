@@ -114,6 +114,31 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+    /**
+     * Adds a conditional row style that applies to all cells in a row when the predicate matches.
+     * <p>
+     * Unlike {@link #rowColor(Function)} which only sets background color, this method supports
+     * bold, font size, font color, italic, strikethrough, and background color.
+     * Multiple row styles can be registered; the first matching predicate wins.
+     *
+     * <pre>{@code
+     * writer.rowStyle(
+     *     product -> product.price() > 10000,
+     *     style -> style.bold(true).backgroundColor(ExcelColor.LIGHT_YELLOW)
+     * );
+     * }</pre>
+     *
+     * @param predicate  condition to test each row
+     * @param configurer style configuration to apply when the condition is true
+     * @return this writer for chaining
+     */
+    public SELF rowStyle(java.util.function.Predicate<T> predicate, Consumer<RowStyleConfig> configurer) {
+        RowStyleConfig style = new RowStyleConfig();
+        configurer.accept(style);
+        cfg.rowStyleEntries.add(new SheetConfig.RowStyleEntry<>(predicate, style));
+        return self();
+    }
+
     // ── Progress ──
 
     /**

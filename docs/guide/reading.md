@@ -181,6 +181,19 @@ ExcelReader.configureLargeFileSupport();  // call once at startup; JVM-global
 reader.onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count));
 ```
 
+**Percentage progress with `countRows()`:**
+```java
+ExcelReader.setter(MyDto::new)
+    .column((dto, cell) -> dto.setName(cell.asString()))
+    .countRows()   // pre-scan to count total data rows
+    .onProgress(500, (processed, cursor) -> {
+        long total = cursor.getTotalRows();  // -1 if countRows() not called
+        int percent = (int) (processed * 100 / total);
+        log.info("{}% ({}/{})", percent, processed, total);
+    })
+    .build(inputStream).read(result -> { ... });
+```
+
 ## Multi-Sheet Discovery
 
 ```java

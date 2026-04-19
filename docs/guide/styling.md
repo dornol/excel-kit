@@ -151,4 +151,21 @@ Per-cell background via `CellColorFunction`:
     }))
 ```
 
-**Priority:** `cellColor` > `rowColor` > column `backgroundColor`
+**Priority:** `cellColor` > `rowStyle` bg > `rowColor` > column `backgroundColor`
+
+## Conditional Row Style
+
+For full row styling (bold, font size, font color, italic, etc.) — not just background color:
+
+```java
+writer
+    .rowStyle(p -> p.price() > 10000,
+        style -> style.bold(true).backgroundColor(ExcelColor.LIGHT_YELLOW))
+    .rowStyle(p -> p.isError(),
+        style -> style.fontColor(ExcelColor.RED).italic(true).strikethrough(true))
+    .column("Name", p -> p.name())
+    .write(data);
+```
+
+Multiple `rowStyle()` rules can be registered; the **first matching** predicate wins.
+Supports: `bold`, `italic`, `strikethrough`, `fontSize`, `fontColor`, `backgroundColor`.

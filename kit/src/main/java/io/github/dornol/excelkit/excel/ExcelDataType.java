@@ -147,8 +147,8 @@ public enum ExcelDataType {
         var anchor = wb.getCreationHelper().createClientAnchor();
         anchor.setCol1(cell.getColumnIndex());
         anchor.setRow1(cell.getRowIndex());
-        anchor.setCol2(cell.getColumnIndex() + 1);
-        anchor.setRow2(cell.getRowIndex() + 1);
+        anchor.setCol2(cell.getColumnIndex() + img.width());
+        anchor.setRow2(cell.getRowIndex() + img.height());
         drawing.createPicture(anchor, pictureIdx);
     }, null),
 

@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private int sheetIndex = 0;
     private int headerRows = 1;
+    private boolean countRows = false;
     private @Nullable String password;
 
     /**
@@ -228,6 +229,37 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     /**
+     * Enables a pre-scan pass to count the total number of data rows before parsing.
+     * <p>
+     * When enabled, the reader performs a lightweight SAX scan of the sheet XML to count
+     * {@code <row>} elements before the actual read. The total is then available via
+     * {@link io.github.dornol.excelkit.core.Cursor#getTotalRows()} in the
+     * {@link io.github.dornol.excelkit.core.ProgressCallback}.
+     * <p>
+     * This is useful for reporting percentage-based progress (e.g., via SSE):
+     * <pre>{@code
+     * ExcelReader.setter(MyDto::new)
+     *     .column((dto, cell) -> dto.setName(cell.getString()))
+     *     .countRows()
+     *     .onProgress(500, (processed, cursor) -> {
+     *         long total = cursor.getTotalRows();
+     *         int percent = (int) (processed * 100 / total);
+     *     })
+     *     .build(inputStream)
+     *     .read(result -> { ... });
+     * }</pre>
+     * <p>
+     * Note: the pre-scan adds a small overhead (typically 20–30% of total read time)
+     * since it streams through the sheet XML without parsing cell values.
+     *
+     * @return this reader for chaining
+     */
+    public ExcelReader<T> countRows() {
+        this.countRows = true;
+        return this;
+    }
+
+    /**
      * Sets the password for reading encrypted Excel files.
      * <p>
      * If the file is encrypted with the "agile" encryption mode (as produced by
@@ -252,10 +284,10 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     public ExcelReadHandler<T> build(InputStream inputStream) {
         if (rowMapper != null) {
             return new ExcelReadHandler<>(inputStream, rowMapper, validator,
-                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password);
+                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows);
         }
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
-                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password);
+                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows);
     }
 
     /**

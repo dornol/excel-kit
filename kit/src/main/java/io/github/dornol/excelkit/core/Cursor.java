@@ -14,6 +14,7 @@ public class Cursor {
     private final int baseRow;
     private int rowOfSheet;
     private long currentTotal;
+    private long totalRows = -1;
 
     /**
      * Creates a new Cursor with row index and total count initialized to 0.
@@ -81,5 +82,27 @@ public class Cursor {
      */
     public long getCurrentTotal() {
         return currentTotal;
+    }
+
+    /**
+     * Sets the total number of rows known in advance (e.g., from a pre-scan).
+     * A value of {@code -1} means the total is unknown.
+     *
+     * @param totalRows the total row count, or -1 if unknown
+     */
+    public void setTotalRows(long totalRows) {
+        this.totalRows = totalRows;
+    }
+
+    /**
+     * Returns the total number of rows if known in advance, or {@code -1} if unknown.
+     * <p>
+     * For Excel reads, this is populated when {@link io.github.dornol.excelkit.excel.ExcelReader#countRows()}
+     * is enabled. For writes, this is typically unknown ({@code -1}).
+     *
+     * @return Total row count, or -1 if unknown
+     */
+    public long getTotalRows() {
+        return totalRows;
     }
 }

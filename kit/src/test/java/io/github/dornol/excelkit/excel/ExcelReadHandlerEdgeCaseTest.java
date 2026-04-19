@@ -175,4 +175,64 @@ class ExcelReadHandlerEdgeCaseTest {
         assertEquals(3, results.size());
         assertEquals(2, lastProgress.get());
     }
+
+    // ============================================================
+    // countRows — pre-scan total row count
+    // ============================================================
+    @Test
+    void countRows_shouldProvideTotalRowsInCursor() throws IOException {
+        byte[] excel = writeTestExcel(); // 3 data rows
+
+        List<Long> totals = new ArrayList<>();
+        List<Long> processed = new ArrayList<>();
+        ExcelReader.setter(ItemHolder::new)
+                .column((h, c) -> h.name = c.asString())
+                .column((h, c) -> h.value = c.asInt())
+                .countRows()
+                .onProgress(1, (count, cursor) -> {
+                    processed.add(count);
+                    totals.add(cursor.getTotalRows());
+                })
+                .build(new ByteArrayInputStream(excel))
+                .read(r -> {});
+
+        assertEquals(List.of(1L, 2L, 3L), processed);
+        // All callbacks should report the same totalRows = 3
+        assertEquals(List.of(3L, 3L, 3L), totals);
+    }
+
+    @Test
+    void countRows_mappingMode_shouldWork() throws IOException {
+        byte[] excel = writeTestExcel(); // 3 data rows
+
+        java.util.concurrent.atomic.AtomicLong totalRef = new java.util.concurrent.atomic.AtomicLong(-1);
+        ExcelReader.<Item>mapping(row ->
+                new Item(row.get("Name").asString(), row.get("Value").asInt())
+        ).countRows()
+                .onProgress(2, (count, cursor) -> totalRef.set(cursor.getTotalRows()))
+                .build(new ByteArrayInputStream(excel))
+                .read(r -> {});
+
+        assertEquals(3, totalRef.get());
+    }
+
+    @Test
+    void withoutCountRows_cursorTotalRowsShouldBeNegative() throws IOException {
+        byte[] excel = writeTestExcel();
+
+        java.util.concurrent.atomic.AtomicLong totalRef = new java.util.concurrent.atomic.AtomicLong(999);
+        ExcelReader.setter(ItemHolder::new)
+                .column((h, c) -> h.name = c.asString())
+                .column((h, c) -> h.value = c.asInt())
+                .onProgress(1, (count, cursor) -> totalRef.set(cursor.getTotalRows()))
+                .build(new ByteArrayInputStream(excel))
+                .read(r -> {});
+
+        assertEquals(-1, totalRef.get());
+    }
+
+    public static class ItemHolder {
+        String name;
+        int value;
+    }
 }

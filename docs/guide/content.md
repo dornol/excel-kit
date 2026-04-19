@@ -59,7 +59,19 @@ byte[] imageBytes = Files.readAllBytes(Path.of("logo.png"));
 .column("Photo", p -> ExcelImage.png(imageBytes), c -> c.type(ExcelDataType.IMAGE))
 ```
 
-Factory methods: `ExcelImage.png(byte[])`, `ExcelImage.jpeg(byte[])`
+**Custom size** (columns × rows):
+
+```java
+.column("Photo", p -> ExcelImage.png(imageBytes).size(3, 4), c -> c.type(ExcelDataType.IMAGE))
+```
+
+**From URL** (auto-detects PNG/JPEG):
+
+```java
+.column("Photo", p -> ExcelImage.fromUrl(p.getPhotoUrl()), c -> c.type(ExcelDataType.IMAGE))
+```
+
+Factory methods: `ExcelImage.png(byte[])`, `ExcelImage.jpeg(byte[])`, `ExcelImage.fromUrl(String)`
 
 ## Cell Comments (Notes)
 

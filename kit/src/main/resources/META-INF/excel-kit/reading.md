@@ -94,8 +94,11 @@ reader
     .headerRowIndex(0)      // default: 0 — 0-based index of the LAST header row
     .headerRows(1)          // default: 1 — total header row count (v0.16.13+, Excel only)
     .onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count))
+    .countRows()            // opt-in pre-scan for total row count (v0.16.15+, Excel only)
     .build(inputStream);
 ```
+
+With `countRows()`, `cursor.getTotalRows()` returns the total data row count in the progress callback (otherwise `-1`).
 
 ### Multi-row headers (v0.16.13+, Excel)
 

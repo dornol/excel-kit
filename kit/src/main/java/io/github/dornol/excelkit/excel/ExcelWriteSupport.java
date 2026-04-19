@@ -314,23 +314,37 @@ class ExcelWriteSupport {
 
         ExcelColor rowColor = (cfg.rowColorFunction != null) ? cfg.rowColorFunction.apply(rowData) : null;
 
+        // Resolve conditional row style (first match wins)
+        @Nullable RowStyleConfig matchedRowStyle = null;
+        for (SheetConfig.RowStyleEntry<T> entry : cfg.rowStyleEntries) {
+            if (entry.predicate().test(rowData)) {
+                matchedRowStyle = entry.style();
+                break;
+            }
+        }
+
         for (int j = 0; j < columns.size(); j++) {
             SXSSFCell cell = row.createCell(j);
             ExcelColumn<T> column = columns.get(j);
             @Nullable Object columnData = column.applyFunction(rowData, cursor);
             column.setColumnData(cell, columnData);
 
-            // Resolve effective color: cellColor > rowColor > column default
+            // Resolve effective color: cellColor > rowStyle.bg > rowColor > column default
             ExcelColor effectiveColor = null;
             CellColorFunction<T> cellColorFn = column.getCellColorFunction();
             if (cellColorFn != null) {
                 effectiveColor = cellColorFn.apply(columnData, rowData);
             }
+            if (effectiveColor == null && matchedRowStyle != null && matchedRowStyle.backgroundColor != null) {
+                effectiveColor = matchedRowStyle.backgroundColor;
+            }
             if (effectiveColor == null) {
                 effectiveColor = rowColor;
             }
 
-            if (effectiveColor != null) {
+            if (matchedRowStyle != null && matchedRowStyle.hasAnyStyle()) {
+                cell.setCellStyle(resolveRowStyle(column.getStyle(), effectiveColor, matchedRowStyle, rowStyleCache, wb));
+            } else if (effectiveColor != null) {
                 cell.setCellStyle(resolveColorStyle(column.getStyle(), effectiveColor, rowStyleCache, wb));
             } else {
                 cell.setCellStyle(column.getStyle());
@@ -411,6 +425,55 @@ class ExcelWriteSupport {
             style.setFillForegroundColor(new XSSFColor(new byte[]{
                     (byte) color.getR(), (byte) color.getG(), (byte) color.getB()}));
             style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            return style;
+        });
+    }
+
+    static CellStyle resolveRowStyle(CellStyle baseStyle, @Nullable ExcelColor bgColor,
+                                      RowStyleConfig rowStyle, Map<String, CellStyle> cache,
+                                      SXSSFWorkbook wb) {
+        String bgKey = bgColor != null
+                ? bgColor.getR() + "_" + bgColor.getG() + "_" + bgColor.getB()
+                : "none";
+        String key = baseStyle.getIndex() + "_" + rowStyle.cacheKey() + "_bg" + bgKey;
+        return cache.computeIfAbsent(key, k -> {
+            CellStyle style = wb.createCellStyle();
+            style.cloneStyleFrom(baseStyle);
+
+            // Background color
+            if (bgColor != null) {
+                style.setFillForegroundColor(new XSSFColor(new byte[]{
+                        (byte) bgColor.getR(), (byte) bgColor.getG(), (byte) bgColor.getB()}));
+                style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            }
+
+            // Font modifications
+            if (rowStyle.bold != null || rowStyle.fontSize != null || rowStyle.fontColor != null
+                    || rowStyle.italic != null || rowStyle.strikethrough != null) {
+                Font baseFont = wb.getFontAt(baseStyle.getFontIndex());
+                Font newFont = wb.createFont();
+                newFont.setFontName(baseFont.getFontName());
+                newFont.setFontHeightInPoints(baseFont.getFontHeightInPoints());
+                newFont.setBold(baseFont.getBold());
+                newFont.setItalic(baseFont.getItalic());
+                newFont.setStrikeout(baseFont.getStrikeout());
+                newFont.setColor(baseFont.getColor());
+
+                if (rowStyle.bold != null) newFont.setBold(rowStyle.bold);
+                if (rowStyle.fontSize != null) newFont.setFontHeightInPoints(rowStyle.fontSize.shortValue());
+                if (rowStyle.italic != null) newFont.setItalic(rowStyle.italic);
+                if (rowStyle.strikethrough != null) newFont.setStrikeout(rowStyle.strikethrough);
+                if (rowStyle.fontColor != null) {
+                    newFont.setColor(org.apache.poi.xssf.usermodel.XSSFFont.DEFAULT_FONT_COLOR);
+                    if (newFont instanceof org.apache.poi.xssf.usermodel.XSSFFont xf) {
+                        xf.setColor(new XSSFColor(new byte[]{
+                                (byte) rowStyle.fontColor.getR(),
+                                (byte) rowStyle.fontColor.getG(),
+                                (byte) rowStyle.fontColor.getB()}));
+                    }
+                }
+                style.setFont(newFont);
+            }
             return style;
         });
     }
