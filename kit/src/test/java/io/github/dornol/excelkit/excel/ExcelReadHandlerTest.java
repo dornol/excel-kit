@@ -344,12 +344,12 @@ class ExcelReadHandlerTest {
     }
 
     @Test
-    void constructor_shouldThrowForSheetIndexExceeding255() {
-        assertThrows(IllegalArgumentException.class, () -> {
+    void constructor_shouldAcceptLargeNonNegativeSheetIndex() {
+        assertDoesNotThrow(() -> {
             List<ReadColumn<TestPerson>> columns = new ArrayList<>();
             columns.add(new ReadColumn<>(createNameSetter()));
             new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 256);
-        }, "sheetIndex > 255 should throw IllegalArgumentException");
+        }, "sheetIndex existence should be validated against the actual workbook, not an arbitrary upper bound");
     }
 
     @Test

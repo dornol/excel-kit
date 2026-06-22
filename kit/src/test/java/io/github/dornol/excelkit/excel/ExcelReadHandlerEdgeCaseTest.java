@@ -6,8 +6,10 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,6 +76,29 @@ class ExcelReadHandlerEdgeCaseTest {
         assertEquals(3, results.size());
         assertEquals("B", results.get(1).name());
         assertEquals(30, results.get(2).value());
+    }
+
+    @Test
+    void readAsStream_fullConsumptionBeyondQueueBuffer_shouldFinish() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ExcelWriter.<Item>create()
+                .column("Name", Item::name)
+                .column("Value", Item::value, c -> c.type(ExcelDataType.INTEGER))
+                .write(IntStream.range(0, 1500).mapToObj(i -> new Item("I" + i, i)))
+                .writeTo(out);
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            try (var stream = ExcelReader.<Item>mapping(row ->
+                    new Item(row.get("Name").asString(), row.get("Value").asInt())
+            ).build(new ByteArrayInputStream(out.toByteArray())).readAsStream()) {
+                List<Item> rows = stream
+                        .filter(ReadResult::success)
+                        .map(ReadResult::data)
+                        .toList();
+                assertEquals(1500, rows.size());
+                assertEquals("I1499", rows.get(1499).name());
+            }
+        });
     }
 
     // ============================================================

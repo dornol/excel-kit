@@ -322,6 +322,13 @@ class ExcelWorkbookTest {
     }
 
     @Test
+    void passwordCharArray_blank_throws() {
+        try (ExcelWorkbook wb = ExcelWorkbook.create()) {
+            assertThrows(IllegalArgumentException.class, () -> wb.password(" \t".toCharArray()));
+        }
+    }
+
+    @Test
     void customColorConstructor_createsWorkbook() throws IOException {
         try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.of(100, 150, 200))) {
             wb.<String>sheet("S1").column("A", s -> s).write(Stream.of("x"));

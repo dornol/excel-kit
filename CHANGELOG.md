@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.0] - 2026-06-22
+
+### Added
+
+- `ExcelWriter.create(opts -> opts.rowAccessWindowSize(...))` and
+  `ExcelWorkbook.create(opts -> opts.rowAccessWindowSize(...))` for configuring
+  SXSSF's row access window at workbook construction time.
+
+### Fixed
+
+- `ExcelReadHandler.readAsStream()` now releases temporary reader resources when
+  the stream is fully consumed, even if callers do not explicitly close the stream.
+- `ExcelReader.getSheetHeaders(...)` now throws `ExcelReadException` when the
+  requested sheet index does not exist, matching the main read path.
+- `ExcelReader.sheetIndex(...)` now accepts any non-negative index and lets the
+  workbook contents determine whether that sheet exists.
+- `password(char[])` now rejects blank passwords, matching `password(String)`.
+
 ## [0.16.15] - 2026-04-19
 
 ### Added

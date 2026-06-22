@@ -383,6 +383,23 @@ class ExcelReaderBranchTest {
             assertEquals(2, headers.size());
             assertEquals("Col1", headers.get(0));
         }
+
+        @Test
+        void getSheetHeaders_missingSheet_throwsExcelReadException() throws IOException {
+            Path file = tempDir.resolve("missing-sheet-headers.xlsx");
+            try (var wb = new XSSFWorkbook()) {
+                wb.createSheet("Only").createRow(0).createCell(0).setCellValue("A");
+                try (var fos = new FileOutputStream(file.toFile())) {
+                    wb.write(fos);
+                }
+            }
+
+            try (InputStream is = Files.newInputStream(file)) {
+                ExcelReadException ex = assertThrows(ExcelReadException.class,
+                        () -> ExcelReader.getSheetHeaders(is, 1, 0));
+                assertTrue(ex.getMessage().contains("Sheet index 1 not found"));
+            }
+        }
     }
 
     // ============================================================

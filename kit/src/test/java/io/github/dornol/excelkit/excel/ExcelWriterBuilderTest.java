@@ -95,6 +95,12 @@ class ExcelWriterBuilderTest {
         }
 
         @Test
+        void passwordCharArray_blank_throws() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> ExcelWriter.<String>create().password(" \t".toCharArray()));
+        }
+
+        @Test
         void maxRows_one_isAccepted() {
             // Boundary: 1 is the minimum legal positive value.
             assertDoesNotThrow(() -> ExcelWriter.<String>create().maxRows(1));
