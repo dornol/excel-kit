@@ -196,8 +196,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private static void validateSheetIndex(int sheetIndex) {
-        if (sheetIndex < 0 || sheetIndex > 255) {
-            throw new IllegalArgumentException("sheetIndex must be between 0 and 255");
+        if (sheetIndex < 0) {
+            throw new IllegalArgumentException("sheetIndex must be non-negative");
         }
     }
 
@@ -241,6 +241,12 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         BlockingQueue<Object> queue = new ArrayBlockingQueue<>(bufferSize);
         Object sentinel = new Object();
         AtomicReference<Throwable> producerError = new AtomicReference<>();
+        java.util.concurrent.atomic.AtomicBoolean cleaned = new java.util.concurrent.atomic.AtomicBoolean(false);
+        Runnable cleanup = () -> {
+            if (cleaned.compareAndSet(false, true)) {
+                close();
+            }
+        };
 
         Thread producer = new Thread(() -> {
             try {
@@ -265,9 +271,16 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             } catch (Throwable t) {
                 producerError.set(t);
             } finally {
-                // Use offer to avoid blocking forever if queue is full and consumer is gone.
-                // Sentinel delivery is best-effort; consumer also checks producerError on interrupt.
-                queue.offer(sentinel);
+                try {
+                    while (!queue.offer(sentinel, 100, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            break;
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                cleanup.run();
             }
         });
         // Daemon thread: if the caller abandons the stream without close(),
@@ -305,7 +318,13 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         return StreamSupport.stream(spliterator, false)
                 .onClose(() -> {
                     producer.interrupt();
-                    close();
+                    try {
+                        producer.join(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        cleanup.run();
+                    }
                 });
     }
 

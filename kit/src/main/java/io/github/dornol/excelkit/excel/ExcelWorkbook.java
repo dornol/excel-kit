@@ -207,11 +207,20 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook password(char[] password) {
-        if (password == null || password.length == 0) {
-            throw new IllegalArgumentException("Password cannot be null or empty");
+        if (password == null || password.length == 0 || isBlank(password)) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
         }
         this.password = password.clone();
         return this;
+    }
+
+    private static boolean isBlank(char[] chars) {
+        for (char c : chars) {
+            if (!Character.isWhitespace(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

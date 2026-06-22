@@ -201,6 +201,9 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * Sets the zero-based sheet index to read from. Defaults to 0.
      */
     public ExcelReader<T> sheetIndex(int sheetIndex) {
+        if (sheetIndex < 0) {
+            throw new IllegalArgumentException("sheetIndex must be non-negative");
+        }
         this.sheetIndex = sheetIndex;
         return this;
     }
@@ -335,6 +338,12 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return A list of header names
      */
     public static List<String> getSheetHeaders(InputStream inputStream, int sheetIndex, int headerRowIndex) {
+        if (sheetIndex < 0) {
+            throw new IllegalArgumentException("sheetIndex must be non-negative");
+        }
+        if (headerRowIndex < 0) {
+            throw new IllegalArgumentException("headerRowIndex must be non-negative");
+        }
         Path tempDir = null;
         Path tempFile = null;
         try {
@@ -356,17 +365,25 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
                 Iterator<InputStream> sheetsData = reader.getSheetsData();
                 int currentIndex = 0;
+                boolean found = false;
                 while (sheetsData.hasNext()) {
                     try (InputStream sheet = sheetsData.next()) {
                         if (currentIndex == sheetIndex) {
                             parser.parse(new InputSource(sheet));
+                            found = true;
                             break;
                         }
                     }
                     currentIndex++;
                 }
+                if (!found) {
+                    throw new ExcelReadException("Sheet index " + sheetIndex + " not found. File has "
+                            + currentIndex + " sheet(s).");
+                }
                 return extractor.getHeaders();
             }
+        } catch (ExcelReadException e) {
+            throw e;
         } catch (Exception e) {
             throw new ExcelReadException("Failed to read sheet headers", e);
         } finally {

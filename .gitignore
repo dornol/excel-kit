@@ -55,3 +55,6 @@ gradle-app.setting
 
 # Claude
 .claude
+
+# Local agent/runtime state
+.bkit/
