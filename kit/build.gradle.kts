@@ -22,6 +22,7 @@ dependencies {
     testImplementation(libs.poi.ooxml)
     testImplementation(libs.opencsv)
     testImplementation(libs.slf4j.simple)
+    testImplementation(libs.jakarta.validation.api)
     testImplementation(libs.hibernate.validator)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
