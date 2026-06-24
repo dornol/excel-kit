@@ -29,6 +29,27 @@ public ResponseEntity<StreamingResponseBody> downloadEncrypted() {
 }
 ```
 
+For upload endpoints, return structured read errors when the client asks for
+JSON and a readable HTML/text summary for manual testing:
+
+```java
+@PostMapping("/upload")
+public ResponseEntity<?> upload(MultipartFile file, @RequestHeader(HttpHeaders.ACCEPT) String accept)
+        throws IOException {
+    List<RowError> errors = new ArrayList<>();
+    List<User> rows = new ArrayList<>();
+
+    try (InputStream in = file.getInputStream()) {
+        userReader.build(in).read(rows::add, errors::add);
+    }
+
+    if (accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
+        return ResponseEntity.ok(Map.of("rows", rows, "errors", errors));
+    }
+    return ResponseEntity.ok("Success: %d rows, Errors: %d rows".formatted(rows.size(), errors.size()));
+}
+```
+
 ### Late-Binding Password
 
 When the service layer builds the handler but the password is only known

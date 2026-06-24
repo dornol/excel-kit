@@ -131,6 +131,29 @@ class ReadHeaderOptionsTest {
     }
 
     @Test
+    void excelReader_rowErrorIncludesStructuredCellErrors() throws Exception {
+        byte[] workbook = workbook(
+                List.of("Name", "Age"),
+                List.of("Alice", "not-a-number")
+        );
+        List<RowError> errors = new ArrayList<>();
+
+        ExcelReader.setter(Person::new)
+                .column("Name", (p, c) -> p.name = c.asString())
+                .column("Age", (p, c) -> p.age = c.asInt())
+                .build(new ByteArrayInputStream(workbook))
+                .read(p -> {}, errors::add);
+
+        assertEquals(1, errors.size());
+        assertEquals(1, errors.get(0).cellErrors().size());
+        CellError error = errors.get(0).cellErrors().get(0);
+        assertEquals(1, error.columnIndex());
+        assertEquals("Age", error.headerName());
+        assertEquals("not-a-number", error.cellValue());
+        assertTrue(error.message().contains("Failed to set column 'Age'"));
+    }
+
+    @Test
     void csvReader_forMapStrictHeaders_failsWhenSelectedHeaderMissing() {
         String csv = "Name\nAlice\n";
 

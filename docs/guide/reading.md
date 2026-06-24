@@ -151,6 +151,40 @@ reader.build(inputStream).read(
 );
 ```
 
+For API responses, keep `cellErrors()` structured instead of flattening it into a
+single message. This lets clients highlight the exact row, header, and submitted
+value:
+
+```json
+{
+  "fileRowNum": 2,
+  "messages": ["Failed to set column 'Price'"],
+  "cellErrors": [
+    {
+      "columnIndex": 2,
+      "headerName": "Price",
+      "cellValue": "not-a-number",
+      "message": "Failed to set column 'Price'"
+    }
+  ]
+}
+```
+
+When using `ExcelKitSchema`, the same read options apply to generated readers:
+
+```java
+ExcelKitSchema<User> schema = ExcelKitSchema.<User>builder()
+    .requiredColumn("Name", List.of("User Name", "이름"), User::getName, User::setName)
+    .column("Age", User::getAge, User::setAge)
+    .build();
+
+schema.excelReader(User::new, validator)
+    .strictHeaders()
+    .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
+    .build(inputStream)
+    .read(user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
+```
+
 ## Advanced Options
 
 **Header row index** (files with metadata rows above header):

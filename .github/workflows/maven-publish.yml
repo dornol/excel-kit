@@ -41,3 +41,23 @@ jobs:
 
       - name: Publish
         run: ./gradlew :kit:publishAndReleaseToMavenCentral --no-daemon
+
+      - name: Verify Maven Central visibility
+        timeout-minutes: 30
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          POM_URL="https://repo1.maven.org/maven2/io/github/dornol/excel-kit/${VERSION}/excel-kit-${VERSION}.pom"
+          METADATA_URL="https://repo1.maven.org/maven2/io/github/dornol/excel-kit/maven-metadata.xml"
+
+          for i in $(seq 1 60); do
+            if curl -fsI "$POM_URL" >/dev/null; then
+              curl -fsSL "$METADATA_URL" | grep "<version>${VERSION}</version>"
+              echo "Maven Central contains ${VERSION}"
+              exit 0
+            fi
+            echo "Waiting for Maven Central visibility (${i}/60): ${POM_URL}"
+            sleep 30
+          done
+
+          echo "Maven Central did not expose ${VERSION} within 30 minutes"
+          exit 1
