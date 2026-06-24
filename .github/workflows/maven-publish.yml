@@ -51,8 +51,12 @@ jobs:
 
           for i in $(seq 1 60); do
             if curl -fsI "$POM_URL" >/dev/null; then
-              curl -fsSL "$METADATA_URL" | grep "<version>${VERSION}</version>"
-              echo "Maven Central contains ${VERSION}"
+              if curl -fsSL "$METADATA_URL" | grep "<version>${VERSION}</version>"; then
+                echo "Maven Central metadata contains ${VERSION}"
+              else
+                echo "Maven Central POM is visible, but metadata has not caught up yet"
+              fi
+              echo "Maven Central POM is visible for ${VERSION}"
               exit 0
             fi
             echo "Waiting for Maven Central visibility (${i}/60): ${POM_URL}"
