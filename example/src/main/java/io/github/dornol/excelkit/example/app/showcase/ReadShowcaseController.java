@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.example.app.showcase;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.example.app.common.DownloadFileType;
 import io.github.dornol.excelkit.example.app.common.DownloadUtil;
+import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSheetInfo;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
@@ -76,7 +77,7 @@ public class ReadShowcaseController {
             if (result.success()) {
                 results.add(result.data());
             } else {
-                errors.add(result.messages().toString());
+                errors.add(formatReadError(result.fileRowNum(), result.messages(), result.cellErrors()));
             }
         });
 
@@ -91,6 +92,25 @@ public class ReadShowcaseController {
             errors.forEach(e -> sb.append(e).append("\n"));
         }
         return sb.toString();
+    }
+
+    private String formatReadError(long fileRowNum, List<String> messages, List<CellError> cellErrors) {
+        StringBuilder sb = new StringBuilder();
+        if (fileRowNum > 0) {
+            sb.append("fileRow=").append(fileRowNum).append(": ");
+        }
+        if (!cellErrors.isEmpty()) {
+            for (CellError error : cellErrors) {
+                sb.append("[column=").append(error.columnIndex());
+                if (error.headerName() != null) {
+                    sb.append(", header=").append(error.headerName());
+                }
+                sb.append(", value=").append(error.cellValue());
+                sb.append(", message=").append(error.message()).append("] ");
+            }
+            return sb.toString().trim();
+        }
+        return sb.append(messages).toString();
     }
 
     // ========================================================================
