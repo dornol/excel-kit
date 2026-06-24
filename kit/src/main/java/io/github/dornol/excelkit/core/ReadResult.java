@@ -14,6 +14,7 @@ import java.util.List;
  * @param cause    The underlying exception for mapping-stage failures, if any;
  *                 {@code null} for validation-only failures
  * @param fileRowNum 1-based physical row number in the source file, or {@code -1} if unknown
+ * @param cellErrors structured cell-level errors, if available
  *
  * @author dhkim
  * @since 2025-07-19
@@ -23,8 +24,21 @@ public record ReadResult<T>(
         boolean success,
         @Nullable List<String> messages,
         @Nullable Throwable cause,
-        long fileRowNum
+        long fileRowNum,
+        List<CellError> cellErrors
 ) {
+    public ReadResult {
+        cellErrors = cellErrors == null ? List.of() : List.copyOf(cellErrors);
+    }
+
+    /**
+     * Backward-compatible constructor with a file row number but without cell errors.
+     */
+    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
+                      @Nullable Throwable cause, long fileRowNum) {
+        this(data, success, messages, cause, fileRowNum, List.of());
+    }
+
     /**
      * Backward-compatible constructor without a file row number.
      *
@@ -35,7 +49,7 @@ public record ReadResult<T>(
      */
     public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
                       @Nullable Throwable cause) {
-        this(data, success, messages, cause, -1);
+        this(data, success, messages, cause, -1, List.of());
     }
 
     /**
@@ -46,6 +60,6 @@ public record ReadResult<T>(
      * @param messages validation or processing messages
      */
     public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages) {
-        this(data, success, messages, null, -1);
+        this(data, success, messages, null, -1, List.of());
     }
 }

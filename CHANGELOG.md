@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.0] - 2026-06-24
+
+### Added
+
+- Header aliases for Excel and CSV readers via `column(List<String>, ...)`.
+- Strict reader header validation via `strictHeaders()` / `requireHeaders()`.
+- Duplicate header handling via `DuplicateHeaderPolicy` (`FIRST`, `LAST`, `FAIL`).
+- Physical source row tracking via `ReadResult.fileRowNum()` and `RowError.fileRowNum()`.
+- Structured cell-level read errors via `CellError` and `RowError.cellErrors()`.
+- Schema read aliases and required columns via `ExcelKitSchema.Builder.column(name, aliases, ...)`
+  and `requiredColumn(...)`.
+- Strict selected-column validation for `ExcelReader.forMap(...)` and `CsvReader.forMap(...)`.
+- Example app MockMvc upload smoke tests for schema-based Excel and CSV reads.
+
+### Changed
+
+- Map-mode readers now apply the configured duplicate header policy consistently
+  when building output maps.
+
 ## [0.17.1] - 2026-06-24
 
 ### Added

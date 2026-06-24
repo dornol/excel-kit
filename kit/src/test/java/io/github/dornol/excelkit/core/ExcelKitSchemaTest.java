@@ -267,6 +267,28 @@ class ExcelKitSchemaTest {
     }
 
     @Test
+    void schemaReader_shouldUseHeaderAliasesAndRequiredColumns() {
+        ExcelKitSchema<TestPerson> aliasSchema = ExcelKitSchema.<TestPerson>builder()
+                .requiredColumn("Name", List.of("Full Name", "이름"),
+                        TestPerson::getName, (p, cell) -> p.setName(cell.asString()))
+                .column("Age", TestPerson::getAge, (p, cell) -> p.setAge(cell.asInt()))
+                .build();
+
+        String csv = "Full Name,Age\nAlice,30\n,25\n";
+        List<TestPerson> valid = new ArrayList<>();
+        List<RowError> errors = new ArrayList<>();
+
+        aliasSchema.csvReader(TestPerson::new, null)
+                .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
+                .read(valid::add, errors::add);
+
+        assertEquals(1, valid.size());
+        assertEquals("Alice", valid.get(0).getName());
+        assertEquals(1, errors.size());
+        assertEquals("Full Name", errors.get(0).cellErrors().get(0).headerName());
+    }
+
+    @Test
     void roundTrip_excel_shouldPreserveData() throws IOException {
         // Arrange
         List<TestPerson> original = List.of(

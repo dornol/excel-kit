@@ -104,7 +104,10 @@ public class ExcelKitSchema<T> {
     public ExcelReader<T> excelReader(Supplier<T> supplier, @Nullable Validator validator) {
         ExcelReader<T> reader = new ExcelReader<>(supplier, validator);
         for (SchemaColumn<T> col : columns) {
-            reader.column(col.name(), col.readSetter());
+            reader.column(col.readHeaderNames(), col.readSetter());
+            if (col.required()) {
+                reader.required();
+            }
         }
         return reader;
     }
@@ -137,7 +140,10 @@ public class ExcelKitSchema<T> {
     public CsvReader<T> csvReader(Supplier<T> supplier, @Nullable Validator validator) {
         CsvReader<T> reader = new CsvReader<>(supplier, validator);
         for (SchemaColumn<T> col : columns) {
-            reader.column(col.name(), col.readSetter());
+            reader.column(col.readHeaderNames(), col.readSetter());
+            if (col.required()) {
+                reader.required();
+            }
         }
         return reader;
     }
@@ -169,14 +175,28 @@ public class ExcelKitSchema<T> {
      * @param writeFunction    Function to extract the cell value from a row object
      * @param readSetter       BiConsumer to set the cell value into a row object
      * @param writeConfigurer  Optional consumer to configure Excel column properties (type, format, etc.)
+     * @param readHeaderNames  Header names accepted when reading, in priority order
+     * @param required         Whether blank/empty cells should fail row validation
      * @param <T>              The row data type
      */
     public record SchemaColumn<T>(
             String name,
             Function<T, @Nullable Object> writeFunction,
             BiConsumer<T, CellData> readSetter,
-            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer
+            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer,
+            List<String> readHeaderNames,
+            boolean required
     ) {
+        /**
+         * Creates a schema column.
+         */
+        public SchemaColumn {
+            java.util.Objects.requireNonNull(name, "name cannot be null");
+            java.util.Objects.requireNonNull(writeFunction, "writeFunction cannot be null");
+            java.util.Objects.requireNonNull(readSetter, "readSetter cannot be null");
+            readHeaderNames = normalizeReadHeaderNames(name, readHeaderNames);
+        }
+
         /**
          * Creates a schema column without write configuration.
          *
@@ -185,7 +205,36 @@ public class ExcelKitSchema<T> {
          * @param readSetter consumer to set the cell value
          */
         public SchemaColumn(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter) {
-            this(name, writeFunction, readSetter, null);
+            this(name, writeFunction, readSetter, null, List.of(name), false);
+        }
+
+        /**
+         * Creates a schema column with Excel write configuration.
+         *
+         * @param name the column header name
+         * @param writeFunction function to extract the cell value
+         * @param readSetter consumer to set the cell value
+         * @param writeConfigurer optional Excel column write configuration
+         */
+        public SchemaColumn(String name, Function<T, @Nullable Object> writeFunction,
+                            BiConsumer<T, CellData> readSetter,
+                            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+            this(name, writeFunction, readSetter, writeConfigurer, List.of(name), false);
+        }
+
+        private static List<String> normalizeReadHeaderNames(String name, List<String> aliases) {
+            java.util.Objects.requireNonNull(aliases, "readHeaderNames cannot be null");
+            List<String> normalized = new ArrayList<>();
+            normalized.add(name);
+            for (String alias : aliases) {
+                if (alias == null) {
+                    throw new IllegalArgumentException("readHeaderNames cannot contain null");
+                }
+                if (!normalized.contains(alias)) {
+                    normalized.add(alias);
+                }
+            }
+            return List.copyOf(normalized);
         }
     }
 
@@ -213,6 +262,52 @@ public class ExcelKitSchema<T> {
         }
 
         /**
+         * Adds a column definition with read header aliases.
+         *
+         * @param name          Column header name used for writing
+         * @param readAliases   Additional header names accepted when reading
+         * @param writeFunction Function to extract the cell value from a row object for writing
+         * @param readSetter    BiConsumer to set the cell value into a row object for reading
+         * @return This builder for chaining
+         */
+        public Builder<T> column(String name, List<String> readAliases,
+                                 Function<T, @Nullable Object> writeFunction,
+                                 BiConsumer<T, CellData> readSetter) {
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, null, readAliases, false));
+            return this;
+        }
+
+        /**
+         * Adds a required column definition.
+         *
+         * @param name Column header name
+         * @param writeFunction Function to extract the cell value from a row object for writing
+         * @param readSetter BiConsumer to set the cell value into a row object for reading
+         * @return This builder for chaining
+         */
+        public Builder<T> requiredColumn(String name, Function<T, @Nullable Object> writeFunction,
+                                         BiConsumer<T, CellData> readSetter) {
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, null, List.of(name), true));
+            return this;
+        }
+
+        /**
+         * Adds a required column definition with read header aliases.
+         *
+         * @param name Column header name used for writing
+         * @param readAliases Additional header names accepted when reading
+         * @param writeFunction Function to extract the cell value from a row object for writing
+         * @param readSetter BiConsumer to set the cell value into a row object for reading
+         * @return This builder for chaining
+         */
+        public Builder<T> requiredColumn(String name, List<String> readAliases,
+                                         Function<T, @Nullable Object> writeFunction,
+                                         BiConsumer<T, CellData> readSetter) {
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, null, readAliases, true));
+            return this;
+        }
+
+        /**
          * Adds a column definition with Excel write configuration.
          * <p>
          * The configurer receives an {@link ExcelColumn.ExcelColumnBuilder} to set column properties
@@ -234,6 +329,58 @@ public class ExcelKitSchema<T> {
         public Builder<T> column(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter,
                                   Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer));
+            return this;
+        }
+
+        /**
+         * Adds a column definition with read header aliases and Excel write configuration.
+         *
+         * @param name Column header name used for writing
+         * @param readAliases Additional header names accepted when reading
+         * @param writeFunction Function to extract the cell value from a row object for writing
+         * @param readSetter BiConsumer to set the cell value into a row object for reading
+         * @param writeConfigurer Consumer to configure Excel column properties
+         * @return This builder for chaining
+         */
+        public Builder<T> column(String name, List<String> readAliases,
+                                 Function<T, @Nullable Object> writeFunction,
+                                 BiConsumer<T, CellData> readSetter,
+                                 Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, false));
+            return this;
+        }
+
+        /**
+         * Adds a required column definition with Excel write configuration.
+         *
+         * @param name Column header name
+         * @param writeFunction Function to extract the cell value from a row object for writing
+         * @param readSetter BiConsumer to set the cell value into a row object for reading
+         * @param writeConfigurer Consumer to configure Excel column properties
+         * @return This builder for chaining
+         */
+        public Builder<T> requiredColumn(String name, Function<T, @Nullable Object> writeFunction,
+                                         BiConsumer<T, CellData> readSetter,
+                                         Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, List.of(name), true));
+            return this;
+        }
+
+        /**
+         * Adds a required column definition with read header aliases and Excel write configuration.
+         *
+         * @param name Column header name used for writing
+         * @param readAliases Additional header names accepted when reading
+         * @param writeFunction Function to extract the cell value from a row object for writing
+         * @param readSetter BiConsumer to set the cell value into a row object for reading
+         * @param writeConfigurer Consumer to configure Excel column properties
+         * @return This builder for chaining
+         */
+        public Builder<T> requiredColumn(String name, List<String> readAliases,
+                                         Function<T, @Nullable Object> writeFunction,
+                                         BiConsumer<T, CellData> readSetter,
+                                         Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, true));
             return this;
         }
 

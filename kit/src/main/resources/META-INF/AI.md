@@ -72,6 +72,10 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - Writers use static factory `create()`: `ExcelWriter.<T>create()`, `ExcelWorkbook.create()`,
   `CsvWriter.<T>create()` (no public constructors)
 - `required()` on reader columns — blank cells produce validation errors
+- `column(List<String>, ...)` on readers — read by header aliases
+- `strictHeaders()` / `requireHeaders()` — fail fast when configured headers are absent
+- `DuplicateHeaderPolicy` — choose first, last, or fail for duplicate headers
+- `CellError` and `RowError.cellErrors()` — structured cell-level read errors
 - `asBigDecimal()` parses directly without Double intermediate — full precision
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time
@@ -101,8 +105,8 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 
 - **Split success/error callbacks** — `read(Consumer<T> onSuccess, Consumer<RowError> onError)` routes
   validated rows vs failed rows. Library buffers nothing — caller decides error memory policy.
-- **`RowError`** record — `rowNum` (1-based, header excluded), `type` (`VALIDATION` / `MAPPING`),
-  `messages`, nullable `cause`.
+- **`RowError`** record — `rowNum` (1-based, header excluded), `fileRowNum` (physical source row),
+  `type` (`VALIDATION` / `MAPPING`), `messages`, nullable `cause`, and `cellErrors`.
 - **`ReadResult<T>.cause()`** — nullable throwable from mapping stage. 3-arg constructor retained for
   backward compatibility.
 
@@ -114,6 +118,18 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   reader.headerRowIndex(1).headerRows(2).build(in).read(r -> ...);
   ```
   Default `headerRows(1)` preserves existing single-row behavior including empty-string headers.
+
+## Key API Notes (v0.18.0+) — Reading
+
+- **Header aliases** — `column(List.of("Name", "User Name", "이름"), setter)` tries aliases in order.
+- **Strict headers** — `strictHeaders()` / `requireHeaders()` fail before data rows when configured
+  headers or selected map-mode columns are missing.
+- **Duplicate headers** — `duplicateHeaderPolicy(DuplicateHeaderPolicy.FIRST|LAST|FAIL)` controls
+  duplicate header resolution.
+- **Schema read options** — `ExcelKitSchema.Builder.column(name, aliases, ...)` and
+  `requiredColumn(...)` flow into generated Excel/CSV readers.
+- **Cell errors** — `CellError` is exposed through `ReadResult.cellErrors()` and
+  `RowError.cellErrors()` for import UIs.
 
 ## Key API Notes (v0.16.14+)
 

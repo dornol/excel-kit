@@ -24,7 +24,7 @@ ExcelWriter.<User>create()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.17.1")
+implementation("io.github.dornol:excel-kit:0.18.0")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.17.1")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.17.1</version>
+  <version>0.18.0</version>
 </dependency>
 ```
 
@@ -98,6 +98,15 @@ ExcelReader.setter(User::new)
     .column(List.of("Name", "User Name", "이름"), (u, cell) -> u.setName(cell.asString()))
     .build(inputStream)
     .read(user -> { ... }, error -> log.warn("file row {}", error.fileRowNum()));
+```
+
+Schema-based readers can carry the same read metadata:
+
+```java
+ExcelKitSchema.<User>builder()
+    .requiredColumn("Name", List.of("User Name", "이름"),
+            User::getName, (u, cell) -> u.setName(cell.asString()))
+    .build();
 ```
 
 ### Write & Read CSV
@@ -192,7 +201,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Read modes | Setter (mutable), Mapping (records), Map (schema-less) |
 | Headers | Strict header validation, duplicate header policies, single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
-| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError` and physical file row number |
+| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, and physical file row number |
 | Stream | `readAsStream()` with lazy evaluation, `readStrict()` for fail-fast |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
 | Config | Sheet index, header row index, progress callback, `countRows()` for total row pre-scan, password-encrypted files |

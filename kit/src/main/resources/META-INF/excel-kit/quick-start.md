@@ -50,8 +50,10 @@ class User {
 }
 
 new ExcelReader<>(User::new, null)
-    .column("Name", (u, cell) -> u.name = cell.asString())
+    .column(List.of("Name", "User Name"), (u, cell) -> u.name = cell.asString())
     .column("Age", (u, cell) -> u.age = cell.asInt())
+    .strictHeaders()
+    .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
     .build(Files.newInputStream(Path.of("users.xlsx")))
     .read(result -> {
         if (result.success()) {
@@ -117,4 +119,13 @@ ExcelReader.forMap().build(inputStream).read(result -> {
     Map<String, String> row = result.data();
     String name = row.get("Name");
 });
+```
+
+## Schema Reading Metadata
+
+```java
+ExcelKitSchema.<User>builder()
+    .requiredColumn("Name", List.of("User Name"), User::getName,
+            (u, cell) -> u.name = cell.asString())
+    .build();
 ```

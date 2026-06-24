@@ -1,18 +1,28 @@
 package io.github.dornol.excelkit.example;
 
 import io.github.dornol.excelkit.example.app.book.adapter.out.persistence.BookMyBatisMapper;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -59,5 +69,53 @@ class ExampleApplicationSmokeTest {
         assertTrue(body.length > 4);
         assertEquals('P', body[0]);
         assertEquals('K', body[1]);
+    }
+
+    @Test
+    void uploadShowcaseExcel_readsRows() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "products.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", productWorkbook());
+
+        mockMvc.perform(multipart("/showcase/read-by-name-excel").file(file))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Success: 2 rows")));
+    }
+
+    @Test
+    void uploadShowcaseCsv_readsRows() throws Exception {
+        String csv = "Name,Category,Price,Quantity,Discount\n"
+                + "Notebook,Stationery,1200,3,0.1\n"
+                + "Pen,Stationery,500,10,0.0\n";
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv",
+                "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(multipart("/showcase/read-by-name-csv").file(file))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Success: 2 rows")));
+    }
+
+    private static byte[] productWorkbook() throws Exception {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Products");
+            Row header = sheet.createRow(0);
+            String[] headers = {"Name", "Category", "Price", "Quantity", "Discount"};
+            for (int i = 0; i < headers.length; i++) {
+                header.createCell(i).setCellValue(headers[i]);
+            }
+            Row first = sheet.createRow(1);
+            first.createCell(0).setCellValue("Notebook");
+            first.createCell(1).setCellValue("Stationery");
+            first.createCell(2).setCellValue(1200);
+            first.createCell(3).setCellValue(3);
+            first.createCell(4).setCellValue(0.1);
+            Row second = sheet.createRow(2);
+            second.createCell(0).setCellValue("Pen");
+            second.createCell(1).setCellValue("Stationery");
+            second.createCell(2).setCellValue(500);
+            second.createCell(3).setCellValue(10);
+            second.createCell(4).setCellValue(0.0);
+            workbook.write(out);
+            return out.toByteArray();
+        }
     }
 }

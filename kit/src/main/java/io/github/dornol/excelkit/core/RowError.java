@@ -17,6 +17,7 @@ import java.util.List;
  *                  never {@code null}, may be empty
  * @param cause     the underlying exception for mapping/conversion failures;
  *                  {@code null} for validation-only failures
+ * @param cellErrors structured cell-level errors, if available
  *
  * @author dhkim
  * @since 0.16.12
@@ -26,14 +27,26 @@ public record RowError(
         long fileRowNum,
         Type type,
         List<String> messages,
-        @Nullable Throwable cause
+        @Nullable Throwable cause,
+        List<CellError> cellErrors
 ) {
+    public RowError {
+        cellErrors = cellErrors == null ? List.of() : List.copyOf(cellErrors);
+    }
+
+    /**
+     * Backward-compatible constructor without cell-level errors.
+     */
+    public RowError(long rowNum, long fileRowNum, Type type, List<String> messages,
+                    @Nullable Throwable cause) {
+        this(rowNum, fileRowNum, type, messages, cause, List.of());
+    }
 
     /**
      * Backward-compatible constructor without a physical file row number.
      */
     public RowError(long rowNum, Type type, List<String> messages, @Nullable Throwable cause) {
-        this(rowNum, -1, type, messages, cause);
+        this(rowNum, -1, type, messages, cause, List.of());
     }
 
     /** Category of row-level read error. */
