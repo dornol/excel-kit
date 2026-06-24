@@ -4,8 +4,10 @@ import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.example.app.common.DownloadFileType;
 import io.github.dornol.excelkit.example.app.common.DownloadUtil;
 import io.github.dornol.excelkit.core.CellError;
+import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSheetInfo;
+import io.github.dornol.excelkit.excel.ExcelWriter;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +73,49 @@ public class ReadShowcaseController {
             ReadReport report = readReport("CSV",
                     PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
             return renderReport(report, request);
+        }
+    }
+
+    @PostMapping("/read-errors-csv")
+    public ResponseEntity<StreamingResponseBody> downloadReadErrorsCsv(MultipartFile file) throws IOException {
+        ReadReport report = readUploadedFile(file);
+        var handler = CsvWriter.<ErrorReportRow>create()
+                .column("fileRowNum", ErrorReportRow::fileRowNum)
+                .column("columnIndex", ErrorReportRow::columnIndex)
+                .column("headerName", ErrorReportRow::headerName)
+                .column("cellValue", ErrorReportRow::cellValue)
+                .column("message", ErrorReportRow::message)
+                .write(errorReportRows(report).stream());
+
+        return DownloadUtil.builder("read-errors", DownloadFileType.CSV)
+                .body(handler::writeTo);
+    }
+
+    @PostMapping("/read-errors-excel")
+    public ResponseEntity<StreamingResponseBody> downloadReadErrorsExcel(MultipartFile file) throws IOException {
+        ReadReport report = readUploadedFile(file);
+        var handler = ExcelWriter.<ErrorReportRow>create()
+                .sheetName("Read Errors")
+                .autoFilter(true)
+                .freezeRows(1)
+                .column("fileRowNum", ErrorReportRow::fileRowNum)
+                .column("columnIndex", ErrorReportRow::columnIndex)
+                .column("headerName", ErrorReportRow::headerName)
+                .column("cellValue", ErrorReportRow::cellValue)
+                .column("message", ErrorReportRow::message)
+                .write(errorReportRows(report).stream());
+
+        return DownloadUtil.builder("read-errors", DownloadFileType.EXCEL)
+                .body(handler::writeTo);
+    }
+
+    private ReadReport readUploadedFile(MultipartFile file) throws IOException {
+        String filename = file.getOriginalFilename();
+        try (InputStream is = file.getInputStream()) {
+            if (filename != null && filename.toLowerCase().endsWith(".csv")) {
+                return readReport("CSV", PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
+            }
+            return readReport("Excel", PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
         }
     }
 
@@ -168,6 +213,22 @@ public class ReadShowcaseController {
         return sb.append(readError.messages()).toString();
     }
 
+    private List<ErrorReportRow> errorReportRows(ReadReport report) {
+        List<ErrorReportRow> rows = new ArrayList<>();
+        for (ReadError error : report.errors()) {
+            if (error.cellErrors().isEmpty()) {
+                rows.add(new ErrorReportRow(error.fileRowNum(), null, null, null,
+                        String.join("; ", error.messages())));
+                continue;
+            }
+            for (CellError cell : error.cellErrors()) {
+                rows.add(new ErrorReportRow(error.fileRowNum(), cell.columnIndex(), cell.headerName(),
+                        cell.cellValue(), cell.message()));
+            }
+        }
+        return rows;
+    }
+
     private String escapeHtml(Object value) {
         if (value == null) {
             return "";
@@ -191,6 +252,14 @@ public class ReadShowcaseController {
             long fileRowNum,
             List<String> messages,
             List<CellError> cellErrors
+    ) {}
+
+    private record ErrorReportRow(
+            long fileRowNum,
+            Integer columnIndex,
+            String headerName,
+            String cellValue,
+            String message
     ) {}
 
     // ========================================================================

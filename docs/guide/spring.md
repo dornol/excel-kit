@@ -50,6 +50,27 @@ public ResponseEntity<?> upload(MultipartFile file, @RequestHeader(HttpHeaders.A
 }
 ```
 
+When users need a downloadable correction report, keep the upload parse path the
+same and write the collected `RowError.cellErrors()` into a CSV or Excel response:
+
+```java
+@PostMapping("/upload/errors.csv")
+public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) throws IOException {
+    List<RowError> errors = new ArrayList<>();
+    try (InputStream in = file.getInputStream()) {
+        userReader.build(in).read(user -> {}, errors::add);
+    }
+
+    CsvHandler csv = CsvWriter.<CellError>create()
+        .column("headerName", CellError::headerName)
+        .column("cellValue", CellError::cellValue)
+        .column("message", CellError::message)
+        .write(errors.stream().flatMap(error -> error.cellErrors().stream()));
+
+    return CsvResponse.of(csv, "read-errors");
+}
+```
+
 ### Late-Binding Password
 
 When the service layer builds the handler but the password is only known

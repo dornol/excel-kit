@@ -79,7 +79,9 @@ class ExampleApplicationSmokeTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"upload-result\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-enhanced-upload=\"true\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Download Error CSV")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Download Error CSV")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Server Error Excel")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("feature-filter")));
     }
 
     @Test
@@ -150,6 +152,48 @@ class ExampleApplicationSmokeTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("<h1>Name-Based Excel Read Result</h1>")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("<td>Notebook</td>")));
+    }
+
+    @Test
+    void uploadShowcaseErrors_canDownloadServerCsvReport() throws Exception {
+        String csv = "Name,Category,Price,Quantity,Discount\n"
+                + "Notebook,Stationery,not-a-number,3,0.1\n";
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv",
+                "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(multipart("/showcase/read-errors-csv").file(file))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE,
+                        org.hamcrest.Matchers.containsString("text/csv")))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        org.hamcrest.Matchers.containsString("read-errors.csv")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("fileRowNum,columnIndex,headerName")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("not-a-number")));
+    }
+
+    @Test
+    void uploadShowcaseErrors_canDownloadServerExcelReport() throws Exception {
+        String csv = "Name,Category,Price,Quantity,Discount\n"
+                + "Notebook,Stationery,not-a-number,3,0.1\n";
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv",
+                "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+
+        MvcResult result = mockMvc.perform(multipart("/showcase/read-errors-excel").file(file))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        MvcResult response = mockMvc.perform(asyncDispatch(result))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        org.hamcrest.Matchers.containsString("read-errors.xlsx")))
+                .andReturn();
+
+        byte[] body = response.getResponse().getContentAsByteArray();
+        assertTrue(body.length > 4);
+        assertEquals('P', body[0]);
+        assertEquals('K', body[1]);
     }
 
     private static byte[] productWorkbook() throws Exception {
