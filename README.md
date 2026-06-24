@@ -100,6 +100,35 @@ ExcelReader.setter(User::new)
     .read(user -> { ... }, error -> log.warn("file row {}", error.fileRowNum()));
 ```
 
+Read failures include structured cell-level details that are useful for APIs and
+upload screens:
+
+```java
+reader.read(
+    user -> importUser(user),
+    error -> error.cellErrors().forEach(cell ->
+        log.warn("row {}, header {}, value {}: {}",
+            error.fileRowNum(), cell.headerName(), cell.cellValue(), cell.message()))
+);
+```
+
+For JSON responses, keep those details as fields instead of flattening them into
+one message:
+
+```json
+{
+  "fileRowNum": 2,
+  "cellErrors": [
+    {
+      "columnIndex": 2,
+      "headerName": "Price",
+      "cellValue": "not-a-number",
+      "message": "Failed to set column 'Price'"
+    }
+  ]
+}
+```
+
 Schema-based readers can carry the same read metadata:
 
 ```java

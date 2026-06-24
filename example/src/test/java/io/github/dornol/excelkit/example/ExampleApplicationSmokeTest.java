@@ -74,6 +74,15 @@ class ExampleApplicationSmokeTest {
     }
 
     @Test
+    void indexPage_containsInlineUploadResultPanel() throws Exception {
+        mockMvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"upload-result\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-enhanced-upload=\"true\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Download Error CSV")));
+    }
+
+    @Test
     void uploadShowcaseExcel_readsRows() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "products.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", productWorkbook());

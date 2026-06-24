@@ -1,9 +1,11 @@
 package io.github.dornol.excelkit.core;
 
 import io.github.dornol.excelkit.csv.CsvHandler;
+import io.github.dornol.excelkit.csv.CsvReadException;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelHandler;
+import io.github.dornol.excelkit.excel.ExcelReadException;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import jakarta.validation.Validation;
@@ -11,6 +13,10 @@ import jakarta.validation.Validator;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -286,6 +292,59 @@ class ExcelKitSchemaTest {
         assertEquals("Alice", valid.get(0).getName());
         assertEquals(1, errors.size());
         assertEquals("Full Name", errors.get(0).cellErrors().get(0).headerName());
+    }
+
+    @Test
+    void schemaExcelReader_shouldUseHeaderAliasesAndRequiredColumns() throws IOException {
+        ExcelKitSchema<TestPerson> aliasSchema = ExcelKitSchema.<TestPerson>builder()
+                .requiredColumn("Name", List.of("Full Name", "이름"),
+                        TestPerson::getName, (p, cell) -> p.setName(cell.asString()))
+                .column("Age", TestPerson::getAge, (p, cell) -> p.setAge(cell.asInt()))
+                .build();
+        byte[] workbook = workbook(
+                List.of("Full Name", "Age"),
+                List.of(List.of("Alice", "30"), List.of("", "25"))
+        );
+        List<TestPerson> valid = new ArrayList<>();
+        List<RowError> errors = new ArrayList<>();
+
+        aliasSchema.excelReader(TestPerson::new, null)
+                .build(new ByteArrayInputStream(workbook))
+                .read(valid::add, errors::add);
+
+        assertEquals(1, valid.size());
+        assertEquals("Alice", valid.get(0).getName());
+        assertEquals(1, errors.size());
+        assertEquals("Full Name", errors.get(0).cellErrors().get(0).headerName());
+    }
+
+    @Test
+    void schemaCsvReader_duplicateHeaderPolicyFail_failsBeforeRows() {
+        String csv = "Name,Name,Age\nfirst,last,30\n";
+
+        CsvReadException ex = assertThrows(CsvReadException.class, () ->
+                schema.csvReader(TestPerson::new, null)
+                        .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
+                        .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
+                        .read(row -> {}));
+
+        assertTrue(rootMessage(ex).contains("Duplicate header 'Name'"));
+    }
+
+    @Test
+    void schemaExcelReader_duplicateHeaderPolicyFail_failsBeforeRows() throws IOException {
+        byte[] workbook = workbook(
+                List.of("Name", "Name", "Age"),
+                List.of(List.of("first", "last", "30"))
+        );
+
+        ExcelReadException ex = assertThrows(ExcelReadException.class, () ->
+                schema.excelReader(TestPerson::new, null)
+                        .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
+                        .build(new ByteArrayInputStream(workbook))
+                        .read(row -> {}));
+
+        assertTrue(rootMessage(ex).contains("Duplicate header 'Name'"));
     }
 
     @Test
@@ -599,5 +658,32 @@ class ExcelKitSchemaTest {
         public void setAge(int age) {
             this.age = age;
         }
+    }
+
+    private static byte[] workbook(List<String> headers, List<List<String>> rows) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Data");
+            Row header = sheet.createRow(0);
+            for (int i = 0; i < headers.size(); i++) {
+                header.createCell(i).setCellValue(headers.get(i));
+            }
+            for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+                Row row = sheet.createRow(rowIndex + 1);
+                List<String> values = rows.get(rowIndex);
+                for (int col = 0; col < values.size(); col++) {
+                    row.createCell(col).setCellValue(values.get(col));
+                }
+            }
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private static String rootMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getMessage();
     }
 }
