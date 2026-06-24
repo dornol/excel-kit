@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.TempResourceContainer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -244,6 +245,31 @@ class CsvTempFileCleanupTest {
         assertEquals("Apple", names.get(0));
     }
 
+    @Test
+    void csvReadAsStream_mappingError_shouldCleanUpTempResources() throws IOException {
+        Path csvFile = createTestCsv("Name,Price\nApple,1000\n");
+
+        Path tempFile;
+        Path tempDir;
+        try (InputStream is = Files.newInputStream(csvFile)) {
+            CsvReadHandler<TestItem> handler = CsvReader.<TestItem>mapping(row -> {
+                        throw new IllegalStateException("boom");
+                    })
+                    .build(is);
+            tempFile = tempResourcePath(handler, "tempFile");
+            tempDir = tempResourcePath(handler, "tempDir");
+
+            try (Stream<ReadResult<TestItem>> stream = handler.readAsStream()) {
+                List<ReadResult<TestItem>> results = stream.toList();
+                assertEquals(1, results.size());
+                assertFalse(results.get(0).success());
+            }
+        }
+
+        assertFalse(Files.exists(tempFile), "CSV stream errors should delete temp file");
+        assertFalse(Files.exists(tempDir), "CSV stream errors should delete temp dir");
+    }
+
     // ──────────────────────────────────────────────────────────────
     // CsvWriter+CsvReader roundtrip
     // ──────────────────────────────────────────────────────────────
@@ -290,6 +316,16 @@ class CsvTempFileCleanupTest {
         Path file = tempDir.resolve("test.csv");
         Files.writeString(file, content, StandardCharsets.UTF_8);
         return file;
+    }
+
+    private Path tempResourcePath(CsvReadHandler<?> handler, String fieldName) {
+        try {
+            var field = TempResourceContainer.class.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return (Path) field.get(handler);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("Failed to inspect temp resource path", e);
+        }
     }
 
     static class TestItem {

@@ -211,6 +211,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      */
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
+        markConsumed();
         try {
             readInternal(consumer);
         } catch (ExcelReadException | ReadAbortException e) {
@@ -237,6 +238,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      */
     @Override
     public Stream<ReadResult<T>> readAsStream() {
+        markConsumed();
         int bufferSize = 1024;
         BlockingQueue<Object> queue = new ArrayBlockingQueue<>(bufferSize);
         Object sentinel = new Object();
