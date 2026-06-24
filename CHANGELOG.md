@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.1] - 2026-06-24
+
+### Changed
+
+- Maven Central publishing now uses the automatic release path so tag publishes
+  do not remain as user-managed Central Portal deployments.
+- Generated Javadocs now suppress missing-doc comments while keeping other
+  doclint checks active.
+- Showcase upload read failures now include structured cell error details in the
+  response.
+
+### Added
+
+- Smoke coverage for CSV upload conversion errors in the example app.
+- `CellError` handling examples in the reading guide and bundled docs.
+
 ## [0.18.0] - 2026-06-24
 
 ### Added
