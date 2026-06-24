@@ -119,3 +119,6 @@ try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
           .forEach(this::process);
 }
 ```
+
+Read handlers are one-shot. After `read()`, `readStrict()`, or `readAsStream()`
+has been called, create a new handler from a new `InputStream` for another pass.

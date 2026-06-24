@@ -24,7 +24,7 @@ ExcelWriter.<User>create()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.17.0")
+implementation("io.github.dornol:excel-kit:0.17.1")
 ```
 
 **Maven**
@@ -32,7 +32,7 @@ implementation("io.github.dornol:excel-kit:0.17.0")
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.17.0</version>
+  <version>0.17.1</version>
 </dependency>
 ```
 
@@ -185,6 +185,9 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Stream | `readAsStream()` with lazy evaluation, `readStrict()` for fail-fast |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
 | Config | Sheet index, header row index, progress callback, `countRows()` for total row pre-scan, password-encrypted files |
+
+Read handlers are one-shot: after calling `read()`, `readStrict()`, or `readAsStream()`,
+create a new handler for another pass over the same file.
 
 ## Performance
 
