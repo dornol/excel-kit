@@ -36,6 +36,10 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           VERSION=${TAG#v}
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          PREV_TAG=$(git tag --sort=-v:refname | grep -A1 "^${TAG}$" | tail -1)
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$TAG" ]; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
 
           # Extract the section for this version from CHANGELOG.md
           BODY=$(awk -v ver="$VERSION" '
@@ -49,10 +53,6 @@ jobs:
 
           if [ -z "$BODY" ]; then
             # Fallback to git log if version not found in CHANGELOG
-            PREV_TAG=$(git tag --sort=-v:refname | grep -A1 "^${TAG}$" | tail -1)
-            if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$TAG" ]; then
-              PREV_TAG=$(git rev-list --max-parents=0 HEAD)
-            fi
             BODY=$(git log --pretty=format:"- %s" "${PREV_TAG}..${TAG}" | grep -v "^- Merge")
           fi
 
@@ -60,7 +60,7 @@ jobs:
             echo 'body<<EOF'
             echo "$BODY"
             echo ""
-            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/...${TAG}"
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
             echo 'EOF'
           } >> $GITHUB_OUTPUT
 
