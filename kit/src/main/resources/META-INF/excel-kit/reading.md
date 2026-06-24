@@ -158,6 +158,15 @@ reader.read(
 `cause()` (nullable throwable from mapping stage), and `cellErrors()` (`CellError` entries with
 column index, header name, cell value, and message).
 
+```java
+reader.read(
+    row -> importRow(row),
+    error -> error.cellErrors().forEach(cell ->
+        log.warn("file row {}, {}='{}': {}",
+            error.fileRowNum(), cell.headerName(), cell.cellValue(), cell.message()))
+);
+```
+
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 
 ## Multi-Sheet Discovery

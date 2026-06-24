@@ -94,6 +94,21 @@ class ExampleApplicationSmokeTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Success: 2 rows")));
     }
 
+    @Test
+    void uploadShowcaseCsv_reportsCellErrors() throws Exception {
+        String csv = "Name,Category,Price,Quantity,Discount\n"
+                + "Notebook,Stationery,not-a-number,3,0.1\n";
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv",
+                "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(multipart("/showcase/read-by-name-csv").file(file))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Errors: 1 rows")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("fileRow=2")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("header=Price")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=not-a-number")));
+    }
+
     private static byte[] productWorkbook() throws Exception {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Products");

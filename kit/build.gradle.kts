@@ -73,11 +73,13 @@ tasks.check {
 
 tasks.withType<Javadoc>().configureEach {
     options.encoding = "UTF-8"
+    (options as org.gradle.external.javadoc.StandardJavadocDocletOptions)
+        .addStringOption("Xdoclint:all,-missing", "-quiet")
 }
 
 mavenPublishing {
     signAllPublications()
-    publishToMavenCentral()
+    publishToMavenCentral(automaticRelease = true)
 
     coordinates("io.github.dornol", "excel-kit", project.version.toString())
 

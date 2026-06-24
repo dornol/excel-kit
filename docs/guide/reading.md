@@ -140,6 +140,17 @@ reader.read(
 - `cause()` — nullable throwable (for `MAPPING` errors)
 - `cellErrors()` — structured `CellError` entries with `columnIndex`, `headerName`, `cellValue`, and `message`
 
+Example import error response:
+
+```java
+reader.build(inputStream).read(
+    user -> importUser(user),
+    error -> error.cellErrors().forEach(cell ->
+        log.warn("file row {}, column {}, value {}: {}",
+            error.fileRowNum(), cell.headerName(), cell.cellValue(), cell.message()))
+);
+```
+
 ## Advanced Options
 
 **Header row index** (files with metadata rows above header):
