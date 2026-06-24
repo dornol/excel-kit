@@ -167,6 +167,19 @@ reader.read(
 );
 ```
 
+Keep `cellErrors()` structured when returning API responses so clients can point
+users to a specific row, header, and submitted value.
+
+`ExcelKitSchema` generated readers support the same header controls:
+
+```java
+schema.excelReader(User::new, validator)
+    .strictHeaders()
+    .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
+    .build(inputStream)
+    .read(user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
+```
+
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 
 ## Multi-Sheet Discovery

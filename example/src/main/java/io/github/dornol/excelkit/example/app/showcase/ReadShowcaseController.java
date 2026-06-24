@@ -9,6 +9,8 @@ import io.github.dornol.excelkit.excel.ExcelSheetInfo;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,54 +56,106 @@ public class ReadShowcaseController {
     // ========================================================================
     @PostMapping("/read-by-name-excel")
     @ResponseBody
-    public String readByNameExcel(MultipartFile file) throws IOException {
+    public ResponseEntity<?> readByNameExcel(MultipartFile file, HttpServletRequest request) throws IOException {
         try (InputStream is = file.getInputStream()) {
-            return readAndFormat("Excel",
+            ReadReport report = readReport("Excel",
                     PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
+            return renderReport(report, request);
         }
     }
 
     @PostMapping("/read-by-name-csv")
     @ResponseBody
-    public String readByNameCsv(MultipartFile file) throws IOException {
+    public ResponseEntity<?> readByNameCsv(MultipartFile file, HttpServletRequest request) throws IOException {
         try (InputStream is = file.getInputStream()) {
-            return readAndFormat("CSV",
+            ReadReport report = readReport("CSV",
                     PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
+            return renderReport(report, request);
         }
     }
 
-    private String readAndFormat(String type, io.github.dornol.excelkit.core.AbstractReadHandler<ProductReadDto> handler) {
+    private ReadReport readReport(String type, io.github.dornol.excelkit.core.AbstractReadHandler<ProductReadDto> handler) {
         List<ProductReadDto> results = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
+        List<ReadError> errors = new ArrayList<>();
 
         handler.read(result -> {
             if (result.success()) {
                 results.add(result.data());
             } else {
-                errors.add(formatReadError(result.fileRowNum(), result.messages(), result.cellErrors()));
+                errors.add(new ReadError(result.fileRowNum(), result.messages(), result.cellErrors()));
             }
         });
 
         log.info("Read by name ({}): {} success, {} errors", type, results.size(), errors.size());
+        return new ReadReport(type, results.size(), errors.size(), results, errors);
+    }
 
+    private ResponseEntity<?> renderReport(ReadReport report, HttpServletRequest request) {
+        String accept = request.getHeader(HttpHeaders.ACCEPT);
+        if (accept != null && accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(report);
+        }
+        if (accept != null && accept.contains(MediaType.TEXT_HTML_VALUE)) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(formatHtmlReport(report));
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(formatTextReport(report));
+    }
+
+    private String formatTextReport(ReadReport report) {
         StringBuilder sb = new StringBuilder();
-        sb.append("=== Name-Based %s Read Result ===\n".formatted(type));
-        sb.append("Success: %d rows, Errors: %d rows\n\n".formatted(results.size(), errors.size()));
-        results.forEach(p -> sb.append(p).append("\n"));
-        if (!errors.isEmpty()) {
+        sb.append("=== Name-Based %s Read Result ===\n".formatted(report.type()));
+        sb.append("Success: %d rows, Errors: %d rows\n\n".formatted(report.successCount(), report.errorCount()));
+        report.rows().forEach(p -> sb.append(p).append("\n"));
+        if (!report.errors().isEmpty()) {
             sb.append("\n--- Errors ---\n");
-            errors.forEach(e -> sb.append(e).append("\n"));
+            report.errors().forEach(e -> sb.append(formatReadError(e)).append("\n"));
         }
         return sb.toString();
     }
 
-    private String formatReadError(long fileRowNum, List<String> messages, List<CellError> cellErrors) {
+    private String formatHtmlReport(ReadReport report) {
         StringBuilder sb = new StringBuilder();
-        if (fileRowNum > 0) {
-            sb.append("fileRow=").append(fileRowNum).append(": ");
+        sb.append("<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">")
+                .append("<title>").append(escapeHtml(report.type())).append(" Read Result</title>")
+                .append("<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:24px;line-height:1.5}")
+                .append("table{border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:6px 8px}")
+                .append("th{background:#f6f8fa}.error{color:#b00020}</style></head><body>");
+        sb.append("<h1>Name-Based ").append(escapeHtml(report.type())).append(" Read Result</h1>");
+        sb.append("<p>Success: ").append(report.successCount())
+                .append(" rows, Errors: ").append(report.errorCount()).append(" rows</p>");
+        if (!report.rows().isEmpty()) {
+            sb.append("<h2>Rows</h2><table><thead><tr><th>Name</th><th>Category</th><th>Price</th>")
+                    .append("<th>Quantity</th><th>Discount</th></tr></thead><tbody>");
+            for (ProductReadDto row : report.rows()) {
+                sb.append("<tr><td>").append(escapeHtml(row.getName()))
+                        .append("</td><td>").append(escapeHtml(row.getCategory()))
+                        .append("</td><td>").append(row.getPrice())
+                        .append("</td><td>").append(row.getQuantity())
+                        .append("</td><td>").append(row.getDiscount()).append("</td></tr>");
+            }
+            sb.append("</tbody></table>");
         }
-        if (!cellErrors.isEmpty()) {
-            for (CellError error : cellErrors) {
+        if (!report.errors().isEmpty()) {
+            sb.append("<h2>Errors</h2><ul class=\"error\">");
+            report.errors().forEach(e -> sb.append("<li>").append(escapeHtml(formatReadError(e))).append("</li>"));
+            sb.append("</ul>");
+        }
+        return sb.append("</body></html>").toString();
+    }
+
+    private String formatReadError(ReadError readError) {
+        StringBuilder sb = new StringBuilder();
+        if (readError.fileRowNum() > 0) {
+            sb.append("fileRow=").append(readError.fileRowNum()).append(": ");
+        }
+        if (!readError.cellErrors().isEmpty()) {
+            for (CellError error : readError.cellErrors()) {
                 sb.append("[column=").append(error.columnIndex());
                 if (error.headerName() != null) {
                     sb.append(", header=").append(error.headerName());
@@ -110,8 +165,33 @@ public class ReadShowcaseController {
             }
             return sb.toString().trim();
         }
-        return sb.append(messages).toString();
+        return sb.append(readError.messages()).toString();
     }
+
+    private String escapeHtml(Object value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toString()
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
+    }
+
+    private record ReadReport(
+            String type,
+            int successCount,
+            int errorCount,
+            List<ProductReadDto> rows,
+            List<ReadError> errors
+    ) {}
+
+    private record ReadError(
+            long fileRowNum,
+            List<String> messages,
+            List<CellError> cellErrors
+    ) {}
 
     // ========================================================================
     // 10. columnAt - index-based reading

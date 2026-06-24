@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -107,6 +109,38 @@ class ExampleApplicationSmokeTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("fileRow=2")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("header=Price")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("value=not-a-number")));
+    }
+
+    @Test
+    void uploadShowcaseCsv_canReturnStructuredJsonErrors() throws Exception {
+        String csv = "Name,Category,Price,Quantity,Discount\n"
+                + "Notebook,Stationery,not-a-number,3,0.1\n";
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv",
+                "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(multipart("/showcase/read-by-name-csv").file(file)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.type").value("CSV"))
+                .andExpect(jsonPath("$.successCount").value(0))
+                .andExpect(jsonPath("$.errorCount").value(1))
+                .andExpect(jsonPath("$.errors[0].fileRowNum").value(2))
+                .andExpect(jsonPath("$.errors[0].cellErrors[0].headerName").value("Price"))
+                .andExpect(jsonPath("$.errors[0].cellErrors[0].cellValue").value("not-a-number"));
+    }
+
+    @Test
+    void uploadShowcaseExcel_canReturnHtmlResult() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "products.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", productWorkbook());
+
+        mockMvc.perform(multipart("/showcase/read-by-name-excel").file(file)
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<h1>Name-Based Excel Read Result</h1>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<td>Notebook</td>")));
     }
 
     private static byte[] productWorkbook() throws Exception {
