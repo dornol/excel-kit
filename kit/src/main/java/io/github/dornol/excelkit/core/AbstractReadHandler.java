@@ -50,6 +50,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected final @Nullable Validator validator;
     protected final boolean strictHeaders;
     protected final DuplicateHeaderPolicy duplicateHeaderPolicy;
+    protected final @Nullable Set<String> selectedMapColumns;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -66,6 +67,12 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
 
     protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
                                   String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
+        this(inputStream, instanceSupplier, validator, extension, strictHeaders, duplicateHeaderPolicy, null);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                                  @Nullable Set<String> selectedMapColumns) {
         if (inputStream == null) {
             throw new IllegalArgumentException("InputStream cannot be null");
         }
@@ -77,6 +84,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.validator = validator;
         this.strictHeaders = strictHeaders;
         this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
+        this.selectedMapColumns = selectedMapColumns;
         initTempFile(inputStream, extension);
     }
 
@@ -94,6 +102,12 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
 
     protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
                                   String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
+        this(inputStream, rowMapper, validator, extension, strictHeaders, duplicateHeaderPolicy, null);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                                  @Nullable Set<String> selectedMapColumns) {
         if (inputStream == null) {
             throw new IllegalArgumentException("InputStream cannot be null");
         }
@@ -105,6 +119,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.validator = validator;
         this.strictHeaders = strictHeaders;
         this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
+        this.selectedMapColumns = selectedMapColumns;
         initTempFile(inputStream, extension);
     }
 
@@ -193,7 +208,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             } else {
                 List<String> msgs = result.messages() != null ? result.messages() : List.of();
                 RowError.Type type = result.cause() != null ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
-                onError.accept(new RowError(n, result.fileRowNum(), type, msgs, result.cause()));
+                onError.accept(new RowError(n, result.fileRowNum(), type, msgs, result.cause(), result.cellErrors()));
             }
         });
     }
@@ -310,6 +325,22 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         return map;
     }
 
+    /**
+     * Validates selected map-mode columns in strict mode.
+     */
+    protected void validateSelectedMapColumns(Map<String, Integer> headerIndexMap, List<String> headerNames, String errorPrefix) {
+        if (!strictHeaders || selectedMapColumns == null || selectedMapColumns.isEmpty()) {
+            return;
+        }
+        List<String> missing = selectedMapColumns.stream()
+                .filter(name -> !headerIndexMap.containsKey(name))
+                .toList();
+        if (!missing.isEmpty()) {
+            throw new ExcelKitException("Selected headers " + missing + " not found in "
+                    + errorPrefix + ". Available headers: " + headerNames);
+        }
+    }
+
     private void validateHeaderIndexIfStrict(int index, List<String> headerNames, String errorPrefix) {
         if (strictHeaders && index >= headerNames.size()) {
             throw new ExcelKitException("Column index " + index + " has no header in "
@@ -330,12 +361,22 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      */
     protected boolean mapColumn(java.util.function.BiConsumer<T, CellData> setter, T instance, CellData cellData,
                                 int columnIndex, List<String> headerNames, List<String> messages) {
+        return mapColumn(setter, instance, cellData, columnIndex, headerNames, messages, null);
+    }
+
+    protected boolean mapColumn(java.util.function.BiConsumer<T, CellData> setter, T instance, CellData cellData,
+                                int columnIndex, List<String> headerNames, List<String> messages,
+                                @Nullable List<CellError> cellErrors) {
         try {
             setter.accept(instance, cellData);
             return true;
         } catch (Exception e) {
             String header = (columnIndex < headerNames.size()) ? headerNames.get(columnIndex) : "column#" + columnIndex;
-            messages.add("Failed to set column '" + header + "': value='" + cellData.formattedValue() + "', reason=" + e.getMessage());
+            String message = "Failed to set column '" + header + "': value='" + cellData.formattedValue() + "', reason=" + e.getMessage();
+            messages.add(message);
+            if (cellErrors != null) {
+                cellErrors.add(new CellError(columnIndex, header, cellData.formattedValue(), message));
+            }
             log.warn("Column mapping failed for '{}': value='{}'", header, cellData.formattedValue(), e);
             return false;
         }
@@ -354,12 +395,22 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      */
     protected boolean mapColumn(ReadColumn<T> column, T instance, CellData cellData,
                                 int columnIndex, List<String> headerNames, List<String> messages) {
+        return mapColumn(column, instance, cellData, columnIndex, headerNames, messages, null);
+    }
+
+    protected boolean mapColumn(ReadColumn<T> column, T instance, CellData cellData,
+                                int columnIndex, List<String> headerNames, List<String> messages,
+                                @Nullable List<CellError> cellErrors) {
         if (column.isRequired() && cellData.isEmpty()) {
             String header = (columnIndex < headerNames.size()) ? headerNames.get(columnIndex) : "column#" + columnIndex;
-            messages.add("Required column '" + header + "' is empty");
+            String message = "Required column '" + header + "' is empty";
+            messages.add(message);
+            if (cellErrors != null) {
+                cellErrors.add(new CellError(columnIndex, header, cellData.formattedValue(), message));
+            }
             return false;
         }
-        return mapColumn(column.setter(), instance, cellData, columnIndex, headerNames, messages);
+        return mapColumn(column.setter(), instance, cellData, columnIndex, headerNames, messages, cellErrors);
     }
 
     /**

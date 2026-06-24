@@ -111,6 +111,39 @@ class ReadHeaderOptionsTest {
     }
 
     @Test
+    void csvReader_rowErrorIncludesStructuredCellErrors() {
+        String csv = "Name,Age\nAlice,not-a-number\n";
+        List<RowError> errors = new ArrayList<>();
+
+        CsvReader.setter(Person::new)
+                .column("Name", (p, c) -> p.name = c.asString())
+                .column("Age", (p, c) -> p.age = c.asInt())
+                .build(csv(csv))
+                .read(p -> {}, errors::add);
+
+        assertEquals(1, errors.size());
+        assertEquals(1, errors.get(0).cellErrors().size());
+        CellError error = errors.get(0).cellErrors().get(0);
+        assertEquals(1, error.columnIndex());
+        assertEquals("Age", error.headerName());
+        assertEquals("not-a-number", error.cellValue());
+        assertTrue(error.message().contains("Failed to set column 'Age'"));
+    }
+
+    @Test
+    void csvReader_forMapStrictHeaders_failsWhenSelectedHeaderMissing() {
+        String csv = "Name\nAlice\n";
+
+        CsvReadException ex = assertThrows(CsvReadException.class, () ->
+                CsvReader.forMap("Name", "Age")
+                        .strictHeaders()
+                        .build(csv(csv))
+                        .read(r -> {}));
+
+        assertTrue(rootMessage(ex).contains("Selected headers [Age] not found"));
+    }
+
+    @Test
     void excelReader_columnAliasesAndDuplicatePolicyWorkTogether() throws Exception {
         byte[] workbook = workbook(
                 List.of("이름", "Name"),
@@ -159,6 +192,22 @@ class ReadHeaderOptionsTest {
         assertEquals(1, errors.size());
         assertEquals(1L, errors.get(0).rowNum());
         assertEquals(4L, errors.get(0).fileRowNum());
+    }
+
+    @Test
+    void excelReader_forMapStrictHeaders_failsWhenSelectedHeaderMissing() throws Exception {
+        byte[] workbook = workbook(
+                List.of("Name"),
+                List.of("Alice")
+        );
+
+        ExcelReadException ex = assertThrows(ExcelReadException.class, () ->
+                ExcelReader.forMap("Name", "Age")
+                        .strictHeaders()
+                        .build(new ByteArrayInputStream(workbook))
+                        .read(r -> {}));
+
+        assertTrue(rootMessage(ex).contains("Selected headers [Age] not found"));
     }
 
     private static ByteArrayInputStream csv(String content) {

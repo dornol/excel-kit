@@ -4,7 +4,9 @@ import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -34,6 +36,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected boolean mapMode = false;
     protected boolean strictHeaders = false;
     protected DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FIRST;
+    protected @Nullable Set<String> selectedMapColumns;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = java.util.Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
@@ -69,6 +72,10 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
 
     void addColumn(ReadColumn<T> column) {
         columns.add(column);
+    }
+
+    protected void selectedMapColumns(@Nullable Set<String> selectedColumns) {
+        this.selectedMapColumns = selectedColumns == null ? null : new LinkedHashSet<>(selectedColumns);
     }
 
     /**

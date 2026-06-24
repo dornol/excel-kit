@@ -138,6 +138,7 @@ reader.read(
 - `type()` — `VALIDATION` or `MAPPING`
 - `messages()` — human-readable messages (list)
 - `cause()` — nullable throwable (for `MAPPING` errors)
+- `cellErrors()` — structured `CellError` entries with `columnIndex`, `headerName`, `cellValue`, and `message`
 
 ## Advanced Options
 

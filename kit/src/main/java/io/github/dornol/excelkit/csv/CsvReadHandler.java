@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -117,7 +118,16 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                    @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
                    int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
                    boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        super(inputStream, rowMapper, validator, ".csv", strictHeaders, duplicateHeaderPolicy);
+        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
+                progressCallback, strictHeaders, duplicateHeaderPolicy, null);
+    }
+
+    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                   @Nullable Set<String> selectedMapColumns) {
+        super(inputStream, rowMapper, validator, ".csv", strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
         validateHeaderRowIndex(headerRowIndex);
         this.columns = null;
         this.headerRowIndex = headerRowIndex;
@@ -140,6 +150,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
             if (rowMapper != null) {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
+                validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
                     consumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount)));
                     rowCount++;
@@ -196,6 +207,9 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
             final boolean mappingMode = rowMapper != null;
             final int[] resolvedIndices = mappingMode ? null : resolveIndices();
             final Map<String, Integer> headerIndexMap = mappingMode ? buildHeaderIndexMap(headerNames, "CSV") : null;
+            if (mappingMode) {
+                validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
+            }
 
             final CSVReader csvReader = reader;
             final AtomicLong streamRowCount = new AtomicLong(0);
@@ -253,18 +267,20 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         T currentInstance = instanceSupplier.get();
         boolean success = true;
         List<String> messages = new ArrayList<>();
+        List<io.github.dornol.excelkit.core.CellError> cellErrors = new ArrayList<>();
 
         for (int i = 0; i < columns.size(); i++) {
             int actualIndex = resolvedIndices[i];
             String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
             if (!mapColumn(columns.get(i), currentInstance, new CellData(actualIndex, columnValue),
-                    actualIndex, headerNames, messages)) {
+                    actualIndex, headerNames, messages, cellErrors)) {
                 success = false;
             }
         }
 
         boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
-        return new ReadResult<>(currentInstance, validationSuccess, messages.isEmpty() ? null : messages, null, fileRowNum);
+        return new ReadResult<>(currentInstance, validationSuccess, messages.isEmpty() ? null : messages,
+                null, fileRowNum, cellErrors);
     }
 
     private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap, long fileRowNum) {

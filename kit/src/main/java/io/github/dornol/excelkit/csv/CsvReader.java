@@ -174,6 +174,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         };
         CsvReader<Map<String, String>> reader = CsvReader.mapping(mapMapper);
         reader.mapMode = true;
+        reader.selectedMapColumns(selectedColumns);
         return reader;
     }
 
@@ -227,7 +228,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         if (rowMapper != null) {
             return new CsvReadHandler<>(inputStream, rowMapper, validator,
                     headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                    strictHeaders, duplicateHeaderPolicy);
+                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
         }
         return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 headerRowIndex, delimiter, charset, progressInterval, progressCallback,

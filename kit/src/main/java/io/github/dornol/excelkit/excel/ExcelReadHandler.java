@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -193,7 +194,18 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                      int progressInterval, @Nullable ProgressCallback progressCallback,
                      @Nullable String password, boolean countRows,
                      boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        super(inputStream, rowMapper, validator, ".xlsx", strictHeaders, duplicateHeaderPolicy);
+        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, headerRows, progressInterval,
+                progressCallback, password, countRows, strictHeaders, duplicateHeaderPolicy, null);
+    }
+
+    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
+                     int headerRows,
+                     int progressInterval, @Nullable ProgressCallback progressCallback,
+                     @Nullable String password, boolean countRows,
+                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                     @Nullable Set<String> selectedMapColumns) {
+        super(inputStream, rowMapper, validator, ".xlsx", strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
         validateSheetIndex(sheetIndex);
         validateHeaderRowIndex(headerRowIndex);
         validateHeaderRows(headerRows);
@@ -476,6 +488,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private final List<@Nullable String> headerAccumulator = new ArrayList<>();
         private final Consumer<ReadResult<T>> consumer;
         private @Nullable List<String> messages;
+        private @Nullable List<io.github.dornol.excelkit.core.CellError> cellErrors;
         private int @Nullable [] resolvedIndices;
         private @Nullable Map<String, Integer> headerIndexMap;
         private long dataRowCount;
@@ -503,6 +516,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
             currentRow.clear();
             messages = null;
+            cellErrors = null;
         }
 
         /**
@@ -537,7 +551,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 boolean mappingSuccess = mapValuesToInstance();
                 boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
-                result = new ReadResult<>(currentInstance, validationSuccess, messages, null, rowNum + 1L);
+                result = new ReadResult<>(currentInstance, validationSuccess, messages, null, rowNum + 1L,
+                        cellErrors == null ? List.of() : cellErrors);
             }
 
             consumer.accept(result);
@@ -614,6 +629,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          */
         private void buildHeaderIndex() {
             headerIndexMap = buildHeaderIndexMap(headerNames, "sheet");
+            validateSelectedMapColumns(headerIndexMap, headerNames, "sheet");
         }
 
         /**
@@ -632,14 +648,16 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 if (actualIndex >= currentRow.size()) {
                     if (columns.get(i).isRequired()) {
                         String header = (actualIndex < headerNames.size()) ? headerNames.get(actualIndex) : "column#" + actualIndex;
-                        getOrCreateMessages().add("Required column '" + header + "' is empty");
+                        String message = "Required column '" + header + "' is empty";
+                        getOrCreateMessages().add(message);
+                        getOrCreateCellErrors().add(new io.github.dornol.excelkit.core.CellError(actualIndex, header, null, message));
                         success = false;
                     }
                     continue;
                 }
 
                 if (!mapColumn(columns.get(i), currentInstance, currentRow.get(actualIndex),
-                        actualIndex, headerNames, getOrCreateMessages())) {
+                        actualIndex, headerNames, getOrCreateMessages(), getOrCreateCellErrors())) {
                     success = false;
                 }
             }
@@ -652,6 +670,13 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 messages = new ArrayList<>();
             }
             return messages;
+        }
+
+        private List<io.github.dornol.excelkit.core.CellError> getOrCreateCellErrors() {
+            if (cellErrors == null) {
+                cellErrors = new ArrayList<>();
+            }
+            return cellErrors;
         }
 
         private int getColumnIndex(String cellReference) {

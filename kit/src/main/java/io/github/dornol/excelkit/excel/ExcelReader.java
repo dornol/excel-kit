@@ -195,6 +195,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         };
         ExcelReader<Map<String, String>> reader = ExcelReader.mapping(mapMapper);
         reader.mapMode = true;
+        reader.selectedMapColumns(selectedColumns);
         return reader;
     }
 
@@ -289,7 +290,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         if (rowMapper != null) {
             return new ExcelReadHandler<>(inputStream, rowMapper, validator,
                     sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                    strictHeaders, duplicateHeaderPolicy);
+                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
         }
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,

@@ -42,6 +42,13 @@ ExcelReader.forMap()
 reader.column("Name", (u, cell) -> u.name = cell.asString())  // matches header "Name"
 ```
 
+### Header Aliases
+```java
+reader.column(List.of("Name", "User Name", "이름"), (u, cell) -> u.name = cell.asString())
+      .strictHeaders()
+      .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL);
+```
+
 ### Index-Based
 ```java
 reader.columnAt(0, (u, cell) -> u.name = cell.asString())  // column index 0
@@ -93,6 +100,7 @@ reader
     .sheetIndex(0)          // default: 0
     .headerRowIndex(0)      // default: 0 — 0-based index of the LAST header row
     .headerRows(1)          // default: 1 — total header row count (v0.16.13+, Excel only)
+    .strictHeaders()        // fail fast when configured headers are missing
     .onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count))
     .countRows()            // opt-in pre-scan for total row count (v0.16.15+, Excel only)
     .build(inputStream);
@@ -145,8 +153,10 @@ reader.read(
     });
 ```
 
-**`RowError` fields**: `rowNum()` (1-based, header excluded), `type()` (`VALIDATION` / `MAPPING`),
-`messages()` (human-readable), `cause()` (nullable throwable from mapping stage).
+**`RowError` fields**: `rowNum()` (1-based, header excluded), `fileRowNum()` (physical source row),
+`type()` (`VALIDATION` / `MAPPING`), `messages()` (human-readable),
+`cause()` (nullable throwable from mapping stage), and `cellErrors()` (`CellError` entries with
+column index, header name, cell value, and message).
 
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 

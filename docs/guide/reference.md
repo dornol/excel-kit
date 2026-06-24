@@ -47,7 +47,8 @@ Define columns once for both reading and writing:
 
 ```java
 ExcelKitSchema<Book> schema = ExcelKitSchema.<Book>builder()
-    .column("Title", Book::getTitle, (b, cell) -> b.setTitle(cell.asString()))
+    .requiredColumn("Title", List.of("Book Title", "제목"),
+            Book::getTitle, (b, cell) -> b.setTitle(cell.asString()))
     .column("Price", Book::getPrice, (b, cell) -> b.setPrice(cell.asInt()),
             c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
     .build();
