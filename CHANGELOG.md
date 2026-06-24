@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.18.2] - 2026-06-24
+
+### Added
+
+- Example app upload results now render inline with success rows, structured
+  cell errors, showcase filtering, and client-side error CSV download.
+- Example app now provides server-generated read error reports as CSV and Excel
+  downloads.
+- Maven publish workflow now verifies that a tagged release becomes visible on
+  repo1.maven.org.
+- README and Spring guide now document structured read errors and downloadable
+  correction-report patterns.
+- Schema reader tests now cover Excel/CSV alias, required-column, and duplicate
+  header parity in a dedicated read-options test class.
+
 ## [0.18.1] - 2026-06-24
 
 ### Changed

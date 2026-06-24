@@ -23,6 +23,9 @@
         #upload-result th { background: #f6f8fa; }
         .status-line { font-weight: 600; }
         .error-list { color: #b00020; }
+        .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+        .toolbar input { flex: 1; min-width: 240px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .button-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
         .hidden { display: none; }
         hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
     </style>
@@ -31,6 +34,11 @@
 
 <h1>excel-kit Example</h1>
 <p id="memory">Loading memory usage...</p>
+
+<div class="toolbar">
+    <input type="search" id="feature-filter" placeholder="Filter showcase actions">
+    <button type="button" id="clear-filter">Clear</button>
+</div>
 
 <!-- ============================== -->
 <h2>Showcase (New Features)</h2>
@@ -251,7 +259,11 @@
         <p id="upload-summary" class="status-line"></p>
         <div id="upload-rows"></div>
         <div id="upload-errors"></div>
-        <button type="button" id="download-errors" class="csv hidden">Download Error CSV</button>
+        <div class="button-row">
+            <button type="button" id="download-errors" class="csv hidden">Download Error CSV</button>
+            <button type="button" id="server-errors-csv" class="csv hidden">Server Error CSV</button>
+            <button type="button" id="server-errors-excel" class="excel hidden">Server Error Excel</button>
+        </div>
     </div>
 </div>
 
@@ -308,6 +320,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         let memoryElement = document.getElementById('memory');
         let latestErrors = [];
+        let latestUploadFile = null;
 
         setInterval(() => {
             fetch('/memory')
@@ -328,6 +341,18 @@
             fetch('/gc');
         })
 
+        document.getElementById('feature-filter').addEventListener('input', (event) => {
+            const query = event.target.value.trim().toLowerCase();
+            document.querySelectorAll('.section').forEach((section) => {
+                section.style.display = section.innerText.toLowerCase().includes(query) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('clear-filter').addEventListener('click', () => {
+            document.getElementById('feature-filter').value = '';
+            document.querySelectorAll('.section').forEach((section) => section.style.display = '');
+        });
+
         document.querySelectorAll('form[data-enhanced-upload="true"]').forEach((form) => {
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
@@ -335,6 +360,7 @@
                 const summary = document.getElementById('upload-summary');
                 resultPanel.style.display = 'block';
                 summary.innerText = 'Uploading...';
+                latestUploadFile = form.querySelector('input[type="file"]').files[0] || null;
 
                 try {
                     const response = await fetch(form.action, {
@@ -352,6 +378,8 @@
                     document.getElementById('upload-rows').innerHTML = '';
                     document.getElementById('upload-errors').innerHTML = '';
                     document.getElementById('download-errors').classList.add('hidden');
+                    document.getElementById('server-errors-csv').classList.add('hidden');
+                    document.getElementById('server-errors-excel').classList.add('hidden');
                     latestErrors = [];
                 }
             });
@@ -385,6 +413,14 @@
             URL.revokeObjectURL(link.href);
         });
 
+        document.getElementById('server-errors-csv').addEventListener('click', () => {
+            downloadServerErrorReport('/showcase/read-errors-csv', 'read-errors.csv');
+        });
+
+        document.getElementById('server-errors-excel').addEventListener('click', () => {
+            downloadServerErrorReport('/showcase/read-errors-excel', 'read-errors.xlsx');
+        });
+
         function renderUploadResult(report) {
             latestErrors = report.errors || [];
             document.getElementById('upload-title').innerText = `Name-Based ${report.type} Read Result`;
@@ -394,6 +430,10 @@
             renderErrors(latestErrors);
             document.getElementById('download-errors')
                 .classList.toggle('hidden', latestErrors.length === 0);
+            document.getElementById('server-errors-csv')
+                .classList.toggle('hidden', latestErrors.length === 0 || latestUploadFile === null);
+            document.getElementById('server-errors-excel')
+                .classList.toggle('hidden', latestErrors.length === 0 || latestUploadFile === null);
         }
 
         function renderRows(rows) {
@@ -453,6 +493,24 @@
                 return `"${text.replaceAll('"', '""')}"`;
             }
             return text;
+        }
+
+        async function downloadServerErrorReport(endpoint, filename) {
+            if (latestUploadFile === null) {
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', latestUploadFile);
+            const response = await fetch(endpoint, { method: 'POST', body: formData });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
         }
     })
 </script>
