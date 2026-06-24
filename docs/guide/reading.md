@@ -37,6 +37,15 @@ ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
 
 Columns are matched by header name — order in the file doesn't matter.
 
+Header aliases are tried in order. The first alias found in the file is used.
+
+```java
+ExcelReader.setter(User::new)
+    .column(List.of("Name", "User Name", "이름"), (u, cell) -> u.name = cell.asString())
+    .build(inputStream)
+    .read(...);
+```
+
 **RowData access methods:**
 
 | Method | Description |
@@ -125,6 +134,7 @@ reader.read(
 
 `RowError` fields:
 - `rowNum()` — 1-based row ordinal (header rows excluded)
+- `fileRowNum()` — 1-based physical row number in the original file
 - `type()` — `VALIDATION` or `MAPPING`
 - `messages()` — human-readable messages (list)
 - `cause()` — nullable throwable (for `MAPPING` errors)
@@ -134,6 +144,21 @@ reader.read(
 **Header row index** (files with metadata rows above header):
 ```java
 reader.headerRowIndex(2)  // 3rd row as header (0-based)
+```
+
+**Strict headers** fail before data rows when a positional or index-based column has no header:
+
+```java
+reader.strictHeaders();       // equivalent to requireHeaders()
+reader.strictHeaders(false);  // default
+```
+
+**Duplicate headers** default to the first occurrence. You can choose another policy:
+
+```java
+reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.FIRST); // default
+reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.LAST);
+reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL);
 ```
 
 **Multi-row headers** (v0.16.13+, Excel only):

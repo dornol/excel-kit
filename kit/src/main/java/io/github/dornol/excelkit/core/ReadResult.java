@@ -13,6 +13,7 @@ import java.util.List;
  * @param messages Any validation or processing messages (e.g. errors or warnings)
  * @param cause    The underlying exception for mapping-stage failures, if any;
  *                 {@code null} for validation-only failures
+ * @param fileRowNum 1-based physical row number in the source file, or {@code -1} if unknown
  *
  * @author dhkim
  * @since 2025-07-19
@@ -21,8 +22,22 @@ public record ReadResult<T>(
         @Nullable T data,
         boolean success,
         @Nullable List<String> messages,
-        @Nullable Throwable cause
+        @Nullable Throwable cause,
+        long fileRowNum
 ) {
+    /**
+     * Backward-compatible constructor without a file row number.
+     *
+     * @param data     parsed object (null on failure)
+     * @param success  whether parsing/validation succeeded
+     * @param messages validation or processing messages
+     * @param cause    underlying mapping exception, if any
+     */
+    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
+                      @Nullable Throwable cause) {
+        this(data, success, messages, cause, -1);
+    }
+
     /**
      * Backward-compatible constructor without a cause.
      *
@@ -31,6 +46,6 @@ public record ReadResult<T>(
      * @param messages validation or processing messages
      */
     public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages) {
-        this(data, success, messages, null);
+        this(data, success, messages, null, -1);
     }
 }

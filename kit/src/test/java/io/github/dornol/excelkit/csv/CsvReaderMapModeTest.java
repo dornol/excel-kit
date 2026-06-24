@@ -302,11 +302,7 @@ class CsvReaderMapModeTest {
             assertEquals(1, results.size());
             assertEquals(2, results.get(0).size(),
                     "duplicate headers collapse to a single map key");
-            // Last write wins on Map.put: headers are iterated in order, so "A" is put twice —
-            // once with the value at index 0 (first) and once with the value at index 2 (second).
-            // RowData.get(i) is positional, so both iterations look up by the iteration index.
-            // Final state: "A" → "second".
-            assertEquals("second", results.get(0).get("A"));
+            assertEquals("first", results.get(0).get("A"));
             assertEquals("b-val", results.get(0).get("B"));
         }
 

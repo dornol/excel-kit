@@ -11,13 +11,17 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -44,6 +48,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected final @Nullable Function<RowData, T> rowMapper;
     /** Optional bean validator for row validation. */
     protected final @Nullable Validator validator;
+    protected final boolean strictHeaders;
+    protected final DuplicateHeaderPolicy duplicateHeaderPolicy;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -55,6 +61,11 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @param extension        File extension for the temporary file (e.g., ".xlsx", ".csv")
      */
     protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator, String extension) {
+        this(inputStream, instanceSupplier, validator, extension, false, DuplicateHeaderPolicy.FIRST);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
         if (inputStream == null) {
             throw new IllegalArgumentException("InputStream cannot be null");
         }
@@ -64,6 +75,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.instanceSupplier = instanceSupplier;
         this.rowMapper = null;
         this.validator = validator;
+        this.strictHeaders = strictHeaders;
+        this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
         initTempFile(inputStream, extension);
     }
 
@@ -76,6 +89,11 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @param extension   File extension for the temporary file (e.g., ".xlsx", ".csv")
      */
     protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator, String extension) {
+        this(inputStream, rowMapper, validator, extension, false, DuplicateHeaderPolicy.FIRST);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
         if (inputStream == null) {
             throw new IllegalArgumentException("InputStream cannot be null");
         }
@@ -85,6 +103,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.instanceSupplier = null;
         this.rowMapper = rowMapper;
         this.validator = validator;
+        this.strictHeaders = strictHeaders;
+        this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
         initTempFile(inputStream, extension);
     }
 
@@ -173,7 +193,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             } else {
                 List<String> msgs = result.messages() != null ? result.messages() : List.of();
                 RowError.Type type = result.cause() != null ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
-                onError.accept(new RowError(n, type, msgs, result.cause()));
+                onError.accept(new RowError(n, result.fileRowNum(), type, msgs, result.cause()));
             }
         });
     }
@@ -226,38 +246,75 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     /**
-     * Resolves column indices based on headerName, columnIndex, or positional order.
+     * Resolves column indices based on header aliases, columnIndex, or positional order.
      *
-     * @param columnCount   number of columns to resolve
-     * @param headerNameFn  function to get headerName for column i (may return null)
-     * @param columnIndexFn function to get explicit columnIndex for column i (-1 if not set)
-     * @param headerNames   the header names from the file
-     * @param errorPrefix   prefix for error messages (e.g., "sheet" or "CSV")
+     * @param columnCount     number of columns to resolve
+     * @param headerAliasesFn function to get accepted header aliases for column i
+     * @param columnIndexFn   function to get explicit columnIndex for column i (-1 if not set)
+     * @param headerNames     the header names from the file
+     * @param errorPrefix     prefix for error messages (e.g., "sheet" or "CSV")
      * @return resolved index array
      */
     protected int[] resolveColumnIndices(int columnCount,
-                                          java.util.function.IntFunction<String> headerNameFn,
-                                          java.util.function.IntUnaryOperator columnIndexFn,
+                                          IntFunction<List<String>> headerAliasesFn,
+                                          IntUnaryOperator columnIndexFn,
                                           List<String> headerNames, String errorPrefix) {
+        Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, errorPrefix);
         int[] indices = new int[columnCount];
         for (int i = 0; i < columnCount; i++) {
             int explicitIndex = columnIndexFn.applyAsInt(i);
             if (explicitIndex >= 0) {
+                validateHeaderIndexIfStrict(explicitIndex, headerNames, errorPrefix);
                 indices[i] = explicitIndex;
             } else {
-                String headerName = headerNameFn.apply(i);
-                if (headerName != null) {
-                    int idx = headerNames.indexOf(headerName);
-                    if (idx < 0) {
-                        throw new ExcelKitException("Header '" + headerName + "' not found in " + errorPrefix + ". Available headers: " + headerNames);
+                List<String> headerAliases = headerAliasesFn.apply(i);
+                if (headerAliases != null && !headerAliases.isEmpty()) {
+                    Integer idx = null;
+                    for (String alias : headerAliases) {
+                        idx = headerIndexMap.get(alias);
+                        if (idx != null) {
+                            break;
+                        }
+                    }
+                    if (idx == null) {
+                        throw new ExcelKitException("Header aliases " + headerAliases + " not found in "
+                                + errorPrefix + ". Available headers: " + headerNames);
                     }
                     indices[i] = idx;
                 } else {
+                    validateHeaderIndexIfStrict(i, headerNames, errorPrefix);
                     indices[i] = i;
                 }
             }
         }
         return indices;
+    }
+
+    /**
+     * Builds a header-to-index map using this handler's duplicate header policy.
+     */
+    protected Map<String, Integer> buildHeaderIndexMap(List<String> headerNames, String errorPrefix) {
+        Map<String, Integer> map = new LinkedHashMap<>();
+        for (int i = 0; i < headerNames.size(); i++) {
+            String headerName = headerNames.get(i);
+            if (duplicateHeaderPolicy == DuplicateHeaderPolicy.FAIL
+                    && headerName != null && map.containsKey(headerName)) {
+                throw new ExcelKitException("Duplicate header '" + headerName + "' found in " + errorPrefix);
+            }
+            if (duplicateHeaderPolicy == DuplicateHeaderPolicy.LAST) {
+                map.put(headerName, i);
+            } else {
+                map.putIfAbsent(headerName, i);
+            }
+        }
+        return map;
+    }
+
+    private void validateHeaderIndexIfStrict(int index, List<String> headerNames, String errorPrefix) {
+        if (strictHeaders && index >= headerNames.size()) {
+            throw new ExcelKitException("Column index " + index + " has no header in "
+                    + errorPrefix + ". Available headers: " + headerNames);
+        }
     }
 
     /**
@@ -313,6 +370,13 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @return A {@link ReadResult} containing the mapped instance or error messages
      */
     protected ReadResult<T> mapWithRowMapper(RowData rowData) {
+        return mapWithRowMapper(rowData, -1);
+    }
+
+    /**
+     * Maps a row using the row mapper function and records its physical file row number.
+     */
+    protected ReadResult<T> mapWithRowMapper(RowData rowData, long fileRowNum) {
         if (rowMapper == null) {
             throw new IllegalStateException("rowMapper must not be null in mapping mode");
         }
@@ -323,10 +387,10 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             log.warn("Row mapping failed", e);
             List<String> messages = new ArrayList<>();
             messages.add("Row mapping failed: " + e.getMessage());
-            return new ReadResult<>(null, false, messages, e);
+            return new ReadResult<>(null, false, messages, e, fileRowNum);
         }
         List<String> messages = new ArrayList<>();
         boolean valid = validateIfNeeded(instance, messages);
-        return new ReadResult<>(instance, valid, messages.isEmpty() ? null : messages);
+        return new ReadResult<>(instance, valid, messages.isEmpty() ? null : messages, null, fileRowNum);
     }
 }

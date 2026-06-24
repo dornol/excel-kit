@@ -187,6 +187,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
             for (int i = 0; i < bound; i++) {
                 String header = headers.get(i);
                 if (header == null) continue;
+                if (row.headerIndexOf(header) != i) continue;
                 if (selectedColumns != null && !selectedColumns.contains(header)) continue;
                 map.put(header, row.get(i).formattedValue());
             }
@@ -287,10 +288,12 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     public ExcelReadHandler<T> build(InputStream inputStream) {
         if (rowMapper != null) {
             return new ExcelReadHandler<>(inputStream, rowMapper, validator,
-                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows);
+                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
+                    strictHeaders, duplicateHeaderPolicy);
         }
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
-                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows);
+                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
+                strictHeaders, duplicateHeaderPolicy);
     }
 
     /**

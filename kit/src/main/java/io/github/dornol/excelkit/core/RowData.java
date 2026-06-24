@@ -76,6 +76,17 @@ public class RowData {
     }
 
     /**
+     * Returns the resolved column index for a header name.
+     *
+     * @param headerName the header name to look up
+     * @return the resolved column index, or {@code -1} if the header is absent
+     */
+    public int headerIndexOf(String headerName) {
+        Integer idx = headerIndex.get(headerName);
+        return idx == null ? -1 : idx;
+    }
+
+    /**
      * Returns the number of cells in this row.
      *
      * @return the cell count
