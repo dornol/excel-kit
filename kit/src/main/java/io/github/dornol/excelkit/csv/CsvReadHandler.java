@@ -113,6 +113,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
+        markConsumed();
         try (CSVReader reader = buildCsvReader()) {
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);
@@ -164,6 +165,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
      */
     @Override
     public Stream<ReadResult<T>> readAsStream() {
+        markConsumed();
         CSVReader reader = null;
         try {
             reader = buildCsvReader();

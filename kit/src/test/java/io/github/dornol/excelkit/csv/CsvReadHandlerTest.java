@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
 import jakarta.validation.Validation;
@@ -383,6 +384,28 @@ class CsvReadHandlerTest {
                         .column((p, cell) -> p.age = cell.asInt())
                         .build(is)
                         .readStrict(p -> {}));
+    }
+
+    @Test
+    void read_twice_shouldThrowAlreadyConsumed() {
+        CsvReadHandler<TestPerson> handler = buildHandler("Name,Age\nAlice,30\n", null);
+
+        handler.read(result -> {});
+
+        ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
+        assertTrue(ex.getMessage().contains("already been consumed"));
+    }
+
+    @Test
+    void read_afterReadAsStream_shouldThrowAlreadyConsumed() {
+        CsvReadHandler<TestPerson> handler = buildHandler("Name,Age\nAlice,30\n", null);
+
+        try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
+            assertEquals(1, stream.count());
+        }
+
+        ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
+        assertTrue(ex.getMessage().contains("already been consumed"));
     }
 
     private CsvReadHandler<TestPerson> buildHandler(String csv, Validator validator) {

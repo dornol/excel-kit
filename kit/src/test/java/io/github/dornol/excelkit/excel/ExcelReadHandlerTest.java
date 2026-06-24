@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
 import jakarta.validation.Validation;
@@ -401,6 +402,38 @@ class ExcelReadHandlerTest {
                 assertEquals(1, names.size());
                 assertEquals("Alice", names.get(0));
             }
+        }
+    }
+
+    @Test
+    void read_twice_shouldThrowAlreadyConsumed() throws IOException {
+        try (InputStream is = Files.newInputStream(excelFile)) {
+            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is);
+
+            handler.read(result -> {});
+
+            ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
+            assertTrue(ex.getMessage().contains("already been consumed"));
+        }
+    }
+
+    @Test
+    void read_afterReadAsStream_shouldThrowAlreadyConsumed() throws IOException {
+        try (InputStream is = Files.newInputStream(excelFile)) {
+            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
+                    .column(createNameSetter())
+                    .column(createAgeSetter())
+                    .build(is);
+
+            try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
+                assertEquals(3, stream.count());
+            }
+
+            ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
+            assertTrue(ex.getMessage().contains("already been consumed"));
         }
     }
 

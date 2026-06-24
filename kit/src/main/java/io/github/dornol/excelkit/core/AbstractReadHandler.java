@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -43,6 +44,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected final @Nullable Function<RowData, T> rowMapper;
     /** Optional bean validator for row validation. */
     protected final @Nullable Validator validator;
+    private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
      * Constructs a read handler in setter mode by validating inputs and initializing a temporary file.
@@ -190,6 +192,16 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @return A stream of parsed and validated row results
      */
     public abstract Stream<ReadResult<T>> readAsStream();
+
+    /**
+     * Marks this handler as consumed. Read handlers own temporary resources and
+     * can only be consumed once.
+     */
+    protected void markConsumed() {
+        if (!consumed.compareAndSet(false, true)) {
+            throw new ExcelKitException("Read handler has already been consumed");
+        }
+    }
 
     /**
      * Validates the given instance using Bean Validation (if a validator is configured).
