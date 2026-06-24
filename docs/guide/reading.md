@@ -165,6 +165,10 @@ try (Stream<ReadResult<User>> stream = handler.readAsStream()) {
 
 > `readAsStream()` holds resources — always use try-with-resources.
 
+Read handlers are one-shot. `read()`, `readStrict()`, and `readAsStream()` all
+consume the handler and its temporary resources. Build a new handler from a new
+`InputStream` if you need to read the same file again.
+
 **Bean Validation:**
 ```java
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();

@@ -124,6 +124,10 @@ Default `headerRows(1)` = existing single-row behavior. Empty-string headers pre
 | `.readStrict(Consumer<ReadResult<T>>)` | Throws on first validation failure |
 | `.readAsStream()` | Returns `Stream<ReadResult<T>>` |
 
+Read handlers are one-shot. `read()`, `readStrict()`, and `readAsStream()` all
+consume the handler and its temporary resources. Build a new handler from a new
+`InputStream` if you need to read the same file again.
+
 ### Split success/error callbacks (v0.16.12+)
 
 Route valid rows and failed rows to separate callbacks. The library buffers nothing — caller decides

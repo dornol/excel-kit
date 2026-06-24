@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.1] - 2026-06-24
+
+### Added
+
+- Example app smoke test coverage now starts the Spring context without Docker
+  and verifies a real MyBatis mapper query against an H2 database.
+
+### Changed
+
+- CSV and Excel read handlers are now explicitly one-shot. Calling `read()`,
+  `readStrict()`, or `readAsStream()` consumes the handler; a second read attempt
+  now fails with a clear `ExcelKitException` instead of a lower-level temp-file
+  error.
+
+### Fixed
+
+- CSV `readAsStream()` cleanup coverage now verifies temporary resources are
+  removed after failed row mapping results are consumed.
+
 ## [0.17.0] - 2026-06-22
 
 ### Added
