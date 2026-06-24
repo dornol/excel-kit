@@ -11,6 +11,7 @@ import java.util.List;
  * {@link AbstractReadHandler#read(java.util.function.Consumer, java.util.function.Consumer)}.
  *
  * @param rowNum    1-based data row ordinal (excludes header rows)
+ * @param fileRowNum 1-based physical row number in the source file, or {@code -1} if unknown
  * @param type      the category of failure
  * @param messages  human-readable messages (validation violations or error descriptions);
  *                  never {@code null}, may be empty
@@ -22,10 +23,18 @@ import java.util.List;
  */
 public record RowError(
         long rowNum,
+        long fileRowNum,
         Type type,
         List<String> messages,
         @Nullable Throwable cause
 ) {
+
+    /**
+     * Backward-compatible constructor without a physical file row number.
+     */
+    public RowError(long rowNum, Type type, List<String> messages, @Nullable Throwable cause) {
+        this(rowNum, -1, type, messages, cause);
+    }
 
     /** Category of row-level read error. */
     public enum Type {

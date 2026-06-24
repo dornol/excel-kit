@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.ReadAbortException;
@@ -31,13 +32,10 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.UUID;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -146,7 +144,17 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                      int headerRows,
                      int progressInterval, @Nullable ProgressCallback progressCallback,
                      @Nullable String password, boolean countRows) {
-        super(inputStream, instanceSupplier, validator, ".xlsx");
+        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, headerRows,
+                progressInterval, progressCallback, password, countRows, false, DuplicateHeaderPolicy.FIRST);
+    }
+
+    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                     Validator validator, int sheetIndex, int headerRowIndex,
+                     int headerRows,
+                     int progressInterval, @Nullable ProgressCallback progressCallback,
+                     @Nullable String password, boolean countRows,
+                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
+        super(inputStream, instanceSupplier, validator, ".xlsx", strictHeaders, duplicateHeaderPolicy);
         validateColumns(columns);
         validateSheetIndex(sheetIndex);
         validateHeaderRowIndex(headerRowIndex);
@@ -175,7 +183,17 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                      int headerRows,
                      int progressInterval, @Nullable ProgressCallback progressCallback,
                      @Nullable String password, boolean countRows) {
-        super(inputStream, rowMapper, validator, ".xlsx");
+        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, headerRows, progressInterval,
+                progressCallback, password, countRows, false, DuplicateHeaderPolicy.FIRST);
+    }
+
+    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
+                     int headerRows,
+                     int progressInterval, @Nullable ProgressCallback progressCallback,
+                     @Nullable String password, boolean countRows,
+                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
+        super(inputStream, rowMapper, validator, ".xlsx", strictHeaders, duplicateHeaderPolicy);
         validateSheetIndex(sheetIndex);
         validateHeaderRowIndex(headerRowIndex);
         validateHeaderRows(headerRows);
@@ -515,11 +533,11 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             ReadResult<T> result;
             if (rowMapper != null) {
                 RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap);
-                result = mapWithRowMapper(rowData);
+                result = mapWithRowMapper(rowData, rowNum + 1L);
             } else {
                 boolean mappingSuccess = mapValuesToInstance();
                 boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
-                result = new ReadResult<>(currentInstance, validationSuccess, messages);
+                result = new ReadResult<>(currentInstance, validationSuccess, messages, null, rowNum + 1L);
             }
 
             consumer.accept(result);
@@ -570,18 +588,10 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         /**
-         * Finalizes the accumulated header names and warns about duplicates.
+         * Finalizes the accumulated header names.
          */
         private void finalizeHeaderNames() {
             headerNames.addAll(headerAccumulator);
-
-            Set<String> seen = new HashSet<>();
-            for (String name : headerNames) {
-                if (name != null && !seen.add(name)) {
-                    log.warn("Duplicate header name '{}' found in sheet (headerRowIndex={}). "
-                            + "Only the first occurrence will be used in mapping mode.", name, headerRowIndex);
-                }
-            }
         }
 
         /**
@@ -593,7 +603,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
             resolvedIndices = ExcelReadHandler.this.resolveColumnIndices(
                     columns.size(),
-                    i -> columns.get(i).headerName(),
+                    i -> columns.get(i).headerAliases(),
                     i -> columns.get(i).columnIndex(),
                     headerNames, "sheet"
             );
@@ -603,10 +613,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          * Builds header name to index map (mapping mode).
          */
         private void buildHeaderIndex() {
-            headerIndexMap = new LinkedHashMap<>();
-            for (int i = 0; i < headerNames.size(); i++) {
-                headerIndexMap.putIfAbsent(headerNames.get(i), i);
-            }
+            headerIndexMap = buildHeaderIndexMap(headerNames, "sheet");
         }
 
         /**

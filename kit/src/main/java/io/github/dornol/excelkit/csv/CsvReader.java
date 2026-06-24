@@ -166,6 +166,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
             for (int i = 0; i < bound; i++) {
                 String header = headers.get(i);
                 if (header == null) continue;
+                if (row.headerIndexOf(header) != i) continue;
                 if (selectedColumns != null && !selectedColumns.contains(header)) continue;
                 map.put(header, row.get(i).formattedValue());
             }
@@ -225,9 +226,11 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     public CsvReadHandler<T> build(InputStream inputStream) {
         if (rowMapper != null) {
             return new CsvReadHandler<>(inputStream, rowMapper, validator,
-                    headerRowIndex, delimiter, charset, progressInterval, progressCallback);
+                    headerRowIndex, delimiter, charset, progressInterval, progressCallback,
+                    strictHeaders, duplicateHeaderPolicy);
         }
         return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
-                headerRowIndex, delimiter, charset, progressInterval, progressCallback);
+                headerRowIndex, delimiter, charset, progressInterval, progressCallback,
+                strictHeaders, duplicateHeaderPolicy);
     }
 }

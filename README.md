@@ -89,6 +89,17 @@ ExcelReader.setter(User::new)
     .read(result -> { ... });
 ```
 
+Header aliases, strict header validation, and duplicate header policy are available for Excel and CSV:
+
+```java
+ExcelReader.setter(User::new)
+    .strictHeaders()
+    .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
+    .column(List.of("Name", "User Name", "이름"), (u, cell) -> u.setName(cell.asString()))
+    .build(inputStream)
+    .read(user -> { ... }, error -> log.warn("file row {}", error.fileRowNum()));
+```
+
 ### Write & Read CSV
 
 ```java
@@ -177,11 +188,11 @@ public ResponseEntity<StreamingResponseBody> download() {
 
 | Category | Highlights |
 |----------|-----------|
-| Column matching | By name, by index, positional with skip |
+| Column matching | By name, aliases, by index, positional with skip |
 | Read modes | Setter (mutable), Mapping (records), Map (schema-less) |
-| Headers | Single or multi-row headers (`headerRows(int)`, Excel) |
+| Headers | Strict header validation, duplicate header policies, single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
-| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError` |
+| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError` and physical file row number |
 | Stream | `readAsStream()` with lazy evaluation, `readStrict()` for fail-fast |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
 | Config | Sheet index, header row index, progress callback, `countRows()` for total row pre-scan, password-encrypted files |

@@ -32,6 +32,8 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected @Nullable ProgressCallback progressCallback;
     protected int progressInterval;
     protected boolean mapMode = false;
+    protected boolean strictHeaders = false;
+    protected DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FIRST;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = java.util.Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
@@ -88,6 +90,16 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     }
 
     /**
+     * Registers a name-based column mapping with header aliases.
+     * The first matching alias, in list order, is used.
+     */
+    public SELF column(List<String> headerAliases, BiConsumer<T, CellData> setter) {
+        requireNotMapMode("column(List, BiConsumer)");
+        columns.add(new ReadColumn<>(headerAliases, setter));
+        return self();
+    }
+
+    /**
      * Registers an index-based column mapping.
      */
     public SELF columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
@@ -140,6 +152,38 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         }
         this.progressInterval = interval;
         this.progressCallback = callback;
+        return self();
+    }
+
+    /**
+     * Enables strict header validation.
+     * In strict mode, positional and index-based column bindings must resolve to
+     * an existing header column before any data row is processed.
+     */
+    public SELF strictHeaders() {
+        return strictHeaders(true);
+    }
+
+    /**
+     * Enables or disables strict header validation.
+     */
+    public SELF strictHeaders(boolean enabled) {
+        this.strictHeaders = enabled;
+        return self();
+    }
+
+    /**
+     * Alias for {@link #strictHeaders()}.
+     */
+    public SELF requireHeaders() {
+        return strictHeaders();
+    }
+
+    /**
+     * Sets duplicate header handling. Defaults to {@link DuplicateHeaderPolicy#FIRST}.
+     */
+    public SELF duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
+        this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
         return self();
     }
 }
