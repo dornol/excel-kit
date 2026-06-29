@@ -24,10 +24,11 @@ Use this checklist when publishing a new `excel-kit` release.
 
 - Confirm the GitHub Release exists and is not a draft.
 - Confirm Javadocs deployed successfully.
-- Confirm Maven Central visibility with:
+- Confirm Maven Central visibility for both published artifacts with:
 
 ```bash
 scripts/verify-maven-central.sh X.Y.Z
+scripts/verify-maven-central.sh X.Y.Z --artifact-id excel-kit-spring
 ```
 
 After verification, start the next development cycle by restoring an empty

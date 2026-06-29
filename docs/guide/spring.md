@@ -4,28 +4,34 @@
 
 ## Spring MVC
 
-The `example` module includes a `DownloadResponse` helper that wraps
-handlers into `ResponseEntity<StreamingResponseBody>` with proper Content-Type,
-Content-Disposition (including RFC 5987 Korean filename encoding), and Cache-Control.
+Add the optional Spring helper module:
+
+```kotlin
+implementation("io.github.dornol:excel-kit-spring:<version>")
+```
+
+`ExcelKitResponse` wraps handlers into `ResponseEntity<StreamingResponseBody>`
+with proper Content-Type, Content-Disposition (including RFC 5987 Korean
+filename encoding), and Cache-Control.
 
 ```java
 @GetMapping("/download")
 public ResponseEntity<StreamingResponseBody> download() {
     ExcelHandler handler = writer.write(dataStream);
-    return DownloadResponse.excel(handler, "report");
+    return ExcelKitResponse.excel(handler, "report");
 }
 
 @GetMapping("/download-csv")
 public ResponseEntity<StreamingResponseBody> downloadCsv() {
     CsvHandler handler = csvWriter.write(dataStream);
-    return DownloadResponse.csv(handler, "report");
+    return ExcelKitResponse.csv(handler, "report");
 }
 
 // Password-encrypted
 @GetMapping("/download-encrypted")
 public ResponseEntity<StreamingResponseBody> downloadEncrypted() {
     ExcelHandler handler = writer.password("P@ssw0rd!").write(dataStream);
-    return DownloadResponse.excel(handler, "secret");
+    return ExcelKitResponse.excel(handler, "secret");
 }
 ```
 
@@ -39,7 +45,7 @@ public ResponseEntity<?> upload(MultipartFile file, @RequestHeader(HttpHeaders.A
     List<RowError> errors = new ArrayList<>();
     List<User> rows = new ArrayList<>();
 
-    try (InputStream in = file.getInputStream()) {
+    try (InputStream in = ExcelKitMultipartFile.open(file)) {
         userReader.build(in).read(rows::add, errors::add);
     }
 
@@ -57,7 +63,7 @@ same and write the collected `RowError.cellErrors()` into a CSV or Excel respons
 @PostMapping("/upload/errors.csv")
 public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) throws IOException {
     List<RowError> errors = new ArrayList<>();
-    try (InputStream in = file.getInputStream()) {
+    try (InputStream in = ExcelKitMultipartFile.open(file)) {
         userReader.build(in).read(user -> {}, errors::add);
     }
 
@@ -67,7 +73,7 @@ public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) thr
         .column("message", CellError::message)
         .write(errors.stream().flatMap(error -> error.cellErrors().stream()));
 
-    return DownloadResponse.csv(csv, "read-errors");
+    return ExcelKitResponse.csv(csv, "read-errors");
 }
 ```
 

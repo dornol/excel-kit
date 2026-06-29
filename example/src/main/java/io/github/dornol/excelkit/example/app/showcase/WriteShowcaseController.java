@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
-import io.github.dornol.excelkit.example.app.common.DownloadResponse;
+import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.excel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +66,7 @@ public class WriteShowcaseController {
                 })
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("formula-demo")
+        return ExcelKitResponse.excel("formula-demo")
                 .body(handler::writeTo);
     }
 
@@ -85,7 +85,7 @@ public class WriteShowcaseController {
                         cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("hyperlink-demo")
+        return ExcelKitResponse.excel("hyperlink-demo")
                 .body(handler::writeTo);
     }
 
@@ -129,7 +129,7 @@ public class WriteShowcaseController {
                     ));
 
             var handler = wb.finish();
-            return DownloadResponse.excel("multi-sheet-demo")
+            return ExcelKitResponse.excel("multi-sheet-demo")
                     .body(handler::writeTo);
         }
     }
@@ -165,7 +165,7 @@ public class WriteShowcaseController {
                         ((Number) value).doubleValue() >= 0.2 ? ExcelColor.LIGHT_PURPLE : null))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("cell-color-demo")
+        return ExcelKitResponse.excel("cell-color-demo")
                 .body(handler::writeTo);
     }
 
@@ -198,7 +198,7 @@ public class WriteShowcaseController {
                         cfg -> cfg.type(ExcelDataType.HYPERLINK).group("Link"))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("group-header-demo")
+        return ExcelKitResponse.excel("group-header-demo")
                 .body(handler::writeTo);
     }
 
@@ -222,7 +222,7 @@ public class WriteShowcaseController {
                     .write(sampleProducts().stream());
 
             var handler = wb.finish();
-            return DownloadResponse.excel("rollover-demo")
+            return ExcelKitResponse.excel("rollover-demo")
                     .body(handler::writeTo);
         }
     }
@@ -245,7 +245,7 @@ public class WriteShowcaseController {
                 .column("Summary", p -> "%s (%s)".formatted(p.name(), p.category()))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("outline-demo")
+        return ExcelKitResponse.excel("outline-demo")
                 .body(handler::writeTo);
     }
 
@@ -339,7 +339,7 @@ public class WriteShowcaseController {
                 })
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("full-showcase")
+        return ExcelKitResponse.excel("full-showcase")
                 .body(handler::writeTo);
     }
 

@@ -7,6 +7,11 @@ on:
         description: "Released version to verify, for example 0.18.2"
         required: true
         type: string
+      artifact_id:
+        description: "Artifact ID to verify"
+        required: false
+        default: "excel-kit"
+        type: string
       attempts:
         description: "Number of polling attempts"
         required: false
@@ -29,5 +34,6 @@ jobs:
         run: |
           scripts/verify-maven-central.sh \
             "${{ inputs.version }}" \
+            --artifact-id "${{ inputs.artifact_id }}" \
             --attempts "${{ inputs.attempts }}" \
             --sleep-seconds "${{ inputs.sleep_seconds }}"

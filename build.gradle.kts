@@ -1,4 +1,6 @@
 plugins {
+    alias(libs.plugins.vanniktech.publish) apply false
+    alias(libs.plugins.spring.dependency.management) apply false
 }
 
 allprojects {

@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
-import io.github.dornol.excelkit.example.app.common.DownloadResponse;
+import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.example.app.dto.TypeTestDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -15,7 +15,7 @@ public class TypeTestController {
     @GetMapping("/download-excel-types")
     public ResponseEntity<StreamingResponseBody> downloadExcelTypes() {
         var handler = TypeTestExcelMapper.getHandler(Stream.generate(TypeTestDto::rand).limit(10000));
-        return DownloadResponse.excel("type test excel")
+        return ExcelKitResponse.excel("type test excel")
                 .body(handler::writeTo);
     }
 

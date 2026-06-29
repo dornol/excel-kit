@@ -25,6 +25,7 @@ ExcelWriter.<User>create()
 **Gradle**
 ```kotlin
 implementation("io.github.dornol:excel-kit:0.18.3")
+implementation("io.github.dornol:excel-kit-spring:<version>") // optional Spring MVC helpers
 
 // Add the runtime pieces you use. excel-kit keeps these compileOnly so
 // applications can control versions.
@@ -40,6 +41,11 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
   <version>0.18.3</version>
+</dependency>
+<dependency>
+  <groupId>io.github.dornol</groupId>
+  <artifactId>excel-kit-spring</artifactId>
+  <version>${excel-kit.version}</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
@@ -71,6 +77,12 @@ Runtime dependencies (declared as `compileOnly`):
 | `org.slf4j:slf4j-api` | Logging |
 | `com.opencsv:opencsv` | CSV reading |
 | `jakarta.validation:jakarta.validation-api` | Bean Validation (optional) |
+
+Optional modules:
+
+| Module | Required For |
+|--------|--------------|
+| `io.github.dornol:excel-kit-spring` | Spring MVC download/upload helpers |
 
 ## Quick Start
 

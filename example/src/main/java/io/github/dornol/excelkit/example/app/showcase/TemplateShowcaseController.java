@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
-import io.github.dornol.excelkit.example.app.common.DownloadResponse;
+import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.excel.ExcelTemplateWriter;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +26,7 @@ public class TemplateShowcaseController {
      */
     @GetMapping("/template-write")
     public ResponseEntity<StreamingResponseBody> templateWrite() {
-        return DownloadResponse.excel("invoice").body(out -> {
+        return ExcelKitResponse.excel("invoice").body(out -> {
             // 1. Create a template in memory (in real apps, load from classpath/filesystem)
             byte[] templateBytes;
             try (var twb = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
@@ -81,7 +81,7 @@ public class TemplateShowcaseController {
      */
     @GetMapping("/template-cell-only")
     public ResponseEntity<StreamingResponseBody> templateCellOnly() {
-        return DownloadResponse.excel("certificate").body(out -> {
+        return ExcelKitResponse.excel("certificate").body(out -> {
             byte[] templateBytes;
             try (var twb = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
                 var sheet = twb.createSheet("Certificate");

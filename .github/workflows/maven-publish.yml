@@ -37,11 +37,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build & Test
-        run: ./gradlew :kit:build :kit:test --no-daemon
+        run: ./gradlew :kit:build :excel-kit-spring:build --no-daemon
 
       - name: Publish
-        run: ./gradlew :kit:publishAndReleaseToMavenCentral --no-daemon
+        run: |
+          ./gradlew :kit:publishAndReleaseToMavenCentral --no-daemon
+          ./gradlew :excel-kit-spring:publishAndReleaseToMavenCentral --no-daemon
 
       - name: Verify Maven Central visibility
         timeout-minutes: 30
-        run: scripts/verify-maven-central.sh "${GITHUB_REF_NAME#v}"
+        run: |
+          scripts/verify-maven-central.sh "${GITHUB_REF_NAME#v}"
+          scripts/verify-maven-central.sh "${GITHUB_REF_NAME#v}" --artifact-id excel-kit-spring

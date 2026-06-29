@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.poi.ooxml)
     implementation(libs.opencsv)
     implementation(project(":kit"))
+    implementation(project(":excel-kit-spring"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")

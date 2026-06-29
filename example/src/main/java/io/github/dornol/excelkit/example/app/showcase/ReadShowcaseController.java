@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.example.app.showcase;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.example.app.common.DownloadResponse;
+import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSheetInfo;
@@ -52,7 +52,7 @@ public class ReadShowcaseController {
                 .freezeRows(1)
                 .write(ShowcaseData.sampleProducts().stream().map(ShowcaseData::toReadDto));
 
-        return DownloadResponse.excel("schema-excel-demo")
+        return ExcelKitResponse.excel("schema-excel-demo")
                 .body(handler::writeTo);
     }
 
@@ -90,7 +90,7 @@ public class ReadShowcaseController {
                 .column("message", ErrorReportRow::message)
                 .write(errorReportRows(report).stream());
 
-        return DownloadResponse.csv("read-errors")
+        return ExcelKitResponse.csv("read-errors")
                 .body(handler::writeTo);
     }
 
@@ -108,7 +108,7 @@ public class ReadShowcaseController {
                 .column("message", ErrorReportRow::message)
                 .write(errorReportRows(report).stream());
 
-        return DownloadResponse.excel("read-errors")
+        return ExcelKitResponse.excel("read-errors")
                 .body(handler::writeTo);
     }
 

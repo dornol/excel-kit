@@ -1,3 +1,3 @@
 rootProject.name = "excel-kit"
 
-include("kit", "example")
+include("kit", "excel-kit-spring", "example")

@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
-import io.github.dornol.excelkit.example.app.common.DownloadResponse;
+import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.excel.ExcelBorderStyle;
 import io.github.dornol.excelkit.excel.ExcelCellComment;
@@ -47,7 +47,7 @@ public class WriteShowcaseAdvancedController {
                 .column("No Border", p -> "text", cfg -> cfg.border(ExcelBorderStyle.NONE))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("border-style-demo")
+        return ExcelKitResponse.excel("border-style-demo")
                 .body(handler::writeTo);
     }
 
@@ -69,7 +69,7 @@ public class WriteShowcaseAdvancedController {
                     .type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("cell-comment-demo")
+        return ExcelKitResponse.excel("cell-comment-demo")
                 .body(handler::writeTo);
     }
 
@@ -92,7 +92,7 @@ public class WriteShowcaseAdvancedController {
                     .headerComment("Discount rate (0.0 - 1.0)"))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("header-comment-demo")
+        return ExcelKitResponse.excel("header-comment-demo")
                 .body(handler::writeTo);
     }
 
@@ -115,7 +115,7 @@ public class WriteShowcaseAdvancedController {
                         .group("Financial"))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("group-header-multi-demo")
+        return ExcelKitResponse.excel("group-header-multi-demo")
                 .body(handler::writeTo);
     }
 
@@ -135,7 +135,7 @@ public class WriteShowcaseAdvancedController {
                     .headerComment(ExcelCellComment.of("KRW, no decimals").size(3, 2)))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("comment-size-demo")
+        return ExcelKitResponse.excel("comment-size-demo")
                 .body(handler::writeTo);
     }
 
@@ -161,7 +161,7 @@ public class WriteShowcaseAdvancedController {
                         .greaterThanOrEqual("0.2", ExcelColor.LIGHT_PURPLE))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("conditional-format-demo")
+        return ExcelKitResponse.excel("conditional-format-demo")
                 .body(handler::writeTo);
     }
 
@@ -187,7 +187,7 @@ public class WriteShowcaseAdvancedController {
                 .protectSheet("1234")
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("sheet-protection-demo")
+        return ExcelKitResponse.excel("sheet-protection-demo")
                 .body(handler::writeTo);
     }
 
@@ -206,7 +206,7 @@ public class WriteShowcaseAdvancedController {
                         .valueColumn(2, "Quantity"))
                 .write(sampleProducts().stream().limit(10));
 
-        return DownloadResponse.excel("chart-demo")
+        return ExcelKitResponse.excel("chart-demo")
                 .body(handler::writeTo);
     }
 
@@ -226,7 +226,7 @@ public class WriteShowcaseAdvancedController {
         var handler = ExcelWriter.forMap("Name", "Category", "Price", "Quantity", "Discount")
                 .write(maps);
 
-        return DownloadResponse.excel("map-writer-demo")
+        return ExcelKitResponse.excel("map-writer-demo")
                 .body(handler::writeTo);
     }
 
@@ -256,7 +256,7 @@ public class WriteShowcaseAdvancedController {
                     .write(sampleProducts().stream());
 
             var handler = wb.finish();
-            return DownloadResponse.excel("workbook-protection-demo")
+            return ExcelKitResponse.excel("workbook-protection-demo")
                     .body(handler::writeTo);
         }
     }
@@ -276,7 +276,7 @@ public class WriteShowcaseAdvancedController {
                 .column("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("header-font-demo")
+        return ExcelKitResponse.excel("header-font-demo")
                 .body(handler::writeTo);
     }
 
@@ -303,7 +303,7 @@ public class WriteShowcaseAdvancedController {
                         .type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("header-font-color-demo")
+        return ExcelKitResponse.excel("header-font-color-demo")
                 .body(handler::writeTo);
     }
 
@@ -329,7 +329,7 @@ public class WriteShowcaseAdvancedController {
                 .column("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("default-style-demo")
+        return ExcelKitResponse.excel("default-style-demo")
                 .body(handler::writeTo);
     }
 
@@ -348,7 +348,7 @@ public class WriteShowcaseAdvancedController {
                         .average("Price").average("Quantity"))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("summary-demo")
+        return ExcelKitResponse.excel("summary-demo")
                 .body(handler::writeTo);
     }
 
@@ -376,7 +376,7 @@ public class WriteShowcaseAdvancedController {
                     .write(sampleProducts().stream());
 
             var handler = wb.finish();
-            return DownloadResponse.excel("named-range-demo")
+            return ExcelKitResponse.excel("named-range-demo")
                     .body(handler::writeTo);
         }
     }
@@ -397,7 +397,7 @@ public class WriteShowcaseAdvancedController {
                 .conditionalFormatting(cf -> cf.columns(3).iconSet(ExcelConditionalRule.IconSetType.ARROWS_3))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("data-bar-demo")
+        return ExcelKitResponse.excel("data-bar-demo")
                 .body(handler::writeTo);
     }
 
@@ -414,7 +414,7 @@ public class WriteShowcaseAdvancedController {
                 .column("Discount", ProductDto::discount, c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadResponse.excel("freeze-cols-demo")
+        return ExcelKitResponse.excel("freeze-cols-demo")
                 .body(handler::writeTo);
     }
 
@@ -429,7 +429,7 @@ public class WriteShowcaseAdvancedController {
                 .write(sampleProducts().stream());
 
         String password = "demo123";
-        return DownloadResponse.excel("late-password-demo")
+        return ExcelKitResponse.excel("late-password-demo")
                 .body(os -> handler.writeTo(os, password));
     }
 }

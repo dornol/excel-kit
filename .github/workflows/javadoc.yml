@@ -36,7 +36,14 @@ jobs:
         run: chmod +x gradlew
 
       - name: Generate Javadoc
-        run: ./gradlew :kit:javadoc --no-daemon
+        run: ./gradlew :kit:javadoc :excel-kit-spring:javadoc --no-daemon
+
+      - name: Stage Javadoc site
+        run: |
+          mkdir -p build/javadoc-site
+          cp -R kit/build/docs/javadoc/. build/javadoc-site/
+          mkdir -p build/javadoc-site/excel-kit-spring
+          cp -R excel-kit-spring/build/docs/javadoc/. build/javadoc-site/excel-kit-spring/
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
@@ -44,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: kit/build/docs/javadoc
+          path: build/javadoc-site
 
       - name: Deploy to GitHub Pages
         id: deployment

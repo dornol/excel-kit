@@ -2,12 +2,13 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <version> [--attempts N] [--sleep-seconds N]" >&2
+  echo "Usage: $0 <version> [--attempts N] [--sleep-seconds N] [--artifact-id ARTIFACT]" >&2
 }
 
 version="${1:-}"
 attempts=60
 sleep_seconds=30
+artifact_id="excel-kit"
 
 if [[ -z "${version}" ]]; then
   usage
@@ -23,6 +24,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --sleep-seconds)
       sleep_seconds="${2:-}"
+      shift 2
+      ;;
+    --artifact-id)
+      artifact_id="${2:-}"
       shift 2
       ;;
     *)
@@ -42,9 +47,14 @@ if ! [[ "${sleep_seconds}" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
-artifact_path="io/github/dornol/excel-kit"
+if [[ -z "${artifact_id}" ]]; then
+  echo "--artifact-id must not be empty" >&2
+  exit 2
+fi
+
+artifact_path="io/github/dornol/${artifact_id}"
 base_url="https://repo1.maven.org/maven2/${artifact_path}"
-pom_url="${base_url}/${version}/excel-kit-${version}.pom"
+pom_url="${base_url}/${version}/${artifact_id}-${version}.pom"
 metadata_url="${base_url}/maven-metadata.xml"
 
 for i in $(seq 1 "${attempts}"); do

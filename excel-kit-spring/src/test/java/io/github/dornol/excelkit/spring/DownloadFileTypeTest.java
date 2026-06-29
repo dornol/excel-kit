@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.example.app.common;
+package io.github.dornol.excelkit.spring;
 
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +9,7 @@ class DownloadFileTypeTest {
 
     @Test
     void contentDisposition_doesNotDuplicateExtension() {
-        String header = DownloadFileType.EXCEL.getContentDisposition("report.xlsx");
+        String header = DownloadFileType.EXCEL.contentDisposition("report.xlsx");
 
         assertTrue(header.contains("filename=\"report.xlsx\""));
         assertTrue(header.contains("filename*=UTF-8''report.xlsx"));
@@ -17,7 +17,7 @@ class DownloadFileTypeTest {
 
     @Test
     void contentDisposition_appendsMissingExtension() {
-        String header = DownloadFileType.CSV.getContentDisposition("report");
+        String header = DownloadFileType.CSV.contentDisposition("report");
 
         assertTrue(header.contains("filename=\"report.csv\""));
         assertTrue(header.contains("filename*=UTF-8''report.csv"));
@@ -25,7 +25,7 @@ class DownloadFileTypeTest {
 
     @Test
     void contentDisposition_encodesNonAsciiFilenameWithAsciiFallback() {
-        String header = DownloadFileType.EXCEL.getContentDisposition("도서 목록");
+        String header = DownloadFileType.EXCEL.contentDisposition("도서 목록");
 
         assertTrue(header.contains("filename=\"__ __.xlsx\""));
         assertTrue(header.contains("filename*=UTF-8''%EB%8F%84%EC%84%9C%20%EB%AA%A9%EB%A1%9D.xlsx"));
