@@ -24,7 +24,7 @@ ExcelWriter.<User>create()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.18.2")
+implementation("io.github.dornol:excel-kit:0.18.3")
 
 // Add the runtime pieces you use. excel-kit keeps these compileOnly so
 // applications can control versions.
@@ -39,7 +39,7 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.18.2</version>
+  <version>0.18.3</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
