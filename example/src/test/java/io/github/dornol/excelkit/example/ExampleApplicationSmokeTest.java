@@ -85,6 +85,8 @@ class ExampleApplicationSmokeTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("src=\"/app.js\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Download Error CSV")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Server Error Excel")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Download Excel Template")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Download CSV Template")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("feature-filter")));
     }
 

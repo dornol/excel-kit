@@ -19,9 +19,13 @@ All notable changes to this project will be documented in this file.
 - Example app read report rendering is separated from the read showcase
   controller.
 - Example app download response helpers are unified under `DownloadResponse`.
+- Example app name-based upload area now links directly to Excel and CSV sample
+  templates for correction workflows.
 - Release and publish workflows now use JDK 21 to match the project toolchain.
 - CI workflow permissions now explicitly include read-only repository contents
   access.
+- Documentation examples now avoid `System.out` in favor of logger-style
+  snippets, and data type docs use concrete `ExcelDataType` examples.
 
 ### Tests
 
@@ -823,20 +827,20 @@ ExcelReader.forMap()
 // Before
 new CsvMapReader()
     .dialect(CsvDialect.EXCEL)
-    .onProgress(1000, (count, total) -> System.out.println(count))
+    .onProgress(1000, (count, total) -> log.info("{}", count))
     .build(inputStream)
     .read(r -> process(r.data()));
 
 // After
 CsvReader.forMap()
     .dialect(CsvDialect.EXCEL)
-    .onProgress(1000, (count, total) -> System.out.println(count))
+    .onProgress(1000, (count, total) -> log.info("{}", count))
     .build(inputStream)
     .read(r -> process(r.data()));
 
 // ─── Excel map reading now supports onProgress (new) ───
 ExcelReader.forMap()
-    .onProgress(1000, (count, total) -> System.out.println("read " + count))
+    .onProgress(1000, (count, total) -> log.info("read {}", count))
     .build(inputStream)
     .read(r -> process(r.data()));
 ```

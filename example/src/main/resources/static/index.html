@@ -225,6 +225,10 @@
         <input type="file" name="file" accept=".csv" required>
         <button type="submit" class="upload">Upload CSV (Name-Based Read)</button>
     </form>
+    <div class="button-row">
+        <a href="/showcase/schema-excel" target="_blank"><button type="button" class="excel">Download Excel Template</button></a>
+        <a href="/showcase/schema-csv" target="_blank"><button type="button" class="csv">Download CSV Template</button></a>
+    </div>
     <form action="/showcase/read-by-index" method="POST" enctype="multipart/form-data" target="_blank">
         <input type="file" name="file" accept=".xlsx" required>
         <button type="submit" class="upload">Upload Excel (Index-Based Read)</button>

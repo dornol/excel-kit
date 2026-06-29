@@ -32,7 +32,7 @@ ch.writeTo(Path.of("rows.csv"));
 
 ## Data Types
 
-Set via `.type(ExcelDataType.XXX)`:
+Set via `.type(...)`, for example `ExcelDataType.INTEGER` or `ExcelDataType.DATE`:
 
 | Type | Java Type | Default Format |
 |------|-----------|----------------|
