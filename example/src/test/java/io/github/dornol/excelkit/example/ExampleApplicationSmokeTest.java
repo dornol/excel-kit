@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.example;
 
+import org.apache.poi.ss.usermodel.DataFormatter;
 import io.github.dornol.excelkit.example.app.book.adapter.out.persistence.BookMyBatisMapper;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -15,6 +16,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -79,9 +81,22 @@ class ExampleApplicationSmokeTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"upload-result\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-enhanced-upload=\"true\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/app.css\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("src=\"/app.js\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Download Error CSV")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Server Error Excel")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("feature-filter")));
+    }
+
+    @Test
+    void staticAssets_areServed() throws Exception {
+        mockMvc.perform(get("/app.css"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("#upload-result")));
+
+        mockMvc.perform(get("/app.js"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("downloadServerErrorReport")));
     }
 
     @Test
@@ -194,6 +209,19 @@ class ExampleApplicationSmokeTest {
         assertTrue(body.length > 4);
         assertEquals('P', body[0]);
         assertEquals('K', body[1]);
+
+        try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(body))) {
+            DataFormatter formatter = new DataFormatter();
+            Sheet sheet = workbook.getSheet("Read Errors");
+            assertEquals("fileRowNum", formatter.formatCellValue(sheet.getRow(0).getCell(0)));
+            assertEquals("columnIndex", formatter.formatCellValue(sheet.getRow(0).getCell(1)));
+            assertEquals("headerName", formatter.formatCellValue(sheet.getRow(0).getCell(2)));
+            assertEquals("cellValue", formatter.formatCellValue(sheet.getRow(0).getCell(3)));
+            assertEquals("message", formatter.formatCellValue(sheet.getRow(0).getCell(4)));
+            assertEquals("2", formatter.formatCellValue(sheet.getRow(1).getCell(0)));
+            assertEquals("Price", formatter.formatCellValue(sheet.getRow(1).getCell(2)));
+            assertEquals("not-a-number", formatter.formatCellValue(sheet.getRow(1).getCell(3)));
+        }
     }
 
     private static byte[] productWorkbook() throws Exception {

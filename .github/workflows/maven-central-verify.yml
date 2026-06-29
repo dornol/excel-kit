@@ -1,0 +1,33 @@
+name: maven-central-verify.yml
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Released version to verify, for example 0.18.2"
+        required: true
+        type: string
+      attempts:
+        description: "Number of polling attempts"
+        required: false
+        default: "1"
+        type: string
+      sleep_seconds:
+        description: "Seconds to wait between attempts"
+        required: false
+        default: "0"
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify Maven Central visibility
+        run: |
+          scripts/verify-maven-central.sh \
+            "${{ inputs.version }}" \
+            --attempts "${{ inputs.attempts }}" \
+            --sleep-seconds "${{ inputs.sleep_seconds }}"
