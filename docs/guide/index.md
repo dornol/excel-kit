@@ -23,6 +23,7 @@ infrastructure concerns.
 | [CSV](csv.md) | CSV write/read, dialect, quoting | `CsvWriter.create()`, `CsvReader.setter()`, `dialect()` |
 | [Spring](spring.md) | MVC, WebFlux integration | `DownloadResponse.excel()`, `StreamingResponseBody` |
 | [Reference](reference.md) | Data types, formats, schema, exceptions, notes | `ExcelDataType`, `ExcelDataFormat`, `ExcelKitSchema` |
+| [Release](release.md) | Release preparation and verification | `verify-maven-central.sh`, GitHub Actions |
 
 ---
 

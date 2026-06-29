@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Release checklist guide for version/tag/publish verification workflow.
+
+### Changed
+
+- Example write showcase endpoints are split across focused controllers.
+- Test dependency baseline updated to JUnit 6.1.1.
+
+### Tests
+
+- Added direct coverage for example download content-disposition headers.
+
 ## [0.18.3] - 2026-06-29
 
 ### Added
