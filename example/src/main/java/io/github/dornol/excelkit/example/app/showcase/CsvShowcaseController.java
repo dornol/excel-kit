@@ -39,7 +39,8 @@ public class CsvShowcaseController {
     // ========================================================================
     @GetMapping("/schema-csv")
     public ResponseEntity<StreamingResponseBody> downloadSchemaCsv() {
-        return ExcelKitTemplateResponse.csv(PRODUCT_SCHEMA, "schema-csv-demo");
+        return ExcelKitTemplateResponse.csv(PRODUCT_SCHEMA, "schema-csv-demo",
+                sampleProducts().stream().limit(2).map(ShowcaseData::toReadDto));
     }
 
     // ========================================================================

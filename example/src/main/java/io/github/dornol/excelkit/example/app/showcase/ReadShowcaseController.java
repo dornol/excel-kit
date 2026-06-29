@@ -2,8 +2,8 @@ package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.core.ExcelKitSchema;
 import io.github.dornol.excelkit.spring.ExcelKitErrorResponse;
-import io.github.dornol.excelkit.spring.ExcelKitMultipartFile;
 import io.github.dornol.excelkit.spring.ExcelKitTemplateResponse;
+import io.github.dornol.excelkit.spring.ExcelKitUpload;
 import io.github.dornol.excelkit.spring.UploadResult;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.excel.ExcelReader;
@@ -45,7 +45,8 @@ public class ReadShowcaseController {
     // ========================================================================
     @GetMapping("/schema-excel")
     public ResponseEntity<StreamingResponseBody> downloadSchemaExcel() {
-        return ExcelKitTemplateResponse.excel(PRODUCT_SCHEMA, "schema-excel-demo");
+        return ExcelKitTemplateResponse.excel(PRODUCT_SCHEMA, "schema-excel-demo",
+                ShowcaseData.sampleProducts().stream().limit(2).map(ShowcaseData::toReadDto));
     }
 
     // ========================================================================
@@ -54,27 +55,19 @@ public class ReadShowcaseController {
     @PostMapping("/read-by-name-excel")
     @ResponseBody
     public ResponseEntity<?> readByNameExcel(MultipartFile file, HttpServletRequest request) {
-        try (var is = ExcelKitMultipartFile.open(file)) {
-            UploadResult<ProductReadDto> result = UploadResult.read("Excel",
-                    PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
-            log.info("Read by name (Excel): {} success, {} errors", result.successCount(), result.errorCount());
-            return renderReport(result, request);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to close upload stream", e);
-        }
+        UploadResult<ProductReadDto> result = ExcelKitUpload.excel(file,
+                is -> PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
+        log.info("Read by name (Excel): {} success, {} errors", result.successCount(), result.errorCount());
+        return renderReport(result, request);
     }
 
     @PostMapping("/read-by-name-csv")
     @ResponseBody
     public ResponseEntity<?> readByNameCsv(MultipartFile file, HttpServletRequest request) {
-        try (var is = ExcelKitMultipartFile.open(file)) {
-            UploadResult<ProductReadDto> result = UploadResult.read("CSV",
-                    PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
-            log.info("Read by name (CSV): {} success, {} errors", result.successCount(), result.errorCount());
-            return renderReport(result, request);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to close upload stream", e);
-        }
+        UploadResult<ProductReadDto> result = ExcelKitUpload.csv(file,
+                is -> PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
+        log.info("Read by name (CSV): {} success, {} errors", result.successCount(), result.errorCount());
+        return renderReport(result, request);
     }
 
     @PostMapping("/read-errors-csv")
@@ -89,14 +82,10 @@ public class ReadShowcaseController {
 
     private UploadResult<ProductReadDto> readUploadedFile(MultipartFile file) {
         String filename = file.getOriginalFilename();
-        try (var is = ExcelKitMultipartFile.open(file)) {
-            if (filename != null && filename.toLowerCase().endsWith(".csv")) {
-                return UploadResult.read("CSV", PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
-            }
-            return UploadResult.read("Excel", PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to close upload stream", e);
+        if (filename != null && filename.toLowerCase().endsWith(".csv")) {
+            return ExcelKitUpload.csv(file, is -> PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
         }
+        return ExcelKitUpload.excel(file, is -> PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
     }
 
     private ResponseEntity<?> renderReport(UploadResult<ProductReadDto> report, HttpServletRequest request) {

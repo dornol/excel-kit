@@ -40,12 +40,10 @@ JSON and a readable HTML/text summary for manual testing:
 
 ```java
 @PostMapping("/upload")
-public ResponseEntity<UploadResult<User>> upload(MultipartFile file) throws IOException {
-    try (InputStream in = ExcelKitMultipartFile.open(file)) {
-        UploadResult<User> result = UploadResult.read(
-            "Excel", userReader.build(in));
-        return ResponseEntity.ok(result);
-    }
+public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
+    UploadResult<User> result = ExcelKitUpload.excel(
+        file, in -> userReader.build(in));
+    return ResponseEntity.ok(result);
 }
 ```
 
@@ -54,21 +52,20 @@ path and convert the structured errors to CSV or Excel:
 
 ```java
 @PostMapping("/upload/errors.csv")
-public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) throws IOException {
-    try (InputStream in = ExcelKitMultipartFile.open(file)) {
-        UploadResult<User> result = UploadResult.read(
-            "Excel", userReader.build(in));
-        return ExcelKitErrorResponse.csv(result, "read-errors");
-    }
+public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) {
+    UploadResult<User> result = ExcelKitUpload.excel(
+        file, in -> userReader.build(in));
+    return ExcelKitErrorResponse.csv(result, "read-errors");
 }
 ```
 
-Schema-based empty upload templates can be streamed directly:
+Schema-based upload templates can be streamed empty or with sample rows:
 
 ```java
 @GetMapping("/template.xlsx")
 public ResponseEntity<StreamingResponseBody> excelTemplate() {
-    return ExcelKitTemplateResponse.excel(userSchema, "users-template");
+    return ExcelKitTemplateResponse.excel(
+        userSchema, "users-template", List.of(new User("Alice", 30)));
 }
 
 @GetMapping("/template.csv")

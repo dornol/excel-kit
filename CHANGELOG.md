@@ -11,11 +11,13 @@ All notable changes to this project will be documented in this file.
   `MultipartFile` upload stream adapter.
 - Spring upload result DTOs, read-error report responses, and schema-based
   template response helpers.
+- `ExcelKitUpload` helper and sample-row overloads for schema template responses.
 
 ### Changed
 
 - Example app now uses the new `excel-kit-spring` module for download responses.
 - Example read showcase now uses Spring module upload/result/error-report helpers.
+- Example schema template downloads now include sample rows.
 - Maven publish workflow now publishes and verifies `excel-kit-spring`.
 - Example write showcase endpoints are split across focused controllers.
 - Test dependency baseline updated to JUnit 6.1.1.

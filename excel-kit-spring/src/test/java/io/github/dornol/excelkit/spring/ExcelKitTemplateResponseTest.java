@@ -4,6 +4,8 @@ import io.github.dornol.excelkit.core.ExcelKitSchema;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,8 +33,30 @@ class ExcelKitTemplateResponseTest {
         assertTrue(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION).contains("template.csv"));
     }
 
+    @Test
+    void excel_acceptsSampleRows() {
+        var response = ExcelKitTemplateResponse.excel(SCHEMA, "template",
+                List.of(new Product("Notebook", 1200)));
+
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
+    void csv_acceptsSampleRows() {
+        var response = ExcelKitTemplateResponse.csv(SCHEMA, "template",
+                List.of(new Product("Notebook", 1200)));
+
+        assertEquals("text/csv; charset=UTF-8", response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
+    }
+
     static class Product {
         String name;
         Integer price;
+
+        Product(String name, Integer price) {
+            this.name = name;
+            this.price = price;
+        }
     }
 }
