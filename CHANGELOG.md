@@ -9,10 +9,13 @@ All notable changes to this project will be documented in this file.
 - Release checklist guide for version/tag/publish verification workflow.
 - `excel-kit-spring` module with Spring MVC download response helpers and
   `MultipartFile` upload stream adapter.
+- Spring upload result DTOs, read-error report responses, and schema-based
+  template response helpers.
 
 ### Changed
 
 - Example app now uses the new `excel-kit-spring` module for download responses.
+- Example read showcase now uses Spring module upload/result/error-report helpers.
 - Maven publish workflow now publishes and verifies `excel-kit-spring`.
 - Example write showcase endpoints are split across focused controllers.
 - Test dependency baseline updated to JUnit 6.1.1.
@@ -20,6 +23,7 @@ All notable changes to this project will be documented in this file.
 ### Tests
 
 - Added direct coverage for example download content-disposition headers.
+- Added Spring module tests for upload results, error reports, and template responses.
 
 ## [0.18.3] - 2026-06-29
 

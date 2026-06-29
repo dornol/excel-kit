@@ -1,13 +1,13 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
-import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
-import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.spring.ExcelKitResponse;
+import io.github.dornol.excelkit.spring.ExcelKitErrorResponse;
+import io.github.dornol.excelkit.spring.ExcelKitMultipartFile;
+import io.github.dornol.excelkit.spring.ExcelKitTemplateResponse;
+import io.github.dornol.excelkit.spring.UploadResult;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSheetInfo;
-import io.github.dornol.excelkit.excel.ExcelWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.dornol.excelkit.example.app.showcase.ReadReportFormatter.errorReportRows;
 import static io.github.dornol.excelkit.example.app.showcase.ReadReportFormatter.formatHtmlReport;
 import static io.github.dornol.excelkit.example.app.showcase.ReadReportFormatter.formatTextReport;
 
@@ -46,14 +45,7 @@ public class ReadShowcaseController {
     // ========================================================================
     @GetMapping("/schema-excel")
     public ResponseEntity<StreamingResponseBody> downloadSchemaExcel() {
-        var handler = PRODUCT_SCHEMA.excelWriter()
-                .sheetName("Schema Demo")
-                .autoFilter(true)
-                .freezeRows(1)
-                .write(ShowcaseData.sampleProducts().stream().map(ShowcaseData::toReadDto));
-
-        return ExcelKitResponse.excel("schema-excel-demo")
-                .body(handler::writeTo);
+        return ExcelKitTemplateResponse.excel(PRODUCT_SCHEMA, "schema-excel-demo");
     }
 
     // ========================================================================
@@ -61,84 +53,53 @@ public class ReadShowcaseController {
     // ========================================================================
     @PostMapping("/read-by-name-excel")
     @ResponseBody
-    public ResponseEntity<?> readByNameExcel(MultipartFile file, HttpServletRequest request) throws IOException {
-        try (InputStream is = file.getInputStream()) {
-            ReadReport report = readReport("Excel",
+    public ResponseEntity<?> readByNameExcel(MultipartFile file, HttpServletRequest request) {
+        try (var is = ExcelKitMultipartFile.open(file)) {
+            UploadResult<ProductReadDto> result = UploadResult.read("Excel",
                     PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
-            return renderReport(report, request);
+            log.info("Read by name (Excel): {} success, {} errors", result.successCount(), result.errorCount());
+            return renderReport(result, request);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to close upload stream", e);
         }
     }
 
     @PostMapping("/read-by-name-csv")
     @ResponseBody
-    public ResponseEntity<?> readByNameCsv(MultipartFile file, HttpServletRequest request) throws IOException {
-        try (InputStream is = file.getInputStream()) {
-            ReadReport report = readReport("CSV",
+    public ResponseEntity<?> readByNameCsv(MultipartFile file, HttpServletRequest request) {
+        try (var is = ExcelKitMultipartFile.open(file)) {
+            UploadResult<ProductReadDto> result = UploadResult.read("CSV",
                     PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
-            return renderReport(report, request);
+            log.info("Read by name (CSV): {} success, {} errors", result.successCount(), result.errorCount());
+            return renderReport(result, request);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to close upload stream", e);
         }
     }
 
     @PostMapping("/read-errors-csv")
-    public ResponseEntity<StreamingResponseBody> downloadReadErrorsCsv(MultipartFile file) throws IOException {
-        ReadReport report = readUploadedFile(file);
-        var handler = CsvWriter.<ErrorReportRow>create()
-                .column("fileRowNum", ErrorReportRow::fileRowNum)
-                .column("columnIndex", ErrorReportRow::columnIndex)
-                .column("headerName", ErrorReportRow::headerName)
-                .column("cellValue", ErrorReportRow::cellValue)
-                .column("message", ErrorReportRow::message)
-                .write(errorReportRows(report).stream());
-
-        return ExcelKitResponse.csv("read-errors")
-                .body(handler::writeTo);
+    public ResponseEntity<StreamingResponseBody> downloadReadErrorsCsv(MultipartFile file) {
+        return ExcelKitErrorResponse.csv(readUploadedFile(file), "read-errors");
     }
 
     @PostMapping("/read-errors-excel")
-    public ResponseEntity<StreamingResponseBody> downloadReadErrorsExcel(MultipartFile file) throws IOException {
-        ReadReport report = readUploadedFile(file);
-        var handler = ExcelWriter.<ErrorReportRow>create()
-                .sheetName("Read Errors")
-                .autoFilter(true)
-                .freezeRows(1)
-                .column("fileRowNum", ErrorReportRow::fileRowNum)
-                .column("columnIndex", ErrorReportRow::columnIndex)
-                .column("headerName", ErrorReportRow::headerName)
-                .column("cellValue", ErrorReportRow::cellValue)
-                .column("message", ErrorReportRow::message)
-                .write(errorReportRows(report).stream());
-
-        return ExcelKitResponse.excel("read-errors")
-                .body(handler::writeTo);
+    public ResponseEntity<StreamingResponseBody> downloadReadErrorsExcel(MultipartFile file) {
+        return ExcelKitErrorResponse.excel(readUploadedFile(file), "read-errors");
     }
 
-    private ReadReport readUploadedFile(MultipartFile file) throws IOException {
+    private UploadResult<ProductReadDto> readUploadedFile(MultipartFile file) {
         String filename = file.getOriginalFilename();
-        try (InputStream is = file.getInputStream()) {
+        try (var is = ExcelKitMultipartFile.open(file)) {
             if (filename != null && filename.toLowerCase().endsWith(".csv")) {
-                return readReport("CSV", PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
+                return UploadResult.read("CSV", PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
             }
-            return readReport("Excel", PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
+            return UploadResult.read("Excel", PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to close upload stream", e);
         }
     }
 
-    private ReadReport readReport(String type, AbstractReadHandler<ProductReadDto> handler) {
-        List<ProductReadDto> results = new ArrayList<>();
-        List<ReadError> errors = new ArrayList<>();
-
-        handler.read(result -> {
-            if (result.success()) {
-                results.add(result.data());
-            } else {
-                errors.add(new ReadError(result.fileRowNum(), result.messages(), result.cellErrors()));
-            }
-        });
-
-        log.info("Read by name ({}): {} success, {} errors", type, results.size(), errors.size());
-        return new ReadReport(type, results.size(), errors.size(), results, errors);
-    }
-
-    private ResponseEntity<?> renderReport(ReadReport report, HttpServletRequest request) {
+    private ResponseEntity<?> renderReport(UploadResult<ProductReadDto> report, HttpServletRequest request) {
         String accept = request.getHeader(HttpHeaders.ACCEPT);
         if (accept != null && accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
             return ResponseEntity.ok()

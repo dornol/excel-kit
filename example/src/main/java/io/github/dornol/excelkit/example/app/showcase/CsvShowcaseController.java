@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.spring.ExcelKitResponse;
+import io.github.dornol.excelkit.spring.ExcelKitTemplateResponse;
 import io.github.dornol.excelkit.csv.CsvDialect;
 import io.github.dornol.excelkit.csv.CsvQuoting;
 import io.github.dornol.excelkit.csv.CsvReader;
@@ -38,11 +39,7 @@ public class CsvShowcaseController {
     // ========================================================================
     @GetMapping("/schema-csv")
     public ResponseEntity<StreamingResponseBody> downloadSchemaCsv() {
-        var handler = PRODUCT_SCHEMA.csvWriter()
-                .write(sampleProducts().stream().map(ShowcaseData::toReadDto));
-
-        return ExcelKitResponse.csv("schema-csv-demo")
-                .body(handler::writeTo);
+        return ExcelKitTemplateResponse.csv(PRODUCT_SCHEMA, "schema-csv-demo");
     }
 
     // ========================================================================

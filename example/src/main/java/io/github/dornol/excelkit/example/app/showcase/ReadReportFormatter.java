@@ -1,17 +1,16 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
-import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
-
-import java.util.ArrayList;
-import java.util.List;
+import io.github.dornol.excelkit.spring.CellErrorResponse;
+import io.github.dornol.excelkit.spring.UploadError;
+import io.github.dornol.excelkit.spring.UploadResult;
 
 final class ReadReportFormatter {
 
     private ReadReportFormatter() {
     }
 
-    static String formatTextReport(ReadReport report) {
+    static String formatTextReport(UploadResult<ProductReadDto> report) {
         StringBuilder sb = new StringBuilder();
         sb.append("=== Name-Based %s Read Result ===\n".formatted(report.type()));
         sb.append("Success: %d rows, Errors: %d rows\n\n".formatted(report.successCount(), report.errorCount()));
@@ -23,7 +22,7 @@ final class ReadReportFormatter {
         return sb.toString();
     }
 
-    static String formatHtmlReport(ReadReport report) {
+    static String formatHtmlReport(UploadResult<ProductReadDto> report) {
         StringBuilder sb = new StringBuilder();
         sb.append("<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">")
                 .append("<title>").append(escapeHtml(report.type())).append(" Read Result</title>")
@@ -53,29 +52,13 @@ final class ReadReportFormatter {
         return sb.append("</body></html>").toString();
     }
 
-    static List<ErrorReportRow> errorReportRows(ReadReport report) {
-        List<ErrorReportRow> rows = new ArrayList<>();
-        for (ReadError error : report.errors()) {
-            if (error.cellErrors().isEmpty()) {
-                rows.add(new ErrorReportRow(error.fileRowNum(), null, null, null,
-                        String.join("; ", error.messages())));
-                continue;
-            }
-            for (CellError cell : error.cellErrors()) {
-                rows.add(new ErrorReportRow(error.fileRowNum(), cell.columnIndex(), cell.headerName(),
-                        cell.cellValue(), cell.message()));
-            }
-        }
-        return rows;
-    }
-
-    private static String formatReadError(ReadError readError) {
+    private static String formatReadError(UploadError readError) {
         StringBuilder sb = new StringBuilder();
         if (readError.fileRowNum() > 0) {
             sb.append("fileRow=").append(readError.fileRowNum()).append(": ");
         }
         if (!readError.cellErrors().isEmpty()) {
-            for (CellError error : readError.cellErrors()) {
+            for (CellErrorResponse error : readError.cellErrors()) {
                 sb.append("[column=").append(error.columnIndex());
                 if (error.headerName() != null) {
                     sb.append(", header=").append(error.headerName());

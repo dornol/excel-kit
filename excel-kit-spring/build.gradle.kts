@@ -26,6 +26,9 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.poi.ooxml)
+    testImplementation(libs.opencsv)
+    testImplementation(libs.slf4j.simple)
     testImplementation("org.springframework:spring-webmvc")
     testImplementation("org.springframework:spring-test")
     testRuntimeOnly(libs.junit.platform.launcher)

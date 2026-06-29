@@ -40,40 +40,40 @@ JSON and a readable HTML/text summary for manual testing:
 
 ```java
 @PostMapping("/upload")
-public ResponseEntity<?> upload(MultipartFile file, @RequestHeader(HttpHeaders.ACCEPT) String accept)
-        throws IOException {
-    List<RowError> errors = new ArrayList<>();
-    List<User> rows = new ArrayList<>();
-
+public ResponseEntity<UploadResult<User>> upload(MultipartFile file) throws IOException {
     try (InputStream in = ExcelKitMultipartFile.open(file)) {
-        userReader.build(in).read(rows::add, errors::add);
+        UploadResult<User> result = UploadResult.read(
+            "Excel", userReader.build(in));
+        return ResponseEntity.ok(result);
     }
-
-    if (accept.contains(MediaType.APPLICATION_JSON_VALUE)) {
-        return ResponseEntity.ok(Map.of("rows", rows, "errors", errors));
-    }
-    return ResponseEntity.ok("Success: %d rows, Errors: %d rows".formatted(rows.size(), errors.size()));
 }
 ```
 
-When users need a downloadable correction report, keep the upload parse path the
-same and write the collected `RowError.cellErrors()` into a CSV or Excel response:
+When users need a downloadable correction report, reuse the same upload parse
+path and convert the structured errors to CSV or Excel:
 
 ```java
 @PostMapping("/upload/errors.csv")
 public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) throws IOException {
-    List<RowError> errors = new ArrayList<>();
     try (InputStream in = ExcelKitMultipartFile.open(file)) {
-        userReader.build(in).read(user -> {}, errors::add);
+        UploadResult<User> result = UploadResult.read(
+            "Excel", userReader.build(in));
+        return ExcelKitErrorResponse.csv(result, "read-errors");
     }
+}
+```
 
-    CsvHandler csv = CsvWriter.<CellError>create()
-        .column("headerName", CellError::headerName)
-        .column("cellValue", CellError::cellValue)
-        .column("message", CellError::message)
-        .write(errors.stream().flatMap(error -> error.cellErrors().stream()));
+Schema-based empty upload templates can be streamed directly:
 
-    return ExcelKitResponse.csv(csv, "read-errors");
+```java
+@GetMapping("/template.xlsx")
+public ResponseEntity<StreamingResponseBody> excelTemplate() {
+    return ExcelKitTemplateResponse.excel(userSchema, "users-template");
+}
+
+@GetMapping("/template.csv")
+public ResponseEntity<StreamingResponseBody> csvTemplate() {
+    return ExcelKitTemplateResponse.csv(userSchema, "users-template");
 }
 ```
 

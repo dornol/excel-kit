@@ -184,7 +184,7 @@ class ExampleApplicationSmokeTest {
                         org.hamcrest.Matchers.containsString("text/csv")))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
                         org.hamcrest.Matchers.containsString("read-errors.csv")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("fileRowNum,columnIndex,headerName")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("rowNum,fileRowNum,columnIndex,headerName")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("not-a-number")));
     }
 
@@ -215,14 +215,16 @@ class ExampleApplicationSmokeTest {
         try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(body))) {
             DataFormatter formatter = new DataFormatter();
             Sheet sheet = workbook.getSheet("Read Errors");
-            assertEquals("fileRowNum", formatter.formatCellValue(sheet.getRow(0).getCell(0)));
-            assertEquals("columnIndex", formatter.formatCellValue(sheet.getRow(0).getCell(1)));
-            assertEquals("headerName", formatter.formatCellValue(sheet.getRow(0).getCell(2)));
-            assertEquals("cellValue", formatter.formatCellValue(sheet.getRow(0).getCell(3)));
-            assertEquals("message", formatter.formatCellValue(sheet.getRow(0).getCell(4)));
-            assertEquals("2", formatter.formatCellValue(sheet.getRow(1).getCell(0)));
-            assertEquals("Price", formatter.formatCellValue(sheet.getRow(1).getCell(2)));
-            assertEquals("not-a-number", formatter.formatCellValue(sheet.getRow(1).getCell(3)));
+            assertEquals("rowNum", formatter.formatCellValue(sheet.getRow(0).getCell(0)));
+            assertEquals("fileRowNum", formatter.formatCellValue(sheet.getRow(0).getCell(1)));
+            assertEquals("columnIndex", formatter.formatCellValue(sheet.getRow(0).getCell(2)));
+            assertEquals("headerName", formatter.formatCellValue(sheet.getRow(0).getCell(3)));
+            assertEquals("cellValue", formatter.formatCellValue(sheet.getRow(0).getCell(4)));
+            assertEquals("message", formatter.formatCellValue(sheet.getRow(0).getCell(5)));
+            assertEquals("1", formatter.formatCellValue(sheet.getRow(1).getCell(0)));
+            assertEquals("2", formatter.formatCellValue(sheet.getRow(1).getCell(1)));
+            assertEquals("Price", formatter.formatCellValue(sheet.getRow(1).getCell(3)));
+            assertEquals("not-a-number", formatter.formatCellValue(sheet.getRow(1).getCell(4)));
         }
     }
 

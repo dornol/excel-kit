@@ -21,7 +21,7 @@ infrastructure concerns.
 | [Multi-Sheet](multi-sheet.md) | ExcelWorkbook, auto-rollover, tab color | `ExcelWorkbook.create()`, `maxRows()`, `tabColor()` |
 | [Protection](protection.md) | Sheet/workbook protection, password encryption | `protectSheet()`, `protectWorkbook()`, `password()` |
 | [CSV](csv.md) | CSV write/read, dialect, quoting | `CsvWriter.create()`, `CsvReader.setter()`, `dialect()` |
-| [Spring](spring.md) | MVC, WebFlux integration | `DownloadResponse.excel()`, `StreamingResponseBody` |
+| [Spring](spring.md) | MVC, WebFlux integration | `ExcelKitResponse.excel()`, `UploadResult` |
 | [Reference](reference.md) | Data types, formats, schema, exceptions, notes | `ExcelDataType`, `ExcelDataFormat`, `ExcelKitSchema` |
 | [Release](release.md) | Release preparation and verification | `verify-maven-central.sh`, GitHub Actions |
 
@@ -141,7 +141,7 @@ CsvReader.<Person>mapping(row -> new Person(
 @GetMapping("/download")
 public ResponseEntity<StreamingResponseBody> download() {
     ExcelHandler handler = writer.write(dataStream);
-    return DownloadResponse.excel(handler, "report");
+    return ExcelKitResponse.excel(handler, "report");
 }
 ```
 
