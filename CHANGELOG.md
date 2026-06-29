@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Manual Maven Central visibility verification workflow backed by a reusable
+  `scripts/verify-maven-central.sh` script.
+- README installation examples now show the runtime dependencies that
+  applications should declare because library integrations remain `compileOnly`.
+
+### Changed
+
+- Maven publish workflow now reuses the same Maven Central visibility script as
+  manual verification.
+- Example app static CSS/JavaScript is split out of `index.html`.
+- Example app read report rendering is separated from the read showcase
+  controller.
+- Example app download response helpers are unified under `DownloadResponse`.
+- Release and publish workflows now use JDK 21 to match the project toolchain.
+- CI workflow permissions now explicitly include read-only repository contents
+  access.
+
+### Tests
+
+- Example smoke tests now verify served static assets and inspect the generated
+  XLSX read-error report contents.
+
 ## [0.18.2] - 2026-06-24
 
 ### Added

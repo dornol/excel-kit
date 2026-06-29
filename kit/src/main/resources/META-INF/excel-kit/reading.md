@@ -12,7 +12,7 @@ new ExcelReader<>(User::new, validator)  // validator is optional (null to skip)
     .build(inputStream)
     .read(result -> {
         if (result.success()) { User u = result.data(); }
-        else { System.out.println(result.messages()); }
+        else { log.warn("Read failed: {}", result.messages()); }
     });
 ```
 

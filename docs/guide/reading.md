@@ -13,7 +13,7 @@ ExcelReader.setter(User::new)
         if (result.success()) {
             User u = result.data();
         } else {
-            System.out.println(result.messages());
+            log.warn("Read failed: {}", result.messages());
         }
     });
 ```
@@ -273,7 +273,7 @@ ExcelReader.setter(MyDto::new)
 
 ```java
 List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(inputStream);
-sheets.forEach(s -> System.out.println(s.index() + ": " + s.name()));
+sheets.forEach(s -> log.info("{}: {}", s.index(), s.name()));
 
 List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 ```

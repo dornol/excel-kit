@@ -5,7 +5,13 @@ Not annotation-based — columns are defined programmatically via builder chains
 
 - Group: `io.github.dornol`
 - Artifact: `excel-kit`
-- Requires: Java 17+, Apache POI (compileOnly)
+- Requires: Java 17+
+- Runtime dependencies are intentionally declared as `compileOnly` by the
+  library so applications can control versions:
+  - `org.apache.poi:poi-ooxml` for Excel read/write
+  - `com.opencsv:opencsv` for CSV read/write
+  - `org.slf4j:slf4j-api` for logging
+  - `jakarta.validation:jakarta.validation-api` for optional Bean Validation
 - GitHub: https://github.com/dornol/excel-kit
 - Javadoc: https://dornol.github.io/excel-kit/
 
