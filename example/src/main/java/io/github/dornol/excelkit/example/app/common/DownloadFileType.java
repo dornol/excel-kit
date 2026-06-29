@@ -25,7 +25,7 @@ public enum DownloadFileType {
     }
 
     public String getContentDisposition(String filename) {
-        String csvFilename = filename + "." + extension;
+        String csvFilename = filename.endsWith("." + extension) ? filename : filename + "." + extension;
 
         // ASCII fallback (only ASCII characters inside quotes)
         String fallback = csvFilename.replaceAll("[^\\x20-\\x7E]", "_");

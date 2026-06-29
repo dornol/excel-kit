@@ -3,8 +3,7 @@ package io.github.dornol.excelkit.example.app.showcase;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.example.app.common.DownloadFileType;
-import io.github.dornol.excelkit.example.app.common.DownloadUtil;
+import io.github.dornol.excelkit.example.app.common.DownloadResponse;
 import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSheetInfo;
@@ -53,7 +52,7 @@ public class ReadShowcaseController {
                 .freezeRows(1)
                 .write(ShowcaseData.sampleProducts().stream().map(ShowcaseData::toReadDto));
 
-        return DownloadUtil.builder("schema-excel-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("schema-excel-demo")
                 .body(handler::writeTo);
     }
 
@@ -91,7 +90,7 @@ public class ReadShowcaseController {
                 .column("message", ErrorReportRow::message)
                 .write(errorReportRows(report).stream());
 
-        return DownloadUtil.builder("read-errors", DownloadFileType.CSV)
+        return DownloadResponse.csv("read-errors")
                 .body(handler::writeTo);
     }
 
@@ -109,7 +108,7 @@ public class ReadShowcaseController {
                 .column("message", ErrorReportRow::message)
                 .write(errorReportRows(report).stream());
 
-        return DownloadUtil.builder("read-errors", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("read-errors")
                 .body(handler::writeTo);
     }
 

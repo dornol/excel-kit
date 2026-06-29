@@ -4,7 +4,7 @@
 
 ## Spring MVC
 
-The `example` module includes `ExcelResponse` and `CsvResponse` helpers that wrap
+The `example` module includes a `DownloadResponse` helper that wraps
 handlers into `ResponseEntity<StreamingResponseBody>` with proper Content-Type,
 Content-Disposition (including RFC 5987 Korean filename encoding), and Cache-Control.
 
@@ -12,20 +12,20 @@ Content-Disposition (including RFC 5987 Korean filename encoding), and Cache-Con
 @GetMapping("/download")
 public ResponseEntity<StreamingResponseBody> download() {
     ExcelHandler handler = writer.write(dataStream);
-    return ExcelResponse.of(handler, "report");
+    return DownloadResponse.excel(handler, "report");
 }
 
 @GetMapping("/download-csv")
 public ResponseEntity<StreamingResponseBody> downloadCsv() {
     CsvHandler handler = csvWriter.write(dataStream);
-    return CsvResponse.of(handler, "report");
+    return DownloadResponse.csv(handler, "report");
 }
 
 // Password-encrypted
 @GetMapping("/download-encrypted")
 public ResponseEntity<StreamingResponseBody> downloadEncrypted() {
     ExcelHandler handler = writer.password("P@ssw0rd!").write(dataStream);
-    return ExcelResponse.of(handler, "secret");
+    return DownloadResponse.excel(handler, "secret");
 }
 ```
 
@@ -67,7 +67,7 @@ public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) thr
         .column("message", CellError::message)
         .write(errors.stream().flatMap(error -> error.cellErrors().stream()));
 
-    return CsvResponse.of(csv, "read-errors");
+    return DownloadResponse.csv(csv, "read-errors");
 }
 ```
 

@@ -25,6 +25,13 @@ ExcelWriter.<User>create()
 **Gradle**
 ```kotlin
 implementation("io.github.dornol:excel-kit:0.18.2")
+
+// Add the runtime pieces you use. excel-kit keeps these compileOnly so
+// applications can control versions.
+implementation("org.apache.poi:poi-ooxml:5.5.1")      // Excel read/write
+implementation("com.opencsv:opencsv:5.12.0")          // CSV read/write
+implementation("org.slf4j:slf4j-api:2.0.18")          // logging facade
+implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Bean Validation
 ```
 
 **Maven**
@@ -33,6 +40,26 @@ implementation("io.github.dornol:excel-kit:0.18.2")
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
   <version>0.18.2</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.poi</groupId>
+  <artifactId>poi-ooxml</artifactId>
+  <version>5.5.1</version>
+</dependency>
+<dependency>
+  <groupId>com.opencsv</groupId>
+  <artifactId>opencsv</artifactId>
+  <version>5.12.0</version>
+</dependency>
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-api</artifactId>
+  <version>2.0.18</version>
+</dependency>
+<dependency>
+  <groupId>jakarta.validation</groupId>
+  <artifactId>jakarta.validation-api</artifactId>
+  <version>3.1.1</version>
 </dependency>
 ```
 

@@ -1,8 +1,7 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
-import io.github.dornol.excelkit.example.app.common.DownloadFileType;
-import io.github.dornol.excelkit.example.app.common.DownloadUtil;
+import io.github.dornol.excelkit.example.app.common.DownloadResponse;
 import io.github.dornol.excelkit.excel.*;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
@@ -74,7 +73,7 @@ public class WriteShowcaseController {
                 })
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("formula-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("formula-demo")
                 .body(handler::writeTo);
     }
 
@@ -93,7 +92,7 @@ public class WriteShowcaseController {
                         cfg -> cfg.type(ExcelDataType.HYPERLINK))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("hyperlink-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("hyperlink-demo")
                 .body(handler::writeTo);
     }
 
@@ -137,7 +136,7 @@ public class WriteShowcaseController {
                     ));
 
             var handler = wb.finish();
-            return DownloadUtil.builder("multi-sheet-demo", DownloadFileType.EXCEL)
+            return DownloadResponse.excel("multi-sheet-demo")
                     .body(handler::writeTo);
         }
     }
@@ -173,7 +172,7 @@ public class WriteShowcaseController {
                         ((Number) value).doubleValue() >= 0.2 ? ExcelColor.LIGHT_PURPLE : null))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("cell-color-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("cell-color-demo")
                 .body(handler::writeTo);
     }
 
@@ -206,7 +205,7 @@ public class WriteShowcaseController {
                         cfg -> cfg.type(ExcelDataType.HYPERLINK).group("Link"))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("group-header-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("group-header-demo")
                 .body(handler::writeTo);
     }
 
@@ -230,7 +229,7 @@ public class WriteShowcaseController {
                     .write(sampleProducts().stream());
 
             var handler = wb.finish();
-            return DownloadUtil.builder("rollover-demo", DownloadFileType.EXCEL)
+            return DownloadResponse.excel("rollover-demo")
                     .body(handler::writeTo);
         }
     }
@@ -253,7 +252,7 @@ public class WriteShowcaseController {
                 .column("Summary", p -> "%s (%s)".formatted(p.name(), p.category()))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("outline-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("outline-demo")
                 .body(handler::writeTo);
     }
 
@@ -347,7 +346,7 @@ public class WriteShowcaseController {
                 })
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("full-showcase", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("full-showcase")
                 .body(handler::writeTo);
     }
 
@@ -370,7 +369,7 @@ public class WriteShowcaseController {
                 .column("No Border", p -> "text", cfg -> cfg.border(ExcelBorderStyle.NONE))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("border-style-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("border-style-demo")
                 .body(handler::writeTo);
     }
 
@@ -395,7 +394,7 @@ public class WriteShowcaseController {
                     .type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("cell-comment-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("cell-comment-demo")
                 .body(handler::writeTo);
     }
 
@@ -421,7 +420,7 @@ public class WriteShowcaseController {
                     .headerComment("Discount rate (0.0 - 1.0)"))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("header-comment-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("header-comment-demo")
                 .body(handler::writeTo);
     }
 
@@ -447,7 +446,7 @@ public class WriteShowcaseController {
                         .group("Financial"))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("group-header-multi-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("group-header-multi-demo")
                 .body(handler::writeTo);
     }
 
@@ -472,7 +471,7 @@ public class WriteShowcaseController {
                     .headerComment(ExcelCellComment.of("KRW, no decimals").size(3, 2)))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("comment-size-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("comment-size-demo")
                 .body(handler::writeTo);
     }
 
@@ -501,7 +500,7 @@ public class WriteShowcaseController {
                         .greaterThanOrEqual("0.2", ExcelColor.LIGHT_PURPLE))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("conditional-format-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("conditional-format-demo")
                 .body(handler::writeTo);
     }
 
@@ -530,7 +529,7 @@ public class WriteShowcaseController {
                 .protectSheet("1234")
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("sheet-protection-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("sheet-protection-demo")
                 .body(handler::writeTo);
     }
 
@@ -552,7 +551,7 @@ public class WriteShowcaseController {
                         .valueColumn(2, "Quantity"))
                 .write(sampleProducts().stream().limit(10));
 
-        return DownloadUtil.builder("chart-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("chart-demo")
                 .body(handler::writeTo);
     }
 
@@ -576,7 +575,7 @@ public class WriteShowcaseController {
         var handler = ExcelWriter.forMap("Name", "Category", "Price", "Quantity", "Discount")
                 .write(maps);
 
-        return DownloadUtil.builder("map-writer-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("map-writer-demo")
                 .body(handler::writeTo);
     }
 
@@ -609,7 +608,7 @@ public class WriteShowcaseController {
                     .write(sampleProducts().stream());
 
             var handler = wb.finish();
-            return DownloadUtil.builder("workbook-protection-demo", DownloadFileType.EXCEL)
+            return DownloadResponse.excel("workbook-protection-demo")
                     .body(handler::writeTo);
         }
     }
@@ -632,7 +631,7 @@ public class WriteShowcaseController {
                 .column("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("header-font-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("header-font-demo")
                 .body(handler::writeTo);
     }
 
@@ -662,7 +661,7 @@ public class WriteShowcaseController {
                         .type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("header-font-color-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("header-font-color-demo")
                 .body(handler::writeTo);
     }
 
@@ -691,7 +690,7 @@ public class WriteShowcaseController {
                 .column("Discount", p -> p.discount(), c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("default-style-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("default-style-demo")
                 .body(handler::writeTo);
     }
 
@@ -713,7 +712,7 @@ public class WriteShowcaseController {
                         .average("Price").average("Quantity"))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("summary-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("summary-demo")
                 .body(handler::writeTo);
     }
 
@@ -744,7 +743,7 @@ public class WriteShowcaseController {
                     .write(sampleProducts().stream());
 
             var handler = wb.finish();
-            return DownloadUtil.builder("named-range-demo", DownloadFileType.EXCEL)
+            return DownloadResponse.excel("named-range-demo")
                     .body(handler::writeTo);
         }
     }
@@ -768,7 +767,7 @@ public class WriteShowcaseController {
                 .conditionalFormatting(cf -> cf.columns(3).iconSet(ExcelConditionalRule.IconSetType.ARROWS_3))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("data-bar-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("data-bar-demo")
                 .body(handler::writeTo);
     }
 
@@ -788,7 +787,7 @@ public class WriteShowcaseController {
                 .column("Discount", ProductDto::discount, c -> c.type(ExcelDataType.DOUBLE_PERCENT))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("freeze-cols-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("freeze-cols-demo")
                 .body(handler::writeTo);
     }
 
@@ -808,7 +807,7 @@ public class WriteShowcaseController {
                 .write(sampleProducts().stream());
 
         String password = "demo123";
-        return DownloadUtil.builder("late-password-demo", DownloadFileType.EXCEL)
+        return DownloadResponse.excel("late-password-demo")
                 .body(os -> handler.writeTo(os, password));
     }
 

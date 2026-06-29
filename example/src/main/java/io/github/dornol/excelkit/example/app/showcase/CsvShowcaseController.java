@@ -1,8 +1,7 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
-import io.github.dornol.excelkit.example.app.common.DownloadFileType;
-import io.github.dornol.excelkit.example.app.common.DownloadUtil;
+import io.github.dornol.excelkit.example.app.common.DownloadResponse;
 import io.github.dornol.excelkit.csv.CsvDialect;
 import io.github.dornol.excelkit.csv.CsvQuoting;
 import io.github.dornol.excelkit.csv.CsvReader;
@@ -42,7 +41,7 @@ public class CsvShowcaseController {
         var handler = PRODUCT_SCHEMA.csvWriter()
                 .write(sampleProducts().stream().map(ShowcaseData::toReadDto));
 
-        return DownloadUtil.builder("schema-csv-demo", DownloadFileType.CSV)
+        return DownloadResponse.csv("schema-csv-demo")
                 .body(handler::writeTo);
     }
 
@@ -63,7 +62,7 @@ public class CsvShowcaseController {
                         new String[]{"Normal Text", "Hello World"}
                 ));
 
-        return DownloadUtil.builder("csv-defense-off", DownloadFileType.CSV)
+        return DownloadResponse.csv("csv-defense-off")
                 .body(handler::writeTo);
     }
 
@@ -84,7 +83,7 @@ public class CsvShowcaseController {
                         new String[]{"Normal Text", "Hello World"}
                 ));
 
-        return DownloadUtil.builder("csv-defense-on", DownloadFileType.CSV)
+        return DownloadResponse.csv("csv-defense-on")
                 .body(handler::writeTo);
     }
 
@@ -124,7 +123,7 @@ public class CsvShowcaseController {
                 .column("Quantity", (ProductDto p) -> String.valueOf(p.quantity()))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("tsv-demo", DownloadFileType.CSV)
+        return DownloadResponse.csv("tsv-demo")
                 .body(handler::writeTo);
     }
 
@@ -141,7 +140,7 @@ public class CsvShowcaseController {
                 .column("Quantity", (ProductDto p) -> String.valueOf(p.quantity()))
                 .write(sampleProducts().stream());
 
-        return DownloadUtil.builder("quoted-csv-demo", DownloadFileType.CSV)
+        return DownloadResponse.csv("quoted-csv-demo")
                 .body(handler::writeTo);
     }
 }
