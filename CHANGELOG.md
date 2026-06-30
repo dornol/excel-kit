@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.18.4] - 2026-06-30
+
 ### Added
 
 - Release checklist guide for version/tag/publish verification workflow.
