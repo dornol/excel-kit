@@ -22,7 +22,8 @@ public final class ExcelKitUpload {
         try (InputStream inputStream = ExcelKitMultipartFile.open(file)) {
             return UploadResult.read(type, handlerFactory.apply(inputStream));
         } catch (IOException e) {
-            throw new ExcelKitUploadException("Failed to close upload file: " + file.getOriginalFilename(), e);
+            throw new ExcelKitUploadException(
+                    "Failed to close upload file: " + ExcelKitMultipartFile.safeOriginalFilename(file), e);
         }
     }
 

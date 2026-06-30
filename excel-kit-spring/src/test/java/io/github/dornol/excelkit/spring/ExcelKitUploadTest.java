@@ -3,10 +3,15 @@ package io.github.dornol.excelkit.spring;
 import io.github.dornol.excelkit.csv.CsvReader;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ExcelKitUploadTest {
 
@@ -40,8 +45,55 @@ class ExcelKitUploadTest {
         assertEquals(0, result.errorCount());
     }
 
+    @Test
+    void read_sanitizesFilenameWhenUploadStreamCloseFails() {
+        MultipartFile file = new MockMultipartFile(
+                "file", "..\\bad/\r\nname.csv", "text/csv", new byte[]{1}) {
+            @Override
+            public InputStream getInputStream() {
+                return new FailOnSecondCloseInputStream("Name\nAlice\n".getBytes(StandardCharsets.UTF_8));
+            }
+        };
+
+        ExcelKitUploadException exception = assertThrows(ExcelKitUploadException.class,
+                () -> ExcelKitUpload.csv(file, inputStream -> CsvReader.setter(Product::new)
+                        .column("Name", (p, cell) -> p.name = cell.asString())
+                        .build(inputStream)));
+
+        assertFalse(exception.getMessage().contains("\r"));
+        assertFalse(exception.getMessage().contains("\n"));
+        assertFalse(exception.getMessage().contains("\\"));
+        assertFalse(exception.getMessage().contains("/"));
+    }
+
     static class Product {
         String name;
         Integer price;
+    }
+
+    private static final class FailOnSecondCloseInputStream extends InputStream {
+        private final byte[] data;
+        private int index;
+        private int closeCount;
+
+        private FailOnSecondCloseInputStream(byte[] data) {
+            this.data = data;
+        }
+
+        @Override
+        public int read() {
+            if (index >= data.length) {
+                return -1;
+            }
+            return data[index++] & 0xFF;
+        }
+
+        @Override
+        public void close() throws IOException {
+            closeCount++;
+            if (closeCount > 1) {
+                throw new IOException("close failed");
+            }
+        }
     }
 }

@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - Spring upload result DTOs, read-error report responses, and schema-based
   template response helpers.
 - `ExcelKitUpload` helper and sample-row overloads for schema template responses.
+- Spring upload validation helpers for max file size and Excel/CSV filename
+  extension checks.
 
 ### Changed
 
@@ -21,11 +23,17 @@ All notable changes to this project will be documented in this file.
 - Maven publish workflow now publishes and verifies `excel-kit-spring`.
 - Example write showcase endpoints are split across focused controllers.
 - Test dependency baseline updated to JUnit 6.1.1.
+- Spring download filenames are sanitized before being written to
+  `Content-Disposition` headers.
+- `ExcelImage.fromUrl` now accepts only HTTP(S), applies a 10 MiB default
+  download limit, and offers a `fromUrl(url, maxBytes)` overload.
 
 ### Tests
 
 - Added direct coverage for example download content-disposition headers.
 - Added Spring module tests for upload results, error reports, and template responses.
+- Added security-focused tests for download filename sanitization and bounded
+  URL image downloads.
 
 ## [0.18.3] - 2026-06-29
 

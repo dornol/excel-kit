@@ -71,7 +71,12 @@ byte[] imageBytes = Files.readAllBytes(Path.of("logo.png"));
 .column("Photo", p -> ExcelImage.fromUrl(p.getPhotoUrl()), c -> c.type(ExcelDataType.IMAGE))
 ```
 
-Factory methods: `ExcelImage.png(byte[])`, `ExcelImage.jpeg(byte[])`, `ExcelImage.fromUrl(String)`
+`fromUrl` accepts only HTTP(S), uses 10-second timeouts, and limits downloads
+to 10 MiB by default. Use `ExcelImage.fromUrl(url, maxBytes)` for a stricter
+limit. Validate hosts yourself when URLs come from untrusted users.
+
+Factory methods: `ExcelImage.png(byte[])`, `ExcelImage.jpeg(byte[])`, `ExcelImage.fromUrl(String)`,
+`ExcelImage.fromUrl(String, int)`
 
 ## Cell Comments (Notes)
 

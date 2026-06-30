@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.util.Locale;
 
 /**
  * Represents image data to be embedded in an Excel cell.
@@ -25,6 +26,10 @@ import java.net.URI;
  * @since 0.6.0
  */
 public class ExcelImage {
+    /**
+     * Default upper bound for images downloaded via {@link #fromUrl(String)}.
+     */
+    public static final int DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
     private final byte[] data;
     private final int imageType;
@@ -69,7 +74,10 @@ public class ExcelImage {
      * Downloads an image from a URL and creates an ExcelImage.
      * <p>
      * The image type is auto-detected from the URL extension (defaults to PNG).
-     * Uses a 10-second connect/read timeout.
+     * Uses a 10-second connect/read timeout and a 10 MiB download limit.
+     * Only {@code http} and {@code https} URLs are accepted. If URLs come from
+     * untrusted input, callers should still validate the host against their own
+     * allow-list before calling this method.
      *
      * <pre>{@code
      * writer.column("Photo", user -> ExcelImage.fromUrl(user.getPhotoUrl()),
@@ -81,18 +89,43 @@ public class ExcelImage {
      * @throws UncheckedIOException if the download fails
      */
     public static ExcelImage fromUrl(String url) {
+        return fromUrl(url, DEFAULT_MAX_IMAGE_BYTES);
+    }
+
+    /**
+     * Downloads an image from a URL with a caller-provided byte limit.
+     *
+     * @param url      the image URL
+     * @param maxBytes maximum number of bytes to read
+     * @return an ExcelImage with the downloaded data
+     * @throws IllegalArgumentException if the URL scheme is unsupported or the limit is invalid
+     * @throws UncheckedIOException     if the download fails
+     */
+    public static ExcelImage fromUrl(String url, int maxBytes) {
+        if (maxBytes < 1 || maxBytes == Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("maxBytes must be between 1 and " + (Integer.MAX_VALUE - 1));
+        }
         try {
-            var conn = URI.create(url).toURL().openConnection();
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            if (scheme == null || !isHttpScheme(scheme)) {
+                throw new IllegalArgumentException("Only http and https image URLs are supported");
+            }
+            var conn = uri.toURL().openConnection();
             conn.setConnectTimeout(10_000);
             conn.setReadTimeout(10_000);
+            long contentLength = conn.getContentLengthLong();
+            if (contentLength > maxBytes) {
+                throw new IOException("Image exceeds maximum download size");
+            }
             byte[] data;
             try (InputStream is = conn.getInputStream()) {
-                data = is.readAllBytes();
+                data = readBounded(is, maxBytes);
             }
             int type = detectImageType(url, data);
             return new ExcelImage(data, type);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to download image from: " + url, e);
+            throw new UncheckedIOException("Failed to download image", e);
         }
     }
 
@@ -141,7 +174,7 @@ public class ExcelImage {
     }
 
     private static int detectImageType(String url, byte[] data) {
-        String lower = url.toLowerCase(java.util.Locale.ROOT);
+        String lower = url.toLowerCase(Locale.ROOT);
         if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
             return Workbook.PICTURE_TYPE_JPEG;
         }
@@ -154,5 +187,18 @@ public class ExcelImage {
         }
         // Default to PNG
         return Workbook.PICTURE_TYPE_PNG;
+    }
+
+    private static boolean isHttpScheme(String scheme) {
+        String normalized = scheme.toLowerCase(Locale.ROOT);
+        return normalized.equals("http") || normalized.equals("https");
+    }
+
+    private static byte[] readBounded(InputStream inputStream, int maxBytes) throws IOException {
+        byte[] data = inputStream.readNBytes(maxBytes + 1);
+        if (data.length > maxBytes) {
+            throw new IOException("Image exceeds maximum download size");
+        }
+        return data;
     }
 }

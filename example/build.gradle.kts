@@ -10,6 +10,8 @@ repositories {
     mavenCentral()
 }
 
+extra["tomcat.version"] = "11.0.23"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")

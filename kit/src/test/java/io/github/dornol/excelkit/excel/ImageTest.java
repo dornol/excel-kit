@@ -5,10 +5,13 @@ import org.apache.poi.xssf.usermodel.XSSFPictureData;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
+import com.sun.net.httpserver.HttpServer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.stream.Stream;
+import java.net.InetSocketAddress;
+import java.io.UncheckedIOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -73,6 +76,38 @@ class ImageTest {
     }
 
     @Test
+    void excelImage_fromUrl_rejectsNonHttpScheme() {
+        assertThrows(IllegalArgumentException.class, () -> ExcelImage.fromUrl("file:///tmp/image.png"));
+    }
+
+    @Test
+    void excelImage_fromUrl_downloadsHttpImageWithinLimit() throws IOException {
+        HttpServer server = startImageServer("/image.png", TINY_PNG);
+        try {
+            String url = "http://localhost:" + server.getAddress().getPort() + "/image.png";
+
+            ExcelImage image = ExcelImage.fromUrl(url, 1024);
+
+            assertEquals(Workbook.PICTURE_TYPE_PNG, image.imageType());
+            assertArrayEquals(TINY_PNG, image.data());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void excelImage_fromUrl_rejectsImageOverLimit() throws IOException {
+        HttpServer server = startImageServer("/image.png", TINY_PNG);
+        try {
+            String url = "http://localhost:" + server.getAddress().getPort() + "/image.png";
+
+            assertThrows(UncheckedIOException.class, () -> ExcelImage.fromUrl(url, 4));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     void image_nonImageValue_shouldFallbackToString() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<String>create()
@@ -83,5 +118,17 @@ class ImageTest {
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
             assertEquals("not-an-image", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
         }
+    }
+
+    private static HttpServer startImageServer(String path, byte[] response) throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext(path, exchange -> {
+            exchange.sendResponseHeaders(200, response.length);
+            try (var out = exchange.getResponseBody()) {
+                out.write(response);
+            }
+        });
+        server.start();
+        return server;
     }
 }

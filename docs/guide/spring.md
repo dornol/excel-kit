@@ -47,6 +47,19 @@ public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
 }
 ```
 
+Validate size and filename extension before opening uploads:
+
+```java
+@PostMapping("/upload")
+public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
+    MultipartFile checked = ExcelKitMultipartFile.requireSizeAtMost(
+        ExcelKitMultipartFile.requireExcelOrCsv(file), 5 * 1024 * 1024);
+
+    return ResponseEntity.ok(ExcelKitUpload.excel(
+        checked, in -> userReader.build(in)));
+}
+```
+
 When users need a downloadable correction report, reuse the same upload parse
 path and convert the structured errors to CSV or Excel:
 
