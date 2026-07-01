@@ -15,6 +15,7 @@ import java.util.List;
  *                 {@code null} for validation-only failures
  * @param fileRowNum 1-based physical row number in the source file, or {@code -1} if unknown
  * @param cellErrors structured cell-level errors, if available
+ * @param rawValues raw source row values, if available
  *
  * @author dhkim
  * @since 2025-07-19
@@ -25,10 +26,17 @@ public record ReadResult<T>(
         @Nullable List<String> messages,
         @Nullable Throwable cause,
         long fileRowNum,
-        List<CellError> cellErrors
+        List<CellError> cellErrors,
+        List<String> rawValues
 ) {
     public ReadResult {
         cellErrors = cellErrors == null ? List.of() : List.copyOf(cellErrors);
+        rawValues = rawValues == null ? List.of() : List.copyOf(rawValues);
+    }
+
+    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
+                      @Nullable Throwable cause, long fileRowNum, List<CellError> cellErrors) {
+        this(data, success, messages, cause, fileRowNum, cellErrors, List.of());
     }
 
     /**

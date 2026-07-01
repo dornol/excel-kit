@@ -102,9 +102,16 @@ public class ExcelColumn<T> {
      * @return the cell value, or {@code null} if the function threw an exception
      */
     @Nullable Object applyFunction(T rowData, Cursor cursor) {
+        return applyFunction(rowData, cursor, ExcelWriteErrorPolicy.LENIENT);
+    }
+
+    @Nullable Object applyFunction(T rowData, Cursor cursor, ExcelWriteErrorPolicy policy) {
         try {
             return function.apply(rowData, cursor);
         } catch (RuntimeException e) {
+            if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
+                throw new ExcelWriteException("Failed to extract value for column '" + name + "'", e);
+            }
             log.error("applyFunction exception caught for column '{}': row={}, cursor={}", name, rowData, cursor, e);
             return null;
         }
@@ -134,6 +141,10 @@ public class ExcelColumn<T> {
      * Writes a value into a given cell using the column's setter logic.
      */
     void setColumnData(SXSSFCell cell, @Nullable Object columnData) {
+        setColumnData(cell, columnData, ExcelWriteErrorPolicy.LENIENT);
+    }
+
+    void setColumnData(SXSSFCell cell, @Nullable Object columnData, ExcelWriteErrorPolicy policy) {
         if (columnData == null) {
             if (nullValue != null) {
                 columnData = nullValue;
@@ -145,6 +156,9 @@ public class ExcelColumn<T> {
         try {
             this.columnSetter.set(cell, columnData);
         } catch (RuntimeException e) {
+            if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
+                throw new ExcelWriteException("Failed to write cell value for column '" + name + "'", e);
+            }
             log.warn("Failed to set cell value for column '{}': expected type mismatch (value={})", name, columnData, e);
             cell.setCellValue(String.valueOf(columnData));
         }

@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.spring;
 
 import io.github.dornol.excelkit.csv.CsvReader;
+import io.github.dornol.excelkit.core.ExcelKitSchema;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,6 +44,22 @@ class ExcelKitUploadTest {
         assertEquals("Products", result.type());
         assertEquals(1, result.successCount());
         assertEquals(0, result.errorCount());
+    }
+
+    @Test
+    void csv_schemaShortcut_opensMultipartFileAndCollectsUploadResult() {
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv", "text/csv",
+                "Name,Price\nNotebook,1200\n".getBytes(StandardCharsets.UTF_8));
+        ExcelKitSchema<Product> schema = ExcelKitSchema.<Product>builder()
+                .column("Name", p -> p.name, (p, cell) -> p.name = cell.asString())
+                .column("Price", p -> p.price, (p, cell) -> p.price = cell.asInt())
+                .build();
+
+        UploadResult<Product> result = ExcelKitUpload.csv(file, schema, Product::new);
+
+        assertEquals("CSV", result.type());
+        assertEquals(1, result.successCount());
+        assertEquals("Notebook", result.rows().getFirst().name);
     }
 
     @Test

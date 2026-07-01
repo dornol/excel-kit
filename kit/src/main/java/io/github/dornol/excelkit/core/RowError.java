@@ -18,6 +18,7 @@ import java.util.List;
  * @param cause     the underlying exception for mapping/conversion failures;
  *                  {@code null} for validation-only failures
  * @param cellErrors structured cell-level errors, if available
+ * @param rawValues raw source row values, if available
  *
  * @author dhkim
  * @since 0.16.12
@@ -28,10 +29,17 @@ public record RowError(
         Type type,
         List<String> messages,
         @Nullable Throwable cause,
-        List<CellError> cellErrors
+        List<CellError> cellErrors,
+        List<String> rawValues
 ) {
     public RowError {
         cellErrors = cellErrors == null ? List.of() : List.copyOf(cellErrors);
+        rawValues = rawValues == null ? List.of() : List.copyOf(rawValues);
+    }
+
+    public RowError(long rowNum, long fileRowNum, Type type, List<String> messages,
+                    @Nullable Throwable cause, List<CellError> cellErrors) {
+        this(rowNum, fileRowNum, type, messages, cause, cellErrors, List.of());
     }
 
     /**

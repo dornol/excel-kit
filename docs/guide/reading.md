@@ -256,6 +256,14 @@ ExcelReader.configureLargeFileSupport();  // call once at startup; JVM-global
 reader.onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count));
 ```
 
+**Row guards and blank rows:**
+```java
+reader
+    .skipBlankRows()
+    .stopAtBlankRows(3)
+    .maxRows(100_000);
+```
+
 **Percentage progress with `countRows()`:**
 ```java
 ExcelReader.setter(MyDto::new)
@@ -316,6 +324,19 @@ CellData.resetDateFormats();
 **Number parsing locale:**
 ```java
 CellData.setDefaultLocale(Locale.US);  // default: Locale.KOREA
+```
+
+Prefer reader-scoped conversion settings in server applications:
+
+```java
+CsvReader.<Order>mapping(row -> new Order(
+        row.get("Ordered At").asLocalDate(),
+        row.get("Amount").asBigDecimal()))
+    .cellConversion(c -> c
+        .locale(Locale.GERMANY)
+        .addDateFormat("dd.MM.yyyy"))
+    .build(inputStream)
+    .read(result -> { ... });
 ```
 
 ## CSV Reading

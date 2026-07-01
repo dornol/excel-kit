@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-07-01
+
+### Added
+
+- Reader-scoped `CellConversionConfig` via `cellConversion(...)` on Excel and
+  CSV readers for locale/date parsing without mutating global `CellData` state.
+- `ExcelWriteErrorPolicy` with `writeErrorPolicy(FAIL_FAST)` for aborting Excel
+  writes on value extraction or cell type write failures.
+- CSV reader parser options for quote character, escape character, strict quotes,
+  and leading whitespace handling.
+- Schema convenience APIs for Excel writer init options and validator-free
+  schema readers.
+- Schema-level reader/writer defaults for strict headers, duplicate header
+  policy, cell conversion, row limits, blank-row handling, and Excel write
+  error policy.
+- Spring upload shortcuts for schema-backed Excel/CSV uploads.
+- Spring upload content validation helper `requireExcelOrCsvContent(...)`.
+- Reader row guards via `maxRows(...)`, `skipBlankRows(...)`, and
+  `stopAtBlankRows(...)`.
+- Raw source row values on read errors, upload errors, and downloadable error
+  reports.
+- Upload summary metadata with row counts, duration, filename, and file size.
+- Guided Excel template response helper with required-column guidance.
+
+### Changed
+
+- `CellData` number cleanup now respects the configured locale's grouping and
+  decimal separators.
+
 ## [0.18.4] - 2026-06-30
 
 ### Added

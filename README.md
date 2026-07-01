@@ -24,7 +24,7 @@ ExcelWriter.<User>create()
 
 **Gradle**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.18.4")
+implementation("io.github.dornol:excel-kit:0.19.0")
 implementation("io.github.dornol:excel-kit-spring:<version>") // optional Spring MVC helpers
 
 // Add the runtime pieces you use. excel-kit keeps these compileOnly so
@@ -40,7 +40,7 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.18.4</version>
+  <version>0.19.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
@@ -259,7 +259,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |
 | Null handling | `nullValue()` default for null cells, `defaultStyle()` for writer-level defaults |
 | Metadata | Document properties (title, author, subject, keywords), named ranges (fluent API) |
-| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup |
+| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, fail-fast write errors |
 
 **Reading (Excel & CSV)**
 
@@ -269,10 +269,10 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Read modes | Setter (mutable), Mapping (records), Map (schema-less) |
 | Headers | Strict header validation, duplicate header policies, single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
-| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, and physical file row number |
+| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values |
 | Stream | `readAsStream()` with lazy evaluation, `readStrict()` for fail-fast |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
-| Config | Sheet index, header row index, progress callback, `countRows()` for total row pre-scan, password-encrypted files |
+| Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files |
 
 Read handlers are one-shot: after calling `read()`, `readStrict()`, or `readAsStream()`,
 create a new handler for another pass over the same file.

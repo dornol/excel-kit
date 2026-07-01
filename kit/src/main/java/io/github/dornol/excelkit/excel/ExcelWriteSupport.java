@@ -326,8 +326,8 @@ class ExcelWriteSupport {
         for (int j = 0; j < columns.size(); j++) {
             SXSSFCell cell = row.createCell(j);
             ExcelColumn<T> column = columns.get(j);
-            @Nullable Object columnData = column.applyFunction(rowData, cursor);
-            column.setColumnData(cell, columnData);
+            @Nullable Object columnData = column.applyFunction(rowData, cursor, cfg.writeErrorPolicy);
+            column.setColumnData(cell, columnData, cfg.writeErrorPolicy);
 
             // Resolve effective color: cellColor > rowStyle.bg > rowColor > column default
             ExcelColor effectiveColor = null;

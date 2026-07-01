@@ -32,6 +32,7 @@ public final class ExcelKitErrorResponse {
                 .column("headerName", ErrorReportRow::headerName)
                 .column("cellValue", ErrorReportRow::cellValue)
                 .column("message", ErrorReportRow::message)
+                .column("rawValues", ErrorReportRow::rawValues)
                 .write(reportRows(errors));
 
         return ExcelKitResponse.csv(handler, filename);
@@ -54,6 +55,7 @@ public final class ExcelKitErrorResponse {
                 .column("headerName", ErrorReportRow::headerName)
                 .column("cellValue", ErrorReportRow::cellValue)
                 .column("message", ErrorReportRow::message)
+                .column("rawValues", ErrorReportRow::rawValues)
                 .write(reportRows(errors));
 
         return ExcelKitResponse.excel(handler, filename);
@@ -64,7 +66,7 @@ public final class ExcelKitErrorResponse {
             if (error.cellErrors().isEmpty()) {
                 List<String> messages = error.messages().isEmpty() ? List.of("Unknown read error") : error.messages();
                 return messages.stream().map(message -> new ErrorReportRow(
-                        error.rowNum(), error.fileRowNum(), null, null, null, message));
+                        error.rowNum(), error.fileRowNum(), null, null, null, message, joinRawValues(error.rawValues())));
             }
             return error.cellErrors().stream().map(cell -> new ErrorReportRow(
                     error.rowNum(),
@@ -72,8 +74,13 @@ public final class ExcelKitErrorResponse {
                     cell.columnIndex(),
                     cell.headerName(),
                     cell.cellValue(),
-                    cell.message()
+                    cell.message(),
+                    joinRawValues(error.rawValues())
             ));
         });
+    }
+
+    private static String joinRawValues(List<String> rawValues) {
+        return rawValues == null || rawValues.isEmpty() ? "" : String.join(" | ", rawValues);
     }
 }

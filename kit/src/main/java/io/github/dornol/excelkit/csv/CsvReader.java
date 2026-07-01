@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
 
+import com.opencsv.ICSVParser;
 import io.github.dornol.excelkit.core.AbstractReader;
 import io.github.dornol.excelkit.core.RowData;
 import jakarta.validation.Validator;
@@ -31,6 +32,10 @@ import java.util.function.Supplier;
 public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
+    private char quoteChar = ICSVParser.DEFAULT_QUOTE_CHARACTER;
+    private char escapeChar = ICSVParser.DEFAULT_ESCAPE_CHARACTER;
+    private boolean strictQuotes = ICSVParser.DEFAULT_STRICT_QUOTES;
+    private boolean ignoreLeadingWhiteSpace = ICSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE;
 
     /**
      * Constructs a CsvReader in setter mode with instance supplier and optional validator.
@@ -219,6 +224,46 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     /**
+     * Sets the quote character used by the CSV parser.
+     *
+     * @since 0.19.0
+     */
+    public CsvReader<T> quoteChar(char quoteChar) {
+        this.quoteChar = quoteChar;
+        return this;
+    }
+
+    /**
+     * Sets the escape character used by the CSV parser.
+     *
+     * @since 0.19.0
+     */
+    public CsvReader<T> escapeChar(char escapeChar) {
+        this.escapeChar = escapeChar;
+        return this;
+    }
+
+    /**
+     * Enables or disables OpenCSV strict quote parsing.
+     *
+     * @since 0.19.0
+     */
+    public CsvReader<T> strictQuotes(boolean strictQuotes) {
+        this.strictQuotes = strictQuotes;
+        return this;
+    }
+
+    /**
+     * Controls whether leading whitespace before quoted values is ignored.
+     *
+     * @since 0.19.0
+     */
+    public CsvReader<T> ignoreLeadingWhiteSpace(boolean ignoreLeadingWhiteSpace) {
+        this.ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace;
+        return this;
+    }
+
+    /**
      * Finalizes the configuration and builds a {@link CsvReadHandler} for parsing the given CSV stream.
      *
      * @param inputStream The input stream of the CSV file
@@ -228,10 +273,14 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         if (rowMapper != null) {
             return new CsvReadHandler<>(inputStream, rowMapper, validator,
                     headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
+                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
+                    quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
+                    maxRows, skipBlankRows, stopAtBlankRows);
         }
         return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                strictHeaders, duplicateHeaderPolicy);
+                strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
+                quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
+                maxRows, skipBlankRows, stopAtBlankRows);
     }
 }

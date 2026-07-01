@@ -53,6 +53,19 @@ Custom format: `.format("#,##0.00")` or use `ExcelDataFormat` presets.
 
 Full type table: [Reference](reference.md#excelDataType-reference)
 
+## Write Error Policy
+
+By default, Excel writing is lenient: a value extraction failure becomes a blank
+cell, and a cell type mismatch falls back to text. Use fail-fast mode when a bad
+cell should abort the export:
+
+```java
+ExcelWriter.<Product>create()
+    .writeErrorPolicy(ExcelWriteErrorPolicy.FAIL_FAST)
+    .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
+    .write(products);
+```
+
 ## Column DSL
 
 ```java

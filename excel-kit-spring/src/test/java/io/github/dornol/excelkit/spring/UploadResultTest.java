@@ -28,6 +28,8 @@ class UploadResultTest {
         assertEquals(3, result.errors().getFirst().fileRowNum());
         assertEquals("Price", result.errors().getFirst().cellErrors().getFirst().headerName());
         assertEquals("not-a-number", result.errors().getFirst().cellErrors().getFirst().cellValue());
+        assertEquals(2, result.summary().totalRows());
+        assertEquals("not-a-number", result.errors().getFirst().rawValues().get(1));
     }
 
     static class Product {

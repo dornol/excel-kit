@@ -290,11 +290,13 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         if (rowMapper != null) {
             return new ExcelReadHandler<>(inputStream, rowMapper, validator,
                     sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
+                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
+                    maxRows, skipBlankRows, stopAtBlankRows);
         }
         return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
                 sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                strictHeaders, duplicateHeaderPolicy);
+                strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
+                maxRows, skipBlankRows, stopAtBlankRows);
     }
 
     /**

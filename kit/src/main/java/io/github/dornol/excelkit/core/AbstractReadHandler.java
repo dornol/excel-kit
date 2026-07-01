@@ -51,6 +51,10 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected final boolean strictHeaders;
     protected final DuplicateHeaderPolicy duplicateHeaderPolicy;
     protected final @Nullable Set<String> selectedMapColumns;
+    protected final @Nullable CellConversionConfig cellConversionConfig;
+    protected final long maxRows;
+    protected final boolean skipBlankRows;
+    protected final int stopAtBlankRows;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -73,6 +77,23 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
                                   String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
                                   @Nullable Set<String> selectedMapColumns) {
+        this(inputStream, instanceSupplier, validator, extension, strictHeaders, duplicateHeaderPolicy,
+                selectedMapColumns, null);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                                  @Nullable Set<String> selectedMapColumns,
+                                  @Nullable CellConversionConfig cellConversionConfig) {
+        this(inputStream, instanceSupplier, validator, extension, strictHeaders, duplicateHeaderPolicy,
+                selectedMapColumns, cellConversionConfig, -1, false, 0);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                                  @Nullable Set<String> selectedMapColumns,
+                                  @Nullable CellConversionConfig cellConversionConfig,
+                                  long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
         if (inputStream == null) {
             throw new IllegalArgumentException("InputStream cannot be null");
         }
@@ -85,6 +106,10 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.strictHeaders = strictHeaders;
         this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
         this.selectedMapColumns = selectedMapColumns;
+        this.cellConversionConfig = cellConversionConfig;
+        this.maxRows = maxRows;
+        this.skipBlankRows = skipBlankRows;
+        this.stopAtBlankRows = stopAtBlankRows;
         initTempFile(inputStream, extension);
     }
 
@@ -108,6 +133,23 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
                                   String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
                                   @Nullable Set<String> selectedMapColumns) {
+        this(inputStream, rowMapper, validator, extension, strictHeaders, duplicateHeaderPolicy,
+                selectedMapColumns, null);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                                  @Nullable Set<String> selectedMapColumns,
+                                  @Nullable CellConversionConfig cellConversionConfig) {
+        this(inputStream, rowMapper, validator, extension, strictHeaders, duplicateHeaderPolicy,
+                selectedMapColumns, cellConversionConfig, -1, false, 0);
+    }
+
+    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
+                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                                  @Nullable Set<String> selectedMapColumns,
+                                  @Nullable CellConversionConfig cellConversionConfig,
+                                  long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
         if (inputStream == null) {
             throw new IllegalArgumentException("InputStream cannot be null");
         }
@@ -120,7 +162,23 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.strictHeaders = strictHeaders;
         this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
         this.selectedMapColumns = selectedMapColumns;
+        this.cellConversionConfig = cellConversionConfig;
+        this.maxRows = maxRows;
+        this.skipBlankRows = skipBlankRows;
+        this.stopAtBlankRows = stopAtBlankRows;
         initTempFile(inputStream, extension);
+    }
+
+    protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
+        return new CellData(columnIndex, formattedValue, cellConversionConfig);
+    }
+
+    protected boolean isBlankValues(List<String> values) {
+        return values.stream().allMatch(value -> value == null || value.isBlank());
+    }
+
+    protected List<String> rawValues(List<CellData> cells) {
+        return cells.stream().map(CellData::formattedValue).toList();
     }
 
     /**
@@ -208,7 +266,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             } else {
                 List<String> msgs = result.messages() != null ? result.messages() : List.of();
                 RowError.Type type = result.cause() != null ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
-                onError.accept(new RowError(n, result.fileRowNum(), type, msgs, result.cause(), result.cellErrors()));
+                onError.accept(new RowError(n, result.fileRowNum(), type, msgs, result.cause(),
+                        result.cellErrors(), result.rawValues()));
             }
         });
     }
@@ -421,13 +480,17 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @return A {@link ReadResult} containing the mapped instance or error messages
      */
     protected ReadResult<T> mapWithRowMapper(RowData rowData) {
-        return mapWithRowMapper(rowData, -1);
+        return mapWithRowMapper(rowData, -1, List.of());
     }
 
     /**
      * Maps a row using the row mapper function and records its physical file row number.
      */
     protected ReadResult<T> mapWithRowMapper(RowData rowData, long fileRowNum) {
+        return mapWithRowMapper(rowData, fileRowNum, List.of());
+    }
+
+    protected ReadResult<T> mapWithRowMapper(RowData rowData, long fileRowNum, List<String> rawValues) {
         if (rowMapper == null) {
             throw new IllegalStateException("rowMapper must not be null in mapping mode");
         }
@@ -438,10 +501,10 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             log.warn("Row mapping failed", e);
             List<String> messages = new ArrayList<>();
             messages.add("Row mapping failed: " + e.getMessage());
-            return new ReadResult<>(null, false, messages, e, fileRowNum);
+            return new ReadResult<>(null, false, messages, e, fileRowNum, List.of(), rawValues);
         }
         List<String> messages = new ArrayList<>();
         boolean valid = validateIfNeeded(instance, messages);
-        return new ReadResult<>(instance, valid, messages.isEmpty() ? null : messages, null, fileRowNum);
+        return new ReadResult<>(instance, valid, messages.isEmpty() ? null : messages, null, fileRowNum, List.of(), rawValues);
     }
 }

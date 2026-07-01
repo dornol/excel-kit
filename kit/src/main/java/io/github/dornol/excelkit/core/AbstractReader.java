@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -37,6 +38,10 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected boolean strictHeaders = false;
     protected DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FIRST;
     protected @Nullable Set<String> selectedMapColumns;
+    protected @Nullable CellConversionConfig cellConversionConfig;
+    protected long maxRows = -1;
+    protected boolean skipBlankRows;
+    protected int stopAtBlankRows;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = java.util.Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
@@ -191,6 +196,73 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      */
     public SELF duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
         this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+        return self();
+    }
+
+    /**
+     * Sets reader-scoped conversion settings for {@link CellData}.
+     *
+     * @since 0.19.0
+     */
+    public SELF cellConversion(CellConversionConfig config) {
+        this.cellConversionConfig = java.util.Objects.requireNonNull(config, "config cannot be null");
+        return self();
+    }
+
+    /**
+     * Configures reader-scoped {@link CellData} conversion settings.
+     *
+     * @since 0.19.0
+     */
+    public SELF cellConversion(Consumer<CellConversionConfig.Builder> configurer) {
+        CellConversionConfig.Builder builder = CellConversionConfig.builder();
+        configurer.accept(builder);
+        return cellConversion(builder.build());
+    }
+
+    /**
+     * Limits the number of non-skipped data rows emitted by this reader.
+     *
+     * @since 0.19.0
+     */
+    public SELF maxRows(long maxRows) {
+        if (maxRows < 0) {
+            throw new IllegalArgumentException("maxRows must be non-negative");
+        }
+        this.maxRows = maxRows;
+        return self();
+    }
+
+    /**
+     * Skips rows where every cell is blank.
+     *
+     * @since 0.19.0
+     */
+    public SELF skipBlankRows() {
+        return skipBlankRows(true);
+    }
+
+    /**
+     * Enables or disables skipping rows where every cell is blank.
+     *
+     * @since 0.19.0
+     */
+    public SELF skipBlankRows(boolean enabled) {
+        this.skipBlankRows = enabled;
+        return self();
+    }
+
+    /**
+     * Stops reading after the given number of consecutive blank data rows.
+     * Pass {@code 0} to disable.
+     *
+     * @since 0.19.0
+     */
+    public SELF stopAtBlankRows(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count must be non-negative");
+        }
+        this.stopAtBlankRows = count;
         return self();
     }
 }

@@ -153,6 +153,17 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+    /**
+     * Sets how row value extraction and cell value write failures are handled.
+     * Defaults to {@link ExcelWriteErrorPolicy#LENIENT}, preserving existing behavior.
+     *
+     * @since 0.19.0
+     */
+    public SELF writeErrorPolicy(ExcelWriteErrorPolicy policy) {
+        cfg.writeErrorPolicy = java.util.Objects.requireNonNull(policy, "policy must not be null");
+        return self();
+    }
+
     // ── Width ──
 
     /**

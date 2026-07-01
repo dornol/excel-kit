@@ -15,7 +15,8 @@ class ExcelKitErrorResponseTest {
         UploadError error = new UploadError(1, 2,
                 io.github.dornol.excelkit.core.RowError.Type.MAPPING,
                 List.of("failed"),
-                List.of(new CellErrorResponse(2, "Price", "bad", "Failed to set column")));
+                List.of(new CellErrorResponse(2, "Price", "bad", "Failed to set column")),
+                List.of("Notebook", "bad"));
 
         List<ErrorReportRow> rows = ExcelKitErrorResponse.reportRows(List.of(error)).toList();
 
@@ -25,6 +26,7 @@ class ExcelKitErrorResponseTest {
         assertEquals(2, rows.getFirst().columnIndex());
         assertEquals("Price", rows.getFirst().headerName());
         assertEquals("bad", rows.getFirst().cellValue());
+        assertEquals("Notebook | bad", rows.getFirst().rawValues());
     }
 
     @Test

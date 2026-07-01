@@ -53,12 +53,26 @@ Validate size and filename extension before opening uploads:
 @PostMapping("/upload")
 public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
     MultipartFile checked = ExcelKitMultipartFile.requireSizeAtMost(
-        ExcelKitMultipartFile.requireExcelOrCsv(file), 5 * 1024 * 1024);
+        ExcelKitMultipartFile.requireExcelOrCsvContent(file), 5 * 1024 * 1024);
 
     return ResponseEntity.ok(ExcelKitUpload.excel(
         checked, in -> userReader.build(in)));
 }
 ```
+
+For schema-backed uploads, pass the schema directly:
+
+```java
+@PostMapping("/upload")
+public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
+    MultipartFile checked = ExcelKitMultipartFile.requireExcelOrCsvContent(file);
+    return ResponseEntity.ok(ExcelKitUpload.excel(checked, userSchema, User::new, validator));
+}
+```
+
+`UploadResult.summary()` includes total rows, success/error counts, duration,
+filename, and file size. `UploadError.rawValues()` carries the source row values
+for correction screens.
 
 When users need a downloadable correction report, reuse the same upload parse
 path and convert the structured errors to CSV or Excel:
@@ -79,6 +93,11 @@ Schema-based upload templates can be streamed empty or with sample rows:
 public ResponseEntity<StreamingResponseBody> excelTemplate() {
     return ExcelKitTemplateResponse.excel(
         userSchema, "users-template", List.of(new User("Alice", 30)));
+}
+
+@GetMapping("/template-guided.xlsx")
+public ResponseEntity<StreamingResponseBody> guidedTemplate() {
+    return ExcelKitTemplateResponse.excelWithGuidance(userSchema, "users-template");
 }
 
 @GetMapping("/template.csv")

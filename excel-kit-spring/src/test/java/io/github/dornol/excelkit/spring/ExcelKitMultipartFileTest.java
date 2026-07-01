@@ -78,4 +78,31 @@ class ExcelKitMultipartFileTest {
         assertSame(csv, ExcelKitMultipartFile.requireExcelOrCsv(csv));
         assertSame(excel, ExcelKitMultipartFile.requireExcelOrCsv(excel));
     }
+
+    @Test
+    void requireExcelOrCsvContent_acceptsCsvTextAndXlsxZipHeader() {
+        MockMultipartFile csv = new MockMultipartFile(
+                "file", "sample.csv", "text/csv", "Name\nAlice\n".getBytes(StandardCharsets.UTF_8));
+        MockMultipartFile excel = new MockMultipartFile(
+                "file", "sample.xlsx", "application/octet-stream", new byte[]{'P', 'K', 3, 4});
+
+        assertSame(csv, ExcelKitMultipartFile.requireExcelOrCsvContent(csv));
+        assertSame(excel, ExcelKitMultipartFile.requireExcelOrCsvContent(excel));
+    }
+
+    @Test
+    void requireExcelOrCsvContent_rejectsMismatchedXlsxContent() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "sample.xlsx", "application/octet-stream", "not zip".getBytes(StandardCharsets.UTF_8));
+
+        assertThrows(ExcelKitUploadException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(file));
+    }
+
+    @Test
+    void requireExcelOrCsvContent_rejectsBinaryCsvContent() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "sample.csv", "text/csv", new byte[]{'A', 0, 'B'});
+
+        assertThrows(ExcelKitUploadException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(file));
+    }
 }

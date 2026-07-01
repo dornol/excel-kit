@@ -4,8 +4,10 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.ICSVParser;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.ReadAbortException;
@@ -66,6 +68,10 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final int headerRowIndex;
     private final char delimiter;
     private final Charset charset;
+    private final char quoteChar;
+    private final char escapeChar;
+    private final boolean strictQuotes;
+    private final boolean ignoreLeadingWhiteSpace;
     private final int progressInterval;
     private final io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback;
 
@@ -93,13 +99,51 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                    @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
                    int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
                    boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        super(inputStream, instanceSupplier, validator, ".csv", strictHeaders, duplicateHeaderPolicy);
+        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
+                progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy, null);
+    }
+
+    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                   @Nullable CellConversionConfig cellConversionConfig) {
+        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
+                progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
+                ICSVParser.DEFAULT_QUOTE_CHARACTER, ICSVParser.DEFAULT_ESCAPE_CHARACTER,
+                ICSVParser.DEFAULT_STRICT_QUOTES, ICSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE);
+    }
+
+    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                   @Nullable CellConversionConfig cellConversionConfig,
+                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace) {
+        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
+                progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
+                quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace, -1, false, 0);
+    }
+
+    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                   @Nullable CellConversionConfig cellConversionConfig,
+                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace,
+                   long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
+        super(inputStream, instanceSupplier, validator, ".csv", strictHeaders, duplicateHeaderPolicy,
+                null, cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
         validateColumns(columns);
         validateHeaderRowIndex(headerRowIndex);
         this.columns = columns;
         this.headerRowIndex = headerRowIndex;
         this.delimiter = delimiter;
         this.charset = charset;
+        this.quoteChar = quoteChar;
+        this.escapeChar = escapeChar;
+        this.strictQuotes = strictQuotes;
+        this.ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace;
         this.progressInterval = progressInterval;
         this.progressCallback = progressCallback;
     }
@@ -127,12 +171,53 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                    int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
                    boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
                    @Nullable Set<String> selectedMapColumns) {
-        super(inputStream, rowMapper, validator, ".csv", strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
+        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
+                progressCallback, strictHeaders, duplicateHeaderPolicy, selectedMapColumns, null);
+    }
+
+    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                   @Nullable Set<String> selectedMapColumns,
+                   @Nullable CellConversionConfig cellConversionConfig) {
+        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
+                progressCallback, strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
+                ICSVParser.DEFAULT_QUOTE_CHARACTER, ICSVParser.DEFAULT_ESCAPE_CHARACTER,
+                ICSVParser.DEFAULT_STRICT_QUOTES, ICSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE);
+    }
+
+    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                   @Nullable Set<String> selectedMapColumns,
+                   @Nullable CellConversionConfig cellConversionConfig,
+                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace) {
+        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
+                progressCallback, strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
+                quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace, -1, false, 0);
+    }
+
+    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
+                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+                   @Nullable Set<String> selectedMapColumns,
+                   @Nullable CellConversionConfig cellConversionConfig,
+                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace,
+                   long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
+        super(inputStream, rowMapper, validator, ".csv", strictHeaders, duplicateHeaderPolicy,
+                selectedMapColumns, cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
         validateHeaderRowIndex(headerRowIndex);
         this.columns = null;
         this.headerRowIndex = headerRowIndex;
         this.delimiter = delimiter;
         this.charset = charset;
+        this.quoteChar = quoteChar;
+        this.escapeChar = escapeChar;
+        this.strictQuotes = strictQuotes;
+        this.ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace;
         this.progressInterval = progressInterval;
         this.progressCallback = progressCallback;
     }
@@ -147,12 +232,31 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
             String[] line;
             long rowCount = 0;
+            long emittedRows = 0;
+            int consecutiveBlankRows = 0;
 
             if (rowMapper != null) {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
-                    consumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount)));
+                    List<String> rawValues = rawValues(line);
+                    if (isBlankValues(rawValues)) {
+                        consecutiveBlankRows++;
+                        if (stopAtBlankRows > 0 && consecutiveBlankRows >= stopAtBlankRows) {
+                            break;
+                        }
+                        if (skipBlankRows) {
+                            rowCount++;
+                            continue;
+                        }
+                    } else {
+                        consecutiveBlankRows = 0;
+                    }
+                    if (maxRows >= 0 && emittedRows >= maxRows) {
+                        break;
+                    }
+                    consumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
+                    emittedRows++;
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
@@ -161,7 +265,24 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 int[] resolvedIndices = resolveIndices();
                 while ((line = reader.readNext()) != null) {
-                    consumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount)));
+                    List<String> rawValues = rawValues(line);
+                    if (isBlankValues(rawValues)) {
+                        consecutiveBlankRows++;
+                        if (stopAtBlankRows > 0 && consecutiveBlankRows >= stopAtBlankRows) {
+                            break;
+                        }
+                        if (skipBlankRows) {
+                            rowCount++;
+                            continue;
+                        }
+                    } else {
+                        consecutiveBlankRows = 0;
+                    }
+                    if (maxRows >= 0 && emittedRows >= maxRows) {
+                        break;
+                    }
+                    consumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
+                    emittedRows++;
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
@@ -213,22 +334,51 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
             final CSVReader csvReader = reader;
             final AtomicLong streamRowCount = new AtomicLong(0);
+            final AtomicLong emittedRows = new AtomicLong(0);
+            final java.util.concurrent.atomic.AtomicInteger consecutiveBlankRows = new java.util.concurrent.atomic.AtomicInteger(0);
             Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
                     Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
                 @Override
                 public boolean tryAdvance(Consumer<? super ReadResult<T>> action) {
                     try {
-                        String[] line = csvReader.readNext();
-                        if (line == null) {
-                            closeQuietly(csvReader);
-                            close();
-                            return false;
+                        String[] line;
+                        List<String> rawValues;
+                        long countBeforeIncrement;
+                        while (true) {
+                            line = csvReader.readNext();
+                            if (line == null) {
+                                closeQuietly(csvReader);
+                                close();
+                                return false;
+                            }
+                            countBeforeIncrement = streamRowCount.get();
+                            rawValues = rawValues(line);
+                            if (isBlankValues(rawValues)) {
+                                int blankCount = consecutiveBlankRows.incrementAndGet();
+                                if (stopAtBlankRows > 0 && blankCount >= stopAtBlankRows) {
+                                    closeQuietly(csvReader);
+                                    close();
+                                    return false;
+                                }
+                                if (skipBlankRows) {
+                                    streamRowCount.incrementAndGet();
+                                    continue;
+                                }
+                            } else {
+                                consecutiveBlankRows.set(0);
+                            }
+                            if (maxRows >= 0 && emittedRows.get() >= maxRows) {
+                                closeQuietly(csvReader);
+                                close();
+                                return false;
+                            }
+                            break;
                         }
-                        long countBeforeIncrement = streamRowCount.get();
                         ReadResult<T> result = mappingMode
-                                ? processRowMapping(line, headerIndexMap, fileRowNum(countBeforeIncrement))
-                                : processRow(line, resolvedIndices, fileRowNum(countBeforeIncrement));
+                                ? processRowMapping(line, headerIndexMap, fileRowNum(countBeforeIncrement), rawValues)
+                                : processRow(line, resolvedIndices, fileRowNum(countBeforeIncrement), rawValues);
                         action.accept(result);
+                        emittedRows.incrementAndGet();
                         long count = streamRowCount.incrementAndGet();
                         if (progressCallback != null && progressInterval > 0
                                 && count % progressInterval == 0) {
@@ -260,7 +410,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
-    private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum) {
+    private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum, List<String> rawValues) {
         if (columns == null || instanceSupplier == null) {
             throw new IllegalStateException("columns and instanceSupplier must not be null in setter mode");
         }
@@ -272,7 +422,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         for (int i = 0; i < columns.size(); i++) {
             int actualIndex = resolvedIndices[i];
             String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
-            if (!mapColumn(columns.get(i), currentInstance, new CellData(actualIndex, columnValue),
+            if (!mapColumn(columns.get(i), currentInstance, cellData(actualIndex, columnValue),
                     actualIndex, headerNames, messages, cellErrors)) {
                 success = false;
             }
@@ -280,16 +430,21 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
         boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
         return new ReadResult<>(currentInstance, validationSuccess, messages.isEmpty() ? null : messages,
-                null, fileRowNum, cellErrors);
+                null, fileRowNum, cellErrors, rawValues);
     }
 
-    private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap, long fileRowNum) {
+    private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap, long fileRowNum,
+                                            List<String> rawValues) {
         List<CellData> cells = new ArrayList<>();
         for (int i = 0; i < line.length; i++) {
-            cells.add(new CellData(i, line[i]));
+            cells.add(cellData(i, line[i]));
         }
         RowData rowData = new RowData(cells, headerNames, headerIndexMap);
-        return mapWithRowMapper(rowData, fileRowNum);
+        return mapWithRowMapper(rowData, fileRowNum, rawValues);
+    }
+
+    private List<String> rawValues(String[] line) {
+        return java.util.Arrays.asList(line.clone());
     }
 
     private void skipToHeader(CSVReader reader) throws Exception {
@@ -335,7 +490,13 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private CSVReader buildCsvReader() throws Exception {
-        CSVParser csvParser = new CSVParserBuilder().withSeparator(this.delimiter).build();
+        CSVParser csvParser = new CSVParserBuilder()
+                .withSeparator(this.delimiter)
+                .withQuoteChar(this.quoteChar)
+                .withEscapeChar(this.escapeChar)
+                .withStrictQuotes(this.strictQuotes)
+                .withIgnoreLeadingWhiteSpace(this.ignoreLeadingWhiteSpace)
+                .build();
         return new CSVReaderBuilder(new InputStreamReader(Files.newInputStream(getTempFile()), this.charset))
                 .withCSVParser(csvParser).build();
     }

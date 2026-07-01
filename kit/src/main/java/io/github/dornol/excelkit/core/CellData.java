@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.regex.Pattern;
@@ -18,6 +19,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
@@ -28,16 +30,16 @@ import java.util.function.Function;
  * Provides utility methods to convert the cell's value into various Java types,
  * including number, string, boolean, date/time, etc.
  *
- * @param columnIndex    the column index of the cell (0-based)
- * @param formattedValue the formatted string value extracted from Excel
- *
  * @author dhkim
  * @since 2025-07-19
  */
-public record CellData(int columnIndex, @Nullable String formattedValue) {
+public final class CellData {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
-    private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$,₩€%원]");
+    private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$₩€%원]");
     private static volatile Locale defaultLocale = Locale.getDefault();
+    private final int columnIndex;
+    private final String formattedValue;
+    private final @Nullable CellConversionConfig conversionConfig;
 
     /**
      * Returns the default locale used by no-arg number parsing methods.
@@ -152,14 +154,55 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
         }
     }
 
-    /** Validates and normalizes the cell data. */
-    public CellData {
+    /**
+     * Creates cell data using global conversion defaults.
+     *
+     * @param columnIndex    the column index of the cell (0-based)
+     * @param formattedValue the formatted string value extracted from Excel
+     */
+    public CellData(int columnIndex, @Nullable String formattedValue) {
+        this(columnIndex, formattedValue, null);
+    }
+
+    /**
+     * Creates cell data with reader-scoped conversion settings.
+     *
+     * @param columnIndex      the column index of the cell (0-based)
+     * @param formattedValue   the formatted string value extracted from Excel
+     * @param conversionConfig conversion settings, or {@code null} to use global defaults
+     * @since 0.19.0
+     */
+    public CellData(int columnIndex, @Nullable String formattedValue,
+                    @Nullable CellConversionConfig conversionConfig) {
         if (formattedValue == null) {
             formattedValue = "";
         }
         if (columnIndex < 0) {
             throw new IllegalArgumentException("columnIndex must be non-negative");
         }
+        this.columnIndex = columnIndex;
+        this.formattedValue = formattedValue;
+        this.conversionConfig = conversionConfig;
+    }
+
+    public int columnIndex() {
+        return columnIndex;
+    }
+
+    public String formattedValue() {
+        return formattedValue;
+    }
+
+    private Locale effectiveLocale() {
+        return conversionConfig != null ? conversionConfig.locale() : defaultLocale;
+    }
+
+    private List<DateTimeFormatter> effectiveDateFormats() {
+        return conversionConfig != null ? conversionConfig.dateFormats() : dateFormatPatterns;
+    }
+
+    private List<DateTimeFormatter> effectiveDateTimeFormats() {
+        return conversionConfig != null ? conversionConfig.dateTimeFormats() : dateTimeFormatPatterns;
     }
 
     /**
@@ -177,12 +220,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
         }
 
         try {
-            // Remove NBSP, currency symbols, and whitespace
-            String cleaned = CURRENCY_SYMBOLS.matcher(
-                    formattedValue.replace("\u00A0", " "))
-                    .replaceAll("")
-                    .replace(" ", "")
-                    .trim();
+            String cleaned = cleanNumberText(formattedValue, locale, false);
 
             return NumberFormat.getNumberInstance(locale).parse(cleaned);
         } catch (ParseException e) {
@@ -199,7 +237,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @see #setDefaultLocale(Locale)
      */
     public @Nullable Number asNumber() {
-        return asNumber(defaultLocale);
+        return asNumber(effectiveLocale());
     }
 
     /**
@@ -298,7 +336,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             return null;
         }
 
-        for (var formatter : dateTimeFormatPatterns) {
+        for (var formatter : effectiveDateTimeFormats()) {
             try {
                 return LocalDateTime.parse(formattedValue, formatter);
             } catch (Exception e) {
@@ -342,7 +380,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
         if (formattedValue.isBlank()) {
             return null;
         }
-        for (var format : dateFormatPatterns) {
+        for (var format : effectiveDateFormats()) {
             try {
                 return LocalDate.parse(formattedValue, format);
             } catch (Exception e) {
@@ -459,11 +497,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             return null;
         }
         try {
-            String cleaned = CURRENCY_SYMBOLS.matcher(
-                    formattedValue.replace("\u00A0", " "))
-                    .replaceAll("")
-                    .replace(" ", "")
-                    .trim();
+            String cleaned = cleanNumberText(formattedValue, effectiveLocale(), true);
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
             log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, formattedValue);
@@ -584,6 +618,44 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             return defaultValue;
         }
         return converter.apply(formattedValue);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof CellData cellData)) {
+            return false;
+        }
+        return columnIndex == cellData.columnIndex
+                && Objects.equals(formattedValue, cellData.formattedValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(columnIndex, formattedValue);
+    }
+
+    @Override
+    public String toString() {
+        return "CellData[columnIndex=" + columnIndex + ", formattedValue=" + formattedValue + "]";
+    }
+
+    private static String cleanNumberText(String value, Locale locale, boolean normalizeDecimalSeparator) {
+        String cleaned = CURRENCY_SYMBOLS.matcher(value.replace("\u00A0", " "))
+                .replaceAll("")
+                .replace(" ", "")
+                .trim();
+        char groupingSeparator = DecimalFormatSymbols.getInstance(locale).getGroupingSeparator();
+        char decimalSeparator = DecimalFormatSymbols.getInstance(locale).getDecimalSeparator();
+        if (groupingSeparator != decimalSeparator) {
+            cleaned = cleaned.replace(String.valueOf(groupingSeparator), "");
+        }
+        if (normalizeDecimalSeparator && decimalSeparator != '.') {
+            cleaned = cleaned.replace(decimalSeparator, '.');
+        }
+        return cleaned;
     }
 
 }
