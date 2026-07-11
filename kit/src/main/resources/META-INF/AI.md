@@ -26,6 +26,8 @@ Not annotation-based — columns are defined programmatically via builder chains
 | Read Excel (setter) | `ExcelReader<T>` | `ExcelReader.setter(T::new).column("Name", T::setName).required().read(in, r -> ...)` |
 | Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().read(in, r -> r.data().get("Name"))` |
 | Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).read(in, r -> ...)` |
+| Summarize a read | `ReadSummary` / `ReadReport` | `reader.readWithSummary(in, r -> ...)` / `reader.readReport(in, 100)` |
+| Detect tabular input | `TabularFileDetector` | `TabularFileDetector.detect(path)` or `.detectDetailed(in)` |
 | Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).writeTo(path)` |
 | Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).writeTo(path)` |
 | Read CSV (setter) | `CsvReader<T>` | `CsvReader.setter(T::new).column("Name", T::setName).read(in, r -> ...)` |

@@ -28,15 +28,15 @@ integrations you use, using versions compatible with the rest of your applicatio
 
 **Gradle — Excel**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.20.0")
-implementation("io.github.dornol:excel-kit-spring:<version>") // optional Spring MVC helpers
+implementation("io.github.dornol:excel-kit:0.21.0")
+implementation("io.github.dornol:excel-kit-spring:0.21.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:5.5.1")      // Excel read/write
 implementation("org.slf4j:slf4j-api:2.0.18")          // logging facade
 ```
 
 **Gradle — CSV**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.20.0")
+implementation("io.github.dornol:excel-kit:0.21.0")
 implementation("com.opencsv:opencsv:5.12.0")
 implementation("org.slf4j:slf4j-api:2.0.18")
 ```
@@ -51,7 +51,7 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.20.0</version>
+  <version>0.21.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>

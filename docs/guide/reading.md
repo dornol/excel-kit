@@ -253,6 +253,11 @@ Strict inspection also bounds each decompressed worksheet entry, total scanned b
 compression ratio. CSV callers can use `readDetected(...)` to apply sampled charset and
 delimiter detection without closing the caller stream.
 
+Before selecting a reader, `TabularFileDetector.detect(path)` identifies XLSX, legacy XLS,
+CSV, or unknown content from its signature instead of trusting the filename. Use
+`detectDetailed(input)` when confidence, charset, delimiter, and read-support metadata are
+needed. Caller-provided streams remain caller-owned.
+
 **Bean Validation:**
 ```java
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();

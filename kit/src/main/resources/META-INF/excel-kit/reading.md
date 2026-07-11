@@ -176,6 +176,16 @@ schema.excelReader(User::new, validator)
 
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 
+## Summaries, bounded reports, and file detection
+
+`readWithSummary(...)` returns a `ReadSummary` with total, successful, and failed row counts,
+early-stop state, and elapsed time. `readReport(input, maxCollectedErrors)` adds a bounded
+error sample and an `errorsTruncated` indicator.
+
+`TabularFileDetector.detect(path)` distinguishes XLSX, XLS, CSV, and unknown content by
+signature. `detectDetailed(input)` also reports confidence, charset, delimiter, and whether
+excel-kit supports reading the detected format. Caller-provided streams remain caller-owned.
+
 ## Multi-Sheet Discovery
 
 ```java

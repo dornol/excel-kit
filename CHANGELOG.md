@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-07-11
+
 ### Added
 
 - Symmetric `Path` and `InputStreamSource` overloads for `read`, `readStrict`, and `readWhile`.
