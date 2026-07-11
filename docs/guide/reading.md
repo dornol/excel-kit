@@ -229,6 +229,20 @@ reader.readWhile(inputStream, result -> {
 
 Callback reading is row-by-row and does not load the whole file into memory. A caller-provided
 `InputStream` remains caller-owned; use try-with-resources around it.
+`Path` and `InputStreamSource` are available consistently for `read`, `readStrict`, and
+`readWhile`. Path inputs are read directly and are never modified or deleted. Streams opened
+by an `InputStreamSource` are closed by excel-kit.
+
+Excel sheet discovery follows the same ownership rule: `getSheetNames(InputStream)` and
+`getSheetHeaders(InputStream, ...)` consume but do not close the supplied stream, while their
+`Path` and `InputStreamSource` overloads manage their own resources.
+
+Use `readWithSummary(...)` when aggregate counts and elapsed time are needed, or
+`readReport(input, maxCollectedErrors)` for a bounded error sample. Untrusted inputs can be
+guarded with `limits(new ReadLimits(maxBytes, maxSheets, maxColumns, maxCellCharacters))`.
+`headerPolicy(...)` provides common trim, case-insensitive, whitespace, and Unicode-normalized
+matching presets. Long-running reads can use `cancellationToken(...)` and
+`onReadProgress(interval, callback)` without transferring execution to a library thread.
 
 **Bean Validation:**
 ```java

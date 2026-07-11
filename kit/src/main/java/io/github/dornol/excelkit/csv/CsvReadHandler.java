@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,8 +47,38 @@ import java.util.function.Supplier;
  * @author dhkim
  * @since 2025-07-19
  */
-public class CsvReadHandler<T> extends AbstractReadHandler<T> {
+final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private static final Logger log = LoggerFactory.getLogger(CsvReadHandler.class);
+
+    static <T> CsvReadHandler<T> forPath(Path path, List<ReadColumn<T>> columns, Supplier<T> supplier,
+            @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+            int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+            boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+            @Nullable CellConversionConfig conversion, char quoteChar, char escapeChar,
+            boolean strictQuotes, boolean ignoreLeadingWhiteSpace, long maxRows,
+            boolean skipBlankRows, int stopAtBlankRows) {
+        var handler = new CsvReadHandler<>(InputStream.nullInputStream(), columns, supplier, validator,
+                headerRowIndex, delimiter, charset, progressInterval, progressCallback, strictHeaders,
+                duplicateHeaderPolicy, conversion, quoteChar, escapeChar, strictQuotes,
+                ignoreLeadingWhiteSpace, maxRows, skipBlankRows, stopAtBlankRows);
+        handler.useExternalInput(path);
+        return handler;
+    }
+
+    static <T> CsvReadHandler<T> forPath(Path path, Function<RowData, T> mapper,
+            @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
+            int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
+            boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+            @Nullable Set<String> selectedColumns, @Nullable CellConversionConfig conversion,
+            char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace,
+            long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
+        var handler = new CsvReadHandler<>(InputStream.nullInputStream(), mapper, validator,
+                headerRowIndex, delimiter, charset, progressInterval, progressCallback, strictHeaders,
+                duplicateHeaderPolicy, selectedColumns, conversion, quoteChar, escapeChar, strictQuotes,
+                ignoreLeadingWhiteSpace, maxRows, skipBlankRows, stopAtBlankRows);
+        handler.useExternalInput(path);
+        return handler;
+    }
 
     private final List<String> headerNames = new ArrayList<>();
     private final @Nullable List<ReadColumn<T>> columns;
@@ -248,6 +279,7 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
                     }
+                    if (progressInterval > 0 && rowCount % progressInterval == 0) notifyReadProgress(rowCount, -1, -1);
                 }
             } else {
                 int[] resolvedIndices = resolveIndices();
@@ -274,10 +306,12 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
                     }
+                    if (progressInterval > 0 && rowCount % progressInterval == 0) notifyReadProgress(rowCount, -1, -1);
                 }
             }
         } catch (io.github.dornol.excelkit.core.ReadStoppedException e) {
             // Normal early completion requested by readWhile.
+            stoppedEarly = true;
         } catch (CsvReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
@@ -287,13 +321,24 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
+    boolean wasStoppedEarly() { return stoppedEarly; }
+
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
+        java.util.concurrent.atomic.AtomicReference<RuntimeException> failure = new java.util.concurrent.atomic.AtomicReference<>();
         read(result -> {
-            if (!predicate.test(result)) {
+            boolean proceed;
+            try {
+                proceed = predicate.test(result);
+            } catch (RuntimeException e) {
+                failure.set(e);
+                throw new io.github.dornol.excelkit.core.ReadStoppedException();
+            }
+            if (!proceed) {
                 throw new io.github.dornol.excelkit.core.ReadStoppedException();
             }
         });
+        if (failure.get() != null) throw failure.get();
     }
 
     private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum, List<String> rawValues) {

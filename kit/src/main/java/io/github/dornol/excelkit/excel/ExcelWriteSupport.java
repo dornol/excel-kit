@@ -3,8 +3,11 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressList;
+import org.apache.poi.ss.util.AreaReference;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -607,5 +610,16 @@ class ExcelWriteSupport {
             name.setNameName(entry.getKey());
             name.setRefersToFormula(ref);
         }
+    }
+
+    static void applyTable(SXSSFSheet sheet, String name, int headerRow, int lastRow, int columnCount) {
+        XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
+        if (xssfSheet == null || columnCount == 0 || lastRow <= headerRow) return;
+        AreaReference area = new AreaReference(new CellReference(headerRow, 0),
+                new CellReference(lastRow, columnCount - 1), SpreadsheetVersion.EXCEL2007);
+        var table = xssfSheet.createTable(area);
+        table.setName(name);
+        table.setDisplayName(name);
+        table.setStyleName("TableStyleMedium2");
     }
 }

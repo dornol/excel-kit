@@ -12,10 +12,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for {@link ExcelMapReader.ExcelMapReadHandler#readAsStream()} streaming implementation.
- * Verifies BlockingQueue-based streaming, resource cleanup, and error propagation.
- */
+/** Regression tests for map-mode reader behavior. */
 class MapReaderStreamTest {
 
     record Item(String name, int value) {}
@@ -29,18 +26,6 @@ class MapReaderStreamTest {
                 .writeTo(out);
         return out.toByteArray();
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Test
     void read_withSparseRow_shouldFillGaps() throws IOException {

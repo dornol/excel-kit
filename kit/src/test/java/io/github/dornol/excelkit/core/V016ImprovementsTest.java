@@ -493,28 +493,6 @@ class V016ImprovementsTest {
     }
 
     // ============================================================
-    // A6: readStrict row numbering
-    // ============================================================
-    @Nested
-    @DisplayName("A6: readStrict row numbering")
-    class ReadStrictTests {
-
-
-    }
-
-    // ============================================================
-    // readAsStream laziness
-    // ============================================================
-    @Nested
-    @DisplayName("A2: readAsStream is lazy")
-    class ReadAsStreamTests {
-
-
-
-
-    }
-
-    // ============================================================
     // Bug fixes: sparse row required validation, rollover header color
     // ============================================================
     @Nested

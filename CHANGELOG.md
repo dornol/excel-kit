@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Symmetric `Path` and `InputStreamSource` overloads for `read`, `readStrict`, and `readWhile`.
+- `Path` and `InputStreamSource` overloads for Excel sheet metadata discovery.
+- `ReadSummary`, bounded `ReadReport`, detailed `ReadProgress`, and cooperative cancellation APIs.
+- Header normalization presets through `HeaderPolicy`.
+- Defensive input, sheet, column, and cell-size limits through `ReadLimits`.
+- Signature-based `TabularFileDetector` for XLSX, XLS, CSV, and unknown inputs.
+- Excel structured table creation through `ExcelWriter.table(...)`.
+- SXSSF temporary-file compression and shared-string initialization options.
+- CI-generated japicmp reports against the latest published baseline.
+
+### Changed
+
+- Excel metadata methods no longer close caller-provided `InputStream` instances.
+- Reader executions now snapshot column and selected-header collections.
+- Reader `Path` inputs are read directly without copying the source file to a temporary file.
+- Excel and CSV read-handler implementations are no longer public API types.
+- Exceptions thrown by a `readWhile` predicate are propagated unchanged.
+
 ## [0.20.0] - 2026-07-11
 
 ### Added

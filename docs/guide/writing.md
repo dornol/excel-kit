@@ -266,3 +266,16 @@ writer
 ```
 
 For manual control, use `SheetContext.namedRange()` in `afterData` callbacks.
+## Streaming initialization
+
+SXSSF memory and disk behavior can be selected when the writer is created:
+
+```java
+ExcelWriter.<Row>create(options -> options
+        .rowAccessWindowSize(500)
+        .compressTempFiles(true)
+        .useSharedStrings(false));
+```
+
+Use `.table("RowsTable")` to create an Excel structured table over the generated header and
+data range.

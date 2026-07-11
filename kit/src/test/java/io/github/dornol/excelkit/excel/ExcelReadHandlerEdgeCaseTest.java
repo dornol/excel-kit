@@ -16,9 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Edge case tests for {@link ExcelReadHandler} to cover:
- * - Mapping mode (rowMapper) in both read() and readAsStream()
+ * - Mapping mode (rowMapper)
  * - Missing columns in row
- * - readAsStream error propagation
  * - Custom headerRowIndex > 0
  */
 class ExcelReadHandlerEdgeCaseTest {
@@ -56,13 +55,6 @@ class ExcelReadHandlerEdgeCaseTest {
     }
 
     // ============================================================
-    // Mapping mode - readAsStream()
-    // ============================================================
-
-
-
-
-    // ============================================================
     // Mapping mode - error handling
     // ============================================================
     @Test
@@ -82,16 +74,6 @@ class ExcelReadHandlerEdgeCaseTest {
             assertNotNull(r.messages());
         }
     }
-
-    // ============================================================
-    // readAsStream - close without consuming
-    // ============================================================
-
-
-    // ============================================================
-    // readAsStream - partial consumption
-    // ============================================================
-
 
     // ============================================================
     // Missing columns (actualIndex >= currentRow.size())

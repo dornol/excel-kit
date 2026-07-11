@@ -49,6 +49,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private @Nullable SXSSFSheet sheet;
     private @Nullable Cursor cursor;
     private @Nullable ExcelWriteOptions<T> executionOptions;
+    private @Nullable String tableName;
 
 
     private static final int DEFAULT_MAX_ROWS = 1_000_000;
@@ -185,7 +186,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     private ExcelWriter(InitOptions opts) {
-        this.wb = new SXSSFWorkbook(opts.rowAccessWindowSize);
+        this.wb = new SXSSFWorkbook(null, opts.rowAccessWindowSize, opts.compressTempFiles, opts.useSharedStrings);
         ExcelColor defaultColor = ExcelColor.WHITE;
         this.headerColor = new XSSFColor(new byte[]{
                 (byte) defaultColor.getR(),
@@ -211,6 +212,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     public static final class InitOptions {
         private int rowAccessWindowSize = DEFAULT_ROW_ACCESS_WINDOW_SIZE;
+        private boolean compressTempFiles;
+        private boolean useSharedStrings;
 
         private InitOptions() {
         }
@@ -233,6 +236,18 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             this.rowAccessWindowSize = size;
             return this;
         }
+
+        /** Compresses SXSSF temporary XML files to reduce disk usage. */
+        public InitOptions compressTempFiles(boolean enabled) {
+            this.compressTempFiles = enabled;
+            return this;
+        }
+
+        /** Uses a shared strings table, trading additional memory for broader client compatibility. */
+        public InitOptions useSharedStrings(boolean enabled) {
+            this.useSharedStrings = enabled;
+            return this;
+        }
     }
 
     /**
@@ -249,6 +264,20 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     public ExcelWriter<T> documentProperty(String key, String value) {
         ExcelWriteSupport.applyDocumentProperty(wb, key, value);
+        return this;
+    }
+
+    /** Creates an Excel structured table over the header and all written data rows. */
+    public ExcelWriter<T> table(String name) {
+        if (name == null || !name.matches("[A-Za-z_][A-Za-z0-9_.]*")) {
+            throw new IllegalArgumentException("Invalid Excel table name: " + name);
+        }
+        if (org.apache.poi.ss.util.CellReference.classifyCellReference(
+                name, org.apache.poi.ss.SpreadsheetVersion.EXCEL2007)
+                != org.apache.poi.ss.util.CellReference.NameType.NAMED_RANGE) {
+            throw new IllegalArgumentException("Excel table name cannot be a cell reference: " + name);
+        }
+        this.tableName = name;
         return this;
     }
 
@@ -678,6 +707,10 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             // Apply chart on last sheet
             if (options.sheetConfig().chartConfig != null) {
                 ExcelWriteSupport.applyChart(sheet, options.sheetConfig().chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
+            }
+            if (tableName != null && cursor.getRowOfSheet() > headerRowIndex) {
+                ExcelWriteSupport.applyTable(sheet, tableName, headerRowIndex,
+                        cursor.getRowOfSheet() - 1, options.columns().size());
             }
 
             return new ExcelHandler(this.wb, this.password);

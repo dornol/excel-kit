@@ -45,6 +45,9 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected int stopAtBlankRows;
     protected long maxErrors = -1;
     protected UnaryOperator<String> headerNormalizer = UnaryOperator.identity();
+    protected ReadLimits limits = ReadLimits.UNLIMITED;
+    protected CancellationToken cancellationToken = CancellationToken.NONE;
+    protected @Nullable ReadProgressCallback readProgressCallback;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = java.util.Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
@@ -284,8 +287,30 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
+    public SELF headerPolicy(HeaderPolicy policy) {
+        return headerNormalizer(java.util.Objects.requireNonNull(policy, "policy cannot be null").normalizer());
+    }
+
+    public SELF limits(ReadLimits limits) {
+        this.limits = java.util.Objects.requireNonNull(limits, "limits cannot be null");
+        return self();
+    }
+
+    public SELF cancellationToken(CancellationToken token) {
+        this.cancellationToken = java.util.Objects.requireNonNull(token, "token cannot be null");
+        return self();
+    }
+
+    public SELF onReadProgress(int interval, ReadProgressCallback callback) {
+        if (interval <= 0) throw new IllegalArgumentException("progress interval must be positive");
+        this.progressInterval = interval;
+        this.readProgressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
+        return self();
+    }
+
     protected ReadOptions snapshotReadOptions() {
         return new ReadOptions(strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows,
-                skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer);
+                skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer, limits, cancellationToken,
+                readProgressCallback);
     }
 }

@@ -16,18 +16,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Edge case tests for {@link CsvReadHandler} to cover:
- * - Mapping mode in readAsStream()
+ * - Mapping mode
  * - BOM handling
  * - Missing columns in rows
  * - Progress callback in stream mode
- * - readAsStream with progress null
  */
 class CsvReadHandlerEdgeCaseTest {
 
     record Person(String name, int age) {}
 
     // ============================================================
-    // readAsStream in mapping mode
+    // Mapping mode
     // ============================================================
 
 
@@ -42,7 +41,7 @@ class CsvReadHandlerEdgeCaseTest {
     }
 
     @Test
-    void readAsStream_withBOM_shouldStripBOM() {
+    void read_withBOM_shouldStripBOM() {
         // UTF-8 BOM + csv content
         byte[] bom = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
         String csvContent = "Name,Age\nAlice,30";
@@ -104,20 +103,6 @@ class CsvReadHandlerEdgeCaseTest {
         // Row succeeded regardless of missing columns
         assertTrue(results.get(0).success());
     }
-
-    // ============================================================
-    // readAsStream without progress (progressCallback null)
-    // ============================================================
-
-
-    // ============================================================
-    // readAsStream stream close without consuming
-    // ============================================================
-
-
-    // ============================================================
-    // readAsStream with empty file (headerLine == null)
-    // ============================================================
 
 
     // ============================================================

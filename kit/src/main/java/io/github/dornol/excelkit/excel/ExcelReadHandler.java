@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.CellConversionConfig;
@@ -67,8 +68,36 @@ import java.util.function.Supplier;
  * @author dhkim
  * @since 2025-07-19
  */
-public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
+final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExcelReadHandler.class);
+
+    static <T> ExcelReadHandler<T> forPath(Path path, List<ReadColumn<T>> columns, Supplier<T> supplier,
+            @Nullable Validator validator, int sheetIndex, int headerRowIndex, int headerRows,
+            int progressInterval, @Nullable ProgressCallback progressCallback, @Nullable String password,
+            boolean countRows, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+            @Nullable CellConversionConfig conversion, long maxRows, boolean skipBlankRows,
+            int stopAtBlankRows) {
+        var handler = new ExcelReadHandler<>(InputStream.nullInputStream(), columns, supplier, validator,
+                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password,
+                countRows, strictHeaders, duplicateHeaderPolicy, conversion, maxRows, skipBlankRows,
+                stopAtBlankRows);
+        handler.useExternalInput(path);
+        return handler;
+    }
+
+    static <T> ExcelReadHandler<T> forPath(Path path, Function<RowData, T> mapper,
+            @Nullable Validator validator, int sheetIndex, int headerRowIndex, int headerRows,
+            int progressInterval, @Nullable ProgressCallback progressCallback, @Nullable String password,
+            boolean countRows, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
+            @Nullable Set<String> selectedColumns, @Nullable CellConversionConfig conversion,
+            long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
+        var handler = new ExcelReadHandler<>(InputStream.nullInputStream(), mapper, validator, sheetIndex,
+                headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
+                strictHeaders, duplicateHeaderPolicy, selectedColumns, conversion, maxRows, skipBlankRows,
+                stopAtBlankRows);
+        handler.useExternalInput(path);
+        return handler;
+    }
 
     private final @Nullable List<ReadColumn<T>> columns;
     private final int sheetIndex;
@@ -280,6 +309,8 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         markConsumed();
         try {
             readInternal(guardedConsumer(consumer));
+        } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
+            stoppedEarly = true;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
@@ -292,13 +323,22 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
         markConsumed();
+        java.util.concurrent.atomic.AtomicReference<RuntimeException> failure = new java.util.concurrent.atomic.AtomicReference<>();
         try {
             Consumer<ReadResult<T>> guarded = guardedConsumer(result -> {
-                if (!predicate.test(result)) throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                boolean proceed;
+                try {
+                    proceed = predicate.test(result);
+                } catch (RuntimeException e) {
+                    failure.set(e);
+                    throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                }
+                if (!proceed) throw new io.github.dornol.excelkit.core.ReadStoppedException();
             });
             readInternal(guarded);
         } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
             // Normal early completion requested by the caller.
+            stoppedEarly = true;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
@@ -306,7 +346,10 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         } finally {
             close();
         }
+        if (failure.get() != null) throw failure.get();
     }
+
+    boolean wasStoppedEarly() { return stoppedEarly; }
 
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
         Path fileToRead = getTempFile();
@@ -322,6 +365,16 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
 
             XSSFReader reader = new XSSFReader(pkg);
+            if (limits.maxSheets() >= 0) {
+                int sheetCount = 0;
+                Iterator<InputStream> countIterator = reader.getSheetsData();
+                while (countIterator.hasNext()) {
+                    try (InputStream ignored = countIterator.next()) { sheetCount++; }
+                    if (sheetCount > limits.maxSheets()) {
+                        throw new ExcelKitException("Input exceeds maxSheets: " + limits.maxSheets());
+                    }
+                }
+            }
 
             SharedStrings ss = reader.getSharedStringsTable();
             StylesTable styles = reader.getStylesTable();
@@ -535,6 +588,9 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             if (progressCallback != null && progressInterval > 0
                     && dataRowCount % progressInterval == 0) {
                 progressCallback.onProgress(dataRowCount, cursor);
+            }
+            if (progressInterval > 0 && dataRowCount % progressInterval == 0) {
+                notifyReadProgress(dataRowCount, sheetIndex, cursor == null ? -1 : cursor.getTotalRows());
             }
         }
 

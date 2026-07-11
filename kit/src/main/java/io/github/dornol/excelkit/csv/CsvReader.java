@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import io.github.dornol.excelkit.core.InputStreamSource;
 import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.ReadSummary;
+import io.github.dornol.excelkit.core.ReadReport;
 
 /**
  * Builder-style class for configuring CSV row readers.
@@ -280,11 +282,12 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         if (rowMapper != null) {
             handler = new CsvReadHandler<>(inputStream, rowMapper, validator,
                     headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
+                    strictHeaders, duplicateHeaderPolicy,
+                    selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), cellConversionConfig,
                     quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
                     maxRows, skipBlankRows, stopAtBlankRows);
         } else {
-            handler = new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
+            handler = new CsvReadHandler<>(inputStream, List.copyOf(columns), instanceSupplier, validator,
                     headerRowIndex, delimiter, charset, progressInterval, progressCallback,
                     strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
                     quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
@@ -294,9 +297,53 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         return handler;
     }
 
+    private CsvReadHandler<T> createHandler(Path path) {
+        CsvReadHandler<T> handler = rowMapper != null
+                ? CsvReadHandler.forPath(path, rowMapper, validator, headerRowIndex, delimiter, charset,
+                    progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy,
+                    selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), cellConversionConfig,
+                    quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
+                    maxRows, skipBlankRows, stopAtBlankRows)
+                : CsvReadHandler.forPath(path, List.copyOf(columns), instanceSupplier, validator,
+                    headerRowIndex, delimiter, charset, progressInterval, progressCallback, strictHeaders,
+                    duplicateHeaderPolicy, cellConversionConfig, quoteChar, escapeChar, strictQuotes,
+                    ignoreLeadingWhiteSpace, maxRows, skipBlankRows, stopAtBlankRows);
+        handler.options(snapshotReadOptions());
+        return handler;
+    }
+
     /** Reads an input stream without closing it. */
     public void read(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         createHandler(inputStream).read(consumer);
+    }
+
+    public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        long started = System.nanoTime();
+        long[] counts = new long[3];
+        CsvReadHandler<T> handler = createHandler(inputStream);
+        handler.read(result -> {
+            counts[0]++;
+            if (result.success()) counts[1]++; else counts[2]++;
+            consumer.accept(result);
+        });
+        return new ReadSummary(counts[0], counts[1], counts[2], handler.wasStoppedEarly(),
+                java.time.Duration.ofNanos(System.nanoTime() - started));
+    }
+
+    public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
+        if (maxCollectedErrors < 0) throw new IllegalArgumentException("maxCollectedErrors must be non-negative");
+        List<RowError> errors = new java.util.ArrayList<>();
+        long[] row = {0};
+        ReadSummary summary = readWithSummary(inputStream, result -> {
+            row[0]++;
+            if (!result.success() && errors.size() < maxCollectedErrors) {
+                errors.add(new RowError(row[0], result.fileRowNum(),
+                        result.cause() == null ? RowError.Type.VALIDATION : RowError.Type.MAPPING,
+                        result.messages() == null ? List.of() : result.messages(), result.cause(),
+                        result.cellErrors(), result.rawValues()));
+            }
+        });
+        return new ReadReport(summary, errors, summary.errorRows() > errors.size());
     }
 
     public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {
@@ -311,13 +358,43 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         createHandler(inputStream).readWhile(predicate);
     }
 
+    /** Reads directly from a caller-owned path without modifying or deleting it. */
     public void read(Path path, Consumer<ReadResult<T>> consumer) {
-        read((InputStreamSource) () -> Files.newInputStream(path), consumer);
+        createHandler(path).read(consumer);
+    }
+
+    public void read(Path path, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        createHandler(path).read(onSuccess, onError);
+    }
+
+    public void readStrict(Path path, Consumer<T> consumer) {
+        createHandler(path).readStrict(consumer);
+    }
+
+    public void readWhile(Path path, Predicate<ReadResult<T>> predicate) {
+        createHandler(path).readWhile(predicate);
     }
 
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        withSource(source, input -> read(input, consumer));
+    }
+
+    public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        withSource(source, input -> read(input, onSuccess, onError));
+    }
+
+    public void readStrict(InputStreamSource source, Consumer<T> consumer) {
+        withSource(source, input -> readStrict(input, consumer));
+    }
+
+    public void readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
+        withSource(source, input -> readWhile(input, predicate));
+    }
+
+    private void withSource(InputStreamSource source, Consumer<InputStream> operation) {
+        java.util.Objects.requireNonNull(source, "source cannot be null");
         try (InputStream input = source.openStream()) {
-            read(input, consumer);
+            operation.accept(input);
         } catch (IOException e) {
             throw new CsvReadException("Failed to open CSV input", e);
         }

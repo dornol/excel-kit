@@ -24,6 +24,7 @@ public class TempResourceContainer implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(TempResourceContainer.class);
     private @Nullable Path tempDir;
     private @Nullable Path tempFile;
+    private boolean ownsFile = true;
 
     /**
      * Returns the path to the temporary directory (if set).
@@ -59,6 +60,15 @@ public class TempResourceContainer implements AutoCloseable {
      */
     protected void setTempFile(@Nullable Path tempFile) {
         this.tempFile = tempFile;
+        this.ownsFile = true;
+    }
+
+    /** Replaces owned temporary resources with a caller-owned file that must never be deleted. */
+    protected void useExternalFile(Path file) {
+        close();
+        this.tempDir = null;
+        this.tempFile = java.util.Objects.requireNonNull(file, "file cannot be null");
+        this.ownsFile = false;
     }
 
     /**
@@ -68,7 +78,7 @@ public class TempResourceContainer implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (tempFile != null) {
+        if (tempFile != null && ownsFile) {
             try {
                 Files.deleteIfExists(tempFile);
             } catch (IOException e) {

@@ -29,6 +29,8 @@ import java.util.function.Supplier;
 import io.github.dornol.excelkit.core.InputStreamSource;
 import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.ReadSummary;
+import io.github.dornol.excelkit.core.ReadReport;
 
 /**
  * Builder-style class for configuring Excel row readers.
@@ -292,10 +294,11 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         if (rowMapper != null) {
             handler = new ExcelReadHandler<>(inputStream, rowMapper, validator,
                     sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
+                    strictHeaders, duplicateHeaderPolicy,
+                    selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), cellConversionConfig,
                     maxRows, skipBlankRows, stopAtBlankRows);
         } else {
-            handler = new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
+            handler = new ExcelReadHandler<>(inputStream, List.copyOf(columns), instanceSupplier, validator,
                     sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
                     strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
                     maxRows, skipBlankRows, stopAtBlankRows);
@@ -304,9 +307,52 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         return handler;
     }
 
+    private ExcelReadHandler<T> createHandler(Path path) {
+        ExcelReadHandler<T> handler = rowMapper != null
+                ? ExcelReadHandler.forPath(path, rowMapper, validator, sheetIndex, headerRowIndex, headerRows,
+                    progressInterval, progressCallback, password, countRows, strictHeaders,
+                    duplicateHeaderPolicy, selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns),
+                    cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows)
+                : ExcelReadHandler.forPath(path, List.copyOf(columns), instanceSupplier, validator, sheetIndex,
+                    headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
+                    strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows, skipBlankRows,
+                    stopAtBlankRows);
+        handler.options(snapshotReadOptions());
+        return handler;
+    }
+
     /** Reads an input stream without closing it. */
     public void read(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         createHandler(inputStream).read(consumer);
+    }
+
+    public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        long started = System.nanoTime();
+        long[] counts = new long[3];
+        ExcelReadHandler<T> handler = createHandler(inputStream);
+        handler.read(result -> {
+            counts[0]++;
+            if (result.success()) counts[1]++; else counts[2]++;
+            consumer.accept(result);
+        });
+        return new ReadSummary(counts[0], counts[1], counts[2], handler.wasStoppedEarly(),
+                java.time.Duration.ofNanos(System.nanoTime() - started));
+    }
+
+    public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
+        if (maxCollectedErrors < 0) throw new IllegalArgumentException("maxCollectedErrors must be non-negative");
+        List<RowError> errors = new ArrayList<>();
+        long[] row = {0};
+        ReadSummary summary = readWithSummary(inputStream, result -> {
+            row[0]++;
+            if (!result.success() && errors.size() < maxCollectedErrors) {
+                errors.add(new RowError(row[0], result.fileRowNum(),
+                        result.cause() == null ? RowError.Type.VALIDATION : RowError.Type.MAPPING,
+                        result.messages() == null ? List.of() : result.messages(), result.cause(),
+                        result.cellErrors(), result.rawValues()));
+            }
+        });
+        return new ReadReport(summary, errors, summary.errorRows() > errors.size());
     }
 
     public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {
@@ -321,15 +367,44 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         createHandler(inputStream).readWhile(predicate);
     }
 
-    /** Opens and closes the path-owned stream. */
+    /** Reads directly from a caller-owned path without modifying or deleting it. */
     public void read(Path path, Consumer<ReadResult<T>> consumer) {
-        read((InputStreamSource) () -> Files.newInputStream(path), consumer);
+        createHandler(path).read(consumer);
+    }
+
+    public void read(Path path, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        createHandler(path).read(onSuccess, onError);
+    }
+
+    public void readStrict(Path path, Consumer<T> consumer) {
+        createHandler(path).readStrict(consumer);
+    }
+
+    public void readWhile(Path path, Predicate<ReadResult<T>> predicate) {
+        createHandler(path).readWhile(predicate);
     }
 
     /** Opens and closes the source-owned stream. */
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        withSource(source, input -> read(input, consumer));
+    }
+
+    public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        withSource(source, input -> read(input, onSuccess, onError));
+    }
+
+    public void readStrict(InputStreamSource source, Consumer<T> consumer) {
+        withSource(source, input -> readStrict(input, consumer));
+    }
+
+    public void readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
+        withSource(source, input -> readWhile(input, predicate));
+    }
+
+    private void withSource(InputStreamSource source, Consumer<InputStream> operation) {
+        java.util.Objects.requireNonNull(source, "source cannot be null");
         try (InputStream input = source.openStream()) {
-            read(input, consumer);
+            operation.accept(input);
         } catch (IOException e) {
             throw new ExcelReadException("Failed to open Excel input", e);
         }
@@ -347,9 +422,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         try {
             tempDir = TempResourceCreator.createTempDirectory();
             tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            try (InputStream is = inputStream) {
-                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.copy(java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null"),
+                    tempFile, StandardCopyOption.REPLACE_EXISTING);
 
             try (OPCPackage pkg = OPCPackage.open(tempFile.toFile())) {
                 XSSFReader reader = new XSSFReader(pkg);
@@ -368,6 +442,20 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
             throw new ExcelReadException("Failed to read sheet names", e);
         } finally {
             cleanupTemp(tempDir, tempFile);
+        }
+    }
+
+    public static List<ExcelSheetInfo> getSheetNames(Path path) {
+        java.util.Objects.requireNonNull(path, "path cannot be null");
+        return getSheetNames((InputStreamSource) () -> Files.newInputStream(path));
+    }
+
+    public static List<ExcelSheetInfo> getSheetNames(InputStreamSource source) {
+        java.util.Objects.requireNonNull(source, "source cannot be null");
+        try (InputStream input = source.openStream()) {
+            return getSheetNames(input);
+        } catch (IOException e) {
+            throw new ExcelReadException("Failed to open Excel input", e);
         }
     }
 
@@ -391,9 +479,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         try {
             tempDir = TempResourceCreator.createTempDirectory();
             tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            try (InputStream is = inputStream) {
-                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.copy(java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null"),
+                    tempFile, StandardCopyOption.REPLACE_EXISTING);
 
             try (OPCPackage pkg = OPCPackage.open(tempFile.toFile())) {
                 XSSFReader reader = new XSSFReader(pkg);
@@ -430,6 +517,20 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
             throw new ExcelReadException("Failed to read sheet headers", e);
         } finally {
             cleanupTemp(tempDir, tempFile);
+        }
+    }
+
+    public static List<String> getSheetHeaders(Path path, int sheetIndex, int headerRowIndex) {
+        java.util.Objects.requireNonNull(path, "path cannot be null");
+        return getSheetHeaders((InputStreamSource) () -> Files.newInputStream(path), sheetIndex, headerRowIndex);
+    }
+
+    public static List<String> getSheetHeaders(InputStreamSource source, int sheetIndex, int headerRowIndex) {
+        java.util.Objects.requireNonNull(source, "source cannot be null");
+        try (InputStream input = source.openStream()) {
+            return getSheetHeaders(input, sheetIndex, headerRowIndex);
+        } catch (IOException e) {
+            throw new ExcelReadException("Failed to open Excel input", e);
         }
     }
 

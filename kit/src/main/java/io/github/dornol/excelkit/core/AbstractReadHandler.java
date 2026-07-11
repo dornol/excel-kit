@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -58,6 +59,13 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected int stopAtBlankRows;
     protected long maxErrors = -1;
     protected UnaryOperator<String> headerNormalizer = UnaryOperator.identity();
+    protected ReadLimits limits = ReadLimits.UNLIMITED;
+    protected CancellationToken cancellationToken = CancellationToken.NONE;
+    protected @Nullable ReadProgressCallback readProgressCallback;
+    private final AtomicLong successCount = new AtomicLong();
+    private final AtomicLong errorCount = new AtomicLong();
+    private final long startedNanos = System.nanoTime();
+    protected boolean stoppedEarly;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -173,6 +181,11 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
+        if (formattedValue != null && limits.maxCellCharacters() >= 0
+                && formattedValue.length() > limits.maxCellCharacters()) {
+            throw new ExcelKitException("Cell exceeds maxCellCharacters at column " + columnIndex
+                    + ": " + limits.maxCellCharacters());
+        }
         return new CellData(columnIndex, formattedValue, cellConversionConfig);
     }
 
@@ -218,6 +231,14 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         }
     }
 
+    protected final void useExternalInput(Path path) {
+        if (!Files.isRegularFile(java.util.Objects.requireNonNull(path, "path cannot be null"))) {
+            close();
+            throw new ExcelKitException("Input path is not a regular file: " + path);
+        }
+        useExternalFile(path);
+    }
+
     /**
      * Reads the file and invokes the given consumer for each row result.
      *
@@ -238,21 +259,46 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.stopAtBlankRows = options.stopAtBlankRows();
         this.maxErrors = options.maxErrors();
         this.headerNormalizer = options.headerNormalizer();
+        this.limits = options.limits();
+        this.cancellationToken = options.cancellationToken();
+        this.readProgressCallback = options.readProgressCallback();
+        if (limits.maxInputBytes() >= 0) {
+            try {
+                if (Files.size(java.util.Objects.requireNonNull(getTempFile())) > limits.maxInputBytes()) {
+                    close();
+                    throw new ExcelKitException("Input exceeds maxInputBytes: " + limits.maxInputBytes());
+                }
+            } catch (java.io.IOException e) {
+                close();
+                throw new ExcelKitException("Failed to inspect input size", e);
+            }
+        }
         return this;
     }
 
     protected Consumer<ReadResult<T>> guardedConsumer(Consumer<ReadResult<T>> consumer) {
         AtomicLong errors = new AtomicLong();
         return result -> {
+            if (cancellationToken.isCancellationRequested()) {
+                throw new ReadStoppedException();
+            }
             if (!result.success()) {
+                errorCount.incrementAndGet();
                 long count = errors.incrementAndGet();
                 if (maxErrors >= 0 && count > maxErrors) {
                     throw new ReadAbortException("Maximum read errors exceeded: " + maxErrors,
                             ReadAbortReason.MAX_ERRORS_EXCEEDED, maxErrors, count);
                 }
-            }
+            } else successCount.incrementAndGet();
             consumer.accept(result);
         };
+    }
+
+    protected void notifyReadProgress(long processedRows, int sheetIndex, long totalRows) {
+        if (readProgressCallback != null) {
+            readProgressCallback.onProgress(new ReadProgress(processedRows, successCount.get(), errorCount.get(),
+                    sheetIndex, totalRows, java.time.Duration.ofNanos(System.nanoTime() - startedNanos)));
+        }
     }
 
     /**
@@ -384,6 +430,9 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * Builds a header-to-index map using this handler's duplicate header policy.
      */
     protected Map<String, Integer> buildHeaderIndexMap(List<String> headerNames, String errorPrefix) {
+        if (limits.maxColumns() >= 0 && headerNames.size() > limits.maxColumns()) {
+            throw new ExcelKitException("Input exceeds maxColumns: " + limits.maxColumns());
+        }
         Map<String, Integer> map = new LinkedHashMap<>();
         for (int i = 0; i < headerNames.size(); i++) {
             String originalHeaderName = headerNames.get(i);

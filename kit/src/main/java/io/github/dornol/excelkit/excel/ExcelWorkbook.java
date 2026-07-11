@@ -88,7 +88,7 @@ public class ExcelWorkbook implements AutoCloseable {
     }
 
     private ExcelWorkbook(InitOptions opts) {
-        this.wb = new SXSSFWorkbook(opts.rowAccessWindowSize);
+        this.wb = new SXSSFWorkbook(null, opts.rowAccessWindowSize, opts.compressTempFiles, opts.useSharedStrings);
         ExcelColor defaultColor = ExcelColor.WHITE;
         this.headerColor = new XSSFColor(new byte[]{
                 (byte) defaultColor.getR(),
@@ -113,6 +113,8 @@ public class ExcelWorkbook implements AutoCloseable {
      */
     public static final class InitOptions {
         private int rowAccessWindowSize = DEFAULT_ROW_ACCESS_WINDOW_SIZE;
+        private boolean compressTempFiles;
+        private boolean useSharedStrings;
 
         private InitOptions() {}
 
@@ -126,6 +128,16 @@ public class ExcelWorkbook implements AutoCloseable {
         public InitOptions rowAccessWindowSize(int size) {
             if (size <= 0) throw new IllegalArgumentException("rowAccessWindowSize must be positive");
             this.rowAccessWindowSize = size;
+            return this;
+        }
+
+        public InitOptions compressTempFiles(boolean enabled) {
+            this.compressTempFiles = enabled;
+            return this;
+        }
+
+        public InitOptions useSharedStrings(boolean enabled) {
+            this.useSharedStrings = enabled;
             return this;
         }
     }

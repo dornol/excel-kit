@@ -1,0 +1,49 @@
+name: API compatibility
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: Published version to compare
+        default: 0.20.0
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  japicmp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: chmod +x gradlew
+      - run: ./gradlew :kit:jar :excel-kit-spring:jar --no-daemon
+      - name: Compare public APIs
+        env:
+          BASELINE: ${{ inputs.baseline || '0.20.0' }}
+        run: |
+          curl -fsSLo japicmp.jar https://repo1.maven.org/maven2/com/github/siom79/japicmp/japicmp/0.24.1/japicmp-0.24.1-jar-with-dependencies.jar
+          mkdir -p api-compatibility
+          for artifact in excel-kit excel-kit-spring; do
+            curl -fsSLo "old-${artifact}.jar" "https://repo1.maven.org/maven2/io/github/dornol/${artifact}/${BASELINE}/${artifact}-${BASELINE}.jar"
+            if [ "$artifact" = "excel-kit" ]; then module=kit; jar_prefix=kit; else module=excel-kit-spring; jar_prefix=excel-kit-spring; fi
+            new_jar=$(find "${module}/build/libs" -name "${jar_prefix}-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -1)
+            java -jar japicmp.jar \
+              --old "old-${artifact}.jar" \
+              --new "$new_jar" \
+              --ignore-missing-classes \
+              --only-modified \
+              --html-file "api-compatibility/${artifact}.html" \
+              --xml-file "api-compatibility/${artifact}.xml" || true
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: api-compatibility
+          path: api-compatibility/
