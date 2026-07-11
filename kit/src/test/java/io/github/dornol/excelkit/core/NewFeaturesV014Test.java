@@ -227,8 +227,7 @@ class NewFeaturesV014Test {
                     .password("secret")
                     .column((u, cell) -> u.name = cell.asString())
                     .column((u, cell) -> u.age = cell.asInt())
-                    .build(new ByteArrayInputStream(encrypted))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(encrypted), results::add);
 
             assertEquals(2, results.size());
             assertEquals("Alice", results.get(0).data().name);
@@ -246,8 +245,7 @@ class NewFeaturesV014Test {
                     ExcelReader.setter(User::new)
                             .password("wrong")
                             .column((u, cell) -> u.name = cell.asString())
-                            .build(new ByteArrayInputStream(encrypted))
-                            .read(r -> {})
+                            .read(new ByteArrayInputStream(encrypted), r -> {})
             );
             assertTrue(ex.getMessage().contains("Invalid password"),
                     "Expected 'Invalid password' in message but got: " + ex.getMessage());
@@ -262,8 +260,7 @@ class NewFeaturesV014Test {
             assertThrows(ExcelReadException.class, () ->
                     ExcelReader.setter(User::new)
                             .column((u, cell) -> u.name = cell.asString())
-                            .build(new ByteArrayInputStream(encrypted))
-                            .read(r -> {})
+                            .read(new ByteArrayInputStream(encrypted), r -> {})
             );
         }
 
@@ -283,8 +280,7 @@ class NewFeaturesV014Test {
                     ExcelReader.setter(User::new)
                             .password("secret")
                             .column((u, cell) -> u.name = cell.asString())
-                            .build(new ByteArrayInputStream(out.toByteArray()))
-                            .read(r -> {})
+                            .read(new ByteArrayInputStream(out.toByteArray()), r -> {})
             );
         }
     }
@@ -371,16 +367,14 @@ class NewFeaturesV014Test {
             new ExcelReader<>(User::new)
                     .column((u, cell) -> u.name = cell.asString())
                     .column((u, cell) -> u.age = cell.asInt())
-                    .build(new ByteArrayInputStream(data))
-                    .read(constructorResults::add);
+                    .read(new ByteArrayInputStream(data), constructorResults::add);
 
             // Read with setter factory
             List<ReadResult<User>> setterResults = new ArrayList<>();
             ExcelReader.setter(User::new)
                     .column((u, cell) -> u.name = cell.asString())
                     .column((u, cell) -> u.age = cell.asInt())
-                    .build(new ByteArrayInputStream(data))
-                    .read(setterResults::add);
+                    .read(new ByteArrayInputStream(data), setterResults::add);
 
             assertEquals(constructorResults.size(), setterResults.size());
             assertEquals(constructorResults.get(0).data().name, setterResults.get(0).data().name);
@@ -398,16 +392,14 @@ class NewFeaturesV014Test {
             new CsvReader<>(User::new)
                     .column((u, cell) -> u.name = cell.asString())
                     .column((u, cell) -> u.age = cell.asInt())
-                    .build(new ByteArrayInputStream(data))
-                    .read(constructorResults::add);
+                    .read(new ByteArrayInputStream(data), constructorResults::add);
 
             // Read with setter factory
             List<ReadResult<User>> setterResults = new ArrayList<>();
             CsvReader.setter(User::new)
                     .column((u, cell) -> u.name = cell.asString())
                     .column((u, cell) -> u.age = cell.asInt())
-                    .build(new ByteArrayInputStream(data))
-                    .read(setterResults::add);
+                    .read(new ByteArrayInputStream(data), setterResults::add);
 
             assertEquals(constructorResults.size(), setterResults.size());
             assertEquals(constructorResults.get(0).data().name, setterResults.get(0).data().name);
@@ -428,8 +420,7 @@ class NewFeaturesV014Test {
             ExcelReader.setter(User::new)
                     .column("Name", (u, cell) -> u.name = cell.asString())
                     .column("Age", (u, cell) -> u.age = cell.asInt())
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertEquals("Bob", results.get(0).data().name);
@@ -459,15 +450,13 @@ class NewFeaturesV014Test {
             List<ReadResult<User>> nullValidatorResults = new ArrayList<>();
             new ExcelReader<>(User::new, null)
                     .column((u, cell) -> u.name = cell.asString())
-                    .build(new ByteArrayInputStream(data))
-                    .read(nullValidatorResults::add);
+                    .read(new ByteArrayInputStream(data), nullValidatorResults::add);
 
             // With no-validator constructor
             List<ReadResult<User>> noValidatorResults = new ArrayList<>();
             new ExcelReader<>(User::new)
                     .column((u, cell) -> u.name = cell.asString())
-                    .build(new ByteArrayInputStream(data))
-                    .read(noValidatorResults::add);
+                    .read(new ByteArrayInputStream(data), noValidatorResults::add);
 
             assertEquals(nullValidatorResults.size(), noValidatorResults.size());
             assertEquals(nullValidatorResults.get(0).data().name, noValidatorResults.get(0).data().name);
@@ -485,15 +474,13 @@ class NewFeaturesV014Test {
             List<ReadResult<User>> nullValidatorResults = new ArrayList<>();
             new CsvReader<>(User::new, null)
                     .column((u, cell) -> u.name = cell.asString())
-                    .build(new ByteArrayInputStream(data))
-                    .read(nullValidatorResults::add);
+                    .read(new ByteArrayInputStream(data), nullValidatorResults::add);
 
             // With no-validator constructor
             List<ReadResult<User>> noValidatorResults = new ArrayList<>();
             new CsvReader<>(User::new)
                     .column((u, cell) -> u.name = cell.asString())
-                    .build(new ByteArrayInputStream(data))
-                    .read(noValidatorResults::add);
+                    .read(new ByteArrayInputStream(data), noValidatorResults::add);
 
             assertEquals(nullValidatorResults.size(), noValidatorResults.size());
             assertEquals(nullValidatorResults.get(0).data().name, noValidatorResults.get(0).data().name);

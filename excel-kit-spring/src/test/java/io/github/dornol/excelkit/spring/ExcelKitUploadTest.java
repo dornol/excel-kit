@@ -21,10 +21,10 @@ class ExcelKitUploadTest {
         MockMultipartFile file = new MockMultipartFile("file", "products.csv", "text/csv",
                 "Name,Price\nNotebook,1200\nPen,bad\n".getBytes(StandardCharsets.UTF_8));
 
-        UploadResult<Product> result = ExcelKitUpload.csv(file, inputStream -> CsvReader.setter(Product::new)
+        UploadResult<Product> result = ExcelKitUpload.csv(file, (inputStream, consumer) -> CsvReader.setter(Product::new)
                 .column("Name", (p, cell) -> p.name = cell.asString())
                 .column("Price", (p, cell) -> p.price = cell.asInt())
-                .build(inputStream));
+                .read(inputStream, consumer));
 
         assertEquals("CSV", result.type());
         assertEquals(1, result.successCount());
@@ -37,9 +37,9 @@ class ExcelKitUploadTest {
         MockMultipartFile file = new MockMultipartFile("file", "products.csv", "text/csv",
                 "Name\nNotebook\n".getBytes(StandardCharsets.UTF_8));
 
-        UploadResult<Product> result = ExcelKitUpload.read("Products", file, inputStream -> CsvReader.setter(Product::new)
+        UploadResult<Product> result = ExcelKitUpload.read("Products", file, (inputStream, consumer) -> CsvReader.setter(Product::new)
                 .column("Name", (p, cell) -> p.name = cell.asString())
-                .build(inputStream));
+                .read(inputStream, consumer));
 
         assertEquals("Products", result.type());
         assertEquals(1, result.successCount());
@@ -63,7 +63,7 @@ class ExcelKitUploadTest {
     }
 
     @Test
-    void read_sanitizesFilenameWhenUploadStreamCloseFails() {
+    void read_closesMultipartStreamExactlyOnce() {
         MultipartFile file = new MockMultipartFile(
                 "file", "..\\bad/\r\nname.csv", "text/csv", new byte[]{1}) {
             @Override
@@ -72,15 +72,11 @@ class ExcelKitUploadTest {
             }
         };
 
-        ExcelKitUploadException exception = assertThrows(ExcelKitUploadException.class,
-                () -> ExcelKitUpload.csv(file, inputStream -> CsvReader.setter(Product::new)
-                        .column("Name", (p, cell) -> p.name = cell.asString())
-                        .build(inputStream)));
+        UploadResult<Product> result = ExcelKitUpload.csv(file, (inputStream, consumer) -> CsvReader.setter(Product::new)
+                .column("Name", (p, cell) -> p.name = cell.asString())
+                .read(inputStream, consumer));
 
-        assertFalse(exception.getMessage().contains("\r"));
-        assertFalse(exception.getMessage().contains("\n"));
-        assertFalse(exception.getMessage().contains("\\"));
-        assertFalse(exception.getMessage().contains("/"));
+        assertEquals(1, result.successCount());
     }
 
     static class Product {

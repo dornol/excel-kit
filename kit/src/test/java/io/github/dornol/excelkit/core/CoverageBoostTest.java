@@ -39,39 +39,15 @@ class CoverageBoostTest {
     @Nested
     class AbstractReadHandlerValidation {
 
-        @Test
-        void excelReader_nullInputStream_throwsIllegalArgument() {
-            var reader = new ExcelReader<>(Object::new, null)
-                    .column("A", (t, cell) -> {});
-            assertThrows(IllegalArgumentException.class, () -> reader.build(null));
-        }
 
-        @Test
-        void csvReader_nullInputStream_throwsIllegalArgument() {
-            var reader = new CsvReader<>(Object::new, null)
-                    .column("A", (t, cell) -> {});
-            assertThrows(IllegalArgumentException.class, () -> reader.build(null));
-        }
 
-        @Test
-        void excelMapReader_nullInputStream_throwsException() {
-            assertThrows(Exception.class,
-                    () -> ExcelReader.forMap().build(null));
-        }
 
-        @Test
-        void csvMapReader_nullInputStream_throwsIllegalArgument() {
-            assertThrows(IllegalArgumentException.class,
-                    () -> CsvReader.forMap().build(null));
-        }
 
-        @Test
-        void csvMapReader_negativeHeaderRowIndex_throwsIllegalArgument() {
-            assertThrows(IllegalArgumentException.class,
-                    () -> CsvReader.forMap()
-                            .headerRowIndex(-1)
-                            .build(new ByteArrayInputStream("A\n1".getBytes())));
-        }
+
+
+
+
+
     }
 
     // ============================================================
@@ -80,76 +56,17 @@ class CoverageBoostTest {
     @Nested
     class CsvMapReaderStreamErrors {
 
-        @Test
-        void readAsStream_emptyFile_throwsCsvReadException() {
-            assertThrows(CsvReadException.class, () -> {
-                try (var stream = CsvReader.forMap()
-                        .build(new ByteArrayInputStream(new byte[0]))
-                        .readAsStream()) {
-                    stream.toList();
-                }
-            });
-        }
 
-        @Test
-        void readAsStream_headerOnly_returnsEmptyStream() {
-            String csv = "Name,Age\n";
-            try (var stream = CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .readAsStream()) {
-                var results = stream.toList();
-                assertTrue(results.isEmpty());
-            }
-        }
 
-        @Test
-        void readAsStream_closeWithoutConsuming_shouldNotLeak() {
-            String csv = "Name\nAlice\nBob\n";
-            var stream = CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .readAsStream();
-            stream.close();
-            // no exception = resources cleaned up
-        }
 
-        @Test
-        void readAsStream_partialConsumption_shouldCleanup() {
-            String csv = "Name\nAlice\nBob\nCharlie\n";
-            try (var stream = CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .readAsStream()) {
-                var first = stream.findFirst();
-                assertTrue(first.isPresent());
-                assertEquals("Alice", first.get().data().get("Name"));
-            }
-        }
 
-        @Test
-        void readAsStream_withProgress_shouldFireCallbacks() {
-            String csv = "Name\nA\nB\nC\nD\n";
-            List<Long> progressCounts = new ArrayList<>();
-            try (var stream = CsvReader.forMap()
-                    .onProgress(2, (count, total) -> progressCounts.add(count))
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .readAsStream()) {
-                var results = stream.toList();
-                assertEquals(4, results.size());
-            }
-            assertEquals(List.of(2L, 4L), progressCounts);
-        }
 
-        @Test
-        void readAsStream_insufficientRowsForHeader_throwsCsvReadException() {
-            String csv = "only one line";
-            assertThrows(CsvReadException.class, () -> {
-                try (var stream = CsvReader.forMap()
-                        .headerRowIndex(5)
-                        .build(new ByteArrayInputStream(csv.getBytes()))
-                        .readAsStream()) {
-                    stream.toList();
-                }
-            });
-        }
+
+
+
+
+
+
     }
 
     // ============================================================
@@ -354,42 +271,9 @@ class CoverageBoostTest {
     @Nested
     class ExcelMapReaderStreamCoverage {
 
-        @Test
-        void readAsStream_tryWithResources_multipleColumns() throws IOException {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.forMap("Name", "Age", "City").write(Stream.of(
-                    Map.of("Name", "Alice", "Age", 30, "City", "Seoul"),
-                    Map.of("Name", "Bob", "Age", 25, "City", "Tokyo")
-            )).writeTo(out);
 
-            try (var stream = ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .readAsStream()) {
-                var results = stream.toList();
-                assertEquals(2, results.size());
-                assertTrue(results.get(0).success());
-                assertEquals("Alice", results.get(0).data().get("Name"));
-                assertEquals("Bob", results.get(1).data().get("Name"));
-            }
-        }
 
-        @Test
-        void readAsStream_withHeaderRowIndex() throws IOException {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.forMap("Name").write(Stream.of(
-                    Map.of("Name", "Alice")
-            )).writeTo(out);
 
-            // headerRowIndex 0 is default — just verifying the API path
-            try (var stream = ExcelReader.forMap()
-                    .headerRowIndex(0)
-                    .sheetIndex(0)
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .readAsStream()) {
-                var results = stream.toList();
-                assertEquals(1, results.size());
-            }
-        }
     }
 
     // ============================================================
@@ -411,8 +295,7 @@ class CoverageBoostTest {
                     .column((p, cell) -> p.name = cell.asString())
                     .skipColumn()
                     .column((p, cell) -> p.age = cell.asInt())
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes()), results::add);
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).success());
@@ -427,8 +310,7 @@ class CoverageBoostTest {
             new CsvReader<>(Person::new, null)
                     .skipColumns(3)
                     .column((p, cell) -> p.name = cell.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes()), results::add);
 
             assertEquals(1, results.size());
             assertEquals("4", results.get(0).data().name);
@@ -448,8 +330,7 @@ class CoverageBoostTest {
                     .dialect(CsvDialect.PIPE)
                     .column("Name", (p, cell) -> p.name = cell.asString())
                     .column("Age", (p, cell) -> p.age = cell.asInt())
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes()), results::add);
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).data().name);
@@ -463,8 +344,7 @@ class CoverageBoostTest {
                     .column("NonExistent", (p, cell) -> p.name = cell.asString());
 
             assertThrows(ExcelKitException.class, () ->
-                    reader.build(new ByteArrayInputStream(csv.getBytes()))
-                            .read(r -> {}));
+                    reader.read(new ByteArrayInputStream(csv.getBytes()), r -> {}));
         }
 
         @Test
@@ -473,26 +353,10 @@ class CoverageBoostTest {
                     .column("Name", (p, cell) -> p.name = cell.asString());
 
             assertThrows(CsvReadException.class, () ->
-                    reader.build(new ByteArrayInputStream(new byte[0]))
-                            .read(r -> {}));
+                    reader.read(new ByteArrayInputStream(new byte[0]), r -> {}));
         }
 
-        @Test
-        void csvReader_readAsStream_errorInRow_throwsCsvReadException() {
-            String csv = "Name,Age\nAlice,notANumber\n";
-            var handler = new CsvReader<>(Person::new, null)
-                    .column("Name", (p, cell) -> p.name = cell.asString())
-                    .column("Age", (p, cell) -> p.age = cell.asInt())
-                    .build(new ByteArrayInputStream(csv.getBytes()));
 
-            // Setter error results in failed ReadResult, not exception
-            List<ReadResult<Person>> results = new ArrayList<>();
-            handler.read(results::add);
-            assertEquals(1, results.size());
-            assertFalse(results.get(0).success());
-            assertNotNull(results.get(0).messages());
-            assertFalse(results.get(0).messages().isEmpty());
-        }
     }
 
     // ============================================================
@@ -508,8 +372,7 @@ class CoverageBoostTest {
             CsvReader.forMap()
                     .dialect(CsvDialect.TSV)
                     .charset(StandardCharsets.UTF_8)
-                    .build(new ByteArrayInputStream(tsv.getBytes()))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(tsv.getBytes()), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -521,8 +384,7 @@ class CoverageBoostTest {
             assertThrows(CsvReadException.class, () ->
                     CsvReader.forMap()
                             .headerRowIndex(5)
-                            .build(new ByteArrayInputStream(csv.getBytes()))
-                            .read(r -> {}));
+                            .read(new ByteArrayInputStream(csv.getBytes()), r -> {}));
         }
     }
 

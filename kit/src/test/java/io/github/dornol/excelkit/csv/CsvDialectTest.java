@@ -141,8 +141,7 @@ class CsvDialectTest {
         CsvReader.<Item>mapping(row ->
                 new Item(row.get("Name").asString(), row.get("Value").asInt())
         ).dialect(CsvDialect.TSV)
-                .build(new ByteArrayInputStream(tsv.getBytes(StandardCharsets.UTF_8)))
-                .read(r -> {
+                .read(new ByteArrayInputStream(tsv.getBytes(StandardCharsets.UTF_8)), r -> {
                     assertTrue(r.success());
                     results.add(r.data());
                 });
@@ -160,8 +159,7 @@ class CsvDialectTest {
         CsvReader.<Item>mapping(row ->
                 new Item(row.get("Name").asString(), row.get("Value").asInt())
         ).dialect(CsvDialect.PIPE)
-                .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name());
@@ -184,8 +182,7 @@ class CsvDialectTest {
         CsvReader.<Item>mapping(row ->
                 new Item(row.get("Name").asString(), row.get("Value").asInt())
         ).dialect(CsvDialect.TSV)
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
         assertEquals(2, results.size());
         assertEquals("Alice", results.get(0).name());

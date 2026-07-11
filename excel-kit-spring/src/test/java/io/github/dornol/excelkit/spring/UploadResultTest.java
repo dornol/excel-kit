@@ -13,12 +13,12 @@ class UploadResultTest {
     @Test
     void read_collectsRowsAndStructuredErrors() {
         String csv = "Name,Price\nNotebook,1200\nPen,not-a-number\n";
-        var handler = CsvReader.setter(Product::new)
+        var reader = CsvReader.setter(Product::new)
                 .column("Name", (p, cell) -> p.name = cell.asString())
-                .column("Price", (p, cell) -> p.price = cell.asInt())
-                .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)));
+                .column("Price", (p, cell) -> p.price = cell.asInt());
 
-        UploadResult<Product> result = UploadResult.read("CSV", handler);
+        UploadResult<Product> result = UploadResult.read("CSV", consumer ->
+                reader.read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), consumer));
 
         assertEquals("CSV", result.type());
         assertEquals(1, result.successCount());

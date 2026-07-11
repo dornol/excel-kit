@@ -307,5 +307,5 @@ var schema = ExcelKitSchema.<Product>builder()
 schema.excelWriter().write(data).writeTo(out);
 
 // Read
-schema.excelReader(Product::new, null).build(in).read(consumer);
+schema.excelReader(Product::new, null).read(in, consumer);
 ```

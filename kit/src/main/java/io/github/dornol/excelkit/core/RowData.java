@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.core;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 /**
  * Provides access to all cell data in a single row, indexed by header name or column position.
@@ -13,7 +14,7 @@ import java.util.Map;
  * ExcelReader.mapping(row -> new PersonRecord(
  *         row.get("Name").asString(),
  *         row.get("Age").asInt()
- * )).build(inputStream).read(result -> { ... });
+ * )).read(inputStream, result -> { ... });
  * }</pre>
  *
  * @author dhkim
@@ -23,6 +24,7 @@ public class RowData {
     private final List<CellData> cells;
     private final List<String> headerNames;
     private final Map<String, Integer> headerIndex;
+    private final UnaryOperator<String> headerNormalizer;
 
     /**
      * Constructs a RowData instance.
@@ -32,9 +34,15 @@ public class RowData {
      * @param headerIndex a map from header name to column index (built once per file)
      */
     public RowData(List<CellData> cells, List<String> headerNames, Map<String, Integer> headerIndex) {
+        this(cells, headerNames, headerIndex, UnaryOperator.identity());
+    }
+
+    public RowData(List<CellData> cells, List<String> headerNames, Map<String, Integer> headerIndex,
+                   UnaryOperator<String> headerNormalizer) {
         this.cells = cells;
         this.headerNames = headerNames;
         this.headerIndex = headerIndex;
+        this.headerNormalizer = java.util.Objects.requireNonNull(headerNormalizer, "headerNormalizer cannot be null");
     }
 
     /**
@@ -46,7 +54,7 @@ public class RowData {
      * @throws IllegalArgumentException if the header name is not found
      */
     public CellData get(String headerName) {
-        Integer idx = headerIndex.get(headerName);
+        Integer idx = headerIndex.get(normalize(headerName));
         if (idx == null) {
             throw new IllegalArgumentException(
                     "Header '" + headerName + "' not found. Available headers: " + headerNames);
@@ -72,7 +80,7 @@ public class RowData {
      * @return {@code true} if the header exists
      */
     public boolean has(String headerName) {
-        return headerIndex.containsKey(headerName);
+        return headerIndex.containsKey(normalize(headerName));
     }
 
     /**
@@ -82,7 +90,7 @@ public class RowData {
      * @return the resolved column index, or {@code -1} if the header is absent
      */
     public int headerIndexOf(String headerName) {
-        Integer idx = headerIndex.get(headerName);
+        Integer idx = headerIndex.get(normalize(headerName));
         return idx == null ? -1 : idx;
     }
 
@@ -112,5 +120,11 @@ public class RowData {
             return new CellData(index, null);
         }
         return cells.get(index);
+    }
+
+    private String normalize(String headerName) {
+        String normalized = headerNormalizer.apply(headerName);
+        if (normalized == null) throw new IllegalArgumentException("Header normalizer returned null");
+        return normalized;
     }
 }

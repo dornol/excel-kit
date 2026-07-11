@@ -11,6 +11,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Shared reader configuration for {@link io.github.dornol.excelkit.excel.ExcelReader}
@@ -42,6 +43,8 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected long maxRows = -1;
     protected boolean skipBlankRows;
     protected int stopAtBlankRows;
+    protected long maxErrors = -1;
+    protected UnaryOperator<String> headerNormalizer = UnaryOperator.identity();
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = java.util.Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
@@ -264,5 +267,25 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         }
         this.stopAtBlankRows = count;
         return self();
+    }
+
+    /** Limits failed rows; zero aborts on the first failure. Disabled by default. */
+    public SELF maxErrors(long maxErrors) {
+        if (maxErrors < 0) {
+            throw new IllegalArgumentException("maxErrors must be non-negative");
+        }
+        this.maxErrors = maxErrors;
+        return self();
+    }
+
+    /** Normalizes headers before matching names and aliases. Original names remain available for diagnostics. */
+    public SELF headerNormalizer(UnaryOperator<String> normalizer) {
+        this.headerNormalizer = java.util.Objects.requireNonNull(normalizer, "normalizer cannot be null");
+        return self();
+    }
+
+    protected ReadOptions snapshotReadOptions() {
+        return new ReadOptions(strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows,
+                skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer);
     }
 }

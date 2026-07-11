@@ -38,16 +38,10 @@ import java.util.UUID;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Reads Excel (.xlsx) files using Apache POI's event-based streaming API.
@@ -58,19 +52,8 @@ import java.util.stream.StreamSupport;
  * <h2>Resource management</h2>
  * On construction, the handler copies the input stream to a temporary file on disk so that
  * the underlying POI API can read it. These temp resources (and, if applicable, the decrypted
- * copy of an encrypted file) are released when:
- * <ul>
- *     <li>{@link #read(Consumer)} / {@link #readStrict(Consumer)} returns or throws — cleanup is automatic.</li>
- *     <li>The stream returned by {@link #readAsStream()} is closed — <strong>always use
- *         try-with-resources</strong>, since this stream also holds a background producer thread:
- *         <pre>{@code
- * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
- *     stream.forEach(result -> ...);
- * }
- *         }</pre>
- *         Abandoning the stream without closing it leaks the temp file until the JVM exits
- *         (the producer thread is a daemon and will eventually self-terminate).</li>
- * </ul>
+ * copy of an encrypted file) are released when {@link #read(Consumer)},
+ * {@link #readWhile(java.util.function.Predicate)}, or {@link #readStrict(Consumer)} returns or throws.
  *
  * <h2>Large file tuning</h2>
  * For large or complex Excel files, you may need to adjust POI's internal limits via
@@ -296,7 +279,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     public void read(Consumer<ReadResult<T>> consumer) {
         markConsumed();
         try {
-            readInternal(consumer);
+            readInternal(guardedConsumer(consumer));
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
@@ -306,111 +289,23 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
-    /**
-     * Reads the file as a stream of row results using a background producer thread.
-     * <p>
-     * <strong>Important:</strong> The returned stream holds file and thread resources.
-     * Always use try-with-resources to ensure proper cleanup:
-     * <pre>{@code
-     * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
-     *     stream.forEach(result -> ...);
-     * }
-     * }</pre>
-     *
-     * @return A stream of parsed and validated row results
-     */
     @Override
-    public Stream<ReadResult<T>> readAsStream() {
+    public void readWhile(Predicate<ReadResult<T>> predicate) {
         markConsumed();
-        int bufferSize = 1024;
-        BlockingQueue<Object> queue = new ArrayBlockingQueue<>(bufferSize);
-        Object sentinel = new Object();
-        AtomicReference<Throwable> producerError = new AtomicReference<>();
-        java.util.concurrent.atomic.AtomicBoolean cleaned = new java.util.concurrent.atomic.AtomicBoolean(false);
-        Runnable cleanup = () -> {
-            if (cleaned.compareAndSet(false, true)) {
-                close();
-            }
-        };
-
-        Thread producer = new Thread(() -> {
-            try {
-                readInternal(result -> {
-                    if (Thread.currentThread().isInterrupted()) {
-                        throw new ExcelReadException("Producer thread interrupted");
-                    }
-                    try {
-                        // Use offer with timeout to avoid permanent block when consumer closes early.
-                        // If the queue is full and consumer stopped draining, the offer will time out
-                        // and the interrupt check above will catch it on the next row.
-                        while (!queue.offer(result, 100, java.util.concurrent.TimeUnit.MILLISECONDS)) {
-                            if (Thread.currentThread().isInterrupted()) {
-                                throw new ExcelReadException("Producer thread interrupted");
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new ExcelReadException("Producer thread interrupted", e);
-                    }
-                });
-            } catch (Throwable t) {
-                producerError.set(t);
-            } finally {
-                try {
-                    while (!queue.offer(sentinel, 100, java.util.concurrent.TimeUnit.MILLISECONDS)) {
-                        if (Thread.currentThread().isInterrupted()) {
-                            break;
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                cleanup.run();
-            }
-        });
-        // Daemon thread: if the caller abandons the stream without close(),
-        // the producer eventually exits via interrupt check or offer timeout.
-        // Normal cleanup path is stream.onClose() → producer.interrupt().
-        producer.setDaemon(true);
-        producer.setName("excel-kit-reader");
-        producer.start();
-
-        Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
-                Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
-            @SuppressWarnings("unchecked")
-            @Override
-            public boolean tryAdvance(Consumer<? super ReadResult<T>> action) {
-                try {
-                    Object item = queue.take();
-                    if (item == sentinel) {
-                        Throwable error = producerError.get();
-                        if (error != null) {
-                            if (error instanceof ExcelReadException e) throw e;
-                            if (error instanceof ReadAbortException e) throw e;
-                            throw new ExcelReadException("Failed to read excel", error);
-                        }
-                        return false;
-                    }
-                    action.accept((ReadResult<T>) item);
-                    return true;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new ExcelReadException("Consumer thread interrupted", e);
-                }
-            }
-        };
-
-        return StreamSupport.stream(spliterator, false)
-                .onClose(() -> {
-                    producer.interrupt();
-                    try {
-                        producer.join(1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    } finally {
-                        cleanup.run();
-                    }
-                });
+        try {
+            Consumer<ReadResult<T>> guarded = guardedConsumer(result -> {
+                if (!predicate.test(result)) throw new io.github.dornol.excelkit.core.ReadStoppedException();
+            });
+            readInternal(guarded);
+        } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
+            // Normal early completion requested by the caller.
+        } catch (ExcelReadException | ReadAbortException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelReadException("Failed to read excel", e);
+        } finally {
+            close();
+        }
     }
 
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
@@ -624,7 +519,7 @@ public class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             ReadResult<T> result;
             if (rowMapper != null) {
-                RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap);
+                RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap, headerNormalizer);
                 result = mapWithRowMapper(rowData, rowNum + 1L, rawValues);
             } else {
                 boolean mappingSuccess = mapValuesToInstance();

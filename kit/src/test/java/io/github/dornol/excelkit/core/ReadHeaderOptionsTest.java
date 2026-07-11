@@ -29,8 +29,7 @@ class ReadHeaderOptionsTest {
         CsvReader.setter(Person::new)
                 .column(List.of("Name", "이름"), (p, c) -> p.name = c.asString())
                 .column("Age", (p, c) -> p.age = c.asInt())
-                .build(csv(csv))
-                .read(r -> results.add(r.data()));
+                .read(csv(csv), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name);
@@ -46,8 +45,7 @@ class ReadHeaderOptionsTest {
                         .strictHeaders()
                         .column((p, c) -> p.name = c.asString())
                         .column((p, c) -> p.age = c.asInt())
-                        .build(csv(csv))
-                        .read(r -> {}));
+                        .read(csv(csv), r -> {}));
 
         assertTrue(rootMessage(ex).contains("Column index 1 has no header"));
     }
@@ -60,8 +58,7 @@ class ReadHeaderOptionsTest {
         CsvReader.setter(Person::new)
                 .duplicateHeaderPolicy(DuplicateHeaderPolicy.LAST)
                 .column("Name", (p, c) -> p.name = c.asString())
-                .build(csv(csv))
-                .read(r -> results.add(r.data()));
+                .read(csv(csv), r -> results.add(r.data()));
 
         assertEquals("last", results.get(0).name);
     }
@@ -73,8 +70,7 @@ class ReadHeaderOptionsTest {
         CsvReadException ex = assertThrows(CsvReadException.class, () ->
                 CsvReader.forMap()
                         .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
-                        .build(csv(csv))
-                        .read(r -> {}));
+                        .read(csv(csv), r -> {}));
 
         assertTrue(rootMessage(ex).contains("Duplicate header 'Name'"));
     }
@@ -86,8 +82,7 @@ class ReadHeaderOptionsTest {
 
         CsvReader.forMap()
                 .duplicateHeaderPolicy(DuplicateHeaderPolicy.LAST)
-                .build(csv(csv))
-                .read(r -> results.add(r.data()));
+                .read(csv(csv), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals(Map.of("Name", "last"), results.get(0));
@@ -102,8 +97,7 @@ class ReadHeaderOptionsTest {
                 .headerRowIndex(2)
                 .column("Name", (p, c) -> p.name = c.asString())
                 .required()
-                .build(csv(csv))
-                .read(p -> {}, errors::add);
+                .read(csv(csv), p -> {}, errors::add);
 
         assertEquals(1, errors.size());
         assertEquals(1L, errors.get(0).rowNum());
@@ -118,8 +112,7 @@ class ReadHeaderOptionsTest {
         CsvReader.setter(Person::new)
                 .column("Name", (p, c) -> p.name = c.asString())
                 .column("Age", (p, c) -> p.age = c.asInt())
-                .build(csv(csv))
-                .read(p -> {}, errors::add);
+                .read(csv(csv), p -> {}, errors::add);
 
         assertEquals(1, errors.size());
         assertEquals(1, errors.get(0).cellErrors().size());
@@ -141,8 +134,7 @@ class ReadHeaderOptionsTest {
         ExcelReader.setter(Person::new)
                 .column("Name", (p, c) -> p.name = c.asString())
                 .column("Age", (p, c) -> p.age = c.asInt())
-                .build(new ByteArrayInputStream(workbook))
-                .read(p -> {}, errors::add);
+                .read(new ByteArrayInputStream(workbook), p -> {}, errors::add);
 
         assertEquals(1, errors.size());
         assertEquals(1, errors.get(0).cellErrors().size());
@@ -160,8 +152,7 @@ class ReadHeaderOptionsTest {
         CsvReadException ex = assertThrows(CsvReadException.class, () ->
                 CsvReader.forMap("Name", "Age")
                         .strictHeaders()
-                        .build(csv(csv))
-                        .read(r -> {}));
+                        .read(csv(csv), r -> {}));
 
         assertTrue(rootMessage(ex).contains("Selected headers [Age] not found"));
     }
@@ -177,8 +168,7 @@ class ReadHeaderOptionsTest {
         ExcelReader.setter(Person::new)
                 .duplicateHeaderPolicy(DuplicateHeaderPolicy.LAST)
                 .column(List.of("Name", "이름"), (p, c) -> p.name = c.asString())
-                .build(new ByteArrayInputStream(workbook))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(workbook), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("last", results.get(0).name);
@@ -194,8 +184,7 @@ class ReadHeaderOptionsTest {
         ExcelReadException ex = assertThrows(ExcelReadException.class, () ->
                 ExcelReader.forMap()
                         .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
-                        .build(new ByteArrayInputStream(workbook))
-                        .read(r -> {}));
+                        .read(new ByteArrayInputStream(workbook), r -> {}));
 
         assertTrue(rootMessage(ex).contains("Duplicate header 'Name'"));
     }
@@ -209,8 +198,7 @@ class ReadHeaderOptionsTest {
                 .headerRowIndex(2)
                 .column("Name", (p, c) -> p.name = c.asString())
                 .required()
-                .build(new ByteArrayInputStream(workbook))
-                .read(p -> {}, errors::add);
+                .read(new ByteArrayInputStream(workbook), p -> {}, errors::add);
 
         assertEquals(1, errors.size());
         assertEquals(1L, errors.get(0).rowNum());
@@ -227,8 +215,7 @@ class ReadHeaderOptionsTest {
         ExcelReadException ex = assertThrows(ExcelReadException.class, () ->
                 ExcelReader.forMap("Name", "Age")
                         .strictHeaders()
-                        .build(new ByteArrayInputStream(workbook))
-                        .read(r -> {}));
+                        .read(new ByteArrayInputStream(workbook), r -> {}));
 
         assertTrue(rootMessage(ex).contains("Selected headers [Age] not found"));
     }

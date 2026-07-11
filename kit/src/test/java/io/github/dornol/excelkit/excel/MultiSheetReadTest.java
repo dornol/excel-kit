@@ -70,8 +70,7 @@ class MultiSheetReadTest {
         new ExcelReader<>(Holder::new, null)
                 .sheetIndex(1)
                 .column((h, c) -> h.value = c.asString())
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(r -> results.add(r.data().value));
+                .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data().value));
 
         assertEquals(List.of("Widget", "Gadget"), results);
     }

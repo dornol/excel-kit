@@ -1,10 +1,11 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.AbstractReadHandler;
+import io.github.dornol.excelkit.core.ReadResult;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * JSON-friendly upload read result containing successful rows and structured errors.
@@ -32,17 +33,18 @@ public record UploadResult<T>(
                 new UploadSummary(successCount + errorCount, successCount, errorCount, 0, null, -1));
     }
 
-    public static <T> UploadResult<T> read(String type, AbstractReadHandler<T> handler) {
-        return read(type, handler, null, -1);
+    public static <T> UploadResult<T> read(String type, java.util.function.Consumer<Consumer<ReadResult<T>>> reader) {
+        return read(type, reader, null, -1);
     }
 
-    static <T> UploadResult<T> read(String type, AbstractReadHandler<T> handler, String filename, long fileSize) {
+    static <T> UploadResult<T> read(String type, java.util.function.Consumer<Consumer<ReadResult<T>>> reader,
+                                    String filename, long fileSize) {
         long started = System.nanoTime();
         List<T> rows = new ArrayList<>();
         List<UploadError> errors = new ArrayList<>();
         AtomicLong rowNum = new AtomicLong(0);
 
-        handler.read(result -> {
+        reader.accept(result -> {
             long currentRowNum = rowNum.incrementAndGet();
             if (result.success()) {
                 rows.add(result.data());

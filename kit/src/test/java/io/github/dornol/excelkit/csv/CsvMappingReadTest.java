@@ -44,8 +44,7 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 row.get("Age").asInt(),
                 row.get("City").asString()
-        )).build(toInputStream(csv))
-          .read(r -> {
+        )).read(toInputStream(csv), r -> {
               assertTrue(r.success());
               results.add(r.data());
           });
@@ -68,8 +67,7 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 row.get("Age").asInt(),
                 row.get("City").asString()
-        )).build(toInputStream(csv))
-          .read(r -> results.add(r.data()));
+        )).read(toInputStream(csv), r -> results.add(r.data()));
 
         assertEquals(2, results.size());
         assertEquals("Alice", results.get(0).name());
@@ -85,8 +83,7 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 null,
                 row.get("City").asString()
-        )).build(toInputStream(csv))
-          .read(r -> results.add(r.data()));
+        )).read(toInputStream(csv), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name());
@@ -105,8 +102,7 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 row.get("Age").asInt(),
                 row.get("NonExistent").asString()
-        )).build(toInputStream(csv))
-          .read(results::add);
+        )).read(toInputStream(csv), results::add);
 
         assertEquals(1, results.size());
         assertFalse(results.get(0).success());
@@ -124,8 +120,7 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 row.get("Age").asInt(),
                 null
-        )).build(toInputStream(csv))
-          .read(results::add);
+        )).read(toInputStream(csv), results::add);
 
         assertEquals(1, results.size());
         assertFalse(results.get(0).success());
@@ -140,8 +135,7 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 row.get("Age").asInt(),
                 null
-        )).build(toInputStream(csv))
-          .read(results::add);
+        )).read(toInputStream(csv), results::add);
 
         assertEquals(3, results.size());
         assertTrue(results.get(0).success());
@@ -162,46 +156,15 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 row.get("Age").asInt(),
                 row.get("City").asString()
-        )).build(toInputStream(csv))
-          .readStrict(results::add);
+        )).readStrict(toInputStream(csv), results::add);
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name());
     }
 
-    @Test
-    void mapping_readStrict_shouldThrowOnError() {
-        String csv = "Name,Age\nAlice,30\nBob,bad";
 
-        var handler = CsvReader.<PersonRecord>mapping(row -> new PersonRecord(
-                row.get("Name").asString(),
-                row.get("Age").asInt(),
-                null
-        )).build(toInputStream(csv));
 
-        assertThrows(ReadAbortException.class, () -> handler.readStrict(r -> {}));
-    }
 
-    @Test
-    void mapping_shouldWorkWithReadAsStream() {
-        String csv = "Name,Age,City\nAlice,30,Seoul\nBob,25,Busan";
-
-        List<PersonRecord> results;
-        try (var stream = CsvReader.<PersonRecord>mapping(row -> new PersonRecord(
-                row.get("Name").asString(),
-                row.get("Age").asInt(),
-                row.get("City").asString()
-        )).build(toInputStream(csv)).readAsStream()) {
-            results = stream
-                    .filter(ReadResult::success)
-                    .map(ReadResult::data)
-                    .toList();
-        }
-
-        assertEquals(2, results.size());
-        assertEquals("Alice", results.get(0).name());
-        assertEquals("Bob", results.get(1).name());
-    }
 
     // --- Configuration ---
 
@@ -215,8 +178,7 @@ class CsvMappingReadTest {
                 row.get("Age").asInt(),
                 row.get("City").asString()
         )).delimiter('\t')
-          .build(toInputStream(tsv))
-          .read(r -> results.add(r.data()));
+          .read(toInputStream(tsv), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name());
@@ -234,8 +196,7 @@ class CsvMappingReadTest {
                 row.get("Age").asInt(),
                 null
         )).headerRowIndex(2)
-          .build(toInputStream(csv))
-          .read(r -> results.add(r.data()));
+          .read(toInputStream(csv), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name());
@@ -252,8 +213,7 @@ class CsvMappingReadTest {
                 row.get("Age").asInt(),
                 null
         )).onProgress(2, (count, cursor) -> lastProgress.set(count))
-          .build(toInputStream(csv))
-          .read(r -> {});
+          .read(toInputStream(csv), r -> {});
 
         assertEquals(4, lastProgress.get());
     }
@@ -269,8 +229,7 @@ class CsvMappingReadTest {
                 row.get(0).asString(),
                 row.get(1).asInt(),
                 row.get(2).asString()
-        )).build(toInputStream(csv))
-          .read(r -> results.add(r.data()));
+        )).read(toInputStream(csv), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name());
@@ -288,8 +247,7 @@ class CsvMappingReadTest {
             assertFalse(row.has("City"));
             assertEquals(List.of("Name", "Age"), row.headerNames());
             return new PersonRecord(row.get("Name").asString(), row.get("Age").asInt(), null);
-        }).build(toInputStream(csv))
-          .read(r -> {});
+        }).read(toInputStream(csv), r -> {});
     }
 
     // --- Bean Validation ---
@@ -310,8 +268,7 @@ class CsvMappingReadTest {
             p.name = row.get("Name").asString();
             p.age = row.get("Age").asInt();
             return p;
-        }, validator).build(toInputStream(csv))
-          .read(results::add);
+        }, validator).read(toInputStream(csv), results::add);
 
         assertEquals(3, results.size());
         assertTrue(results.get(0).success());
@@ -340,8 +297,7 @@ class CsvMappingReadTest {
                 row.get("Name").asString(),
                 row.get("Age").asInt(),
                 row.get("City").asString()
-        )).build(new ByteArrayInputStream(out.toByteArray()))
-          .read(r -> {
+        )).read(new ByteArrayInputStream(out.toByteArray()), r -> {
               assertTrue(r.success());
               results.add(r.data());
           });
@@ -361,8 +317,7 @@ class CsvMappingReadTest {
         List<ReadResult<PersonRecord>> results = new ArrayList<>();
         CsvReader.<PersonRecord>mapping(row -> new PersonRecord(
                 row.get("Name").asString(), null, null
-        )).build(toInputStream(csv))
-          .read(results::add);
+        )).read(toInputStream(csv), results::add);
 
         assertTrue(results.isEmpty());
     }

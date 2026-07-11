@@ -23,14 +23,19 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import io.github.dornol.excelkit.core.InputStreamSource;
+import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.RowError;
 
 /**
  * Builder-style class for configuring Excel row readers.
  * <p>
  * {@code ExcelReader} allows you to define how each Excel cell maps to your target object {@code T},
  * and optionally integrates Bean Validation support.
- * Once configuration is complete, use {@link #build(InputStream)} to create a {@link ExcelReadHandler}.
+ * Once configuration is complete, call {@code read} with an input source and row consumer.
  *
  * @param <T> The type of the object that represents one Excel row
  *
@@ -68,8 +73,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * <pre>{@code
      * ExcelReader.setter(User::new)
      *     .column("Name", (u, cell) -> u.name = cell.asString())
-     *     .build(inputStream)
-     *     .read(result -> { ... });
+     *     .read(inputStream, result -> { ... });
      * }</pre>
      *
      * @param instanceSupplier A supplier to create new instances of {@code T} for each row
@@ -106,7 +110,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      *         row.get("Name").asString(),
      *         row.get("Age").asInt(),
      *         row.get("Email").asString()
-     * )).build(inputStream).read(result -> { ... });
+     * )).read(inputStream, result -> { ... });
      * }</pre>
      *
      * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
@@ -145,8 +149,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * ExcelReader.forMap()
      *     .sheetIndex(0)
      *     .headerRowIndex(0)
-     *     .build(inputStream)
-     *     .read(result -> {
+     *     .read(inputStream, result -> {
      *         Map<String, String> row = result.data();
      *         String name = row.get("Name");
      *     });
@@ -165,8 +168,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      *
      * <pre>{@code
      * ExcelReader.forMap("Name", "Age")
-     *     .build(inputStream)
-     *     .read(result -> {
+     *     .read(inputStream, result -> {
      *         // result.data() contains only "Name" and "Age" keys
      *     });
      * }</pre>
@@ -250,8 +252,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      *         long total = cursor.getTotalRows();
      *         int percent = (int) (processed * 100 / total);
      *     })
-     *     .build(inputStream)
-     *     .read(result -> { ... });
+     *     .read(inputStream, result -> { ... });
      * }</pre>
      * <p>
      * Note: the pre-scan adds a small overhead (typically 20–30% of total read time)
@@ -286,17 +287,52 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @param inputStream The input stream of the Excel file
      * @return A handler to execute Excel parsing
      */
-    public ExcelReadHandler<T> build(InputStream inputStream) {
+    private ExcelReadHandler<T> createHandler(InputStream inputStream) {
+        ExcelReadHandler<T> handler;
         if (rowMapper != null) {
-            return new ExcelReadHandler<>(inputStream, rowMapper, validator,
+            handler = new ExcelReadHandler<>(inputStream, rowMapper, validator,
                     sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
                     strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
                     maxRows, skipBlankRows, stopAtBlankRows);
+        } else {
+            handler = new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
+                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
+                    strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
+                    maxRows, skipBlankRows, stopAtBlankRows);
         }
-        return new ExcelReadHandler<>(inputStream, columns, instanceSupplier, validator,
-                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
-                maxRows, skipBlankRows, stopAtBlankRows);
+        handler.options(snapshotReadOptions());
+        return handler;
+    }
+
+    /** Reads an input stream without closing it. */
+    public void read(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        createHandler(inputStream).read(consumer);
+    }
+
+    public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        createHandler(inputStream).read(onSuccess, onError);
+    }
+
+    public void readStrict(InputStream inputStream, Consumer<T> consumer) {
+        createHandler(inputStream).readStrict(consumer);
+    }
+
+    public void readWhile(InputStream inputStream, Predicate<ReadResult<T>> predicate) {
+        createHandler(inputStream).readWhile(predicate);
+    }
+
+    /** Opens and closes the path-owned stream. */
+    public void read(Path path, Consumer<ReadResult<T>> consumer) {
+        read((InputStreamSource) () -> Files.newInputStream(path), consumer);
+    }
+
+    /** Opens and closes the source-owned stream. */
+    public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        try (InputStream input = source.openStream()) {
+            read(input, consumer);
+        } catch (IOException e) {
+            throw new ExcelReadException("Failed to open Excel input", e);
+        }
     }
 
     /**

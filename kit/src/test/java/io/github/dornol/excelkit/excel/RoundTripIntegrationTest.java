@@ -352,7 +352,7 @@ class RoundTripIntegrationTest {
                         row.get("Price").asInt(0),
                         row.get("Weight").asDouble(0.0),
                         row.get("Id").as(UUID::fromString)
-                )).build(is).read(r -> {
+                )).read(is, r -> {
                     assertTrue(r.success(), "Row should be read successfully");
                     results.add(r.data());
                 });
@@ -399,7 +399,7 @@ class RoundTripIntegrationTest {
                         row.get("Name").asString("N/A"),
                         row.get("Qty").asInt(-1),
                         row.get("Price").asDouble(-1.0)
-                )).build(is).read(r -> {
+                )).read(is, r -> {
                     assertTrue(r.success());
                     results.add(r.data());
                 });
@@ -459,7 +459,7 @@ class RoundTripIntegrationTest {
             try (InputStream is = new ByteArrayInputStream(out.toByteArray())) {
                 CsvReader.<DangerousRow>mapping(row -> new DangerousRow(
                         row.get("Value").asString()
-                )).build(is).read(r -> {
+                )).read(is, r -> {
                     assertTrue(r.success());
                     results.add(r.data());
                 });
@@ -496,7 +496,7 @@ class RoundTripIntegrationTest {
             try (InputStream is = new ByteArrayInputStream(out.toByteArray())) {
                 CsvReader.<DangerousRow>mapping(row -> new DangerousRow(
                         row.get("Value").asString()
-                )).build(is).read(r -> {
+                )).read(is, r -> {
                     assertTrue(r.success());
                     results.add(r.data());
                 });
@@ -559,7 +559,7 @@ class RoundTripIntegrationTest {
                     ExcelReader.<SaleItem>mapping(row -> new SaleItem(
                             row.get("Name").asString(),
                             row.get("Amount").asInt(0)
-                    )).sheetIndex(0).build(is).read(r -> {
+                    )).sheetIndex(0).read(is, r -> {
                         if (r.success() && r.data() != null) {
                             sales.add(r.data());
                         }
@@ -590,7 +590,7 @@ class RoundTripIntegrationTest {
                     ExcelReader.<ScoreEntry>mapping(row -> new ScoreEntry(
                             row.get("Student").asString(),
                             row.get("Score").asInt(0)
-                    )).sheetIndex(1).build(is).read(r -> {
+                    )).sheetIndex(1).read(is, r -> {
                         if (r.success() && r.data() != null) {
                             scores.add(r.data());
                         }
@@ -656,7 +656,7 @@ class RoundTripIntegrationTest {
                             return p;
                         },
                         null
-                ).build(is).read(r -> {
+                ).read(is, r -> {
                     assertTrue(r.success(), "Row should be read successfully");
                     results.add(r.data());
                 });
@@ -698,8 +698,7 @@ class RoundTripIntegrationTest {
             List<Product> results = new ArrayList<>();
             try (InputStream is = new ByteArrayInputStream(out.toByteArray())) {
                 schema.excelReader(Product::new, null)
-                        .build(is)
-                        .read(r -> {
+                        .read(is, r -> {
                             assertTrue(r.success(), "Row should be read successfully");
                             results.add(r.data());
                         });

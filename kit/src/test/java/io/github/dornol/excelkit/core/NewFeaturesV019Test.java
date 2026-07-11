@@ -27,8 +27,7 @@ class NewFeaturesV019Test {
 
         CsvReader.<LocalDate>mapping(row -> row.get("Date").asLocalDate())
                 .cellConversion(c -> c.addDateFormat("dd.MM.yyyy"))
-                .build(new ByteArrayInputStream(csv))
-                .read(result -> dates.add(result.data()));
+                .read(new ByteArrayInputStream(csv), result -> dates.add(result.data()));
 
         assertEquals(List.of(LocalDate.of(2024, 12, 25)), dates);
     }
@@ -41,8 +40,7 @@ class NewFeaturesV019Test {
         CsvReader.<Double>mapping(row -> row.get("Amount").asDouble())
                 .delimiter(';')
                 .cellConversion(c -> c.locale(Locale.GERMANY))
-                .build(new ByteArrayInputStream(csv))
-                .read(result -> values.add(result.data()));
+                .read(new ByteArrayInputStream(csv), result -> values.add(result.data()));
 
         assertEquals(1234.5d, values.getFirst(), 0.0001);
     }
@@ -54,8 +52,7 @@ class NewFeaturesV019Test {
 
         CsvReader.<String>mapping(row -> row.get("Name").asString())
                 .quoteChar('\'')
-                .build(new ByteArrayInputStream(csv))
-                .read(result -> values.add(result.data()));
+                .read(new ByteArrayInputStream(csv), result -> values.add(result.data()));
 
         assertEquals(List.of("Alice, A"), values);
     }
@@ -99,8 +96,7 @@ class NewFeaturesV019Test {
         CsvReader.<String>mapping(row -> row.get("Name").asString())
                 .skipBlankRows()
                 .maxRows(2)
-                .build(new ByteArrayInputStream(csv))
-                .read(result -> names.add(result.data()));
+                .read(new ByteArrayInputStream(csv), result -> names.add(result.data()));
 
         assertEquals(List.of("Alice", "Bob"), names);
     }
@@ -113,8 +109,7 @@ class NewFeaturesV019Test {
         CsvReader.<String>mapping(row -> row.get("Name").asString())
                 .skipBlankRows()
                 .stopAtBlankRows(2)
-                .build(new ByteArrayInputStream(csv))
-                .read(result -> names.add(result.data()));
+                .read(new ByteArrayInputStream(csv), result -> names.add(result.data()));
 
         assertEquals(List.of("Alice"), names);
     }
@@ -125,8 +120,7 @@ class NewFeaturesV019Test {
         List<List<String>> rawRows = new ArrayList<>();
 
         CsvReader.<String>mapping(row -> row.get("Name").asString())
-                .build(new ByteArrayInputStream(csv))
-                .read(result -> rawRows.add(result.rawValues()));
+                .read(new ByteArrayInputStream(csv), result -> rawRows.add(result.rawValues()));
 
         assertEquals(List.of(List.of("Alice", "30")), rawRows);
     }
@@ -142,8 +136,7 @@ class NewFeaturesV019Test {
         List<String> names = new ArrayList<>();
 
         schema.csvReader(() -> "")
-                .build(new ByteArrayInputStream(csv))
-                .read(result -> names.add(result.data()));
+                .read(new ByteArrayInputStream(csv), result -> names.add(result.data()));
 
         assertEquals(1, names.size());
     }

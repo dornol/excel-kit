@@ -42,7 +42,7 @@ JSON and a readable HTML/text summary for manual testing:
 @PostMapping("/upload")
 public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
     UploadResult<User> result = ExcelKitUpload.excel(
-        file, in -> userReader.build(in));
+        file, (in, consumer) -> userReader.read(in, consumer));
     return ResponseEntity.ok(result);
 }
 ```
@@ -56,7 +56,7 @@ public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
         ExcelKitMultipartFile.requireExcelOrCsvContent(file), 5 * 1024 * 1024);
 
     return ResponseEntity.ok(ExcelKitUpload.excel(
-        checked, in -> userReader.build(in)));
+        checked, (in, consumer) -> userReader.read(in, consumer)));
 }
 ```
 
@@ -81,7 +81,7 @@ path and convert the structured errors to CSV or Excel:
 @PostMapping("/upload/errors.csv")
 public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) {
     UploadResult<User> result = ExcelKitUpload.excel(
-        file, in -> userReader.build(in));
+        file, (in, consumer) -> userReader.read(in, consumer));
     return ExcelKitErrorResponse.csv(result, "read-errors");
 }
 ```

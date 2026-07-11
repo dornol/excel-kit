@@ -22,8 +22,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.util.function.UnaryOperator;
 
 /**
  * Abstract base class for file read handlers (Excel, CSV).
@@ -48,13 +49,15 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected final @Nullable Function<RowData, T> rowMapper;
     /** Optional bean validator for row validation. */
     protected final @Nullable Validator validator;
-    protected final boolean strictHeaders;
-    protected final DuplicateHeaderPolicy duplicateHeaderPolicy;
+    protected boolean strictHeaders;
+    protected DuplicateHeaderPolicy duplicateHeaderPolicy;
     protected final @Nullable Set<String> selectedMapColumns;
-    protected final @Nullable CellConversionConfig cellConversionConfig;
-    protected final long maxRows;
-    protected final boolean skipBlankRows;
-    protected final int stopAtBlankRows;
+    protected @Nullable CellConversionConfig cellConversionConfig;
+    protected long maxRows;
+    protected boolean skipBlankRows;
+    protected int stopAtBlankRows;
+    protected long maxErrors = -1;
+    protected UnaryOperator<String> headerNormalizer = UnaryOperator.identity();
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     /**
@@ -207,9 +210,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         try {
             setTempDir(TempResourceCreator.createTempDirectory());
             setTempFile(TempResourceCreator.createTempFile(getTempDir(), UUID.randomUUID().toString(), extension));
-            try (InputStream is = inputStream) {
-                Files.copy(is, getTempFile(), StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.copy(inputStream, getTempFile(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             // Clean up partially created temp resources before rethrowing
             close();
@@ -223,6 +224,36 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @param consumer Callback to receive parsed and validated row results
      */
     public abstract void read(Consumer<ReadResult<T>> consumer);
+
+    /** Reads until the callback returns false. Returning false is normal completion. */
+    public abstract void readWhile(Predicate<ReadResult<T>> predicate);
+
+    /** Applies the immutable configuration snapshot for this one-shot session. */
+    public AbstractReadHandler<T> options(ReadOptions options) {
+        this.strictHeaders = options.strictHeaders();
+        this.duplicateHeaderPolicy = options.duplicateHeaderPolicy();
+        this.cellConversionConfig = options.cellConversionConfig();
+        this.maxRows = options.maxRows();
+        this.skipBlankRows = options.skipBlankRows();
+        this.stopAtBlankRows = options.stopAtBlankRows();
+        this.maxErrors = options.maxErrors();
+        this.headerNormalizer = options.headerNormalizer();
+        return this;
+    }
+
+    protected Consumer<ReadResult<T>> guardedConsumer(Consumer<ReadResult<T>> consumer) {
+        AtomicLong errors = new AtomicLong();
+        return result -> {
+            if (!result.success()) {
+                long count = errors.incrementAndGet();
+                if (maxErrors >= 0 && count > maxErrors) {
+                    throw new ReadAbortException("Maximum read errors exceeded: " + maxErrors,
+                            ReadAbortReason.MAX_ERRORS_EXCEEDED, maxErrors, count);
+                }
+            }
+            consumer.accept(result);
+        };
+    }
 
     /**
      * Reads the file and invokes the given consumer only for successfully parsed rows.
@@ -271,21 +302,6 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             }
         });
     }
-
-    /**
-     * Reads the file and returns a lazy stream of row results.
-     * <p>
-     * <strong>Important:</strong> The returned stream holds file and thread resources.
-     * Always use try-with-resources to ensure proper cleanup:
-     * <pre>{@code
-     * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
-     *     stream.forEach(result -> ...);
-     * }
-     * }</pre>
-     *
-     * @return A stream of parsed and validated row results
-     */
-    public abstract Stream<ReadResult<T>> readAsStream();
 
     /**
      * Marks this handler as consumed. Read handlers own temporary resources and
@@ -345,7 +361,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
                 if (headerAliases != null && !headerAliases.isEmpty()) {
                     Integer idx = null;
                     for (String alias : headerAliases) {
-                        idx = headerIndexMap.get(alias);
+                        idx = headerIndexMap.get(normalizeHeader(alias));
                         if (idx != null) {
                             break;
                         }
@@ -370,10 +386,11 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected Map<String, Integer> buildHeaderIndexMap(List<String> headerNames, String errorPrefix) {
         Map<String, Integer> map = new LinkedHashMap<>();
         for (int i = 0; i < headerNames.size(); i++) {
-            String headerName = headerNames.get(i);
+            String originalHeaderName = headerNames.get(i);
+            String headerName = normalizeHeader(originalHeaderName);
             if (duplicateHeaderPolicy == DuplicateHeaderPolicy.FAIL
                     && headerName != null && map.containsKey(headerName)) {
-                throw new ExcelKitException("Duplicate header '" + headerName + "' found in " + errorPrefix);
+                throw new ExcelKitException("Duplicate header '" + originalHeaderName + "' found in " + errorPrefix);
             }
             if (duplicateHeaderPolicy == DuplicateHeaderPolicy.LAST) {
                 map.put(headerName, i);
@@ -392,12 +409,20 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             return;
         }
         List<String> missing = selectedMapColumns.stream()
-                .filter(name -> !headerIndexMap.containsKey(name))
+                .filter(name -> !headerIndexMap.containsKey(normalizeHeader(name)))
                 .toList();
         if (!missing.isEmpty()) {
             throw new ExcelKitException("Selected headers " + missing + " not found in "
                     + errorPrefix + ". Available headers: " + headerNames);
         }
+    }
+
+    protected String normalizeHeader(String header) {
+        String normalized = headerNormalizer.apply(header);
+        if (normalized == null) {
+            throw new ExcelKitException("Header normalizer returned null for: " + header);
+        }
+        return normalized;
     }
 
     private void validateHeaderIndexIfStrict(int index, List<String> headerNames, String errorPrefix) {

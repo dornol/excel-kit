@@ -54,8 +54,7 @@ new ExcelReader<>(User::new, null)
     .column("Age", (u, cell) -> u.age = cell.asInt())
     .strictHeaders()
     .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
-    .build(Files.newInputStream(Path.of("users.xlsx")))
-    .read(result -> {
+    .read(Path.of("users.xlsx"), result -> {
         if (result.success()) {
             User u = result.data();
         }
@@ -70,7 +69,7 @@ record PersonRecord(String name, Integer age) {}
 ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
     row.get("Name").asString(),
     row.get("Age").asInt()
-)).build(inputStream).read(result -> {
+)).read(inputStream, result -> {
     if (result.success()) {
         PersonRecord p = result.data();
     }
@@ -93,8 +92,7 @@ csv.column("ID", r -> r.id())
 new CsvReader<>(Product::new, null)
     .column("Name", (p, cell) -> p.name = cell.asString())
     .column("Price", (p, cell) -> p.price = cell.asInt())
-    .build(inputStream)
-    .read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 ## Output Consumption
@@ -115,7 +113,7 @@ ExcelWriter.forMap("Name", "Age").write(Stream.of(
 )).writeTo(out);
 
 // Read
-ExcelReader.forMap().build(inputStream).read(result -> {
+ExcelReader.forMap().read(inputStream, result -> {
     Map<String, String> row = result.data();
     String name = row.get("Name");
 });

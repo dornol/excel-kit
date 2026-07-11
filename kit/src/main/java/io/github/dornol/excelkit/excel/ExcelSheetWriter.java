@@ -223,7 +223,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
         SXSSFSheet activeSheet = this.sheet;
 
-        try (stream) {
+        {
             Iterator<T> it = stream.iterator();
             while (it.hasNext()) {
                 T rowData = it.next();
@@ -257,6 +257,12 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             SXSSFSheet lastSheet = allSheets.get(allSheets.size() - 1);
             ExcelWriteSupport.applyChart(lastSheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
         }
+    }
+
+    /** Writes rows from an Iterable without copying them. */
+    public void write(Iterable<T> rows) {
+        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
     }
 
     private SXSSFSheet createRolloverSheet(int rolloverIndex) {

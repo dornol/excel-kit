@@ -173,8 +173,7 @@ class ExcelKitSchemaTest {
         List<TestPerson> results = new ArrayList<>();
         try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
             schema.excelReader(TestPerson::new, null)
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         assertTrue(result.success(), "Row should succeed: " + result.messages());
                         {
                             results.add(result.data());
@@ -205,8 +204,7 @@ class ExcelKitSchemaTest {
         try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
             schema.excelReader(TestPerson::new, null)
                     .sheetIndex(0)
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         assertTrue(result.success(), "Row should succeed: " + result.messages());
                         {
                             results.add(result.data());
@@ -228,8 +226,7 @@ class ExcelKitSchemaTest {
         // Act
         List<TestPerson> results = new ArrayList<>();
         schema.csvReader(TestPerson::new, null)
-                .build(is)
-                .read(result -> {
+                .read(is, result -> {
                     if (result.success()) {
                         results.add(result.data());
                     }
@@ -253,8 +250,7 @@ class ExcelKitSchemaTest {
         List<TestPerson> results = new ArrayList<>();
         schema.csvReader(TestPerson::new, null)
                 .delimiter('\t')
-                .build(is)
-                .read(result -> {
+                .read(is, result -> {
                     if (result.success()) {
                         results.add(result.data());
                     }
@@ -285,8 +281,7 @@ class ExcelKitSchemaTest {
         List<TestPerson> results = new ArrayList<>();
         try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
             schema.excelReader(TestPerson::new, null)
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         assertTrue(result.success(), "Row should succeed: " + result.messages());
                         {
                             results.add(result.data());
@@ -322,8 +317,7 @@ class ExcelKitSchemaTest {
         InputStream is = new ByteArrayInputStream(csvOut.toByteArray());
         List<TestPerson> results = new ArrayList<>();
         schema.csvReader(TestPerson::new, null)
-                .build(is)
-                .read(result -> {
+                .read(is, result -> {
                     if (result.success()) {
                         results.add(result.data());
                     }
@@ -354,8 +348,7 @@ class ExcelKitSchemaTest {
         List<ReadResult<TestPerson>> invalid = new ArrayList<>();
         try (InputStream is = new ByteArrayInputStream(excelOut.toByteArray())) {
             schema.excelReader(TestPerson::new, validator)
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         if (result.success()) {
                             valid.add(result.data());
                         } else {
@@ -411,7 +404,7 @@ class ExcelKitSchemaTest {
                 p.setName(row.get("Name").asString());
                 p.setAge(row.get("Age").asInt());
                 return p;
-            }, null).build(is).read(result -> {
+            }, null).read(is, result -> {
                 if (result.success()) {
                     results.add(result.data());
                 }
@@ -436,7 +429,7 @@ class ExcelKitSchemaTest {
             p.setName(row.get("Name").asString());
             p.setAge(row.get("Age").asInt());
             return p;
-        }, null).build(is).read(result -> {
+        }, null).read(is, result -> {
             if (result.success()) {
                 results.add(result.data());
             }
@@ -466,7 +459,7 @@ class ExcelKitSchemaTest {
                 p.setName(row.get("Name").asString());
                 p.setAge(row.get("Age").asInt());
                 return p;
-            }, validator).build(is).read(result -> {
+            }, validator).read(is, result -> {
                 if (result.success()) {
                     valid.add(result.data());
                 } else {
@@ -500,7 +493,7 @@ class ExcelKitSchemaTest {
                 p.setName(row.get("Name").asString());
                 p.setAge(row.get("Age").asInt());
                 return p;
-            }, null).build(is).read(result -> {
+            }, null).read(is, result -> {
                 if (result.success()) {
                     results.add(result.data());
                 }
@@ -534,7 +527,7 @@ class ExcelKitSchemaTest {
             p.setName(row.get("Name").asString());
             p.setAge(row.get("Age").asInt());
             return p;
-        }, null).build(is).read(result -> {
+        }, null).read(is, result -> {
             if (result.success()) {
                 results.add(result.data());
             }

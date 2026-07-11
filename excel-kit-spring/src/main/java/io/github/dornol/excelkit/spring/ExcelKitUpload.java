@@ -1,13 +1,11 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
 import jakarta.validation.Validator;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -21,9 +19,9 @@ public final class ExcelKitUpload {
     public static <T> UploadResult<T> read(
             String type,
             MultipartFile file,
-            Function<InputStream, AbstractReadHandler<T>> handlerFactory) {
+            UploadReader<T> reader) {
         try (InputStream inputStream = ExcelKitMultipartFile.open(file)) {
-            return UploadResult.read(type, handlerFactory.apply(inputStream),
+            return UploadResult.read(type, consumer -> reader.read(inputStream, consumer),
                     ExcelKitMultipartFile.safeOriginalFilename(file), file.getSize());
         } catch (IOException e) {
             throw new ExcelKitUploadException(
@@ -33,20 +31,20 @@ public final class ExcelKitUpload {
 
     public static <T> UploadResult<T> validateExcel(
             MultipartFile file,
-            Function<InputStream, AbstractReadHandler<T>> handlerFactory) {
-        return excel(file, handlerFactory);
+            UploadReader<T> reader) {
+        return excel(file, reader);
     }
 
     public static <T> UploadResult<T> validateCsv(
             MultipartFile file,
-            Function<InputStream, AbstractReadHandler<T>> handlerFactory) {
-        return csv(file, handlerFactory);
+            UploadReader<T> reader) {
+        return csv(file, reader);
     }
 
     public static <T> UploadResult<T> excel(
             MultipartFile file,
-            Function<InputStream, AbstractReadHandler<T>> handlerFactory) {
-        return read("Excel", file, handlerFactory);
+            UploadReader<T> reader) {
+        return read("Excel", file, reader);
     }
 
     public static <T> UploadResult<T> excel(
@@ -61,13 +59,13 @@ public final class ExcelKitUpload {
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
             Validator validator) {
-        return excel(file, inputStream -> schema.excelReader(supplier, validator).build(inputStream));
+        return excel(file, (inputStream, consumer) -> schema.excelReader(supplier, validator).read(inputStream, consumer));
     }
 
     public static <T> UploadResult<T> csv(
             MultipartFile file,
-            Function<InputStream, AbstractReadHandler<T>> handlerFactory) {
-        return read("CSV", file, handlerFactory);
+            UploadReader<T> reader) {
+        return read("CSV", file, reader);
     }
 
     public static <T> UploadResult<T> csv(
@@ -82,6 +80,6 @@ public final class ExcelKitUpload {
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
             Validator validator) {
-        return csv(file, inputStream -> schema.csvReader(supplier, validator).build(inputStream));
+        return csv(file, (inputStream, consumer) -> schema.csvReader(supplier, validator).read(inputStream, consumer));
     }
 }

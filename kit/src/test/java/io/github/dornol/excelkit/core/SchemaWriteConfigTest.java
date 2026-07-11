@@ -45,8 +45,7 @@ class SchemaWriteConfigTest {
         List<TestProduct> results = new ArrayList<>();
         try (InputStream is = new ByteArrayInputStream(out.toByteArray())) {
             schema.excelReader(TestProduct::new, null)
-                    .build(is)
-                    .read(r -> {
+                    .read(is, r -> {
                         if (r.success()) results.add(r.data());
                     });
         }
@@ -94,8 +93,7 @@ class SchemaWriteConfigTest {
         List<TestProduct> results = new ArrayList<>();
         try (InputStream is = new ByteArrayInputStream(out.toByteArray())) {
             schema.excelReader(TestProduct::new, null)
-                    .build(is)
-                    .read(r -> {
+                    .read(is, r -> {
                         if (r.success()) results.add(r.data());
                     });
         }
@@ -118,8 +116,7 @@ class SchemaWriteConfigTest {
 
         List<TestProduct> results = new ArrayList<>();
         schema.csvReader(TestProduct::new, null)
-                .build(is)
-                .read(r -> {
+                .read(is, r -> {
                     if (r.success()) results.add(r.data());
                 });
 

@@ -279,8 +279,7 @@ class ExcelEdgeCaseTest {
                     row.get("Value").asInt()))
                     .password("multiPass!")
                     .sheetIndex(0)
-                    .build(new ByteArrayInputStream(bytes))
-                    .readStrict(sheet0::add);
+                    .readStrict(new ByteArrayInputStream(bytes), sheet0::add);
             assertEquals(List.of(new Item("A", 1), new Item("B", 2)), sheet0);
 
             // Sheet 1
@@ -290,8 +289,7 @@ class ExcelEdgeCaseTest {
                     row.get("Value").asInt()))
                     .password("multiPass!")
                     .sheetIndex(1)
-                    .build(new ByteArrayInputStream(bytes))
-                    .readStrict(sheet1::add);
+                    .readStrict(new ByteArrayInputStream(bytes), sheet1::add);
             assertEquals(List.of(new Item("X", 9)), sheet1);
         }
 
@@ -437,8 +435,7 @@ class ExcelEdgeCaseTest {
             reader.column("NonExistentHeader", (item, cell) -> {});
 
             assertThrows(ExcelKitException.class,
-                    () -> reader.build(new ByteArrayInputStream(out.toByteArray()))
-                            .read(r -> {}));
+                    () -> reader.read(new ByteArrayInputStream(out.toByteArray()), r -> {}));
         }
 
         @Test
@@ -728,8 +725,7 @@ class ExcelEdgeCaseTest {
             List<Item> results = new ArrayList<>();
             ExcelReader.<Item>mapping(row ->
                     new Item(row.get("Name").asString(), row.get("Value").asInt())
-            ).build(new ByteArrayInputStream(out.toByteArray()))
-                    .readStrict(results::add);
+            ).readStrict(new ByteArrayInputStream(out.toByteArray()), results::add);
 
             assertEquals(1, results.size());
         }

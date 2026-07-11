@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Direct `read(input, ...)`, `readWhile(...)`, `Path`, and `InputStreamSource` APIs for Excel and CSV readers.
+- Reader `maxErrors(...)` guards with structured `ReadAbortReason` details.
+- Excel/CSV header normalization via `headerNormalizer(UnaryOperator<String>)`.
+- `Iterable` inputs for Excel and CSV writers.
+- Spring `UploadReader` callback integration without exposing read handlers.
+- CI compatibility coverage for minimum-tested and current POI/OpenCSV versions.
+
+### Changed
+
+- Caller-provided input streams and writer streams are now caller-owned and are not closed by excel-kit.
+- Reader executions use immutable common option snapshots.
+- Excel stream reading no longer uses a producer thread and blocking queue.
+
+### Removed
+
+- `readAsStream()` in favor of callback-based `read(...)` and `readWhile(...)`.
+- Handler-based `build(input)` in favor of direct Reader execution methods.
+
 ## [0.19.0] - 2026-07-01
 
 ### Added

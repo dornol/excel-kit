@@ -63,8 +63,7 @@ CsvWriter.create().csvInjectionDefense(false);  // disable for trusted data
 CsvReader.setter(Product::new)
     .column("Name", (p, cell) -> p.name = cell.asString())
     .column("Price", (p, cell) -> p.price = cell.asInt())
-    .build(inputStream)
-    .read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 ### Mapping Mode
@@ -73,16 +72,14 @@ CsvReader.setter(Product::new)
 CsvReader.<Person>mapping(row -> new Person(
         row.get("Name").asString(),
         row.get("Age").asInt()))
-    .build(inputStream)
-    .read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 ### Map Mode
 
 ```java
 CsvReader.forMap()
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         Map<String, String> row = result.data();
     });
 ```
@@ -100,7 +97,7 @@ CsvReader.setter(Row::new)
     .headerRowIndex(1)            // skip first row
     .dialect(CsvDialect.TSV)
     .column((r, cell) -> r.name = cell.asString())
-    .build(inputStream);
+    .read(inputStream, result -> { ... });
 ```
 
 Index-based column mapping is also supported:
@@ -108,7 +105,7 @@ Index-based column mapping is also supported:
 CsvReader.setter(User::new)
     .columnAt(0, (u, cell) -> u.name = cell.asString())
     .columnAt(2, (u, cell) -> u.city = cell.asString())
-    .build(inputStream);
+    .read(inputStream, result -> { ... });
 ```
 
 Progress callback and Bean Validation work the same as Excel reading.

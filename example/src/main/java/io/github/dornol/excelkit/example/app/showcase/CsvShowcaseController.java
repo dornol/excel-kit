@@ -94,8 +94,7 @@ public class CsvShowcaseController {
         try (InputStream is = file.getInputStream()) {
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
 
             StringBuilder sb = new StringBuilder();
             sb.append("=== CSV Map-Based Read Result ===\n");

@@ -263,13 +263,11 @@ public class TemplateListWriter<T> {
             ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
         }
 
-        try (stream) {
-            stream.forEach(rowData -> {
-                cursor.plusTotal();
-                ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
-                ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
-            });
-        }
+        stream.sequential().forEach(rowData -> {
+            cursor.plusTotal();
+            ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
+            ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
+        });
 
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 

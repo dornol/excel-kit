@@ -45,8 +45,7 @@ class ExcelReadHandlerEdgeCaseTest {
         List<Item> results = new ArrayList<>();
         ExcelReader.<Item>mapping(row ->
                 new Item(row.get("Name").asString(), row.get("Value").asInt())
-        ).build(new ByteArrayInputStream(excel))
-                .read(r -> {
+        ).read(new ByteArrayInputStream(excel), r -> {
                     assertTrue(r.success());
                     results.add(r.data());
                 });
@@ -59,47 +58,9 @@ class ExcelReadHandlerEdgeCaseTest {
     // ============================================================
     // Mapping mode - readAsStream()
     // ============================================================
-    @Test
-    void mappingMode_readAsStream_shouldWork() throws IOException {
-        byte[] excel = writeTestExcel();
 
-        List<Item> results;
-        try (var stream = ExcelReader.<Item>mapping(row ->
-                new Item(row.get("Name").asString(), row.get("Value").asInt())
-        ).build(new ByteArrayInputStream(excel)).readAsStream()) {
-            results = stream
-                    .filter(ReadResult::success)
-                    .map(ReadResult::data)
-                    .toList();
-        }
 
-        assertEquals(3, results.size());
-        assertEquals("B", results.get(1).name());
-        assertEquals(30, results.get(2).value());
-    }
 
-    @Test
-    void readAsStream_fullConsumptionBeyondQueueBuffer_shouldFinish() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Item>create()
-                .column("Name", Item::name)
-                .column("Value", Item::value, c -> c.type(ExcelDataType.INTEGER))
-                .write(IntStream.range(0, 1500).mapToObj(i -> new Item("I" + i, i)))
-                .writeTo(out);
-
-        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
-            try (var stream = ExcelReader.<Item>mapping(row ->
-                    new Item(row.get("Name").asString(), row.get("Value").asInt())
-            ).build(new ByteArrayInputStream(out.toByteArray())).readAsStream()) {
-                List<Item> rows = stream
-                        .filter(ReadResult::success)
-                        .map(ReadResult::data)
-                        .toList();
-                assertEquals(1500, rows.size());
-                assertEquals("I1499", rows.get(1499).name());
-            }
-        });
-    }
 
     // ============================================================
     // Mapping mode - error handling
@@ -113,8 +74,7 @@ class ExcelReadHandlerEdgeCaseTest {
             // Force conversion error on "Name" column (not a number)
             int v = Integer.parseInt(row.get("Name").asString());
             return new Item("X", v);
-        }).build(new ByteArrayInputStream(excel))
-                .read(results::add);
+        }).read(new ByteArrayInputStream(excel), results::add);
 
         assertEquals(3, results.size());
         for (var r : results) {
@@ -126,31 +86,12 @@ class ExcelReadHandlerEdgeCaseTest {
     // ============================================================
     // readAsStream - close without consuming
     // ============================================================
-    @Test
-    void readAsStream_closeWithoutConsuming_shouldNotLeak() throws IOException {
-        byte[] excel = writeTestExcel();
 
-        var stream = ExcelReader.<Item>mapping(row ->
-                new Item(row.get("Name").asString(), row.get("Value").asInt())
-        ).build(new ByteArrayInputStream(excel)).readAsStream();
-        stream.close();
-    }
 
     // ============================================================
     // readAsStream - partial consumption
     // ============================================================
-    @Test
-    void readAsStream_partialConsumption_shouldCleanup() throws IOException {
-        byte[] excel = writeTestExcel();
 
-        try (var stream = ExcelReader.<Item>mapping(row ->
-                new Item(row.get("Name").asString(), row.get("Value").asInt())
-        ).build(new ByteArrayInputStream(excel)).readAsStream()) {
-            var first = stream.findFirst();
-            assertTrue(first.isPresent());
-            assertEquals("A", first.get().data().name());
-        }
-    }
 
     // ============================================================
     // Missing columns (actualIndex >= currentRow.size())
@@ -176,8 +117,7 @@ class ExcelReadHandlerEdgeCaseTest {
         new ExcelReader<>(MutableItem::new, null)
                 .column("Name", (t, cell) -> t.name = cell.asString())
                 .column("Value", (t, cell) -> t.value = cell.asInt())
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(results::add);
+                .read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
         assertEquals(1, results.size());
     }
@@ -194,8 +134,7 @@ class ExcelReadHandlerEdgeCaseTest {
         ExcelReader.<Item>mapping(row ->
                 new Item(row.get("Name").asString(), row.get("Value").asInt())
         ).onProgress(2, (count, cursor) -> lastProgress.set(count))
-                .build(new ByteArrayInputStream(excel))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(excel), r -> results.add(r.data()));
 
         assertEquals(3, results.size());
         assertEquals(2, lastProgress.get());
@@ -218,8 +157,7 @@ class ExcelReadHandlerEdgeCaseTest {
                     processed.add(count);
                     totals.add(cursor.getTotalRows());
                 })
-                .build(new ByteArrayInputStream(excel))
-                .read(r -> {});
+                .read(new ByteArrayInputStream(excel), r -> {});
 
         assertEquals(List.of(1L, 2L, 3L), processed);
         // All callbacks should report the same totalRows = 3
@@ -235,8 +173,7 @@ class ExcelReadHandlerEdgeCaseTest {
                 new Item(row.get("Name").asString(), row.get("Value").asInt())
         ).countRows()
                 .onProgress(2, (count, cursor) -> totalRef.set(cursor.getTotalRows()))
-                .build(new ByteArrayInputStream(excel))
-                .read(r -> {});
+                .read(new ByteArrayInputStream(excel), r -> {});
 
         assertEquals(3, totalRef.get());
     }
@@ -250,8 +187,7 @@ class ExcelReadHandlerEdgeCaseTest {
                 .column((h, c) -> h.name = c.asString())
                 .column((h, c) -> h.value = c.asInt())
                 .onProgress(1, (count, cursor) -> totalRef.set(cursor.getTotalRows()))
-                .build(new ByteArrayInputStream(excel))
-                .read(r -> {});
+                .read(new ByteArrayInputStream(excel), r -> {});
 
         assertEquals(-1, totalRef.get());
     }
