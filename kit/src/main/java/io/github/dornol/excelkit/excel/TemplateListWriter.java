@@ -51,6 +51,7 @@ public class TemplateListWriter<T> {
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final SheetConfig<T> cfg = new SheetConfig<>();
+    private @Nullable TableOptions tableOptions;
 
     TemplateListWriter(ExcelTemplateWriter parent, SXSSFWorkbook wb, SXSSFSheet sheet,
                        int startRow, Map<String, CellStyle> cellStyleCache, int sheetIndex) {
@@ -209,6 +210,16 @@ public class TemplateListWriter<T> {
         return this;
     }
 
+    public TemplateListWriter<T> table(String name) {
+        return table(TableOptions.defaults(name));
+    }
+
+    public TemplateListWriter<T> table(TableOptions options) {
+        ExcelWriteSupport.validateTableName(java.util.Objects.requireNonNull(options, "options cannot be null").name());
+        this.tableOptions = options;
+        return this;
+    }
+
     /**
      * Sets default column styles that apply to all columns unless overridden per-column.
      *
@@ -235,6 +246,11 @@ public class TemplateListWriter<T> {
         return writeInternal(stream, false);
     }
 
+    public ExcelTemplateWriter write(Iterable<T> rows) {
+        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        return write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
+    }
+
     /**
      * Writes column headers at the start row, followed by data rows.
      * <p>
@@ -245,6 +261,11 @@ public class TemplateListWriter<T> {
      */
     public ExcelTemplateWriter writeWithHeaders(Stream<T> stream) {
         return writeInternal(stream, true);
+    }
+
+    public ExcelTemplateWriter writeWithHeaders(Iterable<T> rows) {
+        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        return writeWithHeaders(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
     }
 
     private ExcelTemplateWriter writeInternal(Stream<T> stream, boolean writeHeaders) {
@@ -270,6 +291,18 @@ public class TemplateListWriter<T> {
         });
 
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+
+        if (tableOptions != null) {
+            int tableHeaderRow = writeHeaders ? startRow : startRow - 1;
+            if (tableHeaderRow < 0) {
+                throw new ExcelWriteException("Template table requires an existing header row before startRow");
+            }
+            int lastDataRow = cursor.getRowOfSheet() - 1;
+            if (lastDataRow > tableHeaderRow) {
+                ExcelWriteSupport.applyTable(sheet, tableOptions.name(), tableHeaderRow, lastDataRow,
+                        columns.size(), tableOptions.style(), tableOptions.showRowStripes());
+            }
+        }
 
         ExcelWriteSupport.applyColumnWidths(sheet, columns);
 

@@ -158,3 +158,8 @@ Flux<MyData> flux = repository.findAll();
 ExcelHandler handler = writer.write(flux.toStream());
 // Flux.toStream() handles backpressure — not loaded entirely into memory.
 ```
+## Signature validation and limits
+
+Schema uploads can apply core `ReadLimits`, and `readDetected(...)` validates XLSX/CSV content
+by signature rather than trusting the filename or HTTP content type. Limit failures retain
+their structured `ReadLimitExceededException` details for mapping to HTTP 413 responses.

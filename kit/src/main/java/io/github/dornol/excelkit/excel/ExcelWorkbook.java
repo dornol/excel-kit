@@ -88,7 +88,9 @@ public class ExcelWorkbook implements AutoCloseable {
     }
 
     private ExcelWorkbook(InitOptions opts) {
-        this.wb = new SXSSFWorkbook(null, opts.rowAccessWindowSize, opts.compressTempFiles, opts.useSharedStrings);
+        StreamingOptions streaming = opts.streamingOptions;
+        this.wb = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
+                streaming.compressTempFiles(), streaming.useSharedStrings());
         ExcelColor defaultColor = ExcelColor.WHITE;
         this.headerColor = new XSSFColor(new byte[]{
                 (byte) defaultColor.getR(),
@@ -112,9 +114,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public static final class InitOptions {
-        private int rowAccessWindowSize = DEFAULT_ROW_ACCESS_WINDOW_SIZE;
-        private boolean compressTempFiles;
-        private boolean useSharedStrings;
+        private StreamingOptions streamingOptions = StreamingOptions.DEFAULT;
 
         private InitOptions() {}
 
@@ -127,17 +127,25 @@ public class ExcelWorkbook implements AutoCloseable {
          */
         public InitOptions rowAccessWindowSize(int size) {
             if (size <= 0) throw new IllegalArgumentException("rowAccessWindowSize must be positive");
-            this.rowAccessWindowSize = size;
+            this.streamingOptions = new StreamingOptions(size, streamingOptions.compressTempFiles(),
+                    streamingOptions.useSharedStrings());
             return this;
         }
 
         public InitOptions compressTempFiles(boolean enabled) {
-            this.compressTempFiles = enabled;
+            this.streamingOptions = new StreamingOptions(streamingOptions.rowAccessWindowSize(), enabled,
+                    streamingOptions.useSharedStrings());
             return this;
         }
 
         public InitOptions useSharedStrings(boolean enabled) {
-            this.useSharedStrings = enabled;
+            this.streamingOptions = new StreamingOptions(streamingOptions.rowAccessWindowSize(),
+                    streamingOptions.compressTempFiles(), enabled);
+            return this;
+        }
+
+        public InitOptions streaming(StreamingOptions options) {
+            this.streamingOptions = java.util.Objects.requireNonNull(options, "options cannot be null");
             return this;
         }
     }

@@ -15,6 +15,12 @@ All notable changes to this project will be documented in this file.
 - Excel structured table creation through `ExcelWriter.table(...)`.
 - SXSSF temporary-file compression and shared-string initialization options.
 - CI-generated japicmp reports against the latest published baseline.
+- Structured `ReadLimitExceededException` details and pre-copy stream byte enforcement.
+- Detailed file detection confidence, charset, delimiter, and read-support metadata.
+- Shared immutable `StreamingOptions` and rollover/multi-sheet structured tables.
+- Signature-validated Spring uploads with core `ReadLimits` integration.
+- Optional Excel formula and external-link rejection through `ReadSecurityPolicy`.
+- Structured tables for template list writers and `Iterable` template inputs.
 
 ### Changed
 
@@ -23,6 +29,9 @@ All notable changes to this project will be documented in this file.
 - Reader `Path` inputs are read directly without copying the source file to a temporary file.
 - Excel and CSV read-handler implementations are no longer public API types.
 - Exceptions thrown by a `readWhile` predicate are propagated unchanged.
+- `readWhile` returns `ReadSummary`; summary/report methods now support all input source types.
+- Detailed read progress always emits a terminal completion/cancellation event.
+- API compatibility CI now fails for non-allowlisted binary incompatibilities.
 
 ## [0.20.0] - 2026-07-11
 

@@ -35,13 +35,19 @@ jobs:
             curl -fsSLo "old-${artifact}.jar" "https://repo1.maven.org/maven2/io/github/dornol/${artifact}/${BASELINE}/${artifact}-${BASELINE}.jar"
             if [ "$artifact" = "excel-kit" ]; then module=kit; jar_prefix=kit; else module=excel-kit-spring; jar_prefix=excel-kit-spring; fi
             new_jar=$(find "${module}/build/libs" -name "${jar_prefix}-*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -1)
+            exclusions=()
+            while IFS= read -r api; do
+              [ -z "$api" ] || [[ "$api" = \#* ]] || exclusions+=(--exclude "$api")
+            done < .japicmp-allowlist
             java -jar japicmp.jar \
               --old "old-${artifact}.jar" \
               --new "$new_jar" \
               --ignore-missing-classes \
               --only-modified \
+              --error-on-binary-incompatibility \
+              "${exclusions[@]}" \
               --html-file "api-compatibility/${artifact}.html" \
-              --xml-file "api-compatibility/${artifact}.xml" || true
+              --xml-file "api-compatibility/${artifact}.xml"
           done
       - uses: actions/upload-artifact@v7
         with:

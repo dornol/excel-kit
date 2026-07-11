@@ -2,6 +2,9 @@ package io.github.dornol.excelkit.spring;
 
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.core.ExcelKitSchema;
+import io.github.dornol.excelkit.core.ReadLimits;
+import io.github.dornol.excelkit.core.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.TabularFileType;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -76,6 +79,38 @@ class ExcelKitUploadTest {
                 .column("Name", (p, cell) -> p.name = cell.asString())
                 .read(inputStream, consumer));
 
+        assertEquals(1, result.successCount());
+    }
+
+    @Test
+    void detectedUploadRejectsContentMismatch() {
+        MockMultipartFile file = new MockMultipartFile("file", "fake.xlsx", "application/octet-stream",
+                "Name\nA\n".getBytes(StandardCharsets.UTF_8));
+        ExcelKitUploadException error = assertThrows(ExcelKitUploadException.class, () ->
+                ExcelKitUpload.readDetected("Excel", TabularFileType.XLSX, file, (input, consumer) -> {}));
+        assertFalse(error.getMessage().isBlank());
+    }
+
+    @Test
+    void schemaUploadAppliesCoreReadLimits() {
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv", "text/csv",
+                "Name\nNotebook\n".getBytes(StandardCharsets.UTF_8));
+        ExcelKitSchema<Product> schema = ExcelKitSchema.<Product>builder()
+                .column("Name", p -> p.name, (p, cell) -> p.name = cell.asString()).build();
+        assertThrows(ReadLimitExceededException.class, () -> ExcelKitUpload.csv(file, schema,
+                Product::new, null, new ReadLimits(3, -1, -1, -1)));
+    }
+
+    @Test
+    void detectedUploadClosesUnderlyingStreamExactlyOnce() {
+        MultipartFile file = new MockMultipartFile("file", "products.csv", "text/csv", new byte[]{1}) {
+            @Override public InputStream getInputStream() {
+                return new FailOnSecondCloseInputStream("Name\nAlice\n".getBytes(StandardCharsets.UTF_8));
+            }
+        };
+        UploadResult<Product> result = ExcelKitUpload.readDetected("CSV", TabularFileType.CSV, file,
+                (input, consumer) -> CsvReader.setter(Product::new)
+                        .column("Name", (p, cell) -> p.name = cell.asString()).read(input, consumer));
         assertEquals(1, result.successCount());
     }
 

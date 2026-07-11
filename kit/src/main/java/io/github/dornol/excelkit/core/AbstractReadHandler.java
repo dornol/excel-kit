@@ -62,6 +62,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected ReadLimits limits = ReadLimits.UNLIMITED;
     protected CancellationToken cancellationToken = CancellationToken.NONE;
     protected @Nullable ReadProgressCallback readProgressCallback;
+    protected ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
     private final AtomicLong successCount = new AtomicLong();
     private final AtomicLong errorCount = new AtomicLong();
     private final long startedNanos = System.nanoTime();
@@ -183,8 +184,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
         if (formattedValue != null && limits.maxCellCharacters() >= 0
                 && formattedValue.length() > limits.maxCellCharacters()) {
-            throw new ExcelKitException("Cell exceeds maxCellCharacters at column " + columnIndex
-                    + ": " + limits.maxCellCharacters());
+            throw new ReadLimitExceededException(ReadLimitExceededException.Limit.CELL_CHARACTERS,
+                    limits.maxCellCharacters(), formattedValue.length());
         }
         return new CellData(columnIndex, formattedValue, cellConversionConfig);
     }
@@ -228,6 +229,9 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
             // Clean up partially created temp resources before rethrowing
             close();
             throw new ExcelKitException("Failed to initialize temporary file", e);
+        } catch (RuntimeException e) {
+            close();
+            throw e;
         }
     }
 
@@ -262,11 +266,13 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.limits = options.limits();
         this.cancellationToken = options.cancellationToken();
         this.readProgressCallback = options.readProgressCallback();
+        this.securityPolicy = options.securityPolicy();
         if (limits.maxInputBytes() >= 0) {
             try {
                 if (Files.size(java.util.Objects.requireNonNull(getTempFile())) > limits.maxInputBytes()) {
                     close();
-                    throw new ExcelKitException("Input exceeds maxInputBytes: " + limits.maxInputBytes());
+                    throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES,
+                            limits.maxInputBytes(), Files.size(java.util.Objects.requireNonNull(getTempFile())));
                 }
             } catch (java.io.IOException e) {
                 close();
@@ -297,7 +303,17 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected void notifyReadProgress(long processedRows, int sheetIndex, long totalRows) {
         if (readProgressCallback != null) {
             readProgressCallback.onProgress(new ReadProgress(processedRows, successCount.get(), errorCount.get(),
-                    sheetIndex, totalRows, java.time.Duration.ofNanos(System.nanoTime() - startedNanos)));
+                    sheetIndex, totalRows, java.time.Duration.ofNanos(System.nanoTime() - startedNanos),
+                    false, false));
+        }
+    }
+
+    protected void notifyReadCompletion(int sheetIndex, long totalRows) {
+        if (readProgressCallback != null) {
+            long processed = successCount.get() + errorCount.get();
+            readProgressCallback.onProgress(new ReadProgress(processed, successCount.get(), errorCount.get(),
+                    sheetIndex, totalRows, java.time.Duration.ofNanos(System.nanoTime() - startedNanos),
+                    true, cancellationToken.isCancellationRequested()));
         }
     }
 
@@ -431,7 +447,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      */
     protected Map<String, Integer> buildHeaderIndexMap(List<String> headerNames, String errorPrefix) {
         if (limits.maxColumns() >= 0 && headerNames.size() > limits.maxColumns()) {
-            throw new ExcelKitException("Input exceeds maxColumns: " + limits.maxColumns());
+            throw new ReadLimitExceededException(ReadLimitExceededException.Limit.COLUMNS,
+                    limits.maxColumns(), headerNames.size());
         }
         Map<String, Integer> map = new LinkedHashMap<>();
         for (int i = 0; i < headerNames.size(); i++) {

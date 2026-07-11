@@ -37,6 +37,14 @@ class ExcelWriteSupport {
     private ExcelWriteSupport() {
     }
 
+    static void validateTableName(String name) {
+        if (name == null || !name.matches("[A-Za-z_][A-Za-z0-9_.]*"))
+            throw new IllegalArgumentException("Invalid Excel table name: " + name);
+        if (CellReference.classifyCellReference(name, SpreadsheetVersion.EXCEL2007)
+                != CellReference.NameType.NAMED_RANGE)
+            throw new IllegalArgumentException("Excel table name cannot be a cell reference: " + name);
+    }
+
     /**
      * Invokes the afterData and summary callbacks on the given sheet, returning the next
      * available row index. Used at both rollover points and post-data finalization.
@@ -612,7 +620,8 @@ class ExcelWriteSupport {
         }
     }
 
-    static void applyTable(SXSSFSheet sheet, String name, int headerRow, int lastRow, int columnCount) {
+    static void applyTable(SXSSFSheet sheet, String name, int headerRow, int lastRow, int columnCount,
+                           String style, boolean showRowStripes) {
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
         if (xssfSheet == null || columnCount == 0 || lastRow <= headerRow) return;
         AreaReference area = new AreaReference(new CellReference(headerRow, 0),
@@ -620,6 +629,10 @@ class ExcelWriteSupport {
         var table = xssfSheet.createTable(area);
         table.setName(name);
         table.setDisplayName(name);
-        table.setStyleName("TableStyleMedium2");
+        table.setStyleName(style);
+        var styleInfo = table.getCTTable().isSetTableStyleInfo()
+                ? table.getCTTable().getTableStyleInfo() : table.getCTTable().addNewTableStyleInfo();
+        styleInfo.setName(style);
+        styleInfo.setShowRowStripes(showRowStripes);
     }
 }

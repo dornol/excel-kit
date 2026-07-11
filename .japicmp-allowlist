@@ -1,0 +1,6 @@
+# Intentional 0.21.0 reader execution redesign; remove after 0.21.0 becomes the baseline.
+io.github.dornol.excelkit.core.ReadOptions
+io.github.dornol.excelkit.csv.CsvReader
+io.github.dornol.excelkit.csv.CsvReadHandler
+io.github.dornol.excelkit.excel.ExcelReader
+io.github.dornol.excelkit.excel.ExcelReadHandler

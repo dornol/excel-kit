@@ -257,6 +257,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
+                    if (cancellationToken.isCancellationRequested()) throw new io.github.dornol.excelkit.core.ReadStoppedException();
                     List<String> rawValues = rawValues(line);
                     if (isBlankValues(rawValues)) {
                         consecutiveBlankRows++;
@@ -284,6 +285,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 int[] resolvedIndices = resolveIndices();
                 while ((line = reader.readNext()) != null) {
+                    if (cancellationToken.isCancellationRequested()) throw new io.github.dornol.excelkit.core.ReadStoppedException();
                     List<String> rawValues = rawValues(line);
                     if (isBlankValues(rawValues)) {
                         consecutiveBlankRows++;
@@ -312,11 +314,14 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         } catch (io.github.dornol.excelkit.core.ReadStoppedException e) {
             // Normal early completion requested by readWhile.
             stoppedEarly = true;
+        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException e) {
+            throw e;
         } catch (CsvReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new CsvReadException("Failed to read CSV", e);
         } finally {
+            notifyReadCompletion(-1, -1);
             close();
         }
     }

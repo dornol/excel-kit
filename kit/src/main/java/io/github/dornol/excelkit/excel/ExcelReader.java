@@ -290,6 +290,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return A handler to execute Excel parsing
      */
     private ExcelReadHandler<T> createHandler(InputStream inputStream) {
+        inputStream = limitInput(inputStream);
         ExcelReadHandler<T> handler;
         if (rowMapper != null) {
             handler = new ExcelReadHandler<>(inputStream, rowMapper, validator,
@@ -327,9 +328,22 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        return summarize(createHandler(inputStream), consumer);
+    }
+
+    public ReadSummary readWithSummary(Path path, Consumer<ReadResult<T>> consumer) {
+        return summarize(createHandler(path), consumer);
+    }
+
+    public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        final ReadSummary[] summary = new ReadSummary[1];
+        withSource(source, input -> summary[0] = readWithSummary(input, consumer));
+        return summary[0];
+    }
+
+    private ReadSummary summarize(ExcelReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
         long started = System.nanoTime();
         long[] counts = new long[3];
-        ExcelReadHandler<T> handler = createHandler(inputStream);
         handler.read(result -> {
             counts[0]++;
             if (result.success()) counts[1]++; else counts[2]++;
@@ -340,10 +354,24 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
+        return report(createHandler(inputStream), maxCollectedErrors);
+    }
+
+    public ReadReport readReport(Path path, int maxCollectedErrors) {
+        return report(createHandler(path), maxCollectedErrors);
+    }
+
+    public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
+        final ReadReport[] report = new ReadReport[1];
+        withSource(source, input -> report[0] = readReport(input, maxCollectedErrors));
+        return report[0];
+    }
+
+    private ReadReport report(ExcelReadHandler<T> handler, int maxCollectedErrors) {
         if (maxCollectedErrors < 0) throw new IllegalArgumentException("maxCollectedErrors must be non-negative");
         List<RowError> errors = new ArrayList<>();
         long[] row = {0};
-        ReadSummary summary = readWithSummary(inputStream, result -> {
+        ReadSummary summary = summarize(handler, result -> {
             row[0]++;
             if (!result.success() && errors.size() < maxCollectedErrors) {
                 errors.add(new RowError(row[0], result.fileRowNum(),
@@ -363,8 +391,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         createHandler(inputStream).readStrict(consumer);
     }
 
-    public void readWhile(InputStream inputStream, Predicate<ReadResult<T>> predicate) {
-        createHandler(inputStream).readWhile(predicate);
+    public ReadSummary readWhile(InputStream inputStream, Predicate<ReadResult<T>> predicate) {
+        return readWhile(createHandler(inputStream), predicate);
     }
 
     /** Reads directly from a caller-owned path without modifying or deleting it. */
@@ -380,8 +408,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         createHandler(path).readStrict(consumer);
     }
 
-    public void readWhile(Path path, Predicate<ReadResult<T>> predicate) {
-        createHandler(path).readWhile(predicate);
+    public ReadSummary readWhile(Path path, Predicate<ReadResult<T>> predicate) {
+        return readWhile(createHandler(path), predicate);
     }
 
     /** Opens and closes the source-owned stream. */
@@ -397,8 +425,22 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         withSource(source, input -> readStrict(input, consumer));
     }
 
-    public void readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
-        withSource(source, input -> readWhile(input, predicate));
+    public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
+        final ReadSummary[] summary = new ReadSummary[1];
+        withSource(source, input -> summary[0] = readWhile(input, predicate));
+        return summary[0];
+    }
+
+    private ReadSummary readWhile(ExcelReadHandler<T> handler, Predicate<ReadResult<T>> predicate) {
+        long started = System.nanoTime();
+        long[] counts = new long[3];
+        handler.readWhile(result -> {
+            counts[0]++;
+            if (result.success()) counts[1]++; else counts[2]++;
+            return predicate.test(result);
+        });
+        return new ReadSummary(counts[0], counts[1], counts[2], handler.wasStoppedEarly(),
+                java.time.Duration.ofNanos(System.nanoTime() - started));
     }
 
     private void withSource(InputStreamSource source, Consumer<InputStream> operation) {

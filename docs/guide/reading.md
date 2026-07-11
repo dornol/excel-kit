@@ -243,6 +243,12 @@ guarded with `limits(new ReadLimits(maxBytes, maxSheets, maxColumns, maxCellChar
 `headerPolicy(...)` provides common trim, case-insensitive, whitespace, and Unicode-normalized
 matching presets. Long-running reads can use `cancellationToken(...)` and
 `onReadProgress(interval, callback)` without transferring execution to a library thread.
+Byte limits are enforced while copying a stream, so oversized uploads are stopped before the
+entire body is materialized. `ReadLimitExceededException` exposes the limit kind, configured
+value, and observed value. Summary, report, and `readWhile` APIs accept `InputStream`, `Path`,
+and `InputStreamSource`; progress callbacks always receive a terminal event.
+For untrusted XLSX files, `securityPolicy(ReadSecurityPolicy.STRICT)` rejects formulas and
+external workbook links before sheet rows are mapped.
 
 **Bean Validation:**
 ```java

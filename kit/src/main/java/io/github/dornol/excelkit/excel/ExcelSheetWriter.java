@@ -49,6 +49,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private int maxRows = Integer.MAX_VALUE;
     private boolean written = false;
+    private @Nullable TableOptions tableOptions;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -195,6 +196,16 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         return this;
     }
 
+    public ExcelSheetWriter<T> table(String name) {
+        return table(TableOptions.defaults(name));
+    }
+
+    public ExcelSheetWriter<T> table(TableOptions options) {
+        ExcelWriteSupport.validateTableName(java.util.Objects.requireNonNull(options, "options cannot be null").name());
+        this.tableOptions = options;
+        return this;
+    }
+
     /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      *
@@ -250,6 +261,18 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
         for (SXSSFSheet s : allSheets) {
             ExcelWriteSupport.applyPostProcessing(s, columns, headerRowIndex, cfg);
+        }
+        if (tableOptions != null) {
+            if (allSheets.size() > 1 && !tableOptions.perRolloverSheet()) {
+                throw new ExcelWriteException("Structured table spans multiple rollover sheets; enable perRolloverSheet");
+            }
+            for (int i = 0; i < allSheets.size(); i++) {
+                SXSSFSheet target = allSheets.get(i);
+                if (target.getLastRowNum() <= headerRowIndex) continue;
+                String name = allSheets.size() == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
+                ExcelWriteSupport.applyTable(target, name, headerRowIndex, target.getLastRowNum(), columns.size(),
+                        tableOptions.style(), tableOptions.showRowStripes());
+            }
         }
 
         // Apply chart on last sheet

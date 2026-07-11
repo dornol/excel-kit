@@ -12,6 +12,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.io.FilterInputStream;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * Shared reader configuration for {@link io.github.dornol.excelkit.excel.ExcelReader}
@@ -48,6 +51,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected ReadLimits limits = ReadLimits.UNLIMITED;
     protected CancellationToken cancellationToken = CancellationToken.NONE;
     protected @Nullable ReadProgressCallback readProgressCallback;
+    protected ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = java.util.Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
@@ -308,9 +312,40 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
+    public SELF securityPolicy(ReadSecurityPolicy policy) {
+        this.securityPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+        return self();
+    }
+
     protected ReadOptions snapshotReadOptions() {
         return new ReadOptions(strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows,
                 skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer, limits, cancellationToken,
-                readProgressCallback);
+                readProgressCallback, securityPolicy);
+    }
+
+    protected InputStream limitInput(InputStream input) {
+        java.util.Objects.requireNonNull(input, "input cannot be null");
+        long maximum = limits.maxInputBytes();
+        if (maximum < 0) return input;
+        return new FilterInputStream(input) {
+            private long count;
+            private void counted(long amount) {
+                if (amount > 0 && (count += amount) > maximum) {
+                    throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES,
+                            maximum, count);
+                }
+            }
+            @Override public int read() throws IOException {
+                int value = super.read();
+                if (value >= 0) counted(1);
+                return value;
+            }
+            @Override public int read(byte[] bytes, int offset, int length) throws IOException {
+                int read = super.read(bytes, offset, length);
+                counted(read);
+                return read;
+            }
+            @Override public void close() { }
+        };
     }
 }

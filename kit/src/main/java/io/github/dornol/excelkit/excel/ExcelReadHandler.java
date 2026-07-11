@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.zip.ZipFile;
 
 /**
  * Reads Excel (.xlsx) files using Apache POI's event-based streaming API.
@@ -311,11 +312,14 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             readInternal(guardedConsumer(consumer));
         } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
             stoppedEarly = true;
+        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException e) {
+            throw e;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException("Failed to read excel", e);
         } finally {
+            notifyReadCompletion(sheetIndex, -1);
             close();
         }
     }
@@ -339,11 +343,14 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
             // Normal early completion requested by the caller.
             stoppedEarly = true;
+        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException e) {
+            throw e;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException("Failed to read excel", e);
         } finally {
+            notifyReadCompletion(sheetIndex, -1);
             close();
         }
         if (failure.get() != null) throw failure.get();
@@ -358,6 +365,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             decryptedFile = decryptFile(getTempFile(), password);
             fileToRead = decryptedFile;
         }
+        enforceSecurityPolicy(fileToRead);
         try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile())) {
             long totalRows = -1;
             if (countRows) {
@@ -371,7 +379,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 while (countIterator.hasNext()) {
                     try (InputStream ignored = countIterator.next()) { sheetCount++; }
                     if (sheetCount > limits.maxSheets()) {
-                        throw new ExcelKitException("Input exceeds maxSheets: " + limits.maxSheets());
+                        throw new io.github.dornol.excelkit.core.ReadLimitExceededException(
+                                io.github.dornol.excelkit.core.ReadLimitExceededException.Limit.SHEETS,
+                                limits.maxSheets(), sheetCount);
                     }
                 }
             }
@@ -412,6 +422,38 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 }
             }
         }
+    }
+
+    private void enforceSecurityPolicy(Path file) throws IOException {
+        if (securityPolicy.allowFormulas() && securityPolicy.allowExternalLinks()) return;
+        try (ZipFile zip = new ZipFile(file.toFile())) {
+            var entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                var entry = entries.nextElement();
+                String name = entry.getName();
+                if (!securityPolicy.allowExternalLinks() && name.startsWith("xl/externalLinks/")) {
+                    throw new ExcelReadException("External workbook links are not allowed");
+                }
+                if (!securityPolicy.allowFormulas() && name.startsWith("xl/worksheets/") && name.endsWith(".xml")) {
+                    try (InputStream input = zip.getInputStream(entry)) {
+                        if (containsFormulaTag(input)) throw new ExcelReadException("Excel formulas are not allowed");
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean containsFormulaTag(InputStream input) throws IOException {
+        int state = 0;
+        for (int value; (value = input.read()) >= 0;) {
+            if (state == 0) state = value == '<' ? 1 : 0;
+            else if (state == 1) state = value == 'f' ? 2 : (value == '<' ? 1 : 0);
+            else {
+                if (value == '>' || Character.isWhitespace(value)) return true;
+                state = value == '<' ? 1 : 0;
+            }
+        }
+        return false;
     }
 
     /**
@@ -521,6 +563,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          */
         @Override
         public void startRow(int rowNum) {
+            if (cancellationToken.isCancellationRequested()) {
+                throw new io.github.dornol.excelkit.core.ReadStoppedException();
+            }
             if (instanceSupplier != null) {
                 currentInstance = instanceSupplier.get();
             }
