@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-07-11
+
 ### Added
 
 - Direct `read(input, ...)`, `readWhile(...)`, `Path`, and `InputStreamSource` APIs for Excel and CSV readers.
