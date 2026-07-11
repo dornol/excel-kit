@@ -15,6 +15,7 @@ import java.util.function.UnaryOperator;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.function.BiFunction;
 
 /**
  * Shared reader configuration for {@link io.github.dornol.excelkit.excel.ExcelReader}
@@ -347,5 +348,15 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
             }
             @Override public void close() { }
         };
+    }
+
+    protected <R> R withInputSource(InputStreamSource source, Function<InputStream,R> execution,
+            BiFunction<String,IOException,? extends RuntimeException> exceptionFactory) {
+        java.util.Objects.requireNonNull(source, "source cannot be null");
+        try (InputStream input = source.openStream()) {
+            return execution.apply(input);
+        } catch (IOException e) {
+            throw exceptionFactory.apply("Failed to open input", e);
+        }
     }
 }

@@ -43,7 +43,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.zip.ZipFile;
 
 /**
  * Reads Excel (.xlsx) files using Apache POI's event-based streaming API.
@@ -72,32 +71,32 @@ import java.util.zip.ZipFile;
 final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExcelReadHandler.class);
 
-    static <T> ExcelReadHandler<T> forPath(Path path, List<ReadColumn<T>> columns, Supplier<T> supplier,
-            @Nullable Validator validator, int sheetIndex, int headerRowIndex, int headerRows,
-            int progressInterval, @Nullable ProgressCallback progressCallback, @Nullable String password,
-            boolean countRows, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-            @Nullable CellConversionConfig conversion, long maxRows, boolean skipBlankRows,
-            int stopAtBlankRows) {
-        var handler = new ExcelReadHandler<>(InputStream.nullInputStream(), columns, supplier, validator,
-                sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password,
-                countRows, strictHeaders, duplicateHeaderPolicy, conversion, maxRows, skipBlankRows,
-                stopAtBlankRows);
-        handler.useExternalInput(path);
-        return handler;
+    ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config) {
+        this(input, config, false, null);
     }
 
-    static <T> ExcelReadHandler<T> forPath(Path path, Function<RowData, T> mapper,
-            @Nullable Validator validator, int sheetIndex, int headerRowIndex, int headerRows,
-            int progressInterval, @Nullable ProgressCallback progressCallback, @Nullable String password,
-            boolean countRows, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-            @Nullable Set<String> selectedColumns, @Nullable CellConversionConfig conversion,
-            long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        var handler = new ExcelReadHandler<>(InputStream.nullInputStream(), mapper, validator, sheetIndex,
-                headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                strictHeaders, duplicateHeaderPolicy, selectedColumns, conversion, maxRows, skipBlankRows,
-                stopAtBlankRows);
-        handler.useExternalInput(path);
-        return handler;
+    ExcelReadHandler(Path path, ExcelReadSessionConfig<T> config) {
+        this(InputStream.nullInputStream(), config, true, path);
+    }
+
+    private ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config,
+                             boolean externalPath, @Nullable Path path) {
+        super(input, config.supplier(), config.mapper(), config.validator(), ".xlsx",
+                config.options(), config.selectedColumns());
+        if (config.columns() != null) validateColumns(config.columns());
+        validateSheetIndex(config.sheetIndex());
+        validateHeaderRowIndex(config.headerRowIndex());
+        validateHeaderRows(config.headerRows());
+        this.columns = config.columns();
+        this.sheetIndex = config.sheetIndex();
+        this.headerRowIndex = config.headerRowIndex();
+        this.headerRows = config.headerRows();
+        this.progressInterval = config.progressInterval();
+        this.progressCallback = config.progressCallback();
+        this.password = config.password();
+        this.countRows = config.countRows();
+        if (externalPath) useExternalInput(path);
+        options(config.options());
     }
 
     private final @Nullable List<ReadColumn<T>> columns;
@@ -367,7 +366,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             decryptedFile = decryptFile(getTempFile(), password);
             fileToRead = decryptedFile;
         }
-        enforceSecurityPolicy(fileToRead);
+        ExcelSecurityScanner.scan(fileToRead, securityPolicy);
         try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile())) {
             long totalRows = -1;
             if (countRows) {
@@ -375,18 +374,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
 
             XSSFReader reader = new XSSFReader(pkg);
-            if (limits.maxSheets() >= 0) {
-                int sheetCount = 0;
-                Iterator<InputStream> countIterator = reader.getSheetsData();
-                while (countIterator.hasNext()) {
-                    try (InputStream ignored = countIterator.next()) { sheetCount++; }
-                    if (sheetCount > limits.maxSheets()) {
-                        throw new io.github.dornol.excelkit.core.ReadLimitExceededException(
-                                io.github.dornol.excelkit.core.ReadLimitExceededException.Limit.SHEETS,
-                                limits.maxSheets(), sheetCount);
-                    }
-                }
-            }
+            ExcelSheetNavigator.enforceLimit(reader, limits.maxSheets());
 
             SharedStrings ss = reader.getSharedStringsTable();
             StylesTable styles = reader.getStylesTable();
@@ -396,24 +384,10 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             XSSFSheetXMLHandler sheetParser = new XSSFSheetXMLHandler(styles, ss, sheetHandler, false);
             parser.setContentHandler(sheetParser);
 
-            Iterator<InputStream> sheetsData = reader.getSheetsData();
-            int currentIndex = 0;
-            while (sheetsData.hasNext()) {
-                try (InputStream sheet = sheetsData.next()) {
-                    if (currentIndex == sheetIndex) {
-                        try {
-                            parser.parse(new InputSource(sheet));
-                        } catch (StopReadingException ignored) {
-                            // Reader limit or blank-row stop condition reached.
-                        }
-                        break;
-                    }
-                }
-                currentIndex++;
-            }
-            if (currentIndex < sheetIndex) {
-                throw new ExcelReadException("Sheet index " + sheetIndex + " not found. File has " + (currentIndex + 1) + " sheet(s).");
-            }
+            ExcelSheetNavigator.consume(reader, sheetIndex, sheet -> {
+                try { parser.parse(new InputSource(sheet)); }
+                catch (StopReadingException ignored) { /* configured row stop */ }
+            });
         } finally {
             if (decryptedFile != null) {
                 try {
@@ -425,69 +399,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
         }
     }
-
-    private void enforceSecurityPolicy(Path file) throws IOException {
-        if (securityPolicy.allowFormulas() && securityPolicy.allowExternalLinks()) return;
-        long totalScanned = 0;
-        try (ZipFile zip = new ZipFile(file.toFile())) {
-            var entries = zip.entries();
-            while (entries.hasMoreElements()) {
-                var entry = entries.nextElement();
-                String name = entry.getName();
-                if (!securityPolicy.allowExternalLinks() && name.startsWith("xl/externalLinks/")) {
-                    throw new io.github.dornol.excelkit.core.ReadSecurityException(
-                            io.github.dornol.excelkit.core.ReadSecurityException.Reason.EXTERNAL_LINK,
-                            "External workbook links are not allowed");
-                }
-                if (!securityPolicy.allowFormulas() && name.startsWith("xl/worksheets/") && name.endsWith(".xml")) {
-                    validateZipEntry(entry);
-                    try (InputStream input = zip.getInputStream(entry)) {
-                        ScanResult scan = scanFormulaTag(input, securityPolicy.maxScannedEntryBytes());
-                        totalScanned += scan.bytes();
-                        if (totalScanned > securityPolicy.maxTotalScannedBytes()) {
-                            throw new io.github.dornol.excelkit.core.ReadSecurityException(
-                                    io.github.dornol.excelkit.core.ReadSecurityException.Reason.TOTAL_SCAN_SIZE,
-                                    "Workbook security scan exceeds total byte limit");
-                        }
-                        if (scan.formula()) throw new io.github.dornol.excelkit.core.ReadSecurityException(
-                                io.github.dornol.excelkit.core.ReadSecurityException.Reason.FORMULA,
-                                "Excel formulas are not allowed");
-                    }
-                }
-            }
-        }
-    }
-
-    private void validateZipEntry(java.util.zip.ZipEntry entry) {
-        long size = entry.getSize();
-        long compressed = entry.getCompressedSize();
-        if (size > securityPolicy.maxScannedEntryBytes()) throw new io.github.dornol.excelkit.core.ReadSecurityException(
-                io.github.dornol.excelkit.core.ReadSecurityException.Reason.ENTRY_SIZE,
-                "Worksheet XML exceeds security scan entry limit: " + size);
-        if (size > 0 && compressed > 0 && (double) size / compressed > securityPolicy.maxCompressionRatio())
-            throw new io.github.dornol.excelkit.core.ReadSecurityException(
-                    io.github.dornol.excelkit.core.ReadSecurityException.Reason.COMPRESSION_RATIO,
-                    "Worksheet XML exceeds compression ratio limit");
-    }
-
-    private static ScanResult scanFormulaTag(InputStream input, long maximum) throws IOException {
-        int state = 0;
-        long bytes = 0;
-        for (int value; (value = input.read()) >= 0;) {
-            if (++bytes > maximum) throw new io.github.dornol.excelkit.core.ReadSecurityException(
-                    io.github.dornol.excelkit.core.ReadSecurityException.Reason.ENTRY_SIZE,
-                    "Worksheet XML exceeds security scan entry limit");
-            if (state == 0) state = value == '<' ? 1 : 0;
-            else if (state == 1) state = value == 'f' ? 2 : (value == '<' ? 1 : 0);
-            else {
-                if (value == '>' || Character.isWhitespace(value)) return new ScanResult(true, bytes);
-                state = value == '<' ? 1 : 0;
-            }
-        }
-        return new ScanResult(false, bytes);
-    }
-
-    private record ScanResult(boolean formula, long bytes) {}
 
     /**
      * Performs a lightweight SAX pre-scan to count data rows (excluding header rows).

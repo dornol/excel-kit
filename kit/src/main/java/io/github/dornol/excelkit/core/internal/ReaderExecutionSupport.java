@@ -37,4 +37,17 @@ public final class ReaderExecutionSupport {
         });
         return new ReadReport(summary, errors, summary.errorRows() > errors.size());
     }
+
+    public static <T> ReadSummary readWhile(Consumer<Predicate<ReadResult<T>>> execution,
+            BooleanSupplier stoppedEarly, Predicate<ReadResult<T>> predicate) {
+        long started = System.nanoTime();
+        long[] counts = new long[3];
+        execution.accept(result -> {
+            counts[0]++;
+            if (result.success()) counts[1]++; else counts[2]++;
+            return predicate.test(result);
+        });
+        return new ReadSummary(counts[0], counts[1], counts[2], stoppedEarly.getAsBoolean(),
+                Duration.ofNanos(System.nanoTime() - started));
+    }
 }

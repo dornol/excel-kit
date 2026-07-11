@@ -291,35 +291,18 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      */
     private ExcelReadHandler<T> createHandler(InputStream inputStream) {
         inputStream = limitInput(inputStream);
-        ExcelReadHandler<T> handler;
-        if (rowMapper != null) {
-            handler = new ExcelReadHandler<>(inputStream, rowMapper, validator,
-                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                    strictHeaders, duplicateHeaderPolicy,
-                    selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), cellConversionConfig,
-                    maxRows, skipBlankRows, stopAtBlankRows);
-        } else {
-            handler = new ExcelReadHandler<>(inputStream, List.copyOf(columns), instanceSupplier, validator,
-                    sheetIndex, headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                    strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
-                    maxRows, skipBlankRows, stopAtBlankRows);
-        }
-        handler.options(snapshotReadOptions());
-        return handler;
+        return new ExcelReadHandler<>(inputStream, sessionConfig());
     }
 
     private ExcelReadHandler<T> createHandler(Path path) {
-        ExcelReadHandler<T> handler = rowMapper != null
-                ? ExcelReadHandler.forPath(path, rowMapper, validator, sheetIndex, headerRowIndex, headerRows,
-                    progressInterval, progressCallback, password, countRows, strictHeaders,
-                    duplicateHeaderPolicy, selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns),
-                    cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows)
-                : ExcelReadHandler.forPath(path, List.copyOf(columns), instanceSupplier, validator, sheetIndex,
-                    headerRowIndex, headerRows, progressInterval, progressCallback, password, countRows,
-                    strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows, skipBlankRows,
-                    stopAtBlankRows);
-        handler.options(snapshotReadOptions());
-        return handler;
+        return new ExcelReadHandler<>(path, sessionConfig());
+    }
+
+    private ExcelReadSessionConfig<T> sessionConfig() {
+        return new ExcelReadSessionConfig<>(rowMapper == null ? List.copyOf(columns) : null,
+                instanceSupplier, rowMapper, validator, sheetIndex, headerRowIndex, headerRows,
+                progressInterval, progressCallback, password, countRows,
+                selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), snapshotReadOptions());
     }
 
     /** Reads an input stream without closing it. */
@@ -336,9 +319,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        final ReadSummary[] summary = new ReadSummary[1];
-        withSource(source, input -> summary[0] = readWithSummary(input, consumer));
-        return summary[0];
+        return withInputSource(source, input -> readWithSummary(input, consumer),
+                (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     private ReadSummary summarize(ExcelReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
@@ -355,9 +337,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
-        final ReadReport[] report = new ReadReport[1];
-        withSource(source, input -> report[0] = readReport(input, maxCollectedErrors));
-        return report[0];
+        return withInputSource(source, input -> readReport(input, maxCollectedErrors),
+                (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     private ReadReport report(ExcelReadHandler<T> handler, int maxCollectedErrors) {
@@ -396,42 +377,28 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     /** Opens and closes the source-owned stream. */
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        withSource(source, input -> read(input, consumer));
+        withInputSource(source, input -> { read(input, consumer); return null; },
+                (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
-        withSource(source, input -> read(input, onSuccess, onError));
+        withInputSource(source, input -> { read(input, onSuccess, onError); return null; },
+                (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public void readStrict(InputStreamSource source, Consumer<T> consumer) {
-        withSource(source, input -> readStrict(input, consumer));
+        withInputSource(source, input -> { readStrict(input, consumer); return null; },
+                (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
-        final ReadSummary[] summary = new ReadSummary[1];
-        withSource(source, input -> summary[0] = readWhile(input, predicate));
-        return summary[0];
+        return withInputSource(source, input -> readWhile(input, predicate),
+                (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     private ReadSummary readWhile(ExcelReadHandler<T> handler, Predicate<ReadResult<T>> predicate) {
-        long started = System.nanoTime();
-        long[] counts = new long[3];
-        handler.readWhile(result -> {
-            counts[0]++;
-            if (result.success()) counts[1]++; else counts[2]++;
-            return predicate.test(result);
-        });
-        return new ReadSummary(counts[0], counts[1], counts[2], handler.wasStoppedEarly(),
-                java.time.Duration.ofNanos(System.nanoTime() - started));
-    }
-
-    private void withSource(InputStreamSource source, Consumer<InputStream> operation) {
-        java.util.Objects.requireNonNull(source, "source cannot be null");
-        try (InputStream input = source.openStream()) {
-            operation.accept(input);
-        } catch (IOException e) {
-            throw new ExcelReadException("Failed to open Excel input", e);
-        }
+        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.readWhile(
+                handler::readWhile, handler::wasStoppedEarly, predicate);
     }
 
     /**

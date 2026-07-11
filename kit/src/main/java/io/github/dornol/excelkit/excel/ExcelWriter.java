@@ -282,7 +282,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
     public ExcelWriter<T> table(TableOptions options) {
         java.util.Objects.requireNonNull(options, "options cannot be null");
-        ExcelWriteSupport.validateTableName(options.name());
+        StructuredTableWriter.validateName(options.name());
         this.tableOptions = options;
         return this;
     }
@@ -837,7 +837,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             SXSSFSheet target = wb.getSheetAt(i);
             if (target.getLastRowNum() <= headerRowIndex) continue;
             String name = sheets == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
-            ExcelWriteSupport.applyTable(target, name, headerRowIndex, target.getLastRowNum(), columnCount,
+            StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columnCount,
                     tableOptions.style(), tableOptions.showRowStripes());
         }
     }

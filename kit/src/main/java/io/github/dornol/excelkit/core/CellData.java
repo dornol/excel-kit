@@ -16,11 +16,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 /**
@@ -36,7 +34,6 @@ import java.util.function.Function;
 public final class CellData {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
     private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$₩€%원]");
-    private static volatile Locale defaultLocale = Locale.getDefault();
     private final int columnIndex;
     private final String formattedValue;
     private final @Nullable CellConversionConfig conversionConfig;
@@ -47,7 +44,7 @@ public final class CellData {
      * @return The current default locale
      */
     public static Locale getDefaultLocale() {
-        return defaultLocale;
+        return LegacyCellDefaults.locale();
     }
 
     /**
@@ -60,29 +57,9 @@ public final class CellData {
      * @param locale The locale to use as default (must not be null)
      */
     public static void setDefaultLocale(Locale locale) {
-        if (locale == null) {
-            throw new IllegalArgumentException("locale must not be null");
-        }
-        defaultLocale = locale;
+        if (locale == null) throw new IllegalArgumentException("locale must not be null");
+        LegacyCellDefaults.locale(locale);
     }
-
-    private static final List<DateTimeFormatter> DEFAULT_DATE_FORMATS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-            DateTimeFormatter.ofPattern("MM/dd/yy"),
-            DateTimeFormatter.ofPattern("M/d/yy"),
-            DateTimeFormatter.ISO_LOCAL_DATE
-    );
-    private static final List<DateTimeFormatter> DEFAULT_DATETIME_FORMATS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("MM/dd/yy[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("M/d/yy[ HH:mm[:ss]]"),
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    );
-    private static final Object FORMAT_LOCK = new Object();
-    private static volatile List<DateTimeFormatter> dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
-    private static volatile List<DateTimeFormatter> dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
 
     /**
      * Adds a custom date format pattern for {@link #asLocalDate()}.
@@ -93,9 +70,7 @@ public final class CellData {
      * @param pattern the date pattern (e.g., "dd.MM.yyyy")
      */
     public static void addDateFormat(String pattern) {
-        synchronized (FORMAT_LOCK) {
-            dateFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
-        }
+        LegacyCellDefaults.addDate(pattern);
     }
 
     /**
@@ -107,9 +82,7 @@ public final class CellData {
      * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
      */
     public static void addDateTimeFormat(String pattern) {
-        synchronized (FORMAT_LOCK) {
-            dateTimeFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
-        }
+        LegacyCellDefaults.addDateTime(pattern);
     }
 
     /**
@@ -118,7 +91,7 @@ public final class CellData {
      * @return the list of date format patterns
      */
     public static List<DateTimeFormatter> getDateFormats() {
-        return Collections.unmodifiableList(dateFormatPatterns);
+        return LegacyCellDefaults.dates();
     }
 
     /**
@@ -127,7 +100,7 @@ public final class CellData {
      * @return the list of date-time format patterns
      */
     public static List<DateTimeFormatter> getDateTimeFormats() {
-        return Collections.unmodifiableList(dateTimeFormatPatterns);
+        return LegacyCellDefaults.dateTimes();
     }
 
     /**
@@ -137,9 +110,7 @@ public final class CellData {
      * This method is thread-safe.
      */
     public static void resetDateFormats() {
-        synchronized (FORMAT_LOCK) {
-            dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
-        }
+        LegacyCellDefaults.resetDates();
     }
 
     /**
@@ -149,9 +120,7 @@ public final class CellData {
      * This method is thread-safe.
      */
     public static void resetDateTimeFormats() {
-        synchronized (FORMAT_LOCK) {
-            dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
-        }
+        LegacyCellDefaults.resetDateTimes();
     }
 
     /**
@@ -194,15 +163,15 @@ public final class CellData {
     }
 
     private Locale effectiveLocale() {
-        return conversionConfig != null ? conversionConfig.locale() : defaultLocale;
+        return conversionConfig != null ? conversionConfig.locale() : LegacyCellDefaults.locale();
     }
 
     private List<DateTimeFormatter> effectiveDateFormats() {
-        return conversionConfig != null ? conversionConfig.dateFormats() : dateFormatPatterns;
+        return conversionConfig != null ? conversionConfig.dateFormats() : LegacyCellDefaults.dates();
     }
 
     private List<DateTimeFormatter> effectiveDateTimeFormats() {
-        return conversionConfig != null ? conversionConfig.dateTimeFormats() : dateTimeFormatPatterns;
+        return conversionConfig != null ? conversionConfig.dateTimeFormats() : LegacyCellDefaults.dateTimes();
     }
 
     /**

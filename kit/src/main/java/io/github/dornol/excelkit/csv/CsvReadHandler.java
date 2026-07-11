@@ -50,34 +50,32 @@ import java.util.function.Supplier;
 final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private static final Logger log = LoggerFactory.getLogger(CsvReadHandler.class);
 
-    static <T> CsvReadHandler<T> forPath(Path path, List<ReadColumn<T>> columns, Supplier<T> supplier,
-            @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-            int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-            boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-            @Nullable CellConversionConfig conversion, char quoteChar, char escapeChar,
-            boolean strictQuotes, boolean ignoreLeadingWhiteSpace, long maxRows,
-            boolean skipBlankRows, int stopAtBlankRows) {
-        var handler = new CsvReadHandler<>(InputStream.nullInputStream(), columns, supplier, validator,
-                headerRowIndex, delimiter, charset, progressInterval, progressCallback, strictHeaders,
-                duplicateHeaderPolicy, conversion, quoteChar, escapeChar, strictQuotes,
-                ignoreLeadingWhiteSpace, maxRows, skipBlankRows, stopAtBlankRows);
-        handler.useExternalInput(path);
-        return handler;
+    CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config) {
+        this(input, config, false, null);
     }
 
-    static <T> CsvReadHandler<T> forPath(Path path, Function<RowData, T> mapper,
-            @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-            int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-            boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-            @Nullable Set<String> selectedColumns, @Nullable CellConversionConfig conversion,
-            char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace,
-            long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        var handler = new CsvReadHandler<>(InputStream.nullInputStream(), mapper, validator,
-                headerRowIndex, delimiter, charset, progressInterval, progressCallback, strictHeaders,
-                duplicateHeaderPolicy, selectedColumns, conversion, quoteChar, escapeChar, strictQuotes,
-                ignoreLeadingWhiteSpace, maxRows, skipBlankRows, stopAtBlankRows);
-        handler.useExternalInput(path);
-        return handler;
+    CsvReadHandler(Path path, CsvReadSessionConfig<T> config) {
+        this(InputStream.nullInputStream(), config, true, path);
+    }
+
+    private CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config,
+                           boolean externalPath, @Nullable Path path) {
+        super(input, config.supplier(), config.mapper(), config.validator(), ".csv",
+                config.options(), config.selectedColumns());
+        validateHeaderRowIndex(config.headerRowIndex());
+        if (config.columns() != null) validateColumns(config.columns());
+        this.columns = config.columns();
+        this.headerRowIndex = config.headerRowIndex();
+        this.delimiter = config.delimiter();
+        this.charset = config.charset();
+        this.quoteChar = config.quoteChar();
+        this.escapeChar = config.escapeChar();
+        this.strictQuotes = config.strictQuotes();
+        this.ignoreLeadingWhiteSpace = config.ignoreLeadingWhiteSpace();
+        this.progressInterval = config.progressInterval();
+        this.progressCallback = config.progressCallback();
+        if (externalPath) useExternalInput(path);
+        options(config.options());
     }
 
     private final List<String> headerNames = new ArrayList<>();

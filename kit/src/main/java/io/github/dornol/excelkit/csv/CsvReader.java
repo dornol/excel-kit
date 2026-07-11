@@ -279,38 +279,19 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      */
     private CsvReadHandler<T> createHandler(InputStream inputStream) {
         inputStream = limitInput(inputStream);
-        CsvReadHandler<T> handler;
-        if (rowMapper != null) {
-            handler = new CsvReadHandler<>(inputStream, rowMapper, validator,
-                    headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                    strictHeaders, duplicateHeaderPolicy,
-                    selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), cellConversionConfig,
-                    quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
-                    maxRows, skipBlankRows, stopAtBlankRows);
-        } else {
-            handler = new CsvReadHandler<>(inputStream, List.copyOf(columns), instanceSupplier, validator,
-                    headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                    strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
-                    quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
-                    maxRows, skipBlankRows, stopAtBlankRows);
-        }
-        handler.options(snapshotReadOptions());
-        return handler;
+        return new CsvReadHandler<>(inputStream, sessionConfig());
     }
 
     private CsvReadHandler<T> createHandler(Path path) {
-        CsvReadHandler<T> handler = rowMapper != null
-                ? CsvReadHandler.forPath(path, rowMapper, validator, headerRowIndex, delimiter, charset,
-                    progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy,
-                    selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), cellConversionConfig,
-                    quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
-                    maxRows, skipBlankRows, stopAtBlankRows)
-                : CsvReadHandler.forPath(path, List.copyOf(columns), instanceSupplier, validator,
-                    headerRowIndex, delimiter, charset, progressInterval, progressCallback, strictHeaders,
-                    duplicateHeaderPolicy, cellConversionConfig, quoteChar, escapeChar, strictQuotes,
-                    ignoreLeadingWhiteSpace, maxRows, skipBlankRows, stopAtBlankRows);
-        handler.options(snapshotReadOptions());
-        return handler;
+        return new CsvReadHandler<>(path, sessionConfig());
+    }
+
+    private CsvReadSessionConfig<T> sessionConfig() {
+        return new CsvReadSessionConfig<>(rowMapper == null ? List.copyOf(columns) : null,
+                instanceSupplier, rowMapper, validator, headerRowIndex, delimiter, charset,
+                progressInterval, progressCallback,
+                selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), quoteChar,
+                escapeChar, strictQuotes, ignoreLeadingWhiteSpace, snapshotReadOptions());
     }
 
     /** Reads an input stream without closing it. */
@@ -345,9 +326,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        final ReadSummary[] summary = new ReadSummary[1];
-        withSource(source, input -> summary[0] = readWithSummary(input, consumer));
-        return summary[0];
+        return withInputSource(source, input -> readWithSummary(input, consumer),
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     private ReadSummary summarize(CsvReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
@@ -364,9 +344,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
-        final ReadReport[] report = new ReadReport[1];
-        withSource(source, input -> report[0] = readReport(input, maxCollectedErrors));
-        return report[0];
+        return withInputSource(source, input -> readReport(input, maxCollectedErrors),
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     private ReadReport report(InputStream inputStream, int maxCollectedErrors) {
@@ -408,41 +387,28 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        withSource(source, input -> read(input, consumer));
+        withInputSource(source, input -> { read(input, consumer); return null; },
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
-        withSource(source, input -> read(input, onSuccess, onError));
+        withInputSource(source, input -> { read(input, onSuccess, onError); return null; },
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     public void readStrict(InputStreamSource source, Consumer<T> consumer) {
-        withSource(source, input -> readStrict(input, consumer));
+        withInputSource(source, input -> { readStrict(input, consumer); return null; },
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
-        final ReadSummary[] summary = new ReadSummary[1];
-        withSource(source, input -> summary[0] = readWhile(input, predicate));
-        return summary[0];
+        return withInputSource(source, input -> readWhile(input, predicate),
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     private ReadSummary readWhile(CsvReadHandler<T> handler, Predicate<ReadResult<T>> predicate) {
-        long started = System.nanoTime();
-        long[] counts = new long[3];
-        handler.readWhile(result -> {
-            counts[0]++;
-            if (result.success()) counts[1]++; else counts[2]++;
-            return predicate.test(result);
-        });
-        return new ReadSummary(counts[0], counts[1], counts[2], handler.wasStoppedEarly(),
-                java.time.Duration.ofNanos(System.nanoTime() - started));
+        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.readWhile(
+                handler::readWhile, handler::wasStoppedEarly, predicate);
     }
 
-    private void withSource(InputStreamSource source, Consumer<InputStream> operation) {
-        java.util.Objects.requireNonNull(source, "source cannot be null");
-        try (InputStream input = source.openStream()) {
-            operation.accept(input);
-        } catch (IOException e) {
-            throw new CsvReadException("Failed to open CSV input", e);
-        }
-    }
 }

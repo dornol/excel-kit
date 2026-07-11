@@ -69,6 +69,24 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected boolean stoppedEarly;
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
+    protected AbstractReadHandler(InputStream input, @Nullable Supplier<T> supplier,
+            @Nullable Function<RowData,T> mapper, @Nullable Validator validator, String extension,
+            ReadOptions options, @Nullable Set<String> selectedColumns) {
+        if ((supplier == null) == (mapper == null))
+            throw new IllegalArgumentException("Exactly one of supplier or mapper is required");
+        this.instanceSupplier = supplier;
+        this.rowMapper = mapper;
+        this.validator = validator;
+        this.strictHeaders = options.strictHeaders();
+        this.duplicateHeaderPolicy = options.duplicateHeaderPolicy();
+        this.selectedMapColumns = selectedColumns;
+        this.cellConversionConfig = options.cellConversionConfig();
+        this.maxRows = options.maxRows();
+        this.skipBlankRows = options.skipBlankRows();
+        this.stopAtBlankRows = options.stopAtBlankRows();
+        initTempFile(java.util.Objects.requireNonNull(input, "input cannot be null"), extension);
+    }
+
     /**
      * Constructs a read handler in setter mode by validating inputs and initializing a temporary file.
      *

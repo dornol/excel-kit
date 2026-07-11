@@ -215,7 +215,7 @@ public class TemplateListWriter<T> {
     }
 
     public TemplateListWriter<T> table(TableOptions options) {
-        ExcelWriteSupport.validateTableName(java.util.Objects.requireNonNull(options, "options cannot be null").name());
+        StructuredTableWriter.validateName(java.util.Objects.requireNonNull(options, "options cannot be null").name());
         this.tableOptions = options;
         return this;
     }
@@ -279,7 +279,7 @@ public class TemplateListWriter<T> {
 
         if (tableOptions != null && !writeHeaders) {
             if (startRow == 0) throw new ExcelWriteException("Template table requires a header row before startRow");
-            ExcelWriteSupport.validateExistingTableHeaders(sheet, startRow - 1, columns.size());
+            StructuredTableWriter.validateExistingHeaders(sheet, startRow - 1, columns.size());
         }
 
         if (writeHeaders) {
@@ -304,7 +304,7 @@ public class TemplateListWriter<T> {
             }
             int lastDataRow = cursor.getRowOfSheet() - 1;
             if (lastDataRow > tableHeaderRow) {
-                ExcelWriteSupport.applyTable(sheet, tableOptions.name(), tableHeaderRow, lastDataRow,
+                StructuredTableWriter.apply(sheet, tableOptions.name(), tableHeaderRow, lastDataRow,
                         columns.size(), tableOptions.style(), tableOptions.showRowStripes());
             }
         }
