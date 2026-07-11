@@ -33,6 +33,17 @@ public final class ExcelKitUpload {
         }
     }
 
+    public static <T> UploadResult<T> read(String type, MultipartFile file, UploadReader<T> reader,
+            UploadCollectionLimits collectionLimits) {
+        try (InputStream inputStream = ExcelKitMultipartFile.open(file)) {
+            return UploadResult.read(type, consumer -> reader.read(inputStream, consumer),
+                    ExcelKitMultipartFile.safeOriginalFilename(file), file.getSize(), collectionLimits);
+        } catch (IOException e) {
+            throw new ExcelKitUploadException("Failed to close upload file: "
+                    + ExcelKitMultipartFile.safeOriginalFilename(file), e);
+        }
+    }
+
     /** Detects content by signature and rejects a mismatch before invoking the reader. */
     public static <T> UploadResult<T> readDetected(String type, TabularFileType expected,
             MultipartFile file, UploadReader<T> reader) {

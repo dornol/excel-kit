@@ -249,6 +249,9 @@ value, and observed value. Summary, report, and `readWhile` APIs accept `InputSt
 and `InputStreamSource`; progress callbacks always receive a terminal event.
 For untrusted XLSX files, `securityPolicy(ReadSecurityPolicy.STRICT)` rejects formulas and
 external workbook links before sheet rows are mapped.
+Strict inspection also bounds each decompressed worksheet entry, total scanned bytes, and
+compression ratio. CSV callers can use `readDetected(...)` to apply sampled charset and
+delimiter detection without closing the caller stream.
 
 **Bean Validation:**
 ```java

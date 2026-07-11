@@ -312,7 +312,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             readInternal(guardedConsumer(consumer));
         } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
             stoppedEarly = true;
-        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException e) {
+        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException |
+                 io.github.dornol.excelkit.core.ReadSecurityException e) {
             throw e;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
@@ -343,7 +344,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
             // Normal early completion requested by the caller.
             stoppedEarly = true;
-        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException e) {
+        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException |
+                 io.github.dornol.excelkit.core.ReadSecurityException e) {
             throw e;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
@@ -426,35 +428,66 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     private void enforceSecurityPolicy(Path file) throws IOException {
         if (securityPolicy.allowFormulas() && securityPolicy.allowExternalLinks()) return;
+        long totalScanned = 0;
         try (ZipFile zip = new ZipFile(file.toFile())) {
             var entries = zip.entries();
             while (entries.hasMoreElements()) {
                 var entry = entries.nextElement();
                 String name = entry.getName();
                 if (!securityPolicy.allowExternalLinks() && name.startsWith("xl/externalLinks/")) {
-                    throw new ExcelReadException("External workbook links are not allowed");
+                    throw new io.github.dornol.excelkit.core.ReadSecurityException(
+                            io.github.dornol.excelkit.core.ReadSecurityException.Reason.EXTERNAL_LINK,
+                            "External workbook links are not allowed");
                 }
                 if (!securityPolicy.allowFormulas() && name.startsWith("xl/worksheets/") && name.endsWith(".xml")) {
+                    validateZipEntry(entry);
                     try (InputStream input = zip.getInputStream(entry)) {
-                        if (containsFormulaTag(input)) throw new ExcelReadException("Excel formulas are not allowed");
+                        ScanResult scan = scanFormulaTag(input, securityPolicy.maxScannedEntryBytes());
+                        totalScanned += scan.bytes();
+                        if (totalScanned > securityPolicy.maxTotalScannedBytes()) {
+                            throw new io.github.dornol.excelkit.core.ReadSecurityException(
+                                    io.github.dornol.excelkit.core.ReadSecurityException.Reason.TOTAL_SCAN_SIZE,
+                                    "Workbook security scan exceeds total byte limit");
+                        }
+                        if (scan.formula()) throw new io.github.dornol.excelkit.core.ReadSecurityException(
+                                io.github.dornol.excelkit.core.ReadSecurityException.Reason.FORMULA,
+                                "Excel formulas are not allowed");
                     }
                 }
             }
         }
     }
 
-    private static boolean containsFormulaTag(InputStream input) throws IOException {
+    private void validateZipEntry(java.util.zip.ZipEntry entry) {
+        long size = entry.getSize();
+        long compressed = entry.getCompressedSize();
+        if (size > securityPolicy.maxScannedEntryBytes()) throw new io.github.dornol.excelkit.core.ReadSecurityException(
+                io.github.dornol.excelkit.core.ReadSecurityException.Reason.ENTRY_SIZE,
+                "Worksheet XML exceeds security scan entry limit: " + size);
+        if (size > 0 && compressed > 0 && (double) size / compressed > securityPolicy.maxCompressionRatio())
+            throw new io.github.dornol.excelkit.core.ReadSecurityException(
+                    io.github.dornol.excelkit.core.ReadSecurityException.Reason.COMPRESSION_RATIO,
+                    "Worksheet XML exceeds compression ratio limit");
+    }
+
+    private static ScanResult scanFormulaTag(InputStream input, long maximum) throws IOException {
         int state = 0;
+        long bytes = 0;
         for (int value; (value = input.read()) >= 0;) {
+            if (++bytes > maximum) throw new io.github.dornol.excelkit.core.ReadSecurityException(
+                    io.github.dornol.excelkit.core.ReadSecurityException.Reason.ENTRY_SIZE,
+                    "Worksheet XML exceeds security scan entry limit");
             if (state == 0) state = value == '<' ? 1 : 0;
             else if (state == 1) state = value == 'f' ? 2 : (value == '<' ? 1 : 0);
             else {
-                if (value == '>' || Character.isWhitespace(value)) return true;
+                if (value == '>' || Character.isWhitespace(value)) return new ScanResult(true, bytes);
                 state = value == '<' ? 1 : 0;
             }
         }
-        return false;
+        return new ScanResult(false, bytes);
     }
+
+    private record ScanResult(boolean formula, long bytes) {}
 
     /**
      * Performs a lightweight SAX pre-scan to count data rows (excluding header rows).

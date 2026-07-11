@@ -318,6 +318,24 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         createHandler(inputStream).read(consumer);
     }
 
+    /** Detects text charset and delimiter from a sample before reading without closing the caller stream. */
+    public void readDetected(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        java.io.BufferedInputStream buffered = inputStream instanceof java.io.BufferedInputStream existing
+                ? existing : new java.io.BufferedInputStream(inputStream);
+        var detection = io.github.dornol.excelkit.core.TabularFileDetector.detectDetailed(buffered);
+        if (detection.type() != io.github.dornol.excelkit.core.TabularFileType.CSV) {
+            throw new CsvReadException("Expected CSV content but detected " + detection.type());
+        }
+        if (detection.charset() != null) this.charset = detection.charset();
+        if (detection.delimiter() != null) this.delimiter = detection.delimiter();
+        read(buffered, consumer);
+    }
+
+    public void readDetected(Path path, Consumer<ReadResult<T>> consumer) {
+        try (InputStream input = Files.newInputStream(path)) { readDetected(input, consumer); }
+        catch (IOException e) { throw new CsvReadException("Failed to open CSV input", e); }
+    }
+
     public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         return summarize(createHandler(inputStream), consumer);
     }
@@ -333,15 +351,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private ReadSummary summarize(CsvReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
-        long started = System.nanoTime();
-        long[] counts = new long[3];
-        handler.read(result -> {
-            counts[0]++;
-            if (result.success()) counts[1]++; else counts[2]++;
-            consumer.accept(result);
-        });
-        return new ReadSummary(counts[0], counts[1], counts[2], handler.wasStoppedEarly(),
-                java.time.Duration.ofNanos(System.nanoTime() - started));
+        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.summarize(
+                handler::read, handler::wasStoppedEarly, consumer);
     }
 
     public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
@@ -363,19 +374,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private ReadReport report(CsvReadHandler<T> handler, int maxCollectedErrors) {
-        if (maxCollectedErrors < 0) throw new IllegalArgumentException("maxCollectedErrors must be non-negative");
-        List<RowError> errors = new java.util.ArrayList<>();
-        long[] row = {0};
-        ReadSummary summary = summarize(handler, result -> {
-            row[0]++;
-            if (!result.success() && errors.size() < maxCollectedErrors) {
-                errors.add(new RowError(row[0], result.fileRowNum(),
-                        result.cause() == null ? RowError.Type.VALIDATION : RowError.Type.MAPPING,
-                        result.messages() == null ? List.of() : result.messages(), result.cause(),
-                        result.cellErrors(), result.rawValues()));
-            }
-        });
-        return new ReadReport(summary, errors, summary.errorRows() > errors.size());
+        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.<T>report(
+                consumer -> handler.read(consumer), handler::wasStoppedEarly, maxCollectedErrors);
     }
 
     public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {

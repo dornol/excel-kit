@@ -342,15 +342,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private ReadSummary summarize(ExcelReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
-        long started = System.nanoTime();
-        long[] counts = new long[3];
-        handler.read(result -> {
-            counts[0]++;
-            if (result.success()) counts[1]++; else counts[2]++;
-            consumer.accept(result);
-        });
-        return new ReadSummary(counts[0], counts[1], counts[2], handler.wasStoppedEarly(),
-                java.time.Duration.ofNanos(System.nanoTime() - started));
+        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.summarize(
+                handler::read, handler::wasStoppedEarly, consumer);
     }
 
     public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
@@ -368,19 +361,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private ReadReport report(ExcelReadHandler<T> handler, int maxCollectedErrors) {
-        if (maxCollectedErrors < 0) throw new IllegalArgumentException("maxCollectedErrors must be non-negative");
-        List<RowError> errors = new ArrayList<>();
-        long[] row = {0};
-        ReadSummary summary = summarize(handler, result -> {
-            row[0]++;
-            if (!result.success() && errors.size() < maxCollectedErrors) {
-                errors.add(new RowError(row[0], result.fileRowNum(),
-                        result.cause() == null ? RowError.Type.VALIDATION : RowError.Type.MAPPING,
-                        result.messages() == null ? List.of() : result.messages(), result.cause(),
-                        result.cellErrors(), result.rawValues()));
-            }
-        });
-        return new ReadReport(summary, errors, summary.errorRows() > errors.size());
+        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.<T>report(
+                consumer -> handler.read(consumer), handler::wasStoppedEarly, maxCollectedErrors);
     }
 
     public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {

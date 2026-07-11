@@ -163,3 +163,5 @@ ExcelHandler handler = writer.write(flux.toStream());
 Schema uploads can apply core `ReadLimits`, and `readDetected(...)` validates XLSX/CSV content
 by signature rather than trusting the filename or HTTP content type. Limit failures retain
 their structured `ReadLimitExceededException` details for mapping to HTTP 413 responses.
+`UploadCollectionLimits` independently bounds retained successful rows and errors while
+`UploadSummary` continues to report complete counts; truncation flags identify sampled results.

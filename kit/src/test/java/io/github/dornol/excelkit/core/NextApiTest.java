@@ -79,9 +79,10 @@ class NextApiTest {
             sheet.createRow(1).createCell(0).setCellFormula("1+1");
             workbook.write(output);
         }
-        assertThrows(io.github.dornol.excelkit.excel.ExcelReadException.class, () ->
+        ReadSecurityException error = assertThrows(ReadSecurityException.class, () ->
                 ExcelReader.forMap().securityPolicy(ReadSecurityPolicy.STRICT)
                         .read(new ByteArrayInputStream(output.toByteArray()), result -> fail()));
+        assertEquals(ReadSecurityException.Reason.FORMULA, error.reason());
     }
 
     @Test void cancellationStopsBetweenRows() {

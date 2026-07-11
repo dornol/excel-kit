@@ -21,6 +21,9 @@ All notable changes to this project will be documented in this file.
 - Signature-validated Spring uploads with core `ReadLimits` integration.
 - Optional Excel formula and external-link rejection through `ReadSecurityPolicy`.
 - Structured tables for template list writers and `Iterable` template inputs.
+- Bounded XLSX security scanning with entry, total-byte, and compression-ratio limits.
+- Spring upload result collection limits with independent truncation indicators.
+- CSV automatic charset/delimiter detection and deterministic malformed-input fuzz coverage.
 
 ### Changed
 
@@ -32,6 +35,8 @@ All notable changes to this project will be documented in this file.
 - `readWhile` returns `ReadSummary`; summary/report methods now support all input source types.
 - Detailed read progress always emits a terminal completion/cancellation event.
 - API compatibility CI now fails for non-allowlisted binary incompatibilities.
+- Reader summary/report aggregation is shared internally to keep Excel and CSV behavior aligned.
+- japicmp exceptions are signature-scoped and document their baseline expiry.
 
 ## [0.20.0] - 2026-07-11
 

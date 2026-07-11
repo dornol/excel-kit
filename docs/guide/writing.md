@@ -283,3 +283,5 @@ For shared configuration, pass `new StreamingOptions(windowSize, compressTempFil
 useSharedStrings)` through the initialization options. `TableOptions` controls style, row
 stripes, and whether rollover sheets receive uniquely suffixed tables.
 Structured tables are also available on `ExcelWorkbook.sheet(...)` and template list writers.
+Table names are checked workbook-wide without regard to case, and template tables validate
+that the expected header row contains every configured column.

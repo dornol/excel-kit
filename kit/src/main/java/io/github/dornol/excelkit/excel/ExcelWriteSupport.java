@@ -45,6 +45,17 @@ class ExcelWriteSupport {
             throw new IllegalArgumentException("Excel table name cannot be a cell reference: " + name);
     }
 
+    static void validateExistingTableHeaders(SXSSFSheet sheet, int headerRow, int columnCount) {
+        XSSFSheet xssf = SXSSFSheetHelper.getXSSFSheet(sheet);
+        var row = xssf == null ? null : xssf.getRow(headerRow);
+        if (row == null) throw new ExcelWriteException("Template table header row not found: " + headerRow);
+        for (int i = 0; i < columnCount; i++) {
+            var cell = row.getCell(i);
+            if (cell == null || cell.toString().isBlank())
+                throw new ExcelWriteException("Template table header is blank at column " + i);
+        }
+    }
+
     /**
      * Invokes the afterData and summary callbacks on the given sheet, returning the next
      * available row index. Used at both rollover points and post-data finalization.
@@ -624,6 +635,14 @@ class ExcelWriteSupport {
                            String style, boolean showRowStripes) {
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
         if (xssfSheet == null || columnCount == 0 || lastRow <= headerRow) return;
+        var xssfWorkbook = sheet.getWorkbook().getXSSFWorkbook();
+        for (int i = 0; i < xssfWorkbook.getNumberOfSheets(); i++) {
+            for (var existing : xssfWorkbook.getSheetAt(i).getTables()) {
+                if (existing.getName() != null && existing.getName().equalsIgnoreCase(name)) {
+                    throw new ExcelWriteException("Duplicate table name: '" + name + "'");
+                }
+            }
+        }
         AreaReference area = new AreaReference(new CellReference(headerRow, 0),
                 new CellReference(lastRow, columnCount - 1), SpreadsheetVersion.EXCEL2007);
         var table = xssfSheet.createTable(area);

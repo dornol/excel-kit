@@ -277,6 +277,11 @@ public class TemplateListWriter<T> {
         Cursor cursor = new Cursor(startRow);
         int headerRowIndex = startRow;
 
+        if (tableOptions != null && !writeHeaders) {
+            if (startRow == 0) throw new ExcelWriteException("Template table requires a header row before startRow");
+            ExcelWriteSupport.validateExistingTableHeaders(sheet, startRow - 1, columns.size());
+        }
+
         if (writeHeaders) {
             CellStyle headerStyle = ExcelStyleSupporter.headerStyle(wb,
                     new org.apache.poi.xssf.usermodel.XSSFColor(
