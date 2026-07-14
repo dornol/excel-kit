@@ -33,7 +33,7 @@ import java.util.function.Supplier;
  * ExcelHandler handler = schema.excelWriter().write(dataStream);
  *
  * // Read Excel (matched by header name, column order doesn't matter)
- * schema.excelReader(Person::new, validator).build(inputStream).read(consumer);
+ * schema.excelReader(Person::new, validator).read(inputStream, consumer);
  * }</pre>
  *
  * @param <T> The row data type

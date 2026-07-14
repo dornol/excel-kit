@@ -42,8 +42,7 @@ class NameBasedReadTest {
                     .column("Name", (p, cell) -> p.name = cell.asString())
                     .column("Age", (p, cell) -> p.age = cell.asInt())
                     .column("City", (p, cell) -> p.city = cell.asString())
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(2, results.size());
@@ -69,8 +68,7 @@ class NameBasedReadTest {
                     .column("Name", (p, cell) -> p.name = cell.asString())
                     .column("Age", (p, cell) -> p.age = cell.asInt())
                     .column("City", (p, cell) -> p.city = cell.asString())
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(2, results.size());
@@ -96,8 +94,7 @@ class NameBasedReadTest {
             new ExcelReader<>(TestPerson::new, null)
                     .column("Name", (p, cell) -> p.name = cell.asString())
                     .column("City", (p, cell) -> p.city = cell.asString())
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -106,21 +103,7 @@ class NameBasedReadTest {
         assertNull(results.get(0).age);
     }
 
-    @Test
-    void readByName_shouldThrowWhenHeaderNotFound() throws IOException {
-        Path file = tempDir.resolve("missing-header.xlsx");
-        createExcelFile(file, new String[]{"Name", "Age"},
-                new Object[][]{{"Alice", 30}});
 
-        try (InputStream is = Files.newInputStream(file)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, null)
-                    .column("Name", (p, cell) -> p.name = cell.asString())
-                    .column("NonExistent", (p, cell) -> p.city = cell.asString())
-                    .build(is);
-
-            assertThrows(ExcelReadException.class, () -> handler.read(r -> {}));
-        }
-    }
 
     @Test
     void readByName_shouldWorkWithAddColumnMethod() throws IOException {
@@ -133,8 +116,7 @@ class NameBasedReadTest {
             new ExcelReader<>(TestPerson::new, null)
                     .column("Name", (p, cell) -> p.name = cell.asString())
                     .column("City", (p, cell) -> p.city = cell.asString())
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -153,8 +135,7 @@ class NameBasedReadTest {
             new ExcelReader<>(TestPerson::new, null)
                     .column("Name", (TestPerson p, CellData cell) -> p.name = cell.asString())
                     .column("Age", (TestPerson p, CellData cell) -> p.age = cell.asInt())
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());

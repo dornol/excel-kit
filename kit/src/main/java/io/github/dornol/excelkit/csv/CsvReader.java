@@ -8,6 +8,7 @@ import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
+import java.io.BufferedInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -16,14 +17,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import io.github.dornol.excelkit.core.InputStreamSource;
+import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.ReadSummary;
+import io.github.dornol.excelkit.core.ReadReport;
+import io.github.dornol.excelkit.core.TabularFileDetector;
+import io.github.dornol.excelkit.core.TabularFileType;
 
 /**
  * Builder-style class for configuring CSV row readers.
  * <p>
  * {@code CsvReader} allows you to define how each CSV cell maps to your target object {@code T},
  * and optionally integrates Bean Validation support.
- * Once configuration is complete, use {@link #build(InputStream)} to create a {@link CsvReadHandler}.
+ * Once configuration is complete, call {@code read} with an input source and row consumer.
  *
  * @param <T> The type of the object that represents one CSV row
  * @author dhkim
@@ -90,7 +103,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      * CsvReader.mapping(row -> new PersonRecord(
      *         row.get("Name").asString(),
      *         row.get("Age").asInt()
-     * )).build(inputStream).read(result -> { ... });
+     * )).read(inputStream, result -> { ... });
      * }</pre>
      *
      * @param rowMapper A function that creates an instance of {@code T} from a {@link RowData}
@@ -129,8 +142,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      * <pre>{@code
      * CsvReader.forMap()
      *     .dialect(CsvDialect.EXCEL)
-     *     .build(inputStream)
-     *     .read(result -> {
+     *     .read(inputStream, result -> {
      *         Map<String, String> row = result.data();
      *         String name = row.get("Name");
      *     });
@@ -149,8 +161,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      *
      * <pre>{@code
      * CsvReader.forMap("Name", "Age")
-     *     .build(inputStream)
-     *     .read(result -> {
+     *     .read(inputStream, result -> {
      *         // result.data() contains only "Name" and "Age" keys
      *     });
      * }</pre>
@@ -269,18 +280,138 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      * @param inputStream The input stream of the CSV file
      * @return A handler to execute CSV parsing
      */
-    public CsvReadHandler<T> build(InputStream inputStream) {
-        if (rowMapper != null) {
-            return new CsvReadHandler<>(inputStream, rowMapper, validator,
-                    headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                    strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
-                    quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
-                    maxRows, skipBlankRows, stopAtBlankRows);
-        }
-        return new CsvReadHandler<>(inputStream, columns, instanceSupplier, validator,
-                headerRowIndex, delimiter, charset, progressInterval, progressCallback,
-                strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
-                quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace,
-                maxRows, skipBlankRows, stopAtBlankRows);
+    private CsvReadHandler<T> createHandler(InputStream inputStream) {
+        inputStream = limitInput(inputStream);
+        return new CsvReadHandler<>(inputStream, sessionConfig());
     }
+
+    private CsvReadHandler<T> createHandler(Path path) {
+        return new CsvReadHandler<>(path, sessionConfig());
+    }
+
+    private CsvReadSessionConfig<T> sessionConfig() {
+        return new CsvReadSessionConfig<>(rowMapper == null ? List.copyOf(columns) : null,
+                instanceSupplier, rowMapper, validator, headerRowIndex, delimiter, charset,
+                progressInterval, progressCallback,
+                selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), quoteChar,
+                escapeChar, strictQuotes, ignoreLeadingWhiteSpace, snapshotReadOptions());
+    }
+
+    /** Reads an input stream without closing it. */
+    public void read(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        createHandler(inputStream).read(consumer);
+    }
+
+    /** Detects text charset and delimiter from a sample before reading without closing the caller stream. */
+    public void readDetected(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        BufferedInputStream buffered = inputStream instanceof BufferedInputStream existing
+                ? existing : new BufferedInputStream(inputStream);
+        var detection = TabularFileDetector.detectDetailed(buffered);
+        if (detection.type() != TabularFileType.CSV) {
+            throw new CsvReadException("Expected CSV content but detected " + detection.type());
+        }
+        if (detection.charset() != null) this.charset = detection.charset();
+        if (detection.delimiter() != null) this.delimiter = detection.delimiter();
+        read(buffered, consumer);
+    }
+
+    public void readDetected(Path path, Consumer<ReadResult<T>> consumer) {
+        try (InputStream input = Files.newInputStream(path)) { readDetected(input, consumer); }
+        catch (IOException e) { throw new CsvReadException("Failed to open CSV input", e); }
+    }
+
+    public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        return summarize(createHandler(inputStream), consumer);
+    }
+
+    public ReadSummary readWithSummary(Path path, Consumer<ReadResult<T>> consumer) {
+        return summarize(createHandler(path), consumer);
+    }
+
+    public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        return withInputSource(source, input -> readWithSummary(input, consumer),
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
+    }
+
+    private ReadSummary summarize(CsvReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
+        return summarizeRead(
+                handler::read, handler::wasStoppedEarly, consumer);
+    }
+
+    public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
+        return report(inputStream, maxCollectedErrors);
+    }
+
+    public ReadReport readReport(Path path, int maxCollectedErrors) {
+        return report(createHandler(path), maxCollectedErrors);
+    }
+
+    public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
+        return withInputSource(source, input -> readReport(input, maxCollectedErrors),
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
+    }
+
+    private ReadReport report(InputStream inputStream, int maxCollectedErrors) {
+        return report(createHandler(inputStream), maxCollectedErrors);
+    }
+
+    private ReadReport report(CsvReadHandler<T> handler, int maxCollectedErrors) {
+        return collectReadReport(
+                consumer -> handler.read(consumer), handler::wasStoppedEarly, maxCollectedErrors);
+    }
+
+    public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        createHandler(inputStream).read(onSuccess, onError);
+    }
+
+    public void readStrict(InputStream inputStream, Consumer<T> consumer) {
+        createHandler(inputStream).readStrict(consumer);
+    }
+
+    public ReadSummary readWhile(InputStream inputStream, Predicate<ReadResult<T>> predicate) {
+        return readWhile(createHandler(inputStream), predicate);
+    }
+
+    /** Reads directly from a caller-owned path without modifying or deleting it. */
+    public void read(Path path, Consumer<ReadResult<T>> consumer) {
+        createHandler(path).read(consumer);
+    }
+
+    public void read(Path path, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        createHandler(path).read(onSuccess, onError);
+    }
+
+    public void readStrict(Path path, Consumer<T> consumer) {
+        createHandler(path).readStrict(consumer);
+    }
+
+    public ReadSummary readWhile(Path path, Predicate<ReadResult<T>> predicate) {
+        return readWhile(createHandler(path), predicate);
+    }
+
+    public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        withInputSource(source, input -> { read(input, consumer); return null; },
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
+    }
+
+    public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        withInputSource(source, input -> { read(input, onSuccess, onError); return null; },
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
+    }
+
+    public void readStrict(InputStreamSource source, Consumer<T> consumer) {
+        withInputSource(source, input -> { readStrict(input, consumer); return null; },
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
+    }
+
+    public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
+        return withInputSource(source, input -> readWhile(input, predicate),
+                (message, error) -> new CsvReadException("Failed to open CSV input", error));
+    }
+
+    private ReadSummary readWhile(CsvReadHandler<T> handler, Predicate<ReadResult<T>> predicate) {
+        return summarizeReadWhile(
+                handler::readWhile, handler::wasStoppedEarly, predicate);
+    }
+
 }

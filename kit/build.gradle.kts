@@ -11,16 +11,19 @@ java {
 }
 
 dependencies {
-    compileOnly(libs.poi.ooxml)
+    val poiVersion = providers.gradleProperty("poiVersion").orNull
+    val opencsvVersion = providers.gradleProperty("opencsvVersion").orNull
+
+    compileOnly(if (poiVersion != null) "org.apache.poi:poi-ooxml:$poiVersion" else libs.poi.ooxml)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jakarta.validation.api)
-    compileOnly(libs.opencsv)
+    compileOnly(if (opencsvVersion != null) "com.opencsv:opencsv:$opencsvVersion" else libs.opencsv)
     compileOnly(libs.jspecify)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.poi.ooxml)
-    testImplementation(libs.opencsv)
+    testImplementation(if (poiVersion != null) "org.apache.poi:poi-ooxml:$poiVersion" else libs.poi.ooxml)
+    testImplementation(if (opencsvVersion != null) "com.opencsv:opencsv:$opencsvVersion" else libs.opencsv)
     testImplementation(libs.slf4j.simple)
     testImplementation(libs.jakarta.validation.api)
     testImplementation(libs.hibernate.validator)

@@ -62,47 +62,6 @@ class ExcelReaderBranchTest {
     }
 
     // ============================================================
-    // readAsStream - producer throws ExcelReadException
-    // ============================================================
-    @Nested
-    class ReadAsStreamErrorTests {
-
-        @Test
-        void readAsStream_nonExistentSheet_throwsExcelReadException() throws IOException {
-            byte[] excel = writeSimpleExcel();
-
-            assertThrows(ExcelReadException.class, () -> {
-                try (var stream = ExcelReader.<Item>mapping(row ->
-                        new Item(row.get("Name").asString(), row.get("Value").asInt())
-                ).sheetIndex(5)
-                        .build(new ByteArrayInputStream(excel))
-                        .readAsStream()) {
-                    stream.forEach(r -> {});
-                }
-            });
-        }
-
-        @Test
-        void readAsStream_mappingThrowsReadAbort() throws IOException {
-            byte[] excel = writeSimpleExcel();
-
-            // mapWithRowMapper catches generic exceptions, but ReadAbortException should propagate
-            // Actually mapWithRowMapper catches ALL exceptions. Let's verify the behavior.
-            List<ReadResult<Item>> results;
-            try (var stream = ExcelReader.<Item>mapping(row -> {
-                throw new IllegalStateException("mapper error");
-            }).build(new ByteArrayInputStream(excel))
-                    .readAsStream()) {
-                results = stream.toList();
-            }
-
-            assertFalse(results.isEmpty(), "Should have results even when mapper fails");
-            assertTrue(results.stream().allMatch(r -> !r.success()),
-                    "All results should be failed when mapper throws");
-        }
-    }
-
-    // ============================================================
     // SheetHandler - mapping mode with headerRowIndex > 0 + progress
     // ============================================================
     @Nested
@@ -135,8 +94,7 @@ class ExcelReaderBranchTest {
                         new Item(row.get("Name").asString(), row.get("Value").asInt())
                 ).headerRowIndex(2)
                         .onProgress(2, (count, cursor) -> progress.set(count))
-                        .build(is)
-                        .read(r -> {
+                        .read(is, r -> {
                             assertTrue(r.success());
                             results.add(r.data());
                         });
@@ -147,37 +105,7 @@ class ExcelReaderBranchTest {
             assertEquals(4, progress.get());
         }
 
-        @Test
-        void mappingMode_headerRowIndex1_viaReadAsStream() throws IOException {
-            Path file = tempDir.resolve("header-offset-stream.xlsx");
-            try (var wb = new XSSFWorkbook()) {
-                Sheet sheet = wb.createSheet("Test");
-                sheet.createRow(0).createCell(0).setCellValue("SKIP");
-                Row header = sheet.createRow(1);
-                header.createCell(0).setCellValue("Name");
-                header.createCell(1).setCellValue("Value");
-                Row data = sheet.createRow(2);
-                data.createCell(0).setCellValue("A");
-                data.createCell(1).setCellValue(10);
-                try (var fos = new FileOutputStream(file.toFile())) {
-                    wb.write(fos);
-                }
-            }
 
-            List<Item> results;
-            try (InputStream is = Files.newInputStream(file)) {
-                try (var stream = ExcelReader.<Item>mapping(row ->
-                        new Item(row.get("Name").asString(), row.get("Value").asInt())
-                ).headerRowIndex(1)
-                        .build(is)
-                        .readAsStream()) {
-                    results = stream.filter(ReadResult::success).map(ReadResult::data).toList();
-                }
-            }
-
-            assertEquals(1, results.size());
-            assertEquals("A", results.get(0).name());
-        }
 
         @Test
         void setterMode_sparseRow_missingCells() throws IOException {
@@ -203,8 +131,7 @@ class ExcelReaderBranchTest {
                         .column("A", (t, cell) -> t.a = cell.asString())
                         .column("B", (t, cell) -> t.b = cell.asString())
                         .column("C", (t, cell) -> t.c = cell.asString())
-                        .build(is)
-                        .read(results::add);
+                        .read(is, results::add);
             }
 
             assertEquals(1, results.size());
@@ -232,8 +159,7 @@ class ExcelReaderBranchTest {
                         throw new RuntimeException("setter broke!");
                     })
                     .column("Value", (t, cell) -> t.value = cell.asInt())
-                    .build(new ByteArrayInputStream(excel))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(excel), results::add);
 
             assertEquals(3, results.size());
             for (var r : results) {
@@ -253,8 +179,7 @@ class ExcelReaderBranchTest {
             new ExcelReader<>(Mapped::new, null)
                     .columnAt(1, (t, cell) -> t.col1 = cell.asString())
                     .columnAt(0, (t, cell) -> t.col0 = cell.asString())
-                    .build(new ByteArrayInputStream(excel))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(excel), results::add);
 
             assertEquals(3, results.size());
             assertTrue(results.get(0).success());
@@ -262,20 +187,7 @@ class ExcelReaderBranchTest {
             assertEquals("10", results.get(0).data().col1, "col1 should map to Value column (index 1)");
         }
 
-        @Test
-        void readStrict_failedRow_showsMessageDetails() throws IOException {
-            byte[] excel = writeSimpleExcel();
 
-            var handler = new ExcelReader<>(StrictTarget::new, null)
-                    .column("Name", (t, cell) -> {
-                        throw new RuntimeException("fail");
-                    })
-                    .column("Value", (t, cell) -> {})
-                    .build(new ByteArrayInputStream(excel));
-
-            var ex = assertThrows(ReadAbortException.class, () -> handler.readStrict(r -> {}));
-            assertTrue(ex.getMessage().contains("Row 1"));
-        }
 
         @Test
         void mappingMode_validationSucceeds_messagesNull() throws IOException {
@@ -284,8 +196,7 @@ class ExcelReaderBranchTest {
             List<ReadResult<Item>> results = new ArrayList<>();
             ExcelReader.<Item>mapping(row ->
                     new Item(row.get("Name").asString(), row.get("Value").asInt())
-            ).build(new ByteArrayInputStream(excel))
-                    .read(results::add);
+            ).read(new ByteArrayInputStream(excel), results::add);
 
             for (var r : results) {
                 assertTrue(r.success());
@@ -304,8 +215,7 @@ class ExcelReaderBranchTest {
                     .columnAt(99, (t, cell) -> {
                         throw new RuntimeException("bad");
                     })
-                    .build(new ByteArrayInputStream(excel))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(excel), results::add);
 
             // Column 99 exceeds header count, so error message should show "column#99"
             assertEquals(3, results.size());
@@ -408,28 +318,9 @@ class ExcelReaderBranchTest {
     @Nested
     class CsvReadAbortTests {
 
-        @Test
-        void csvReadStrict_failedRow_throwsReadAbort() {
-            String csv = "Name,Value\nAlice,10\nBob,bad";
 
-            var handler = new CsvReader<>(CsvItem::new, null)
-                    .column("Name", (t, cell) -> t.name = cell.asString())
-                    .column("Value", (t, cell) -> t.value = cell.asInt())
-                    .build(new ByteArrayInputStream(csv.getBytes()));
 
-            assertThrows(ReadAbortException.class, () -> handler.readStrict(r -> {}));
-        }
 
-        @Test
-        void csvMapping_readStrict_throwsReadAbortOnError() {
-            String csv = "Name,Value\nAlice,10\nBob,bad";
-
-            var handler = CsvReader.<Item>mapping(row ->
-                    new Item(row.get("Name").asString(), row.get("Value").asInt())
-            ).build(new ByteArrayInputStream(csv.getBytes()));
-
-            assertThrows(ReadAbortException.class, () -> handler.readStrict(r -> {}));
-        }
     }
 
     // ============================================================
@@ -446,8 +337,7 @@ class ExcelReaderBranchTest {
             new ExcelReader<>(Mapped::new, null)
                     .column((t, cell) -> t.col0 = cell.asString())  // positional: index 0
                     .column((t, cell) -> t.col1 = cell.asString())  // positional: index 1
-                    .build(new ByteArrayInputStream(excel))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(excel), results::add);
 
             assertEquals(3, results.size());
             assertTrue(results.get(0).success());
@@ -462,30 +352,14 @@ class ExcelReaderBranchTest {
             new CsvReader<>(Mapped::new, null)
                     .column((t, cell) -> t.col0 = cell.asString())
                     .column((t, cell) -> t.col1 = cell.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes()), results::add);
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).data().col0);
             assertEquals("30", results.get(0).data().col1);
         }
 
-        @Test
-        void readStrict_withNullMessages_shouldShowUnknownError() throws IOException {
-            byte[] excel = writeSimpleExcel();
 
-            // Force validation failure with null messages path
-            // readStrict checks: result.messages() != null && !result.messages().isEmpty()
-            // When messages is null or empty → "Unknown error"
-            var handler = ExcelReader.<Item>mapping(row ->
-                    new Item(row.get("Name").asString(), row.get("Value").asInt())
-            ).build(new ByteArrayInputStream(excel));
-
-            // All rows succeed, so readStrict should not throw
-            List<Item> results = new ArrayList<>();
-            handler.readStrict(results::add);
-            assertEquals(3, results.size());
-        }
     }
 
     // ============================================================
@@ -494,58 +368,9 @@ class ExcelReaderBranchTest {
     @Nested
     class ExcelReadExceptionCatchTests {
 
-        @Test
-        void read_consumerThrowsExcelReadException_shouldPropagate() throws IOException {
-            byte[] excel = writeSimpleExcel();
 
-            var handler = ExcelReader.<Item>mapping(row ->
-                    new Item(row.get("Name").asString(), row.get("Value").asInt())
-            ).build(new ByteArrayInputStream(excel));
 
-            assertThrows(ExcelReadException.class, () ->
-                    handler.read(r -> {
-                        throw new ExcelReadException("test");
-                    }));
-        }
 
-        @Test
-        void read_consumerThrowsReadAbortException_shouldPropagate() throws IOException {
-            byte[] excel = writeSimpleExcel();
-
-            var handler = ExcelReader.<Item>mapping(row ->
-                    new Item(row.get("Name").asString(), row.get("Value").asInt())
-            ).build(new ByteArrayInputStream(excel));
-
-            assertThrows(ReadAbortException.class, () ->
-                    handler.read(r -> {
-                        throw new ReadAbortException("abort!");
-                    }));
-        }
-    }
-
-    // ============================================================
-    // ExcelReader.forMap() - exception in readAsStream producer
-    // ============================================================
-    @Nested
-    class MapReaderStreamErrorTests {
-
-        @Test
-        void readAsStream_nonExistentSheet_throwsExcelReadException() throws IOException {
-            // v0.12.0 behavior change: ExcelReader.forMap() now surfaces a missing-sheet
-            // error via ExcelReadException (via readInternal's currentIndex check).
-            // The deleted ExcelMapReader silently returned an empty stream, which hid
-            // caller bugs where the sheet index was wrong.
-            byte[] excel = writeSimpleExcel();
-
-            assertThrows(ExcelReadException.class, () -> {
-                try (var stream = ExcelReader.forMap()
-                        .sheetIndex(99)
-                        .build(new ByteArrayInputStream(excel))
-                        .readAsStream()) {
-                    stream.toList();
-                }
-            });
-        }
     }
 
     // ============================================================

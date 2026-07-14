@@ -78,8 +78,8 @@ class ExcelReadHandlerTest {
         
         // Act
         try (InputStream is = Files.newInputStream(excelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReadHandler<>(is, columns, instanceSupplier, validator);
-            handler.read(consumer);
+            new ExcelReader<>(instanceSupplier, validator)
+                    .column(createNameSetter()).column(createAgeSetter()).read(is, consumer);
         }
         
         // Assert
@@ -124,8 +124,8 @@ class ExcelReadHandlerTest {
         
         // Act
         try (InputStream is = Files.newInputStream(invalidExcelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReadHandler<>(is, columns, instanceSupplier, validator);
-            handler.read(consumer);
+            new ExcelReader<>(instanceSupplier, validator)
+                    .column(createNameSetter()).column(createAgeSetter()).read(is, consumer);
         }
         
         // Assert
@@ -154,8 +154,7 @@ class ExcelReadHandlerTest {
             new ExcelReader<>(TestPerson::new, validator)
                     .column(createNameSetter())
                     .column(createAgeSetter())
-                    .build(is)
-                    .read(successes::add, errors::add);
+                    .read(is, successes::add, errors::add);
         }
 
         assertEquals(1, successes.size());
@@ -169,21 +168,7 @@ class ExcelReadHandlerTest {
         assertFalse(errors.get(0).messages().isEmpty());
     }
 
-    @Test
-    void read_errorCallbackCanAbortByThrowing() throws IOException {
-        Path invalidExcelFile = tempDir.resolve("invalid-abort.xlsx");
-        createInvalidTestExcelFile(invalidExcelFile);
 
-        try (InputStream is = Files.newInputStream(invalidExcelFile)) {
-            var handler = new ExcelReader<>(TestPerson::new, validator)
-                    .column(createNameSetter())
-                    .column(createAgeSetter())
-                    .build(is);
-
-            assertThrows(RuntimeException.class, () ->
-                    handler.read(p -> {}, e -> { throw new RuntimeException("abort"); }));
-        }
-    }
 
     @Test
     void read_multiRowHeaders_roundTripsWrittenGroupHeader() throws IOException {
@@ -218,8 +203,7 @@ class ExcelReadHandlerTest {
             ExcelReader.forMap()
                     .headerRowIndex(1)
                     .headerRows(2)
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -230,16 +214,7 @@ class ExcelReadHandlerTest {
         assertEquals("5",   results.get(0).get("Qty"));
     }
 
-    @Test
-    void headerRows_invalidValue_throws() throws IOException {
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            assertThrows(IllegalArgumentException.class,
-                    () -> new ExcelReader<>(TestPerson::new, validator)
-                            .headerRows(0)
-                            .column(createNameSetter())
-                            .build(is));
-        }
-    }
+
 
     @Test
     void read_shouldReadSecondSheet() throws IOException {
@@ -257,8 +232,7 @@ class ExcelReadHandlerTest {
                     .sheetIndex(1)
                     .column(createNameSetter())
                     .column(createAgeSetter())
-                    .build(is)
-                    .read(consumer);
+                    .read(is, consumer);
         }
 
         assertEquals(2, results.size());
@@ -284,36 +258,19 @@ class ExcelReadHandlerTest {
                     .sheetIndex(1)
                     .column(createNameSetter())
                     .column(createAgeSetter())
-                    .build(is)
-                    .read(consumer);
+                    .read(is, consumer);
         }
 
         assertEquals(2, results.size());
         assertEquals("Dave", results.get(0).getName());
     }
 
-    @Test
-    void read_shouldThrowForInvalidSheetIndex() throws IOException {
-        Path singleSheetFile = tempDir.resolve("single-sheet.xlsx");
-        createTestExcelFile(singleSheetFile);
 
-        try (InputStream is = Files.newInputStream(singleSheetFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
-                    .sheetIndex(5)
-                    .column(createNameSetter())
-                    .column(createAgeSetter())
-                    .build(is);
-
-            assertThrows(ExcelReadException.class, () -> handler.read(r -> {}));
-        }
-    }
 
     @Test
     void constructor_shouldThrowForNegativeSheetIndex() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ReadColumn<>(createNameSetter()));
-            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, -1);
+            new ExcelReader<>(TestPerson::new, null).sheetIndex(-1);
         });
     }
 
@@ -333,8 +290,7 @@ class ExcelReadHandlerTest {
                     .headerRowIndex(2)
                     .column(createNameSetter())
                     .column(createAgeSetter())
-                    .build(is)
-                    .read(consumer);
+                    .read(is, consumer);
         }
 
         assertEquals(2, results.size());
@@ -347,95 +303,26 @@ class ExcelReadHandlerTest {
     @Test
     void constructor_shouldAcceptLargeNonNegativeSheetIndex() {
         assertDoesNotThrow(() -> {
-            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ReadColumn<>(createNameSetter()));
-            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 256);
+            new ExcelReader<>(TestPerson::new, null).sheetIndex(256);
         }, "sheetIndex existence should be validated against the actual workbook, not an arbitrary upper bound");
     }
 
     @Test
     void constructor_shouldThrowForNegativeHeaderRowIndex() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ReadColumn<>(createNameSetter()));
-            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 0, -1);
+            new ExcelReader<>(TestPerson::new, null)
+                    .headerRowIndex(-1).column(createNameSetter())
+                    .read(InputStream.nullInputStream(), result -> { });
         });
     }
 
-    @Test
-    void readAsStream_shouldReturnStreamOfResults() throws IOException {
-        List<String> names;
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            Stream<ReadResult<TestPerson>> stream = new ExcelReader<>(TestPerson::new, validator)
-                    .column(createNameSetter())
-                    .column(createAgeSetter())
-                    .build(is)
-                    .readAsStream();
 
-            names = stream
-                    .filter(ReadResult::success)
-                    .map(r -> r.data().getName())
-                    .toList();
-        }
 
-        assertEquals(3, names.size());
-        assertEquals("Alice", names.get(0));
-        assertEquals("Bob", names.get(1));
-        assertEquals("Charlie", names.get(2));
-    }
 
-    @Test
-    void readAsStream_shouldBeLazy() throws IOException {
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
-                    .column(createNameSetter())
-                    .column(createAgeSetter())
-                    .build(is);
 
-            try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
-                List<String> names = stream
-                        .filter(ReadResult::success)
-                        .limit(1)
-                        .map(r -> r.data().getName())
-                        .toList();
 
-                assertEquals(1, names.size());
-                assertEquals("Alice", names.get(0));
-            }
-        }
-    }
 
-    @Test
-    void read_twice_shouldThrowAlreadyConsumed() throws IOException {
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
-                    .column(createNameSetter())
-                    .column(createAgeSetter())
-                    .build(is);
 
-            handler.read(result -> {});
-
-            ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
-            assertTrue(ex.getMessage().contains("already been consumed"));
-        }
-    }
-
-    @Test
-    void read_afterReadAsStream_shouldThrowAlreadyConsumed() throws IOException {
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
-                    .column(createNameSetter())
-                    .column(createAgeSetter())
-                    .build(is);
-
-            try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
-                assertEquals(3, stream.count());
-            }
-
-            ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
-            assertTrue(ex.getMessage().contains("already been consumed"));
-        }
-    }
 
     @Test
     void skipColumn_shouldSkipMiddleColumn() throws IOException {
@@ -448,8 +335,7 @@ class ExcelReadHandlerTest {
                     .column((p, cell) -> p.first = cell.asString())
                     .skipColumn()
                     .column((p, cell) -> p.third = cell.asString())
-                    .build(is)
-                    .read(result -> results.add(result.data()));
+                    .read(is, result -> results.add(result.data()));
         }
 
         assertEquals(2, results.size());
@@ -470,8 +356,7 @@ class ExcelReadHandlerTest {
             new ExcelReader<>(TestPersonThreeCol::new, null)
                     .skipColumns(2)
                     .column((p, cell) -> p.third = cell.asString())
-                    .build(is)
-                    .read(result -> results.add(result.data()));
+                    .read(is, result -> results.add(result.data()));
         }
 
         assertEquals(2, results.size());
@@ -491,8 +376,7 @@ class ExcelReadHandlerTest {
                     .column((p, cell) -> p.first = cell.asString())
                     .skipColumn()
                     .column((p, cell) -> p.third = cell.asString())
-                    .build(is)
-                    .read(result -> results.add(result.data()));
+                    .read(is, result -> results.add(result.data()));
         }
 
         assertEquals(2, results.size());
@@ -507,8 +391,7 @@ class ExcelReadHandlerTest {
             new ExcelReader<>(TestPerson::new, validator)
                     .column(createNameSetter())
                     .column(createAgeSetter())
-                    .build(is)
-                    .readStrict(results::add);
+                    .readStrict(is, results::add);
         }
 
         assertEquals(3, results.size());
@@ -517,20 +400,7 @@ class ExcelReadHandlerTest {
         assertEquals("Charlie", results.get(2).getName());
     }
 
-    @Test
-    void readStrict_shouldThrowOnFirstError() throws IOException {
-        Path invalidExcelFile = tempDir.resolve("invalid-strict.xlsx");
-        createInvalidTestExcelFile(invalidExcelFile);
 
-        try (InputStream is = Files.newInputStream(invalidExcelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReader<>(TestPerson::new, validator)
-                    .column(createNameSetter())
-                    .column(createAgeSetter())
-                    .build(is);
-
-            assertThrows(ReadAbortException.class, () -> handler.readStrict(p -> {}));
-        }
-    }
 
     @Test
     void skipColumns_negativeThrows() {

@@ -84,8 +84,7 @@ class V016ImprovementsTest {
             // Read back to verify
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Name").asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).success());
@@ -103,8 +102,7 @@ class V016ImprovementsTest {
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Col").asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertEquals("DEFAULT", results.get(0).data());
@@ -121,8 +119,7 @@ class V016ImprovementsTest {
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Col").asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertEquals("CUSTOM", results.get(0).data());
@@ -138,8 +135,7 @@ class V016ImprovementsTest {
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Name").asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals("Hello", results.get(0).data());
         }
@@ -154,8 +150,7 @@ class V016ImprovementsTest {
 
             List<ReadResult<String>> results = new ArrayList<>();
             ExcelReader.<String>mapping(row -> row.get("Name").asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals("", results.get(0).data());
         }
@@ -346,8 +341,7 @@ class V016ImprovementsTest {
             ExcelReader.setter(() -> new String[2])
                     .column("Name", (arr, c) -> arr[0] = c.asString()).required()
                     .column("Age", (arr, c) -> arr[1] = c.asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertFalse(results.get(0).success(), "Required column with blank value should fail");
@@ -367,8 +361,7 @@ class V016ImprovementsTest {
             ExcelReader.setter(() -> new String[2])
                     .column("Name", (arr, c) -> arr[0] = c.asString()).required()
                     .column("Age", (arr, c) -> arr[1] = c.asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).success());
@@ -383,8 +376,7 @@ class V016ImprovementsTest {
             CsvReader.setter(() -> new String[2])
                     .column("Name", (arr, c) -> arr[0] = c.asString()).required()
                     .column("Age", (arr, c) -> arr[1] = c.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());
             assertFalse(results.get(0).success());
@@ -399,8 +391,7 @@ class V016ImprovementsTest {
             CsvReader.setter(() -> new String[2])
                     .column("Name", (arr, c) -> arr[0] = c.asString()).required()
                     .column("Age", (arr, c) -> arr[1] = c.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).success());
@@ -415,8 +406,7 @@ class V016ImprovementsTest {
             CsvReader.setter(() -> new String[2])
                     .column("Name", (arr, c) -> arr[0] = c.asString()).required()
                     .column("Age", (arr, c) -> arr[1] = c.asString()).required()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());
             assertFalse(results.get(0).success());
@@ -431,8 +421,7 @@ class V016ImprovementsTest {
             CsvReader.setter(() -> new String[2])
                     .column("Name", (arr, c) -> arr[0] = c.asString()).required()
                     .column("Age", (arr, c) -> arr[1] = c.asString()).required()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());
             assertFalse(results.get(0).success());
@@ -448,8 +437,7 @@ class V016ImprovementsTest {
             CsvReader.setter(() -> new String[2])
                     .column("Name", (arr, c) -> arr[0] = c.asString())
                     .column("Age", (arr, c) -> arr[1] = c.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).success(), "Non-required column should pass with blank value");
@@ -496,82 +484,11 @@ class V016ImprovementsTest {
 
             List<ReadResult<String>> results = new ArrayList<>();
             CsvReader.<String>mapping(row -> row.get("Name").asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).success());
             assertEquals("Alice", results.get(0).data(), "First occurrence of duplicate header should be used");
-        }
-    }
-
-    // ============================================================
-    // A6: readStrict row numbering
-    // ============================================================
-    @Nested
-    @DisplayName("A6: readStrict row numbering")
-    class ReadStrictTests {
-
-        @Test
-        void readStrict_shouldReportCorrectRowNumber() {
-            String csv = "Name,Age\nAlice,30\n,invalid";
-
-            var reader = CsvReader.setter(() -> new String[2])
-                    .column("Name", (arr, c) -> arr[0] = c.asString()).required()
-                    .column("Age", (arr, c) -> arr[1] = c.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)));
-
-            ReadAbortException ex = assertThrows(ReadAbortException.class, () ->
-                    reader.readStrict(data -> {}));
-            assertTrue(ex.getMessage().contains("Row 2"), "Error should reference row 2, got: " + ex.getMessage());
-        }
-    }
-
-    // ============================================================
-    // readAsStream laziness
-    // ============================================================
-    @Nested
-    @DisplayName("A2: readAsStream is lazy")
-    class ReadAsStreamTests {
-
-        @Test
-        void csvReadAsStream_withLimit_shouldWork() {
-            String csv = "Name\nAlice\nBob\nCharlie";
-
-            try (var stream = CsvReader.<String>mapping(row -> row.get("Name").asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .readAsStream()) {
-                List<String> names = stream
-                        .filter(ReadResult::success)
-                        .map(ReadResult::data)
-                        .limit(2)
-                        .toList();
-
-                assertEquals(2, names.size());
-                assertEquals("Alice", names.get(0));
-                assertEquals("Bob", names.get(1));
-            }
-        }
-
-        @Test
-        void excelReadAsStream_withLimit_shouldWork() throws Exception {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ExcelWriter<String> writer = ExcelWriter.<String>create();
-            writer.column("Name", s -> s);
-            writer.write(Stream.of("Alice", "Bob", "Charlie")).writeTo(bos);
-
-            try (var stream = ExcelReader.<String>mapping(row -> row.get("Name").asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .readAsStream()) {
-                List<String> names = stream
-                        .filter(ReadResult::success)
-                        .map(ReadResult::data)
-                        .limit(2)
-                        .toList();
-
-                assertEquals(2, names.size());
-                assertEquals("Alice", names.get(0));
-            }
         }
     }
 
@@ -598,8 +515,7 @@ class V016ImprovementsTest {
                     .column("Name", (arr, c) -> arr[0] = c.asString())
                     .column("Age", (arr, c) -> arr[1] = c.asString())
                     .column("City", (arr, c) -> arr[2] = c.asString()).required()
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertFalse(results.get(0).success(), "Required column with missing cell in sparse row should fail");
@@ -620,8 +536,7 @@ class V016ImprovementsTest {
                     .column("Name", (arr, c) -> arr[0] = c.asString())
                     .column("Age", (arr, c) -> arr[1] = c.asString())
                     .column("City", (arr, c) -> arr[2] = c.asString())
-                    .build(new ByteArrayInputStream(bos.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(bos.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).success(), "Non-required missing column should succeed");

@@ -220,8 +220,7 @@ class ExcelHandlerTest {
                     return row;
                 })
                 .password("roundTripPw")
-                .build(Files.newInputStream(excelFile))
-                .read(r -> {});
+                .read(Files.newInputStream(excelFile), r -> {});
 
         assertEquals(java.util.List.of("Alice", "Bob"), names);
         assertEquals(java.util.List.of(30, 25), ages);
@@ -236,8 +235,7 @@ class ExcelHandlerTest {
         var ex = assertThrows(ExcelReadException.class, () ->
                 ExcelReader.mapping(row -> row)
                         .password("wrong")
-                        .build(Files.newInputStream(excelFile))
-                        .read(r -> {}));
+                        .read(Files.newInputStream(excelFile), r -> {}));
         assertTrue(ex.getMessage().toLowerCase().contains("invalid password"),
                 "Expected 'invalid password' in message: " + ex.getMessage());
     }

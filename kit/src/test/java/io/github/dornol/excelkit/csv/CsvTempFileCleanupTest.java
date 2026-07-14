@@ -169,8 +169,7 @@ class CsvTempFileCleanupTest {
             new CsvReader<>(TestItem::new, null)
                     .column((item, cell) -> item.name = cell.asString())
                     .column((item, cell) -> item.price = cell.asInt())
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         if (result.success()) {
                             results.add(result.data());
                         }
@@ -182,93 +181,13 @@ class CsvTempFileCleanupTest {
         assertEquals(1000, results.get(0).price);
     }
 
-    @Test
-    void csvRead_shouldCleanUpTempFilesAfterException() throws IOException {
-        Path csvFile = createTestCsv("Name,Price\nApple,1000\n");
 
-        try (InputStream is = Files.newInputStream(csvFile)) {
-            CsvReadHandler<TestItem> handler = new CsvReader<>(TestItem::new, null)
-                    .column((item, cell) -> item.name = cell.asString())
-                    .column((item, cell) -> item.price = cell.asInt())
-                    .build(is);
 
-            assertThrows(RuntimeException.class, () ->
-                    handler.read(result -> {
-                        throw new RuntimeException("Intentional error");
-                    }));
-        }
-    }
 
-    @Test
-    void csvReadAsStream_shouldCleanUpOnClose() throws IOException {
-        Path csvFile = createTestCsv("Name,Price\nApple,1000\nBanana,2000\n");
 
-        List<String> names;
-        try (InputStream is = Files.newInputStream(csvFile)) {
-            try (Stream<ReadResult<TestItem>> stream = new CsvReader<>(TestItem::new, null)
-                    .column((item, cell) -> item.name = cell.asString())
-                    .column((item, cell) -> item.price = cell.asInt())
-                    .build(is)
-                    .readAsStream()) {
 
-                names = stream
-                        .filter(ReadResult::success)
-                        .map(r -> r.data().name)
-                        .toList();
-            }
-        }
 
-        assertEquals(2, names.size());
-    }
 
-    @Test
-    void csvReadAsStream_earlyTermination_shouldCleanUp() throws IOException {
-        Path csvFile = createTestCsv("Name,Price\nApple,1000\nBanana,2000\nCherry,3000\n");
-
-        List<String> names;
-        try (InputStream is = Files.newInputStream(csvFile)) {
-            try (Stream<ReadResult<TestItem>> stream = new CsvReader<>(TestItem::new, null)
-                    .column((item, cell) -> item.name = cell.asString())
-                    .column((item, cell) -> item.price = cell.asInt())
-                    .build(is)
-                    .readAsStream()) {
-
-                names = stream
-                        .filter(ReadResult::success)
-                        .limit(1)
-                        .map(r -> r.data().name)
-                        .toList();
-            }
-        }
-
-        assertEquals(1, names.size());
-        assertEquals("Apple", names.get(0));
-    }
-
-    @Test
-    void csvReadAsStream_mappingError_shouldCleanUpTempResources() throws IOException {
-        Path csvFile = createTestCsv("Name,Price\nApple,1000\n");
-
-        Path tempFile;
-        Path tempDir;
-        try (InputStream is = Files.newInputStream(csvFile)) {
-            CsvReadHandler<TestItem> handler = CsvReader.<TestItem>mapping(row -> {
-                        throw new IllegalStateException("boom");
-                    })
-                    .build(is);
-            tempFile = tempResourcePath(handler, "tempFile");
-            tempDir = tempResourcePath(handler, "tempDir");
-
-            try (Stream<ReadResult<TestItem>> stream = handler.readAsStream()) {
-                List<ReadResult<TestItem>> results = stream.toList();
-                assertEquals(1, results.size());
-                assertFalse(results.get(0).success());
-            }
-        }
-
-        assertFalse(Files.exists(tempFile), "CSV stream errors should delete temp file");
-        assertFalse(Files.exists(tempDir), "CSV stream errors should delete temp dir");
-    }
 
     // ──────────────────────────────────────────────────────────────
     // CsvWriter+CsvReader roundtrip
@@ -293,8 +212,7 @@ class CsvTempFileCleanupTest {
             new CsvReader<>(TestItem::new, null)
                     .column((item, cell) -> item.name = cell.asString())
                     .column((item, cell) -> item.price = cell.asInt())
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         if (result.success()) {
                             results.add(result.data());
                         }

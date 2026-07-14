@@ -66,8 +66,7 @@ class ExcelReaderMapModeTest {
             byte[] data = writeSampleExcel();
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(data), r -> results.add(r.data()));
 
             assertEquals(2, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -82,8 +81,7 @@ class ExcelReaderMapModeTest {
             byte[] data = writeSampleExcel();
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(data), r -> results.add(r.data()));
 
             assertEquals(List.of("Name", "Age", "City"),
                     new ArrayList<>(results.get(0).keySet()),
@@ -103,8 +101,7 @@ class ExcelReaderMapModeTest {
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
                     .sheetIndex(0)
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(data), r -> results.add(r.data()));
 
             assertEquals(2, results.size());
         }
@@ -132,8 +129,7 @@ class ExcelReaderMapModeTest {
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
                     .headerRowIndex(2)
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
             assertEquals(2, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -157,31 +153,13 @@ class ExcelReaderMapModeTest {
                         lastCount.set(count);
                         callCount.incrementAndGet();
                     })
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(r -> {});
+                    .read(new ByteArrayInputStream(out.toByteArray()), r -> {});
 
             assertEquals(3, callCount.get(), "onProgress fires at rows 2, 4, 6");
             assertEquals(6, lastCount.get());
         }
 
-        @Test
-        void forMap_readAsStream_producesSameRowsAsRead() throws IOException {
-            byte[] data = writeSampleExcel();
 
-            List<Map<String, String>> viaRead = new ArrayList<>();
-            ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> viaRead.add(r.data()));
-
-            List<Map<String, String>> viaStream = new ArrayList<>();
-            try (Stream<ReadResult<Map<String, String>>> s = ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .readAsStream()) {
-                s.forEach(r -> viaStream.add(r.data()));
-            }
-
-            assertEquals(viaRead, viaStream);
-        }
     }
 
     @Nested
@@ -284,8 +262,7 @@ class ExcelReaderMapModeTest {
 
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(data), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -312,8 +289,7 @@ class ExcelReaderMapModeTest {
 
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(data), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals(2, results.get(0).size(),
@@ -347,8 +323,7 @@ class ExcelReaderMapModeTest {
 
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(data), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -375,8 +350,7 @@ class ExcelReaderMapModeTest {
 
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(data))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(data), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).containsKey("Age"),
@@ -403,8 +377,7 @@ class ExcelReaderMapModeTest {
             assertThrows(ExcelReadException.class, () ->
                     ExcelReader.forMap()
                             .sheetIndex(99)
-                            .build(new ByteArrayInputStream(data))
-                            .read(r -> {}));
+                            .read(new ByteArrayInputStream(data), r -> {}));
         }
     }
 
@@ -432,8 +405,7 @@ class ExcelReaderMapModeTest {
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
                     .sheetIndex(1)
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
             assertEquals(2, results.size());
             assertEquals("second-a", results.get(0).get("Name"));

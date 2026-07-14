@@ -53,8 +53,7 @@ class CoverageBoostTest {
                 .column((r, cell) -> r.first = cell.asString())
                 .skipColumn()  // builder chain: skipColumn returns CsvReader, then column starts new builder
                 .column((r, cell) -> r.third = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(2, results.size());
         assertEquals("a1", results.get(0).first);
@@ -75,8 +74,7 @@ class CoverageBoostTest {
                 .column((r, cell) -> r.first = cell.asString())
                 .skipColumns(2)  // skip B and C
                 .column((r, cell) -> r.fourth = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(1, results.size());
         assertEquals("a1", results.get(0).first);
@@ -93,8 +91,7 @@ class CoverageBoostTest {
         new CsvReader<>(CsvRow::new, null)
                 .column((r, cell) -> r.first = cell.asString())
                 .columnAt(3, (r, cell) -> r.fourth = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(2, results.size());
         assertEquals("a1", results.get(0).first);
@@ -114,8 +111,7 @@ class CoverageBoostTest {
                 .column((r, cell) -> r.first = cell.asString())
                 .columnAt(2, (r, cell) -> r.third = cell.asString())
                 .columnAt(4, (r, cell) -> r.fifth = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(1, results.size());
         assertEquals("a1", results.get(0).first);
@@ -133,8 +129,7 @@ class CoverageBoostTest {
         new CsvReader<>(CsvRow::new, null)
                 .column("City", (r, cell) -> r.third = cell.asString())
                 .column("Name", (r, cell) -> r.first = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(1, results.size());
         assertEquals("Seoul", results.get(0).third);

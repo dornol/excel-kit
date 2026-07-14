@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 
 @Controller
 @RequestMapping("/showcase")
@@ -29,11 +33,11 @@ public class TemplateShowcaseController {
         return ExcelKitResponse.excel("invoice").body(out -> {
             // 1. Create a template in memory (in real apps, load from classpath/filesystem)
             byte[] templateBytes;
-            try (var twb = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            try (var twb = new XSSFWorkbook()) {
                 var sheet = twb.createSheet("Invoice");
                 var titleRow = sheet.createRow(0);
                 titleRow.createCell(0).setCellValue("INVOICE");
-                sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 3));
+                sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
 
                 sheet.createRow(2).createCell(0).setCellValue("Client:");
                 sheet.createRow(3).createCell(0).setCellValue("Date:");
@@ -44,7 +48,7 @@ public class TemplateShowcaseController {
                 headerRow.createCell(2).setCellValue("Price");
                 headerRow.createCell(3).setCellValue("Amount");
 
-                var bos = new java.io.ByteArrayOutputStream();
+                var bos = new ByteArrayOutputStream();
                 twb.write(bos);
                 templateBytes = bos.toByteArray();
             }
@@ -54,7 +58,7 @@ public class TemplateShowcaseController {
             try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(templateBytes))) {
                 // Cell-level writes (fill placeholders)
                 writer.cell("B3", "Acme Corporation")
-                      .cell("B4", java.time.LocalDate.now());
+                      .cell("B4", LocalDate.now());
 
                 // List streaming (starting at row 6, headers are already in row 5)
                 writer.<ProductDto>list(6)
@@ -83,7 +87,7 @@ public class TemplateShowcaseController {
     public ResponseEntity<StreamingResponseBody> templateCellOnly() {
         return ExcelKitResponse.excel("certificate").body(out -> {
             byte[] templateBytes;
-            try (var twb = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            try (var twb = new XSSFWorkbook()) {
                 var sheet = twb.createSheet("Certificate");
                 sheet.createRow(1).createCell(1).setCellValue("Certificate of Employment");
                 sheet.createRow(3).createCell(0).setCellValue("Name:");
@@ -92,7 +96,7 @@ public class TemplateShowcaseController {
                 sheet.createRow(6).createCell(0).setCellValue("Join Date:");
                 sheet.createRow(8).createCell(0).setCellValue("Issue Date:");
 
-                var bos = new java.io.ByteArrayOutputStream();
+                var bos = new ByteArrayOutputStream();
                 twb.write(bos);
                 templateBytes = bos.toByteArray();
             }
@@ -101,8 +105,8 @@ public class TemplateShowcaseController {
                 writer.cell("B4", "John Doe")
                       .cell("B5", "Engineering")
                       .cell("B6", "Senior Developer")
-                      .cell("B7", java.time.LocalDate.of(2020, 3, 15))
-                      .cell("B9", java.time.LocalDate.now())
+                      .cell("B7", LocalDate.of(2020, 3, 15))
+                      .cell("B9", LocalDate.now())
                       .finish()
                       .writeTo(out);
             }

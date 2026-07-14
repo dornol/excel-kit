@@ -369,8 +369,7 @@ class BenchmarkTest {
 
         AtomicLong count = new AtomicLong();
         ExcelReader.forMap()
-                .build(new FileInputStream(file.toFile()))
-                .read(r -> count.incrementAndGet());
+                .read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
         long elapsed = System.currentTimeMillis() - startTime;
         long peakMem = usedMemoryMB() - startMem;
@@ -401,8 +400,7 @@ class BenchmarkTest {
                 row.get("ID").asString(),
                 row.get("Name").asString(),
                 row.get("Score").asString()
-        }).build(new FileInputStream(file.toFile()))
-                .read(r -> count.incrementAndGet());
+        }).read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
         long elapsed = System.currentTimeMillis() - startTime;
         long peakMem = usedMemoryMB() - startMem;
@@ -434,8 +432,7 @@ class BenchmarkTest {
 
         AtomicLong count = new AtomicLong();
         CsvReader.forMap()
-                .build(new FileInputStream(file.toFile()))
-                .read(r -> count.incrementAndGet());
+                .read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
         long elapsed = System.currentTimeMillis() - startTime;
         long peakMem = usedMemoryMB() - startMem;
@@ -466,8 +463,7 @@ class BenchmarkTest {
                 row.get("ID").asString(),
                 row.get("Name").asString(),
                 row.get("Score").asString()
-        }).build(new FileInputStream(file.toFile()))
-                .read(r -> count.incrementAndGet());
+        }).read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
         long elapsed = System.currentTimeMillis() - startTime;
         long peakMem = usedMemoryMB() - startMem;

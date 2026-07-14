@@ -22,16 +22,27 @@ ExcelWriter.<User>create()
 
 ## Installation
 
-**Gradle**
-```kotlin
-implementation("io.github.dornol:excel-kit:0.19.0")
-implementation("io.github.dornol:excel-kit-spring:<version>") // optional Spring MVC helpers
+excel-kit deliberately declares format integrations as `compileOnly`: it does not force
+POI, OpenCSV, SLF4J, or Bean Validation versions on the application. Add only the
+integrations you use, using versions compatible with the rest of your application.
 
-// Add the runtime pieces you use. excel-kit keeps these compileOnly so
-// applications can control versions.
+**Gradle — Excel**
+```kotlin
+implementation("io.github.dornol:excel-kit:0.21.0")
+implementation("io.github.dornol:excel-kit-spring:0.21.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:5.5.1")      // Excel read/write
-implementation("com.opencsv:opencsv:5.12.0")          // CSV read/write
 implementation("org.slf4j:slf4j-api:2.0.18")          // logging facade
+```
+
+**Gradle — CSV**
+```kotlin
+implementation("io.github.dornol:excel-kit:0.21.0")
+implementation("com.opencsv:opencsv:5.12.0")
+implementation("org.slf4j:slf4j-api:2.0.18")
+```
+
+**Optional Bean Validation**
+```kotlin
 implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Bean Validation
 ```
 
@@ -40,7 +51,7 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.19.0</version>
+  <version>0.21.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
@@ -78,6 +89,17 @@ Runtime dependencies (declared as `compileOnly`):
 | `com.opencsv:opencsv` | CSV reading |
 | `jakarta.validation:jakarta.validation-api` | Bean Validation (optional) |
 
+Compatibility tested in CI:
+
+| Dependency | Minimum tested | Current tested |
+|------------|----------------|----------------|
+| Apache POI | 5.2.5 | 5.5.1 |
+| OpenCSV | 5.9 | 5.12.0 |
+| JDK | 17 | 17, 21, 25 |
+
+“Minimum tested” is the oldest version exercised by the compatibility suite; versions
+outside this matrix may work but are not part of the tested compatibility contract.
+
 Optional modules:
 
 | Module | Required For |
@@ -111,7 +133,7 @@ record Person(String name, int age) {}
 ExcelReader.<Person>mapping(row -> new Person(
         row.get("Name").asString(),
         row.get("Age").asInt()
-)).build(inputStream).read(result -> {
+)).read(inputStream, result -> {
     if (result.success()) {
         Person p = result.data();
     }
@@ -124,8 +146,7 @@ ExcelReader.<Person>mapping(row -> new Person(
 ExcelReader.setter(User::new)
     .column("Name", (u, cell) -> u.setName(cell.asString()))
     .column("Age", (u, cell) -> u.setAge(cell.asInt())).required()
-    .build(inputStream)
-    .read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 Header aliases, strict header validation, and duplicate header policy are available for Excel and CSV:
@@ -135,8 +156,7 @@ ExcelReader.setter(User::new)
     .strictHeaders()
     .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
     .column(List.of("Name", "User Name", "이름"), (u, cell) -> u.setName(cell.asString()))
-    .build(inputStream)
-    .read(user -> { ... }, error -> log.warn("file row {}", error.fileRowNum()));
+    .read(inputStream, user -> { ... }, error -> log.warn("file row {}", error.fileRowNum()));
 ```
 
 Read failures include structured cell-level details that are useful for APIs and
@@ -191,7 +211,7 @@ CsvWriter.<Product>create()
 CsvReader.<Person>mapping(row -> new Person(
         row.get("Name").asString(),
         row.get("Age").asInt()
-)).build(inputStream).read(result -> { ... });
+)).read(inputStream, result -> { ... });
 ```
 
 ### Map-Based I/O (no POJO needed)
@@ -204,8 +224,7 @@ ExcelWriter.forMap("Name", "Age", "City")
 
 // Read
 ExcelReader.forMap()
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         Map<String, String> row = result.data();
     });
 ```
@@ -270,12 +289,12 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Headers | Strict header validation, duplicate header policies, single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values |
-| Stream | `readAsStream()` with lazy evaluation, `readStrict()` for fail-fast |
+| Control flow | `readWhile()` for normal early stop, `readStrict()` for fail-fast, `maxErrors()` for error limits |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
 | Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files |
 
-Read handlers are one-shot: after calling `read()`, `readStrict()`, or `readAsStream()`,
-create a new handler for another pass over the same file.
+Reader configurations are reusable. Each `read()`, `readWhile()`, or `readStrict()` call creates
+an independent one-shot session for its input.
 
 ## Performance
 
@@ -325,10 +344,10 @@ Follow links to individual topic files only when you need full details.
 | Write Excel (map) | `ExcelWriter.forMap("A", "B").write(stream)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook.create()` → `.sheet("name")` |
 | Write CSV | `CsvWriter.<T>create().column(...).write(stream)` |
-| Read Excel (setter) | `ExcelReader.setter(T::new).column(...).build(in).read(...)` |
-| Read Excel (mapping) | `ExcelReader.mapping(row -> ...).build(in).read(...)` |
-| Read Excel (map) | `ExcelReader.forMap().build(in).read(...)` |
-| Read CSV | `CsvReader.setter(T::new).column(...).build(in).read(...)` |
+| Read Excel (setter) | `ExcelReader.setter(T::new).column(...).read(in, ...)` |
+| Read Excel (mapping) | `ExcelReader.mapping(row -> ...).read(in, ...)` |
+| Read Excel (map) | `ExcelReader.forMap().read(in, ...)` |
+| Read CSV | `CsvReader.setter(T::new).column(...).read(in, ...)` |
 
 ## Build & Test
 

@@ -53,8 +53,7 @@ CsvWriter.<Product>create()
 new CsvReader<>(Product::new, null)
     .column("Name", (p, cell) -> p.name = cell.asString())
     .column("Price", (p, cell) -> p.price = cell.asInt())
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         if (result.success()) { Product p = result.data(); }
     });
 ```
@@ -64,7 +63,7 @@ new CsvReader<>(Product::new, null)
 CsvReader.<Product>mapping(row -> new Product(
     row.get("Name").asString(),
     row.get("Price").asInt()
-)).build(inputStream).read(result -> { ... });
+)).read(inputStream, result -> { ... });
 ```
 
 ### Map Mode
@@ -73,8 +72,7 @@ CsvReader.forMap()
     .delimiter(',')
     .charset(StandardCharsets.UTF_8)
     .headerRowIndex(0)
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         Map<String, String> row = result.data();
     });
 ```
@@ -89,7 +87,7 @@ new CsvReader<>(Product::new, null)
     .dialect(CsvDialect.RFC4180)       // preset config
     .onProgress(10_000, (count, cursor) -> log.info("Read {}", count))
     .column(...)
-    .build(inputStream);
+    .read(inputStream, result -> { ... });
 ```
 
 ## CSV Map Writer

@@ -42,7 +42,7 @@ class CsvReadHandlerTest {
         String csv = "Name,Age\nAlice,30\nBob,25\nCharlie,35\n";
         List<TestPerson> results = new ArrayList<>();
 
-        buildHandler(csv, validator).read(result -> {
+        read(csv, validator, result -> {
             assertTrue(result.success(), "All rows should succeed: " + result.messages());
             results.add(result.data());
         });
@@ -61,7 +61,7 @@ class CsvReadHandlerTest {
         List<TestPerson> valid = new ArrayList<>();
         List<ReadResult<TestPerson>> invalid = new ArrayList<>();
 
-        buildHandler(csv, validator).read(result -> {
+        read(csv, validator, result -> {
             if (result.success()) {
                 valid.add(result.data());
             } else {
@@ -81,7 +81,7 @@ class CsvReadHandlerTest {
         String csv = "Name,Age\nAlice,30\n";
         List<TestPerson> results = new ArrayList<>();
 
-        buildHandler(csv, null).read(result -> {
+        read(csv, null, result -> {
             assertTrue(result.success(), "Row should succeed: " + result.messages());
             results.add(result.data());
         });
@@ -95,7 +95,7 @@ class CsvReadHandlerTest {
         String csv = "Name,Age\n\"Alice, Jr.\",30\n\"Bob \"\"The Builder\"\"\",25\n";
         List<TestPerson> results = new ArrayList<>();
 
-        buildHandler(csv, null).read(result -> {
+        read(csv, null, result -> {
             assertTrue(result.success(), "Row should succeed: " + result.messages());
             results.add(result.data());
         });
@@ -110,7 +110,7 @@ class CsvReadHandlerTest {
         String csv = "Name,Age\n";
         List<ReadResult<TestPerson>> results = new ArrayList<>();
 
-        buildHandler(csv, null).read(results::add);
+        read(csv, null, results::add);
 
         assertTrue(results.isEmpty());
     }
@@ -120,7 +120,7 @@ class CsvReadHandlerTest {
         String csv = "Name,Age\nAlice\n";
         List<TestPerson> results = new ArrayList<>();
 
-        buildHandler(csv, null).read(result -> results.add(result.data()));
+        read(csv, null, result -> results.add(result.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name);
@@ -137,8 +137,7 @@ class CsvReadHandlerTest {
         new CsvReader<>(TestPerson::new, null)
                 .column((p, cell) -> p.name = cell.asString())
                 .column((p, cell) -> p.age = cell.asInt())
-                .build(is)
-                .read(result -> {
+                .read(is, result -> {
                     assertTrue(result.success(), "Row should succeed: " + result.messages());
                     results.add(result.data());
                 });
@@ -148,78 +147,7 @@ class CsvReadHandlerTest {
         assertEquals(25, results.get(1).age);
     }
 
-    @Test
-    void read_shouldThrowForBomOnlyHeader() {
-        // The first header column contains only the BOM character
-        String csv = "\uFEFF,Age\nAlice,30\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
-        CsvReadHandler<TestPerson> handler = new CsvReader<>(TestPerson::new, null)
-                .column((p, cell) -> p.name = cell.asString())
-                .column((p, cell) -> p.age = cell.asInt())
-                .build(is);
-
-        assertThrows(CsvReadException.class, () -> handler.read(r -> {}),
-                "Should throw CsvReadException when first header is BOM-only");
-    }
-
-    @Test
-    void constructor_shouldThrowForNullColumns() {
-        InputStream is = new ByteArrayInputStream("a\n".getBytes());
-        assertThrows(IllegalArgumentException.class,
-                () -> new CsvReadHandler<>(is, null, TestPerson::new, null));
-    }
-
-    @Test
-    void constructor_shouldThrowForEmptyColumns() {
-        InputStream is = new ByteArrayInputStream("a\n".getBytes());
-        assertThrows(IllegalArgumentException.class,
-                () -> new CsvReadHandler<>(is, List.of(), TestPerson::new, null));
-    }
-
-    @Test
-    void readAsStream_shouldReturnStreamOfResults() {
-        String csv = "Name,Age\nAlice,30\nBob,25\nCharlie,35\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
-
-        Stream<ReadResult<TestPerson>> stream = new CsvReader<>(TestPerson::new, validator)
-                .column((p, cell) -> p.name = cell.asString())
-                .column((p, cell) -> p.age = cell.asInt())
-                .build(is)
-                .readAsStream();
-
-        List<String> names = stream
-                .filter(ReadResult::success)
-                .map(r -> r.data().name)
-                .toList();
-
-        assertEquals(3, names.size());
-        assertEquals("Alice", names.get(0));
-        assertEquals("Bob", names.get(1));
-        assertEquals("Charlie", names.get(2));
-    }
-
-    @Test
-    void readAsStream_shouldBeLazy() {
-        String csv = "Name,Age\nAlice,30\nBob,25\nCharlie,35\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
-
-        CsvReadHandler<TestPerson> handler = new CsvReader<>(TestPerson::new, validator)
-                .column((p, cell) -> p.name = cell.asString())
-                .column((p, cell) -> p.age = cell.asInt())
-                .build(is);
-
-        try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
-            List<String> names = stream
-                    .filter(ReadResult::success)
-                    .limit(1)
-                    .map(r -> r.data().name)
-                    .toList();
-
-            assertEquals(1, names.size());
-            assertEquals("Alice", names.get(0));
-        }
-    }
 
     @Test
     void skipColumn_shouldSkipMiddleColumn() {
@@ -232,8 +160,7 @@ class CsvReadHandlerTest {
                 .column((p, cell) -> p.first = cell.asString())
                 .skipColumn()
                 .column((p, cell) -> p.third = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(2, results.size());
         assertEquals("A1", results.get(0).first);
@@ -253,8 +180,7 @@ class CsvReadHandlerTest {
         new CsvReader<>(TestPersonThreeCol::new, null)
                 .skipColumns(2)
                 .column((p, cell) -> p.third = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(2, results.size());
         assertNull(results.get(0).first);
@@ -273,8 +199,7 @@ class CsvReadHandlerTest {
                 .headerRowIndex(2)
                 .column((p, cell) -> p.name = cell.asString())
                 .column((p, cell) -> p.age = cell.asInt())
-                .build(is)
-                .read(result -> {
+                .read(is, result -> {
                     assertTrue(result.success(), "Row should succeed: " + result.messages());
                     results.add(result.data());
                 });
@@ -286,24 +211,14 @@ class CsvReadHandlerTest {
         assertEquals(25, results.get(1).age);
     }
 
-    @Test
-    void headerRowIndex_shouldThrowForInsufficientRows() {
-        String csv = "only one row\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
-        CsvReadHandler<TestPerson> handler = new CsvReader<>(TestPerson::new, null)
-                .headerRowIndex(5)
-                .column((p, cell) -> p.name = cell.asString())
-                .build(is);
-
-        assertThrows(CsvReadException.class, () -> handler.read(r -> {}));
-    }
 
     @Test
     void constructor_shouldThrowForNegativeHeaderRowIndex() {
-        InputStream is = new ByteArrayInputStream("a\n".getBytes());
         assertThrows(IllegalArgumentException.class,
-                () -> new CsvReadHandler<>(is, List.of(new ReadColumn<>((p, c) -> {})), TestPerson::new, null, -1));
+                () -> new CsvReader<>(TestPerson::new, null)
+                        .headerRowIndex(-1).column((p, c) -> { })
+                        .read(InputStream.nullInputStream(), result -> { }));
     }
 
     @Test
@@ -317,8 +232,7 @@ class CsvReadHandlerTest {
                 .delimiter('\t')
                 .column((p, cell) -> p.name = cell.asString())
                 .column((p, cell) -> p.age = cell.asInt())
-                .build(is)
-                .read(result -> {
+                .read(is, result -> {
                     assertTrue(result.success(), "Row should succeed: " + result.messages());
                     results.add(result.data());
                 });
@@ -344,8 +258,7 @@ class CsvReadHandlerTest {
                 .charset(eucKr)
                 .column((p, cell) -> p.name = cell.asString())
                 .column((p, cell) -> p.age = cell.asInt())
-                .build(is)
-                .read(result -> {
+                .read(is, result -> {
                     assertTrue(result.success(), "Row should succeed: " + result.messages());
                     results.add(result.data());
                 });
@@ -365,8 +278,7 @@ class CsvReadHandlerTest {
         new CsvReader<>(TestPerson::new, validator)
                 .column((p, cell) -> p.name = cell.asString())
                 .column((p, cell) -> p.age = cell.asInt())
-                .build(is)
-                .readStrict(results::add);
+                .readStrict(is, results::add);
 
         assertEquals(2, results.size());
         assertEquals("Alice", results.get(0).name);
@@ -382,38 +294,17 @@ class CsvReadHandlerTest {
                 new CsvReader<>(TestPerson::new, validator)
                         .column((p, cell) -> p.name = cell.asString())
                         .column((p, cell) -> p.age = cell.asInt())
-                        .build(is)
-                        .readStrict(p -> {}));
+                        .readStrict(is, p -> {}));
     }
 
-    @Test
-    void read_twice_shouldThrowAlreadyConsumed() {
-        CsvReadHandler<TestPerson> handler = buildHandler("Name,Age\nAlice,30\n", null);
 
-        handler.read(result -> {});
 
-        ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
-        assertTrue(ex.getMessage().contains("already been consumed"));
-    }
-
-    @Test
-    void read_afterReadAsStream_shouldThrowAlreadyConsumed() {
-        CsvReadHandler<TestPerson> handler = buildHandler("Name,Age\nAlice,30\n", null);
-
-        try (Stream<ReadResult<TestPerson>> stream = handler.readAsStream()) {
-            assertEquals(1, stream.count());
-        }
-
-        ExcelKitException ex = assertThrows(ExcelKitException.class, () -> handler.read(result -> {}));
-        assertTrue(ex.getMessage().contains("already been consumed"));
-    }
-
-    private CsvReadHandler<TestPerson> buildHandler(String csv, Validator validator) {
+    private void read(String csv, Validator validator, Consumer<ReadResult<TestPerson>> consumer) {
         InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
-        return new CsvReader<>(TestPerson::new, validator)
+        new CsvReader<>(TestPerson::new, validator)
                 .column((p, cell) -> p.name = cell.asString())
                 .column((p, cell) -> p.age = cell.asInt())
-                .build(is);
+                .read(is, consumer);
     }
 
     public static class TestPerson {

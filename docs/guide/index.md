@@ -24,6 +24,7 @@ infrastructure concerns.
 | [Spring](spring.md) | MVC, WebFlux integration | `ExcelKitResponse.excel()`, `UploadResult` |
 | [Reference](reference.md) | Data types, formats, schema, exceptions, notes | `ExcelDataType`, `ExcelDataFormat`, `ExcelKitSchema` |
 | [Release](release.md) | Release preparation and verification | `verify-maven-central.sh`, GitHub Actions |
+| [Architecture Roadmap](../architecture-roadmap.md) | Dependency policy, breaking-change candidates, API/resource redesign | Compatibility matrix, reader lifecycle, option snapshots, error limits |
 
 ---
 
@@ -50,8 +51,7 @@ ExcelWriter.<Product>create().headerColor(ExcelColor.STEEL_BLUE)
 ExcelReader.<Person>mapping(row -> new Person(
         row.get("Name").asString(),
         row.get("Age").asInt()))
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         if (result.success()) { Person p = result.data(); }
     });
 ```
@@ -61,8 +61,7 @@ ExcelReader.<Person>mapping(row -> new Person(
 ExcelReader.setter(User::new)
     .column("Name", (u, cell) -> u.setName(cell.asString()))
     .column("Age", (u, cell) -> u.setAge(cell.asInt())).required()
-    .build(inputStream)
-    .read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 > Details: [Reading](reading.md)
@@ -130,7 +129,7 @@ CsvWriter.<Product>create()
 // Read
 CsvReader.<Person>mapping(row -> new Person(
         row.get("Name").asString(), row.get("Age").asInt()))
-    .build(inputStream).read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 > Details: [CSV](csv.md)

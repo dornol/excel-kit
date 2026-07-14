@@ -58,13 +58,13 @@ schema.excelWriter().write(bookStream);
 schema.csvWriter().write(bookStream);
 
 // Read (setter mode)
-schema.excelReader(Book::new, null).build(inputStream);
-schema.csvReader(Book::new, null).build(inputStream);
+schema.excelReader(Book::new, null).read(inputStream, result -> { ... });
+schema.csvReader(Book::new, null).read(inputStream, result -> { ... });
 
 // Read (mapping mode)
 schema.excelReader(row -> new BookRecord(
     row.get("Title").asString(), row.get("Price").asInt()
-), null).build(inputStream);
+), null).read(inputStream, result -> { ... });
 ```
 
 ## ExcelColor Presets
@@ -111,15 +111,13 @@ These are JVM-global static settings — call once at application startup.
 > **Security:** When reading untrusted files, always call this method to enforce
 > safe decompression limits. See [Protection — Reading Untrusted Files](protection.md#reading-untrusted-files).
 
-### `readAsStream()` requires try-with-resources
+### Reader resource ownership
 
 ```java
-try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
-    stream.filter(ReadResult::success)
-          .map(ReadResult::data)
-          .forEach(this::process);
+try (InputStream input = Files.newInputStream(path)) {
+    reader.read(input, this::process);
 }
 ```
 
-Read handlers are one-shot. After `read()`, `readStrict()`, or `readAsStream()`
-has been called, create a new handler from a new `InputStream` for another pass.
+The caller closes a supplied `InputStream`. For `reader.read(path, ...)` or an
+`InputStreamSource`, the reader opens and closes the stream.

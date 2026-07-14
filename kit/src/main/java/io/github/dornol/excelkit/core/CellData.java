@@ -16,11 +16,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 /**
@@ -35,8 +33,6 @@ import java.util.function.Function;
  */
 public final class CellData {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
-    private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$₩€%원]");
-    private static volatile Locale defaultLocale = Locale.getDefault();
     private final int columnIndex;
     private final String formattedValue;
     private final @Nullable CellConversionConfig conversionConfig;
@@ -47,7 +43,7 @@ public final class CellData {
      * @return The current default locale
      */
     public static Locale getDefaultLocale() {
-        return defaultLocale;
+        return LegacyCellDefaults.locale();
     }
 
     /**
@@ -60,29 +56,9 @@ public final class CellData {
      * @param locale The locale to use as default (must not be null)
      */
     public static void setDefaultLocale(Locale locale) {
-        if (locale == null) {
-            throw new IllegalArgumentException("locale must not be null");
-        }
-        defaultLocale = locale;
+        if (locale == null) throw new IllegalArgumentException("locale must not be null");
+        LegacyCellDefaults.locale(locale);
     }
-
-    private static final List<DateTimeFormatter> DEFAULT_DATE_FORMATS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-            DateTimeFormatter.ofPattern("MM/dd/yy"),
-            DateTimeFormatter.ofPattern("M/d/yy"),
-            DateTimeFormatter.ISO_LOCAL_DATE
-    );
-    private static final List<DateTimeFormatter> DEFAULT_DATETIME_FORMATS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("MM/dd/yy[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("M/d/yy[ HH:mm[:ss]]"),
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    );
-    private static final Object FORMAT_LOCK = new Object();
-    private static volatile List<DateTimeFormatter> dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
-    private static volatile List<DateTimeFormatter> dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
 
     /**
      * Adds a custom date format pattern for {@link #asLocalDate()}.
@@ -93,9 +69,7 @@ public final class CellData {
      * @param pattern the date pattern (e.g., "dd.MM.yyyy")
      */
     public static void addDateFormat(String pattern) {
-        synchronized (FORMAT_LOCK) {
-            dateFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
-        }
+        LegacyCellDefaults.addDate(pattern);
     }
 
     /**
@@ -107,9 +81,7 @@ public final class CellData {
      * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
      */
     public static void addDateTimeFormat(String pattern) {
-        synchronized (FORMAT_LOCK) {
-            dateTimeFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
-        }
+        LegacyCellDefaults.addDateTime(pattern);
     }
 
     /**
@@ -118,7 +90,7 @@ public final class CellData {
      * @return the list of date format patterns
      */
     public static List<DateTimeFormatter> getDateFormats() {
-        return Collections.unmodifiableList(dateFormatPatterns);
+        return LegacyCellDefaults.dates();
     }
 
     /**
@@ -127,7 +99,7 @@ public final class CellData {
      * @return the list of date-time format patterns
      */
     public static List<DateTimeFormatter> getDateTimeFormats() {
-        return Collections.unmodifiableList(dateTimeFormatPatterns);
+        return LegacyCellDefaults.dateTimes();
     }
 
     /**
@@ -137,9 +109,7 @@ public final class CellData {
      * This method is thread-safe.
      */
     public static void resetDateFormats() {
-        synchronized (FORMAT_LOCK) {
-            dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
-        }
+        LegacyCellDefaults.resetDates();
     }
 
     /**
@@ -149,9 +119,7 @@ public final class CellData {
      * This method is thread-safe.
      */
     public static void resetDateTimeFormats() {
-        synchronized (FORMAT_LOCK) {
-            dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
-        }
+        LegacyCellDefaults.resetDateTimes();
     }
 
     /**
@@ -194,15 +162,15 @@ public final class CellData {
     }
 
     private Locale effectiveLocale() {
-        return conversionConfig != null ? conversionConfig.locale() : defaultLocale;
+        return conversionConfig != null ? conversionConfig.locale() : LegacyCellDefaults.locale();
     }
 
     private List<DateTimeFormatter> effectiveDateFormats() {
-        return conversionConfig != null ? conversionConfig.dateFormats() : dateFormatPatterns;
+        return conversionConfig != null ? conversionConfig.dateFormats() : LegacyCellDefaults.dates();
     }
 
     private List<DateTimeFormatter> effectiveDateTimeFormats() {
-        return conversionConfig != null ? conversionConfig.dateTimeFormats() : dateTimeFormatPatterns;
+        return conversionConfig != null ? conversionConfig.dateTimeFormats() : LegacyCellDefaults.dateTimes();
     }
 
     /**
@@ -220,9 +188,7 @@ public final class CellData {
         }
 
         try {
-            String cleaned = cleanNumberText(formattedValue, locale, false);
-
-            return NumberFormat.getNumberInstance(locale).parse(cleaned);
+            return CellConversionSupport.number(formattedValue, locale);
         } catch (ParseException e) {
             log.warn("Failed to parse number (col {}): '{}'", columnIndex, formattedValue);
             throw new IllegalArgumentException("Failed to parse number: " + formattedValue);
@@ -290,7 +256,7 @@ public final class CellData {
         if (formattedValue.isBlank()) {
             return false;
         }
-        return isTrueValue(formattedValue);
+        return CellConversionSupport.booleanValue(formattedValue);
     }
 
     /**
@@ -307,12 +273,7 @@ public final class CellData {
         if (formattedValue.isBlank()) {
             return null;
         }
-        return isTrueValue(formattedValue);
-    }
-
-    private static boolean isTrueValue(String value) {
-        String val = value.trim().toLowerCase();
-        return val.equals("true") || val.equals("1") || val.equals("y") || val.equals("yes");
+        return CellConversionSupport.booleanValue(formattedValue);
     }
 
     /**
@@ -332,19 +293,7 @@ public final class CellData {
      * @return the parsed date-time, or {@code null} if blank
      */
     public @Nullable LocalDateTime asLocalDateTime() {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-
-        for (var formatter : effectiveDateTimeFormats()) {
-            try {
-                return LocalDateTime.parse(formattedValue, formatter);
-            } catch (Exception e) {
-                /* skip */
-            }
-        }
-
-        throw new DateTimeParseException("Cannot parse LocalDateTime: " + formattedValue, formattedValue, 0);
+        return CellConversionSupport.dateTime(formattedValue, effectiveDateTimeFormats());
     }
 
     /**
@@ -377,17 +326,7 @@ public final class CellData {
      * @return the parsed date, or {@code null} if blank
      */
     public @Nullable LocalDate asLocalDate() {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-        for (var format : effectiveDateFormats()) {
-            try {
-                return LocalDate.parse(formattedValue, format);
-            } catch (Exception e) {
-                /* skip */
-            }
-        }
-        return LocalDate.parse(formattedValue);
+        return CellConversionSupport.date(formattedValue, effectiveDateFormats());
     }
 
     /**
@@ -411,10 +350,7 @@ public final class CellData {
      * @return the parsed time, or {@code null} if blank
      */
     public @Nullable LocalTime asLocalTime() {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-        return LocalTime.parse(formattedValue);
+        return CellConversionSupport.time(formattedValue, null);
     }
 
     /**
@@ -425,10 +361,7 @@ public final class CellData {
      * @return the parsed time, or {@code null} if blank
      */
     public @Nullable LocalTime asLocalTime(String format) {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-        return LocalTime.parse(formattedValue, DateTimeFormatter.ofPattern(format));
+        return CellConversionSupport.time(formattedValue, format);
     }
 
     /**
@@ -497,7 +430,7 @@ public final class CellData {
             return null;
         }
         try {
-            String cleaned = cleanNumberText(formattedValue, effectiveLocale(), true);
+            String cleaned = CellConversionSupport.decimalText(formattedValue, effectiveLocale());
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
             log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, formattedValue);
@@ -640,22 +573,6 @@ public final class CellData {
     @Override
     public String toString() {
         return "CellData[columnIndex=" + columnIndex + ", formattedValue=" + formattedValue + "]";
-    }
-
-    private static String cleanNumberText(String value, Locale locale, boolean normalizeDecimalSeparator) {
-        String cleaned = CURRENCY_SYMBOLS.matcher(value.replace("\u00A0", " "))
-                .replaceAll("")
-                .replace(" ", "")
-                .trim();
-        char groupingSeparator = DecimalFormatSymbols.getInstance(locale).getGroupingSeparator();
-        char decimalSeparator = DecimalFormatSymbols.getInstance(locale).getDecimalSeparator();
-        if (groupingSeparator != decimalSeparator) {
-            cleaned = cleaned.replace(String.valueOf(groupingSeparator), "");
-        }
-        if (normalizeDecimalSeparator && decimalSeparator != '.') {
-            cleaned = cleaned.replace(decimalSeparator, '.');
-        }
-        return cleaned;
     }
 
 }
