@@ -291,67 +291,6 @@ class ExcelWriteSupport {
         }
     }
 
-    static <T> void writeRowCells(SXSSFSheet sheet, Cursor cursor, T rowData,
-                                   List<ExcelColumn<T>> columns, SheetConfig<T> cfg,
-                                   Map<String, CellStyle> rowStyleCache, SXSSFWorkbook wb) {
-        SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
-        row.setHeightInPoints(cfg.rowHeightInPoints);
-        cursor.plusRow();
-
-        ExcelColor rowColor = (cfg.rowColorFunction != null) ? cfg.rowColorFunction.apply(rowData) : null;
-
-        // Resolve conditional row style (first match wins)
-        @Nullable RowStyleConfig matchedRowStyle = null;
-        for (SheetConfig.RowStyleEntry<T> entry : cfg.rowStyleEntries) {
-            if (entry.predicate().test(rowData)) {
-                matchedRowStyle = entry.style();
-                break;
-            }
-        }
-
-        for (int j = 0; j < columns.size(); j++) {
-            SXSSFCell cell = row.createCell(j);
-            ExcelColumn<T> column = columns.get(j);
-            @Nullable Object columnData = column.applyFunction(rowData, cursor, cfg.writeErrorPolicy);
-            column.setColumnData(cell, columnData, cfg.writeErrorPolicy);
-
-            // Resolve effective color: cellColor > rowStyle.bg > rowColor > column default
-            ExcelColor effectiveColor = null;
-            CellColorFunction<T> cellColorFn = column.getCellColorFunction();
-            if (cellColorFn != null) {
-                effectiveColor = cellColorFn.apply(columnData, rowData);
-            }
-            if (effectiveColor == null && matchedRowStyle != null && matchedRowStyle.backgroundColor != null) {
-                effectiveColor = matchedRowStyle.backgroundColor;
-            }
-            if (effectiveColor == null) {
-                effectiveColor = rowColor;
-            }
-
-            if (matchedRowStyle != null && matchedRowStyle.hasAnyStyle()) {
-                cell.setCellStyle(resolveRowStyle(column.getStyle(), effectiveColor, matchedRowStyle, rowStyleCache, wb));
-            } else if (effectiveColor != null) {
-                cell.setCellStyle(resolveColorStyle(column.getStyle(), effectiveColor, rowStyleCache, wb));
-            } else {
-                cell.setCellStyle(column.getStyle());
-            }
-
-            if (cfg.autoWidthSampleRows > 0 && cursor.getRowOfSheet() < cfg.autoWidthSampleRows) {
-                column.fitColumnWidthByValue(columnData);
-            }
-
-            // Cell comment
-            Function<T, @Nullable String> commentFn = column.getCommentFunction();
-            if (commentFn != null) {
-                String commentText = commentFn.apply(rowData);
-                if (commentText != null) {
-                    addCellComment(cell, commentText, null,
-                            column.getCommentWidth(), column.getCommentHeight(), wb);
-                }
-            }
-        }
-    }
-
     static void addCellComment(SXSSFCell cell, String text, SXSSFWorkbook wb) {
         addCellComment(cell, text, null, 0, 0, wb);
     }
