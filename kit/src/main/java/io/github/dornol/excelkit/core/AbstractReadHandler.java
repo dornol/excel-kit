@@ -429,91 +429,29 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
                                           IntFunction<List<String>> headerAliasesFn,
                                           IntUnaryOperator columnIndexFn,
                                           List<String> headerNames, String errorPrefix) {
-        Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, errorPrefix);
-        int[] indices = new int[columnCount];
-        for (int i = 0; i < columnCount; i++) {
-            int explicitIndex = columnIndexFn.applyAsInt(i);
-            if (explicitIndex >= 0) {
-                validateHeaderIndexIfStrict(explicitIndex, headerNames, errorPrefix);
-                indices[i] = explicitIndex;
-            } else {
-                List<String> headerAliases = headerAliasesFn.apply(i);
-                if (headerAliases != null && !headerAliases.isEmpty()) {
-                    Integer idx = null;
-                    for (String alias : headerAliases) {
-                        idx = headerIndexMap.get(normalizeHeader(alias));
-                        if (idx != null) {
-                            break;
-                        }
-                    }
-                    if (idx == null) {
-                        throw new ExcelKitException("Header aliases " + headerAliases + " not found in "
-                                + errorPrefix + ". Available headers: " + headerNames);
-                    }
-                    indices[i] = idx;
-                } else {
-                    validateHeaderIndexIfStrict(i, headerNames, errorPrefix);
-                    indices[i] = i;
-                }
-            }
-        }
-        return indices;
+        return headerResolver().resolve(columnCount, headerAliasesFn, columnIndexFn, headerNames, errorPrefix);
     }
 
     /**
      * Builds a header-to-index map using this handler's duplicate header policy.
      */
     protected Map<String, Integer> buildHeaderIndexMap(List<String> headerNames, String errorPrefix) {
-        if (limits.maxColumns() >= 0 && headerNames.size() > limits.maxColumns()) {
-            throw new ReadLimitExceededException(ReadLimitExceededException.Limit.COLUMNS,
-                    limits.maxColumns(), headerNames.size());
-        }
-        Map<String, Integer> map = new LinkedHashMap<>();
-        for (int i = 0; i < headerNames.size(); i++) {
-            String originalHeaderName = headerNames.get(i);
-            String headerName = normalizeHeader(originalHeaderName);
-            if (duplicateHeaderPolicy == DuplicateHeaderPolicy.FAIL
-                    && headerName != null && map.containsKey(headerName)) {
-                throw new ExcelKitException("Duplicate header '" + originalHeaderName + "' found in " + errorPrefix);
-            }
-            if (duplicateHeaderPolicy == DuplicateHeaderPolicy.LAST) {
-                map.put(headerName, i);
-            } else {
-                map.putIfAbsent(headerName, i);
-            }
-        }
-        return map;
+        return headerResolver().index(headerNames, errorPrefix);
     }
 
     /**
      * Validates selected map-mode columns in strict mode.
      */
     protected void validateSelectedMapColumns(Map<String, Integer> headerIndexMap, List<String> headerNames, String errorPrefix) {
-        if (!strictHeaders || selectedMapColumns == null || selectedMapColumns.isEmpty()) {
-            return;
-        }
-        List<String> missing = selectedMapColumns.stream()
-                .filter(name -> !headerIndexMap.containsKey(normalizeHeader(name)))
-                .toList();
-        if (!missing.isEmpty()) {
-            throw new ExcelKitException("Selected headers " + missing + " not found in "
-                    + errorPrefix + ". Available headers: " + headerNames);
-        }
+        headerResolver().validateSelected(selectedMapColumns, headerIndexMap, headerNames, errorPrefix);
     }
 
     protected String normalizeHeader(String header) {
-        String normalized = headerNormalizer.apply(header);
-        if (normalized == null) {
-            throw new ExcelKitException("Header normalizer returned null for: " + header);
-        }
-        return normalized;
+        return headerResolver().normalize(header);
     }
 
-    private void validateHeaderIndexIfStrict(int index, List<String> headerNames, String errorPrefix) {
-        if (strictHeaders && index >= headerNames.size()) {
-            throw new ExcelKitException("Column index " + index + " has no header in "
-                    + errorPrefix + ". Available headers: " + headerNames);
-        }
+    private HeaderResolver headerResolver() {
+        return new HeaderResolver(strictHeaders, duplicateHeaderPolicy, headerNormalizer, limits.maxColumns());
     }
 
     /**

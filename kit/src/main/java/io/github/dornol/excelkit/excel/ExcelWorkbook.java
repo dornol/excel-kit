@@ -88,7 +88,7 @@ public class ExcelWorkbook implements AutoCloseable {
     }
 
     private ExcelWorkbook(InitOptions opts) {
-        StreamingOptions streaming = opts.streamingOptions;
+        StreamingOptions streaming = opts.streamingOptions();
         this.wb = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
                 streaming.compressTempFiles(), streaming.useSharedStrings());
         ExcelColor defaultColor = ExcelColor.WHITE;
@@ -113,41 +113,11 @@ public class ExcelWorkbook implements AutoCloseable {
      *
      * @since 0.17.0
      */
-    public static final class InitOptions {
-        private StreamingOptions streamingOptions = StreamingOptions.DEFAULT;
+    public static final class InitOptions extends AbstractStreamingInitOptions<InitOptions> {
+        private InitOptions() { }
 
-        private InitOptions() {}
-
-        /**
-         * Sets the SXSSF row access window size. Must be set at construction time because
-         * POI's SXSSFWorkbook takes it as a constructor argument.
-         *
-         * @param size row window (must be positive)
-         * @return this options object for chaining
-         */
-        public InitOptions rowAccessWindowSize(int size) {
-            if (size <= 0) throw new IllegalArgumentException("rowAccessWindowSize must be positive");
-            this.streamingOptions = new StreamingOptions(size, streamingOptions.compressTempFiles(),
-                    streamingOptions.useSharedStrings());
-            return this;
-        }
-
-        public InitOptions compressTempFiles(boolean enabled) {
-            this.streamingOptions = new StreamingOptions(streamingOptions.rowAccessWindowSize(), enabled,
-                    streamingOptions.useSharedStrings());
-            return this;
-        }
-
-        public InitOptions useSharedStrings(boolean enabled) {
-            this.streamingOptions = new StreamingOptions(streamingOptions.rowAccessWindowSize(),
-                    streamingOptions.compressTempFiles(), enabled);
-            return this;
-        }
-
-        public InitOptions streaming(StreamingOptions options) {
-            this.streamingOptions = java.util.Objects.requireNonNull(options, "options cannot be null");
-            return this;
-        }
+        @Override
+        protected InitOptions self() { return this; }
     }
 
     /**
@@ -163,7 +133,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook documentProperty(String key, String value) {
-        ExcelWriteSupport.applyDocumentProperty(wb, key, value);
+        ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
 
@@ -315,7 +285,7 @@ public class ExcelWorkbook implements AutoCloseable {
             throw new ExcelWriteException("Workbook is already finished");
         }
         finished = true;
-        ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
+        ExcelWorkbookSupport.applyProtection(wb, workbookPassword);
         return new ExcelHandler(wb, password);
     }
 

@@ -183,7 +183,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     private ExcelWriter(InitOptions opts) {
-        StreamingOptions streaming = opts.streamingOptions;
+        StreamingOptions streaming = opts.streamingOptions();
         this.wb = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
                 streaming.compressTempFiles(), streaming.useSharedStrings());
         ExcelColor defaultColor = ExcelColor.WHITE;
@@ -209,50 +209,11 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      *
      * @since 0.17.0
      */
-    public static final class InitOptions {
-        private StreamingOptions streamingOptions = StreamingOptions.DEFAULT;
+    public static final class InitOptions extends AbstractStreamingInitOptions<InitOptions> {
+        private InitOptions() { }
 
-        private InitOptions() {
-        }
-
-        /**
-         * Sets the number of rows kept in memory by the underlying SXSSFWorkbook.
-         * Higher values use more memory but reduce disk I/O; lower values are the inverse.
-         * Defaults to 1000.
-         * <p>
-         * This must be set at construction time because POI's SXSSFWorkbook takes it as
-         * a constructor argument and does not support changing it afterwards.
-         *
-         * @param size row access window size (must be positive)
-         * @return this options object for chaining
-         */
-        public InitOptions rowAccessWindowSize(int size) {
-            if (size <= 0) {
-                throw new IllegalArgumentException("rowAccessWindowSize must be positive");
-            }
-            this.streamingOptions = new StreamingOptions(size, streamingOptions.compressTempFiles(),
-                    streamingOptions.useSharedStrings());
-            return this;
-        }
-
-        /** Compresses SXSSF temporary XML files to reduce disk usage. */
-        public InitOptions compressTempFiles(boolean enabled) {
-            this.streamingOptions = new StreamingOptions(streamingOptions.rowAccessWindowSize(), enabled,
-                    streamingOptions.useSharedStrings());
-            return this;
-        }
-
-        /** Uses a shared strings table, trading additional memory for broader client compatibility. */
-        public InitOptions useSharedStrings(boolean enabled) {
-            this.streamingOptions = new StreamingOptions(streamingOptions.rowAccessWindowSize(),
-                    streamingOptions.compressTempFiles(), enabled);
-            return this;
-        }
-
-        public InitOptions streaming(StreamingOptions options) {
-            this.streamingOptions = java.util.Objects.requireNonNull(options, "options cannot be null");
-            return this;
-        }
+        @Override
+        protected InitOptions self() { return this; }
     }
 
     /**
@@ -268,7 +229,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @since 0.17.0
      */
     public ExcelWriter<T> documentProperty(String key, String value) {
-        ExcelWriteSupport.applyDocumentProperty(wb, key, value);
+        ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
 
@@ -705,7 +666,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             }
 
             applyPostProcessingAllSheets();
-            ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
+            ExcelWorkbookSupport.applyProtection(wb, workbookPassword);
 
             // Apply chart on last sheet
             if (options.sheetConfig().chartConfig != null) {

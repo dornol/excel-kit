@@ -541,34 +541,6 @@ class ExcelWriteSupport {
         }
     }
 
-    static void applyWorkbookProtection(SXSSFWorkbook wb, @Nullable String password) {
-        if (password != null) {
-            wb.getXSSFWorkbook().lockStructure();
-            wb.getXSSFWorkbook().setWorkbookPassword(password, null);
-        }
-    }
-
-    static void applyDocumentProperty(SXSSFWorkbook wb, String key, String value) {
-        var props = wb.getXSSFWorkbook().getProperties();
-        var core = props.getCoreProperties();
-        switch (key.toLowerCase(java.util.Locale.ROOT)) {
-            case "title" -> core.setTitle(value);
-            case "subject" -> core.setSubjectProperty(value);
-            case "author", "creator" -> core.setCreator(value);
-            case "keywords" -> core.setKeywords(value);
-            case "description" -> core.setDescription(value);
-            case "category" -> core.setCategory(value);
-            default -> {
-                var custom = props.getCustomProperties();
-                if (custom.contains(key)) {
-                    custom.getProperty(key).setLpwstr(value);
-                } else {
-                    custom.addProperty(key, value);
-                }
-            }
-        }
-    }
-
     static void applyTabColor(SXSSFSheet sheet, int @Nullable [] tabColor) {
         if (tabColor == null) return;
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
