@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
+import io.github.dornol.excelkit.example.app.dto.ProductReadDto;
 import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.spring.ExcelKitTemplateResponse;
 import io.github.dornol.excelkit.csv.CsvDialect;
@@ -28,7 +29,7 @@ import java.util.stream.Stream;
 @RequestMapping("/showcase")
 public class CsvShowcaseController {
 
-    private static final ExcelKitSchema<io.github.dornol.excelkit.example.app.dto.ProductReadDto> PRODUCT_SCHEMA = ShowcaseData.PRODUCT_SCHEMA;
+    private static final ExcelKitSchema<ProductReadDto> PRODUCT_SCHEMA = ShowcaseData.PRODUCT_SCHEMA;
 
     private static List<ProductDto> sampleProducts() {
         return ShowcaseData.sampleProducts();

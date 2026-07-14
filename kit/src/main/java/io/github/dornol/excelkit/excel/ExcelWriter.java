@@ -40,15 +40,12 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private @Nullable AfterDataWriter afterAllWriter;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
-    private int headerRowIndex;
     private char @Nullable [] password;
     private @Nullable String workbookPassword;
     private @Nullable String headerFontName;
     private @Nullable Integer headerFontSize;
     private @Nullable HeaderStyleConfig headerStyleConfig;
-    private @Nullable SXSSFSheet sheet;
-    private @Nullable Cursor cursor;
-    private @Nullable ExcelWriteOptions<T> executionOptions;
+    private @Nullable ExcelWriteSession<T> execution;
     private @Nullable TableOptions tableOptions;
 
 
@@ -676,7 +673,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     public ExcelHandler write(Stream<T> stream, WriteRowCallback<T> consumer) {
         ExcelWriteOptions<T> options = snapshotOptions();
-        this.executionOptions = options;
+        this.execution = new ExcelWriteSession<>(options);
         if (options.columns().isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
@@ -686,25 +683,25 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             this.headerStyle = rebuildHeaderStyle();
         }
 
-        this.sheet = createNamedSheet();
-        int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
-        this.cursor = new Cursor(headerStartRow);
-        this.headerRowIndex = headerStartRow;
+        execution().sheet(createNamedSheet());
+        int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
+        execution().cursor(new Cursor(headerStartRow));
+        execution().headerRow(headerStartRow);
 
-        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, options.columns(), headerStyle, wb, headerStyleCache,
+        ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), headerStyle, wb, headerStyleCache,
                 options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
         applySheetOptions();
 
         try {
             stream.sequential().forEach(rowData -> {
                 this.handleRowData(rowData);
-                consumer.accept(rowData, cursor);
+                consumer.accept(rowData, cursor());
             });
 
-            int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(),
-                    options.columns(), headerRowIndex, options.sheetConfig());
+            int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
+                    options.columns(), headerRowIndex(), options.sheetConfig());
             if (this.afterAllWriter != null) {
-                this.afterAllWriter.write(new SheetContext(sheet, wb, nextRow, options.columns(), headerRowIndex));
+                this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
             }
 
             applyPostProcessingAllSheets();
@@ -712,7 +709,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
             // Apply chart on last sheet
             if (options.sheetConfig().chartConfig != null) {
-                ExcelWriteSupport.applyChart(sheet, options.sheetConfig().chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
+                ExcelWriteSupport.applyChart(sheet(), options.sheetConfig().chartConfig, headerRowIndex(), cursor().getRowOfSheet() - 1);
             }
             applyTables(options.columns().size());
 
@@ -747,8 +744,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     private void applySheetOptions() {
         ExcelWriteOptions<T> options = executionOptions();
-        int headerRowIdx = cursor.getRowOfSheet() - 1;
-        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, options.sheetConfig().autoFilter,
+        int headerRowIdx = cursor().getRowOfSheet() - 1;
+        ExcelWriteSupport.applySheetOptions(sheet(), headerRowIdx, options.sheetConfig().autoFilter,
                 options.sheetConfig().freezePaneCols, options.sheetConfig().freezePaneRows, options.columns().size());
     }
 
@@ -759,19 +756,19 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     void handleRowData(T rowData) {
         ExcelWriteOptions<T> options = executionOptions();
-        cursor.plusTotal();
+        cursor().plusTotal();
         if (isOverMaxRows()) {
-            ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), options.columns(), headerRowIndex, options.sheetConfig());
+            ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(), options.columns(), headerRowIndex(), options.sheetConfig());
             turnOverSheet();
-            int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
-            cursor.setRowOfSheet(preambleRow);
-            headerRowIndex = preambleRow;
-            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, options.columns(), headerStyle, wb, headerStyleCache,
+            int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
+            cursor().setRowOfSheet(preambleRow);
+            execution().headerRow(preambleRow);
+            ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), headerStyle, wb, headerStyleCache,
                     options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
             applySheetOptions();
         }
-        ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb);
-        ExcelWriteSupport.checkProgress(cursor, options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
+        ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb);
+        ExcelWriteSupport.checkProgress(cursor(), options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
     }
 
     /**
@@ -781,7 +778,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     private SXSSFSheet createNamedSheet() {
         int index = wb.getNumberOfSheets();
-        SheetConfig<T> sheetConfig = executionOptions == null ? cfg : executionOptions.sheetConfig();
+        SheetConfig<T> sheetConfig = execution == null ? cfg : execution.options().sheetConfig();
         if (sheetConfig.sheetNameFunction != null) {
             return wb.createSheet(sheetConfig.sheetNameFunction.apply(index));
         }
@@ -792,8 +789,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * Creates a new sheet and resets the row index when the current sheet exceeds row limit.
      */
     private void turnOverSheet() {
-        this.sheet = createNamedSheet();
-        this.cursor.initRow();
+        execution().sheet(createNamedSheet());
+        cursor().initRow();
     }
 
     /**
@@ -803,7 +800,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     private boolean isOverMaxRows() {
         int limit = executionOptions().maxRows();
-        return cursor.getCurrentTotal() >= limit && cursor.getCurrentTotal() % limit == 1;
+        return cursor().getCurrentTotal() >= limit && cursor().getCurrentTotal() % limit == 1;
     }
 
     private ExcelWriteOptions<T> snapshotOptions() {
@@ -811,11 +808,17 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     private ExcelWriteOptions<T> executionOptions() {
-        if (executionOptions == null) throw new IllegalStateException("write execution has not started");
-        return executionOptions;
+        return execution().options();
     }
 
-    private record ExcelWriteOptions<T>(List<ExcelColumn<T>> columns, int maxRows, SheetConfig<T> sheetConfig) {}
+    private ExcelWriteSession<T> execution() {
+        if (execution == null) throw new IllegalStateException("write execution has not started");
+        return execution;
+    }
+
+    private SXSSFSheet sheet() { return execution().sheet(); }
+    private Cursor cursor() { return execution().cursor(); }
+    private int headerRowIndex() { return execution().headerRow(); }
 
     /**
      * Applies all post-processing steps (column widths, validations, outlines, hiding,
@@ -823,7 +826,10 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     private void applyPostProcessingAllSheets() {
         for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-            ExcelWriteSupport.applyPostProcessing(wb.getSheetAt(i), columns, headerRowIndex, cfg);
+            SXSSFSheet target = wb.getSheetAt(i);
+            ExcelWriteOptions<T> options = executionOptions();
+            ExcelSheetPostProcessor.apply(target, options.columns(), execution().headerRow(target),
+                    options.sheetConfig());
         }
     }
 
@@ -835,6 +841,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
         for (int i = 0; i < sheets; i++) {
             SXSSFSheet target = wb.getSheetAt(i);
+            int headerRowIndex = execution().headerRow(target);
             if (target.getLastRowNum() <= headerRowIndex) continue;
             String name = sheets == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
             StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columnCount,

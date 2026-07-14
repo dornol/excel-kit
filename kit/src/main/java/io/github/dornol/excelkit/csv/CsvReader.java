@@ -8,6 +8,7 @@ import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
+import java.io.BufferedInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -27,6 +28,8 @@ import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.ReadSummary;
 import io.github.dornol.excelkit.core.ReadReport;
+import io.github.dornol.excelkit.core.TabularFileDetector;
+import io.github.dornol.excelkit.core.TabularFileType;
 
 /**
  * Builder-style class for configuring CSV row readers.
@@ -301,10 +304,10 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     /** Detects text charset and delimiter from a sample before reading without closing the caller stream. */
     public void readDetected(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
-        java.io.BufferedInputStream buffered = inputStream instanceof java.io.BufferedInputStream existing
-                ? existing : new java.io.BufferedInputStream(inputStream);
-        var detection = io.github.dornol.excelkit.core.TabularFileDetector.detectDetailed(buffered);
-        if (detection.type() != io.github.dornol.excelkit.core.TabularFileType.CSV) {
+        BufferedInputStream buffered = inputStream instanceof BufferedInputStream existing
+                ? existing : new BufferedInputStream(inputStream);
+        var detection = TabularFileDetector.detectDetailed(buffered);
+        if (detection.type() != TabularFileType.CSV) {
             throw new CsvReadException("Expected CSV content but detected " + detection.type());
         }
         if (detection.charset() != null) this.charset = detection.charset();
@@ -331,7 +334,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private ReadSummary summarize(CsvReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
-        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.summarize(
+        return summarizeRead(
                 handler::read, handler::wasStoppedEarly, consumer);
     }
 
@@ -353,7 +356,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private ReadReport report(CsvReadHandler<T> handler, int maxCollectedErrors) {
-        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.<T>report(
+        return collectReadReport(
                 consumer -> handler.read(consumer), handler::wasStoppedEarly, maxCollectedErrors);
     }
 
@@ -407,7 +410,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private ReadSummary readWhile(CsvReadHandler<T> handler, Predicate<ReadResult<T>> predicate) {
-        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.readWhile(
+        return summarizeReadWhile(
                 handler::readWhile, handler::wasStoppedEarly, predicate);
     }
 

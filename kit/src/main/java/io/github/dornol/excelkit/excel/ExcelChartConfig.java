@@ -6,6 +6,7 @@ import org.apache.poi.xssf.usermodel.XSSFChart;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.ss.util.CellRangeAddress;
 
 import org.jspecify.annotations.Nullable;
 
@@ -300,7 +301,7 @@ public class ExcelChartConfig {
 
         XDDFDataSource<String> categories = XDDFDataSourcesFactory.fromStringCellRange(
                 xssfSheet,
-                new org.apache.poi.ss.util.CellRangeAddress(
+                new CellRangeAddress(
                         dataStartRow, dataEndRow,
                         categoryColumnIndex, categoryColumnIndex));
 
@@ -374,14 +375,14 @@ public class ExcelChartConfig {
         // For scatter, X-axis is numeric
         XDDFNumericalDataSource<Double> xValues = XDDFDataSourcesFactory.fromNumericCellRange(
                 sheet,
-                new org.apache.poi.ss.util.CellRangeAddress(
+                new CellRangeAddress(
                         dataStart, dataEnd,
                         categoryColumnIndex, categoryColumnIndex));
 
         for (ValueSeries vs : valueSeries) {
             XDDFNumericalDataSource<Double> yValues = XDDFDataSourcesFactory.fromNumericCellRange(
                     sheet,
-                    new org.apache.poi.ss.util.CellRangeAddress(
+                    new CellRangeAddress(
                             dataStart, dataEnd,
                             vs.columnIndex, vs.columnIndex));
             XDDFChartData.Series series = data.addSeries(xValues, yValues);
@@ -524,7 +525,7 @@ public class ExcelChartConfig {
         for (ValueSeries vs : valueSeries) {
             XDDFNumericalDataSource<Double> values = XDDFDataSourcesFactory.fromNumericCellRange(
                     sheet,
-                    new org.apache.poi.ss.util.CellRangeAddress(
+                    new CellRangeAddress(
                             dataStart, dataEnd,
                             vs.columnIndex, vs.columnIndex));
             XDDFChartData.Series series = chartData.addSeries(categories, values);

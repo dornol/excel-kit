@@ -11,6 +11,10 @@ import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.ReadStoppedException;
+import io.github.dornol.excelkit.core.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.ReadSecurityException;
+import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -43,6 +47,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reads Excel (.xlsx) files using Apache POI's event-based streaming API.
@@ -69,7 +76,7 @@ import java.util.function.Supplier;
  * @since 2025-07-19
  */
 final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExcelReadHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ExcelReadHandler.class);
 
     ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config) {
         this(input, config, false, null);
@@ -108,182 +115,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final @Nullable String password;
     private final boolean countRows;
 
-    /**
-     * Constructs a handler for reading the first sheet of an Excel file.
-     *
-     * @param inputStream      The input stream of the uploaded Excel file
-     * @param columns          The list of column setters to apply per row
-     * @param instanceSupplier A supplier to instantiate new row objects
-     * @param validator        Optional bean validator for validating mapped instances
-     */
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0, 0, 1, 0, null, null, false);
-    }
-
-    /**
-     * Constructs a handler for reading a specific sheet of an Excel file.
-     *
-     * @param inputStream      The input stream of the uploaded Excel file
-     * @param columns          The list of column setters to apply per row
-     * @param instanceSupplier A supplier to instantiate new row objects
-     * @param validator        Optional bean validator for validating mapped instances
-     * @param sheetIndex       The zero-based index of the sheet to read
-     */
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, 0, 1, 0, null, null, false);
-    }
-
-    /**
-     * Constructs a handler for reading a specific sheet with a custom header row index.
-     *
-     * @param inputStream      The input stream of the uploaded Excel file
-     * @param columns          The list of column setters to apply per row
-     * @param instanceSupplier A supplier to instantiate new row objects
-     * @param validator        Optional bean validator for validating mapped instances
-     * @param sheetIndex       The zero-based index of the sheet to read
-     * @param headerRowIndex   The zero-based index of the header row (rows before this are skipped)
-     */
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, Validator validator, int sheetIndex, int headerRowIndex) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, 1, 0, null, null, false);
-    }
-
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                     Validator validator, int sheetIndex, int headerRowIndex,
-                     int progressInterval, @Nullable ProgressCallback progressCallback) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, 1, progressInterval, progressCallback, (String) null, false);
-    }
-
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                     Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, headerRows,
-                progressInterval, progressCallback, password, countRows, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                     Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows,
-                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, headerRows,
-                progressInterval, progressCallback, password, countRows, strictHeaders, duplicateHeaderPolicy, null);
-    }
-
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                     Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows,
-                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                     @Nullable CellConversionConfig cellConversionConfig) {
-        this(inputStream, columns, instanceSupplier, validator, sheetIndex, headerRowIndex, headerRows,
-                progressInterval, progressCallback, password, countRows, strictHeaders, duplicateHeaderPolicy,
-                cellConversionConfig, -1, false, 0);
-    }
-
-    ExcelReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                     Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows,
-                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                     @Nullable CellConversionConfig cellConversionConfig,
-                     long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        super(inputStream, instanceSupplier, validator, ".xlsx", strictHeaders, duplicateHeaderPolicy,
-                null, cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
-        validateColumns(columns);
-        validateSheetIndex(sheetIndex);
-        validateHeaderRowIndex(headerRowIndex);
-        validateHeaderRows(headerRows);
-        this.columns = columns;
-        this.sheetIndex = sheetIndex;
-        this.headerRowIndex = headerRowIndex;
-        this.headerRows = headerRows;
-        this.progressInterval = progressInterval;
-        this.progressCallback = progressCallback;
-        this.password = password;
-        this.countRows = countRows;
-    }
-
-    /**
-     * Constructs a handler in mapping mode for immutable object construction.
-     */
-    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
-                     int progressInterval, @Nullable ProgressCallback progressCallback) {
-        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, 1, progressInterval, progressCallback, (String) null, false);
-    }
-
-    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows) {
-        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, headerRows, progressInterval,
-                progressCallback, password, countRows, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows,
-                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, headerRows, progressInterval,
-                progressCallback, password, countRows, strictHeaders, duplicateHeaderPolicy, null);
-    }
-
-    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows,
-                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                     @Nullable Set<String> selectedMapColumns) {
-        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, headerRows, progressInterval,
-                progressCallback, password, countRows, strictHeaders, duplicateHeaderPolicy, selectedMapColumns, null);
-    }
-
-    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows,
-                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                     @Nullable Set<String> selectedMapColumns,
-                     @Nullable CellConversionConfig cellConversionConfig) {
-        this(inputStream, rowMapper, validator, sheetIndex, headerRowIndex, headerRows, progressInterval,
-                progressCallback, password, countRows, strictHeaders, duplicateHeaderPolicy, selectedMapColumns,
-                cellConversionConfig, -1, false, 0);
-    }
-
-    ExcelReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                     @Nullable Validator validator, int sheetIndex, int headerRowIndex,
-                     int headerRows,
-                     int progressInterval, @Nullable ProgressCallback progressCallback,
-                     @Nullable String password, boolean countRows,
-                     boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                     @Nullable Set<String> selectedMapColumns,
-                     @Nullable CellConversionConfig cellConversionConfig,
-                     long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        super(inputStream, rowMapper, validator, ".xlsx", strictHeaders, duplicateHeaderPolicy,
-                selectedMapColumns, cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
-        validateSheetIndex(sheetIndex);
-        validateHeaderRowIndex(headerRowIndex);
-        validateHeaderRows(headerRows);
-        this.columns = null;
-        this.sheetIndex = sheetIndex;
-        this.headerRowIndex = headerRowIndex;
-        this.headerRows = headerRows;
-        this.progressInterval = progressInterval;
-        this.progressCallback = progressCallback;
-        this.password = password;
-        this.countRows = countRows;
-    }
-
     private static void validateHeaderRows(int headerRows) {
         if (headerRows < 1) {
             throw new IllegalArgumentException("headerRows must be >= 1");
@@ -309,10 +140,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         markConsumed();
         try {
             readInternal(guardedConsumer(consumer));
-        } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
+        } catch (ReadStoppedException ignored) {
             stoppedEarly = true;
-        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException |
-                 io.github.dornol.excelkit.core.ReadSecurityException e) {
+        } catch (ReadLimitExceededException | ReadSecurityException e) {
             throw e;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
@@ -327,7 +157,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
         markConsumed();
-        java.util.concurrent.atomic.AtomicReference<RuntimeException> failure = new java.util.concurrent.atomic.AtomicReference<>();
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
         try {
             Consumer<ReadResult<T>> guarded = guardedConsumer(result -> {
                 boolean proceed;
@@ -335,16 +165,15 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                     proceed = predicate.test(result);
                 } catch (RuntimeException e) {
                     failure.set(e);
-                    throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                    throw new ReadStoppedException();
                 }
-                if (!proceed) throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                if (!proceed) throw new ReadStoppedException();
             });
             readInternal(guarded);
-        } catch (io.github.dornol.excelkit.core.ReadStoppedException ignored) {
+        } catch (ReadStoppedException ignored) {
             // Normal early completion requested by the caller.
             stoppedEarly = true;
-        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException |
-                 io.github.dornol.excelkit.core.ReadSecurityException e) {
+        } catch (ReadLimitExceededException | ReadSecurityException e) {
             throw e;
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
@@ -482,7 +311,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private final List<@Nullable String> headerAccumulator = new ArrayList<>();
         private final Consumer<ReadResult<T>> consumer;
         private @Nullable List<String> messages;
-        private @Nullable List<io.github.dornol.excelkit.core.CellError> cellErrors;
+        private @Nullable List<CellError> cellErrors;
         private int @Nullable [] resolvedIndices;
         private @Nullable Map<String, Integer> headerIndexMap;
         private long dataRowCount;
@@ -508,7 +337,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         @Override
         public void startRow(int rowNum) {
             if (cancellationToken.isCancellationRequested()) {
-                throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                throw new ReadStoppedException();
             }
             if (instanceSupplier != null) {
                 currentInstance = instanceSupplier.get();
@@ -669,7 +498,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                         String header = (actualIndex < headerNames.size()) ? headerNames.get(actualIndex) : "column#" + actualIndex;
                         String message = "Required column '" + header + "' is empty";
                         getOrCreateMessages().add(message);
-                        getOrCreateCellErrors().add(new io.github.dornol.excelkit.core.CellError(actualIndex, header, null, message));
+                        getOrCreateCellErrors().add(new CellError(actualIndex, header, null, message));
                         success = false;
                     }
                     continue;
@@ -691,7 +520,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             return messages;
         }
 
-        private List<io.github.dornol.excelkit.core.CellError> getOrCreateCellErrors() {
+        private List<CellError> getOrCreateCellErrors() {
             if (cellErrors == null) {
                 cellErrors = new ArrayList<>();
             }

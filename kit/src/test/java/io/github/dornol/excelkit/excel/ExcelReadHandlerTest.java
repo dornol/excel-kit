@@ -78,8 +78,8 @@ class ExcelReadHandlerTest {
         
         // Act
         try (InputStream is = Files.newInputStream(excelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReadHandler<>(is, columns, instanceSupplier, validator);
-            handler.read(consumer);
+            new ExcelReader<>(instanceSupplier, validator)
+                    .column(createNameSetter()).column(createAgeSetter()).read(is, consumer);
         }
         
         // Assert
@@ -124,8 +124,8 @@ class ExcelReadHandlerTest {
         
         // Act
         try (InputStream is = Files.newInputStream(invalidExcelFile)) {
-            ExcelReadHandler<TestPerson> handler = new ExcelReadHandler<>(is, columns, instanceSupplier, validator);
-            handler.read(consumer);
+            new ExcelReader<>(instanceSupplier, validator)
+                    .column(createNameSetter()).column(createAgeSetter()).read(is, consumer);
         }
         
         // Assert
@@ -270,9 +270,7 @@ class ExcelReadHandlerTest {
     @Test
     void constructor_shouldThrowForNegativeSheetIndex() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ReadColumn<>(createNameSetter()));
-            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, -1);
+            new ExcelReader<>(TestPerson::new, null).sheetIndex(-1);
         });
     }
 
@@ -305,18 +303,16 @@ class ExcelReadHandlerTest {
     @Test
     void constructor_shouldAcceptLargeNonNegativeSheetIndex() {
         assertDoesNotThrow(() -> {
-            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ReadColumn<>(createNameSetter()));
-            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 256);
+            new ExcelReader<>(TestPerson::new, null).sheetIndex(256);
         }, "sheetIndex existence should be validated against the actual workbook, not an arbitrary upper bound");
     }
 
     @Test
     void constructor_shouldThrowForNegativeHeaderRowIndex() {
         assertThrows(IllegalArgumentException.class, () -> {
-            List<ReadColumn<TestPerson>> columns = new ArrayList<>();
-            columns.add(new ReadColumn<>(createNameSetter()));
-            new ExcelReadHandler<>(InputStream.nullInputStream(), columns, TestPerson::new, null, 0, -1);
+            new ExcelReader<>(TestPerson::new, null)
+                    .headerRowIndex(-1).column(createNameSetter())
+                    .read(InputStream.nullInputStream(), result -> { });
         });
     }
 

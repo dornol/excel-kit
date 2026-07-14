@@ -6,6 +6,7 @@ import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import org.jspecify.annotations.Nullable;
 
@@ -284,14 +285,14 @@ public class TemplateListWriter<T> {
 
         if (writeHeaders) {
             CellStyle headerStyle = ExcelStyleSupporter.headerStyle(wb,
-                    new org.apache.poi.xssf.usermodel.XSSFColor(
+                    new XSSFColor(
                             new byte[]{(byte) 255, (byte) 255, (byte) 255}));
-            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
+            ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle);
         }
 
         stream.sequential().forEach(rowData -> {
             cursor.plusTotal();
-            ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
+            ExcelRowWriter.write(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
             ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
         });
 

@@ -12,6 +12,10 @@ import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.ProgressCallback;
+import io.github.dornol.excelkit.core.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.ReadStoppedException;
+import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.core.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
@@ -33,6 +37,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Reads CSV files and maps rows to Java objects.
@@ -88,154 +94,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final boolean strictQuotes;
     private final boolean ignoreLeadingWhiteSpace;
     private final int progressInterval;
-    private final io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback;
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0, ',', StandardCharsets.UTF_8, 0, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator, int headerRowIndex) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, ',', StandardCharsets.UTF_8, 0, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset, 0, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
-                progressInterval, progressCallback, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
-                progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable CellConversionConfig cellConversionConfig) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
-                progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
-                ICSVParser.DEFAULT_QUOTE_CHARACTER, ICSVParser.DEFAULT_ESCAPE_CHARACTER,
-                ICSVParser.DEFAULT_STRICT_QUOTES, ICSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable CellConversionConfig cellConversionConfig,
-                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
-                progressInterval, progressCallback, strictHeaders, duplicateHeaderPolicy, cellConversionConfig,
-                quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace, -1, false, 0);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable CellConversionConfig cellConversionConfig,
-                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace,
-                   long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        super(inputStream, instanceSupplier, validator, ".csv", strictHeaders, duplicateHeaderPolicy,
-                null, cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
-        validateColumns(columns);
-        validateHeaderRowIndex(headerRowIndex);
-        this.columns = columns;
-        this.headerRowIndex = headerRowIndex;
-        this.delimiter = delimiter;
-        this.charset = charset;
-        this.quoteChar = quoteChar;
-        this.escapeChar = escapeChar;
-        this.strictQuotes = strictQuotes;
-        this.ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace;
-        this.progressInterval = progressInterval;
-        this.progressCallback = progressCallback;
-    }
-
-    /**
-     * Constructs a handler in mapping mode for immutable object construction.
-     */
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback) {
-        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
-                progressCallback, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
-                progressCallback, strictHeaders, duplicateHeaderPolicy, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable Set<String> selectedMapColumns) {
-        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
-                progressCallback, strictHeaders, duplicateHeaderPolicy, selectedMapColumns, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable Set<String> selectedMapColumns,
-                   @Nullable CellConversionConfig cellConversionConfig) {
-        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
-                progressCallback, strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
-                ICSVParser.DEFAULT_QUOTE_CHARACTER, ICSVParser.DEFAULT_ESCAPE_CHARACTER,
-                ICSVParser.DEFAULT_STRICT_QUOTES, ICSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE);
-    }
-
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable Set<String> selectedMapColumns,
-                   @Nullable CellConversionConfig cellConversionConfig,
-                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace) {
-        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
-                progressCallback, strictHeaders, duplicateHeaderPolicy, selectedMapColumns, cellConversionConfig,
-                quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace, -1, false, 0);
-    }
-
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable Set<String> selectedMapColumns,
-                   @Nullable CellConversionConfig cellConversionConfig,
-                   char quoteChar, char escapeChar, boolean strictQuotes, boolean ignoreLeadingWhiteSpace,
-                   long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        super(inputStream, rowMapper, validator, ".csv", strictHeaders, duplicateHeaderPolicy,
-                selectedMapColumns, cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
-        validateHeaderRowIndex(headerRowIndex);
-        this.columns = null;
-        this.headerRowIndex = headerRowIndex;
-        this.delimiter = delimiter;
-        this.charset = charset;
-        this.quoteChar = quoteChar;
-        this.escapeChar = escapeChar;
-        this.strictQuotes = strictQuotes;
-        this.ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace;
-        this.progressInterval = progressInterval;
-        this.progressCallback = progressCallback;
-    }
+    private final @Nullable ProgressCallback progressCallback;
 
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
@@ -255,7 +114,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
-                    if (cancellationToken.isCancellationRequested()) throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                    if (cancellationToken.isCancellationRequested()) throw new ReadStoppedException();
                     List<String> rawValues = rawValues(line);
                     if (isBlankValues(rawValues)) {
                         consecutiveBlankRows++;
@@ -283,7 +142,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 int[] resolvedIndices = resolveIndices();
                 while ((line = reader.readNext()) != null) {
-                    if (cancellationToken.isCancellationRequested()) throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                    if (cancellationToken.isCancellationRequested()) throw new ReadStoppedException();
                     List<String> rawValues = rawValues(line);
                     if (isBlankValues(rawValues)) {
                         consecutiveBlankRows++;
@@ -309,10 +168,10 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     if (progressInterval > 0 && rowCount % progressInterval == 0) notifyReadProgress(rowCount, -1, -1);
                 }
             }
-        } catch (io.github.dornol.excelkit.core.ReadStoppedException e) {
+        } catch (ReadStoppedException e) {
             // Normal early completion requested by readWhile.
             stoppedEarly = true;
-        } catch (io.github.dornol.excelkit.core.ReadLimitExceededException e) {
+        } catch (ReadLimitExceededException e) {
             throw e;
         } catch (CsvReadException | ReadAbortException e) {
             throw e;
@@ -328,17 +187,17 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
-        java.util.concurrent.atomic.AtomicReference<RuntimeException> failure = new java.util.concurrent.atomic.AtomicReference<>();
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
         read(result -> {
             boolean proceed;
             try {
                 proceed = predicate.test(result);
             } catch (RuntimeException e) {
                 failure.set(e);
-                throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                throw new ReadStoppedException();
             }
             if (!proceed) {
-                throw new io.github.dornol.excelkit.core.ReadStoppedException();
+                throw new ReadStoppedException();
             }
         });
         if (failure.get() != null) throw failure.get();
@@ -351,7 +210,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         T currentInstance = instanceSupplier.get();
         boolean success = true;
         List<String> messages = new ArrayList<>();
-        List<io.github.dornol.excelkit.core.CellError> cellErrors = new ArrayList<>();
+        List<CellError> cellErrors = new ArrayList<>();
 
         for (int i = 0; i < columns.size(); i++) {
             int actualIndex = resolvedIndices[i];
@@ -378,7 +237,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private List<String> rawValues(String[] line) {
-        return java.util.Arrays.asList(line.clone());
+        return Arrays.asList(line.clone());
     }
 
     private void skipToHeader(CSVReader reader) throws Exception {

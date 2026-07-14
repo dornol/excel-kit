@@ -12,6 +12,8 @@ import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
@@ -324,7 +326,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private ReadSummary summarize(ExcelReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
-        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.summarize(
+        return summarizeRead(
                 handler::read, handler::wasStoppedEarly, consumer);
     }
 
@@ -342,7 +344,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private ReadReport report(ExcelReadHandler<T> handler, int maxCollectedErrors) {
-        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.<T>report(
+        return collectReadReport(
                 consumer -> handler.read(consumer), handler::wasStoppedEarly, maxCollectedErrors);
     }
 
@@ -397,7 +399,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private ReadSummary readWhile(ExcelReadHandler<T> handler, Predicate<ReadResult<T>> predicate) {
-        return io.github.dornol.excelkit.core.internal.ReaderExecutionSupport.readWhile(
+        return summarizeReadWhile(
                 handler::readWhile, handler::wasStoppedEarly, predicate);
     }
 
@@ -525,7 +527,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         }
     }
 
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ExcelReader.class);
+    private static final Logger log = LoggerFactory.getLogger(ExcelReader.class);
 
     private static void cleanupTemp(Path tempDir, Path tempFile) {
         if (tempFile != null) {

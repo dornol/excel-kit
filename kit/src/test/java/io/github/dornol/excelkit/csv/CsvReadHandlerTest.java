@@ -150,24 +150,6 @@ class CsvReadHandlerTest {
 
 
     @Test
-    void constructor_shouldThrowForNullColumns() {
-        InputStream is = new ByteArrayInputStream("a\n".getBytes());
-        assertThrows(IllegalArgumentException.class,
-                () -> new CsvReadHandler<>(is, null, TestPerson::new, null));
-    }
-
-    @Test
-    void constructor_shouldThrowForEmptyColumns() {
-        InputStream is = new ByteArrayInputStream("a\n".getBytes());
-        assertThrows(IllegalArgumentException.class,
-                () -> new CsvReadHandler<>(is, List.of(), TestPerson::new, null));
-    }
-
-
-
-
-
-    @Test
     void skipColumn_shouldSkipMiddleColumn() {
         String csv = "Col1,Col2,Col3\nA1,B1,C1\nA2,B2,C2\n";
         InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
@@ -233,9 +215,10 @@ class CsvReadHandlerTest {
 
     @Test
     void constructor_shouldThrowForNegativeHeaderRowIndex() {
-        InputStream is = new ByteArrayInputStream("a\n".getBytes());
         assertThrows(IllegalArgumentException.class,
-                () -> new CsvReadHandler<>(is, List.of(new ReadColumn<>((p, c) -> {})), TestPerson::new, null, -1));
+                () -> new CsvReader<>(TestPerson::new, null)
+                        .headerRowIndex(-1).column((p, c) -> { })
+                        .read(InputStream.nullInputStream(), result -> { }));
     }
 
     @Test

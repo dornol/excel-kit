@@ -228,7 +228,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         Cursor cursor = new Cursor(currentRow);
         int headerRowIndex = currentRow;
 
-        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
+        ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
         int headerRowIdx = cursor.getRowOfSheet() - 1;
         ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
 
@@ -248,11 +248,11 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     int preambleRow = ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
                     cursor.setRowOfSheet(preambleRow);
                     headerRowIndex = preambleRow;
-                    ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
+                    ExcelHeaderWriter.write(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
                 }
-                ExcelWriteSupport.writeRowCells(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
+                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             }
         }
@@ -260,7 +260,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
         for (SXSSFSheet s : allSheets) {
-            ExcelWriteSupport.applyPostProcessing(s, columns, headerRowIndex, cfg);
+            ExcelSheetPostProcessor.apply(s, columns, headerRowIndex, cfg);
         }
         if (tableOptions != null) {
             if (allSheets.size() > 1 && !tableOptions.perRolloverSheet()) {

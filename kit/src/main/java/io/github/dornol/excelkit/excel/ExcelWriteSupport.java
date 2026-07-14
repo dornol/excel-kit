@@ -14,6 +14,7 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 
 import org.jspecify.annotations.Nullable;
 
@@ -52,24 +53,6 @@ class ExcelWriteSupport {
             row = cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
         }
         return row;
-    }
-
-    /**
-     * Applies all post-processing steps (column widths, validations, outlines, hiding,
-     * protection, conditional formatting, print setup, tab color) to a single sheet.
-     */
-    static <T> void applyPostProcessing(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
-                                         int headerRowIndex, SheetConfig<T> cfg) {
-        applyColumnWidths(sheet, columns);
-        applyDataValidations(sheet, columns, headerRowIndex);
-        applyColumnOutline(sheet, columns);
-        applyColumnHidden(sheet, columns);
-        applySheetProtection(sheet, cfg.sheetPassword);
-        applyConditionalFormatting(sheet, cfg.conditionalRules, headerRowIndex,
-                columns.size(), sheet.getLastRowNum());
-        applyPrintSetup(sheet, cfg.printSetup, headerRowIndex);
-        applyTabColor(sheet, cfg.tabColor);
-        applyNamedRanges(sheet, cfg.namedRanges, headerRowIndex);
     }
 
     /**
@@ -131,7 +114,7 @@ class ExcelWriteSupport {
             font.setBold(baseFont.getBold());
             font.setFontHeight(baseFont.getFontHeight());
             font.setFontName(baseFont.getFontName());
-            ((org.apache.poi.xssf.usermodel.XSSFFont) font).setColor(
+            ((XSSFFont) font).setColor(
                     new XSSFColor(new byte[]{(byte) fontColor[0], (byte) fontColor[1], (byte) fontColor[2]}));
             style.setFont(font);
             return style;
@@ -467,8 +450,8 @@ class ExcelWriteSupport {
                 if (rowStyle.italic != null) newFont.setItalic(rowStyle.italic);
                 if (rowStyle.strikethrough != null) newFont.setStrikeout(rowStyle.strikethrough);
                 if (rowStyle.fontColor != null) {
-                    newFont.setColor(org.apache.poi.xssf.usermodel.XSSFFont.DEFAULT_FONT_COLOR);
-                    if (newFont instanceof org.apache.poi.xssf.usermodel.XSSFFont xf) {
+                    newFont.setColor(XSSFFont.DEFAULT_FONT_COLOR);
+                    if (newFont instanceof XSSFFont xf) {
                         xf.setColor(new XSSFColor(new byte[]{
                                 (byte) rowStyle.fontColor.getR(),
                                 (byte) rowStyle.fontColor.getG(),
