@@ -387,18 +387,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @return {@code true} if valid or no validator is configured, {@code false} if violations exist
      */
     protected boolean validateIfNeeded(T instance, List<String> messages) {
-        if (validator == null) {
-            return true;
-        }
-
-        Set<ConstraintViolation<T>> violations = validator.validate(instance);
-        if (violations.isEmpty()) return true;
-
-        violations.stream()
-                .map(ConstraintViolation::getMessage)
-                .forEach(messages::add);
-
-        return false;
+        return RowMappingSupport.validate(instance, validator, messages);
     }
 
     /**
@@ -459,19 +448,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected boolean mapColumn(java.util.function.BiConsumer<T, CellData> setter, T instance, CellData cellData,
                                 int columnIndex, List<String> headerNames, List<String> messages,
                                 @Nullable List<CellError> cellErrors) {
-        try {
-            setter.accept(instance, cellData);
-            return true;
-        } catch (Exception e) {
-            String header = (columnIndex < headerNames.size()) ? headerNames.get(columnIndex) : "column#" + columnIndex;
-            String message = "Failed to set column '" + header + "': value='" + cellData.formattedValue() + "', reason=" + e.getMessage();
-            messages.add(message);
-            if (cellErrors != null) {
-                cellErrors.add(new CellError(columnIndex, header, cellData.formattedValue(), message));
-            }
-            log.warn("Column mapping failed for '{}': value='{}'", header, cellData.formattedValue(), e);
-            return false;
-        }
+        return RowMappingSupport.map(setter, instance, cellData, columnIndex, headerNames, messages, cellErrors);
     }
 
     /**
@@ -493,16 +470,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected boolean mapColumn(ReadColumn<T> column, T instance, CellData cellData,
                                 int columnIndex, List<String> headerNames, List<String> messages,
                                 @Nullable List<CellError> cellErrors) {
-        if (column.isRequired() && cellData.isEmpty()) {
-            String header = (columnIndex < headerNames.size()) ? headerNames.get(columnIndex) : "column#" + columnIndex;
-            String message = "Required column '" + header + "' is empty";
-            messages.add(message);
-            if (cellErrors != null) {
-                cellErrors.add(new CellError(columnIndex, header, cellData.formattedValue(), message));
-            }
-            return false;
-        }
-        return mapColumn(column.setter(), instance, cellData, columnIndex, headerNames, messages, cellErrors);
+        return RowMappingSupport.map(column, instance, cellData, columnIndex, headerNames, messages, cellErrors);
     }
 
     /**
@@ -527,17 +495,6 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         if (rowMapper == null) {
             throw new IllegalStateException("rowMapper must not be null in mapping mode");
         }
-        T instance;
-        try {
-            instance = rowMapper.apply(rowData);
-        } catch (Exception e) {
-            log.warn("Row mapping failed", e);
-            List<String> messages = new ArrayList<>();
-            messages.add("Row mapping failed: " + e.getMessage());
-            return new ReadResult<>(null, false, messages, e, fileRowNum, List.of(), rawValues);
-        }
-        List<String> messages = new ArrayList<>();
-        boolean valid = validateIfNeeded(instance, messages);
-        return new ReadResult<>(instance, valid, messages.isEmpty() ? null : messages, null, fileRowNum, List.of(), rawValues);
+        return RowMappingSupport.mapRow(rowMapper, rowData, validator, fileRowNum, rawValues);
     }
 }

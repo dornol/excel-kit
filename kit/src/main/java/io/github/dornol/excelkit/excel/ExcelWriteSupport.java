@@ -375,26 +375,6 @@ class ExcelWriteSupport {
         cell.setCellComment(comment);
     }
 
-    static void applySheetProtection(SXSSFSheet sheet, @Nullable String password) {
-        if (password != null) {
-            sheet.protectSheet(password);
-        }
-    }
-
-    static <T> void applyConditionalFormatting(SXSSFSheet sheet, @Nullable List<ExcelConditionalRule> rules,
-                                                int headerRowIndex, int columnCount, int lastDataRow) {
-        if (rules == null) return;
-        for (ExcelConditionalRule rule : rules) {
-            rule.apply(sheet, headerRowIndex, columnCount, lastDataRow);
-        }
-    }
-
-    static void applyPrintSetup(SXSSFSheet sheet, @Nullable ExcelPrintSetup printSetup, int headerRowIndex) {
-        if (printSetup != null) {
-            printSetup.apply(sheet, headerRowIndex);
-        }
-    }
-
     static void applyChart(SXSSFSheet sheet, @Nullable ExcelChartConfig chartConfig,
                             int headerRow, int dataEndRow) {
         if (chartConfig != null) {
@@ -464,34 +444,6 @@ class ExcelWriteSupport {
         });
     }
 
-    static <T> void applyDataValidations(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
-                                          int headerRowIndex) {
-        DataValidationHelper helper = sheet.getDataValidationHelper();
-        for (int j = 0; j < columns.size(); j++) {
-            ExcelColumn<T> column = columns.get(j);
-            String[] options = column.getDropdownOptions();
-            if (options != null) {
-                DataValidationConstraint constraint = helper.createExplicitListConstraint(options);
-                CellRangeAddressList range = new CellRangeAddressList(
-                        headerRowIndex + 1, EXCEL_MAX_ROWS, j, j);
-                DataValidation validation = helper.createValidation(constraint, range);
-                validation.setSuppressDropDownArrow(false);
-                validation.setShowErrorBox(true);
-                sheet.addValidationData(validation);
-            }
-            ExcelValidation excelValidation = column.getValidation();
-            if (excelValidation != null) {
-                excelValidation.apply(helper, sheet, j, headerRowIndex);
-            }
-        }
-    }
-
-    static <T> void applyColumnWidths(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
-        for (int j = 0; j < columns.size(); j++) {
-            sheet.setColumnWidth(j, columns.get(j).getColumnWidth());
-        }
-    }
-
     static <T> int initSheetPreamble(SXSSFSheet sheet, SXSSFWorkbook wb,
                                       List<ExcelColumn<T>> columns,
                                       @Nullable BeforeHeaderWriter writer) {
@@ -500,30 +452,6 @@ class ExcelWriteSupport {
             currentRow = writer.write(new SheetContext(sheet, wb, currentRow, columns));
         }
         return currentRow;
-    }
-
-    static <T> void applyColumnHidden(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
-        for (int j = 0; j < columns.size(); j++) {
-            if (columns.get(j).isHidden()) {
-                sheet.setColumnHidden(j, true);
-            }
-        }
-    }
-
-    static <T> void applyColumnOutline(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
-        int i = 0;
-        while (i < columns.size()) {
-            int level = columns.get(i).getOutlineLevel();
-            if (level > 0) {
-                int start = i;
-                while (i < columns.size() && columns.get(i).getOutlineLevel() == level) {
-                    i++;
-                }
-                sheet.groupColumn(start, i - 1);
-            } else {
-                i++;
-            }
-        }
     }
 
     static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
