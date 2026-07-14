@@ -58,7 +58,7 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
 
     @Override
     public void readExcel(InputStream is, Consumer<ImportResult<BookReadDto>> consumer) {
-        createExcelReadHandler(is).read(result ->
+        createExcelReader().read(is, result ->
                 consumer.accept(new ImportResult<>(result.data(), result.success(), result.messages())));
     }
 
@@ -73,8 +73,7 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
                 .column((r, d) -> r.setPublisher(d.asString()))
                 .column((r, d) -> r.setIsbn(d.asString()))
                 .column((r, d) -> r.setDescription(d.asString()))
-                .build(is)
-                .read(result ->
+                .read(is, result ->
                         consumer.accept(new ImportResult<>(result.data(), result.success(), result.messages())));
     }
 
@@ -114,7 +113,7 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
         return writer.write(data);
     }
 
-    private ExcelReadHandler<BookReadDto> createExcelReadHandler(InputStream is) {
+    private ExcelReader<BookReadDto> createExcelReader() {
         return new ExcelReader<>(BookReadDto::new, validator)
                 .column((r, d) -> {})
                 .column((r, d) -> r.setId(d.asLong()))
@@ -123,8 +122,7 @@ class BookExcelAdapter implements FileExportPort, FileImportPort {
                 .column((r, d) -> r.setAuthor(d.asString()))
                 .column((r, d) -> r.setPublisher(d.asString()))
                 .column((r, d) -> r.setIsbn(d.asString()))
-                .column((r, d) -> r.setDescription(d.asString()))
-                .build(is);
+                .column((r, d) -> r.setDescription(d.asString()));
     }
 
 }

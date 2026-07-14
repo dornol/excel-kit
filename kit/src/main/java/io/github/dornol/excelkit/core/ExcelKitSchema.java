@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelColumn;
 import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import jakarta.validation.Validator;
 
@@ -32,7 +33,7 @@ import java.util.function.Supplier;
  * ExcelHandler handler = schema.excelWriter().write(dataStream);
  *
  * // Read Excel (matched by header name, column order doesn't matter)
- * schema.excelReader(Person::new, validator).build(inputStream).read(consumer);
+ * schema.excelReader(Person::new, validator).read(inputStream, consumer);
  * }</pre>
  *
  * @param <T> The row data type
@@ -41,9 +42,23 @@ import java.util.function.Supplier;
 public class ExcelKitSchema<T> {
 
     private final List<SchemaColumn<T>> columns;
+    private final boolean strictHeaders;
+    private final DuplicateHeaderPolicy duplicateHeaderPolicy;
+    private final @Nullable CellConversionConfig cellConversionConfig;
+    private final @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
+    private final long maxRows;
+    private final boolean skipBlankRows;
+    private final int stopAtBlankRows;
 
-    private ExcelKitSchema(List<SchemaColumn<T>> columns) {
+    private ExcelKitSchema(List<SchemaColumn<T>> columns, Builder<T> builder) {
         this.columns = Collections.unmodifiableList(columns);
+        this.strictHeaders = builder.strictHeaders;
+        this.duplicateHeaderPolicy = builder.duplicateHeaderPolicy;
+        this.cellConversionConfig = builder.cellConversionConfig;
+        this.writeErrorPolicy = builder.writeErrorPolicy;
+        this.maxRows = builder.maxRows;
+        this.skipBlankRows = builder.skipBlankRows;
+        this.stopAtBlankRows = builder.stopAtBlankRows;
     }
 
     /**
@@ -65,7 +80,19 @@ public class ExcelKitSchema<T> {
      * @return A configured ExcelWriter instance
      */
     public ExcelWriter<T> excelWriter() {
-        ExcelWriter<T> writer = ExcelWriter.<T>create();
+        return excelWriter(opts -> {});
+    }
+
+    /**
+     * Creates a new {@link ExcelWriter} with initialization options and this schema's columns.
+     *
+     * @since 0.19.0
+     */
+    public ExcelWriter<T> excelWriter(Consumer<ExcelWriter.InitOptions> configurer) {
+        ExcelWriter<T> writer = ExcelWriter.<T>create(configurer);
+        if (writeErrorPolicy != null) {
+            writer.writeErrorPolicy(writeErrorPolicy);
+        }
         for (SchemaColumn<T> col : columns) {
             if (col.writeConfigurer() != null) {
                 writer.column(col.name(), col.writeFunction(), col.writeConfigurer());
@@ -109,7 +136,17 @@ public class ExcelKitSchema<T> {
                 reader.required();
             }
         }
+        applyReaderDefaults(reader);
         return reader;
+    }
+
+    /**
+     * Creates a schema-backed Excel reader without Bean Validation.
+     *
+     * @since 0.19.0
+     */
+    public ExcelReader<T> excelReader(Supplier<T> supplier) {
+        return excelReader(supplier, null);
     }
 
     /**
@@ -123,7 +160,9 @@ public class ExcelKitSchema<T> {
      * @return A configured ExcelReader instance in mapping mode
      */
     public ExcelReader<T> excelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        return ExcelReader.mapping(rowMapper, validator);
+        ExcelReader<T> reader = ExcelReader.mapping(rowMapper, validator);
+        applyReaderDefaults(reader);
+        return reader;
     }
 
     /**
@@ -145,7 +184,17 @@ public class ExcelKitSchema<T> {
                 reader.required();
             }
         }
+        applyReaderDefaults(reader);
         return reader;
+    }
+
+    /**
+     * Creates a schema-backed CSV reader without Bean Validation.
+     *
+     * @since 0.19.0
+     */
+    public CsvReader<T> csvReader(Supplier<T> supplier) {
+        return csvReader(supplier, null);
     }
 
     /**
@@ -156,7 +205,28 @@ public class ExcelKitSchema<T> {
      * @return A configured CsvReader instance in mapping mode
      */
     public CsvReader<T> csvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        return CsvReader.mapping(rowMapper, validator);
+        CsvReader<T> reader = CsvReader.mapping(rowMapper, validator);
+        applyReaderDefaults(reader);
+        return reader;
+    }
+
+    private <R extends AbstractReader<T, R>> void applyReaderDefaults(R reader) {
+        reader.duplicateHeaderPolicy(duplicateHeaderPolicy);
+        if (strictHeaders) {
+            reader.strictHeaders();
+        }
+        if (cellConversionConfig != null) {
+            reader.cellConversion(cellConversionConfig);
+        }
+        if (maxRows >= 0) {
+            reader.maxRows(maxRows);
+        }
+        if (skipBlankRows) {
+            reader.skipBlankRows();
+        }
+        if (stopAtBlankRows > 0) {
+            reader.stopAtBlankRows(stopAtBlankRows);
+        }
     }
 
     /**
@@ -245,6 +315,13 @@ public class ExcelKitSchema<T> {
      */
     public static class Builder<T> {
         private final List<SchemaColumn<T>> columns = new ArrayList<>();
+        private boolean strictHeaders;
+        private DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FIRST;
+        private @Nullable CellConversionConfig cellConversionConfig;
+        private @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
+        private long maxRows = -1;
+        private boolean skipBlankRows;
+        private int stopAtBlankRows;
 
         private Builder() {}
 
@@ -394,7 +471,48 @@ public class ExcelKitSchema<T> {
             if (columns.isEmpty()) {
                 throw new IllegalArgumentException("At least one column must be defined");
             }
-            return new ExcelKitSchema<>(new ArrayList<>(columns));
+            return new ExcelKitSchema<>(new ArrayList<>(columns), this);
+        }
+
+        public Builder<T> strictHeaders() {
+            this.strictHeaders = true;
+            return this;
+        }
+
+        public Builder<T> duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
+            this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+            return this;
+        }
+
+        public Builder<T> cellConversion(CellConversionConfig config) {
+            this.cellConversionConfig = java.util.Objects.requireNonNull(config, "config cannot be null");
+            return this;
+        }
+
+        public Builder<T> writeErrorPolicy(ExcelWriteErrorPolicy policy) {
+            this.writeErrorPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+            return this;
+        }
+
+        public Builder<T> maxRows(long maxRows) {
+            if (maxRows < 0) {
+                throw new IllegalArgumentException("maxRows must be non-negative");
+            }
+            this.maxRows = maxRows;
+            return this;
+        }
+
+        public Builder<T> skipBlankRows() {
+            this.skipBlankRows = true;
+            return this;
+        }
+
+        public Builder<T> stopAtBlankRows(int count) {
+            if (count < 0) {
+                throw new IllegalArgumentException("count must be non-negative");
+            }
+            this.stopAtBlankRows = count;
+            return this;
         }
     }
 }

@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.regex.Pattern;
@@ -15,10 +16,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -28,16 +28,14 @@ import java.util.function.Function;
  * Provides utility methods to convert the cell's value into various Java types,
  * including number, string, boolean, date/time, etc.
  *
- * @param columnIndex    the column index of the cell (0-based)
- * @param formattedValue the formatted string value extracted from Excel
- *
  * @author dhkim
  * @since 2025-07-19
  */
-public record CellData(int columnIndex, @Nullable String formattedValue) {
+public final class CellData {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
-    private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$,₩€%원]");
-    private static volatile Locale defaultLocale = Locale.getDefault();
+    private final int columnIndex;
+    private final String formattedValue;
+    private final @Nullable CellConversionConfig conversionConfig;
 
     /**
      * Returns the default locale used by no-arg number parsing methods.
@@ -45,7 +43,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @return The current default locale
      */
     public static Locale getDefaultLocale() {
-        return defaultLocale;
+        return LegacyCellDefaults.locale();
     }
 
     /**
@@ -58,29 +56,9 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @param locale The locale to use as default (must not be null)
      */
     public static void setDefaultLocale(Locale locale) {
-        if (locale == null) {
-            throw new IllegalArgumentException("locale must not be null");
-        }
-        defaultLocale = locale;
+        if (locale == null) throw new IllegalArgumentException("locale must not be null");
+        LegacyCellDefaults.locale(locale);
     }
-
-    private static final List<DateTimeFormatter> DEFAULT_DATE_FORMATS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-            DateTimeFormatter.ofPattern("MM/dd/yy"),
-            DateTimeFormatter.ofPattern("M/d/yy"),
-            DateTimeFormatter.ISO_LOCAL_DATE
-    );
-    private static final List<DateTimeFormatter> DEFAULT_DATETIME_FORMATS = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("MM/dd/yy[ HH:mm[:ss]]"),
-            DateTimeFormatter.ofPattern("M/d/yy[ HH:mm[:ss]]"),
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    );
-    private static final Object FORMAT_LOCK = new Object();
-    private static volatile List<DateTimeFormatter> dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
-    private static volatile List<DateTimeFormatter> dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
 
     /**
      * Adds a custom date format pattern for {@link #asLocalDate()}.
@@ -91,9 +69,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @param pattern the date pattern (e.g., "dd.MM.yyyy")
      */
     public static void addDateFormat(String pattern) {
-        synchronized (FORMAT_LOCK) {
-            dateFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
-        }
+        LegacyCellDefaults.addDate(pattern);
     }
 
     /**
@@ -105,9 +81,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
      */
     public static void addDateTimeFormat(String pattern) {
-        synchronized (FORMAT_LOCK) {
-            dateTimeFormatPatterns.add(0, DateTimeFormatter.ofPattern(pattern));
-        }
+        LegacyCellDefaults.addDateTime(pattern);
     }
 
     /**
@@ -116,7 +90,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @return the list of date format patterns
      */
     public static List<DateTimeFormatter> getDateFormats() {
-        return Collections.unmodifiableList(dateFormatPatterns);
+        return LegacyCellDefaults.dates();
     }
 
     /**
@@ -125,7 +99,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @return the list of date-time format patterns
      */
     public static List<DateTimeFormatter> getDateTimeFormats() {
-        return Collections.unmodifiableList(dateTimeFormatPatterns);
+        return LegacyCellDefaults.dateTimes();
     }
 
     /**
@@ -135,9 +109,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * This method is thread-safe.
      */
     public static void resetDateFormats() {
-        synchronized (FORMAT_LOCK) {
-            dateFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATE_FORMATS);
-        }
+        LegacyCellDefaults.resetDates();
     }
 
     /**
@@ -147,19 +119,58 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * This method is thread-safe.
      */
     public static void resetDateTimeFormats() {
-        synchronized (FORMAT_LOCK) {
-            dateTimeFormatPatterns = new CopyOnWriteArrayList<>(DEFAULT_DATETIME_FORMATS);
-        }
+        LegacyCellDefaults.resetDateTimes();
     }
 
-    /** Validates and normalizes the cell data. */
-    public CellData {
+    /**
+     * Creates cell data using global conversion defaults.
+     *
+     * @param columnIndex    the column index of the cell (0-based)
+     * @param formattedValue the formatted string value extracted from Excel
+     */
+    public CellData(int columnIndex, @Nullable String formattedValue) {
+        this(columnIndex, formattedValue, null);
+    }
+
+    /**
+     * Creates cell data with reader-scoped conversion settings.
+     *
+     * @param columnIndex      the column index of the cell (0-based)
+     * @param formattedValue   the formatted string value extracted from Excel
+     * @param conversionConfig conversion settings, or {@code null} to use global defaults
+     * @since 0.19.0
+     */
+    public CellData(int columnIndex, @Nullable String formattedValue,
+                    @Nullable CellConversionConfig conversionConfig) {
         if (formattedValue == null) {
             formattedValue = "";
         }
         if (columnIndex < 0) {
             throw new IllegalArgumentException("columnIndex must be non-negative");
         }
+        this.columnIndex = columnIndex;
+        this.formattedValue = formattedValue;
+        this.conversionConfig = conversionConfig;
+    }
+
+    public int columnIndex() {
+        return columnIndex;
+    }
+
+    public String formattedValue() {
+        return formattedValue;
+    }
+
+    private Locale effectiveLocale() {
+        return conversionConfig != null ? conversionConfig.locale() : LegacyCellDefaults.locale();
+    }
+
+    private List<DateTimeFormatter> effectiveDateFormats() {
+        return conversionConfig != null ? conversionConfig.dateFormats() : LegacyCellDefaults.dates();
+    }
+
+    private List<DateTimeFormatter> effectiveDateTimeFormats() {
+        return conversionConfig != null ? conversionConfig.dateTimeFormats() : LegacyCellDefaults.dateTimes();
     }
 
     /**
@@ -177,14 +188,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
         }
 
         try {
-            // Remove NBSP, currency symbols, and whitespace
-            String cleaned = CURRENCY_SYMBOLS.matcher(
-                    formattedValue.replace("\u00A0", " "))
-                    .replaceAll("")
-                    .replace(" ", "")
-                    .trim();
-
-            return NumberFormat.getNumberInstance(locale).parse(cleaned);
+            return CellConversionSupport.number(formattedValue, locale);
         } catch (ParseException e) {
             log.warn("Failed to parse number (col {}): '{}'", columnIndex, formattedValue);
             throw new IllegalArgumentException("Failed to parse number: " + formattedValue);
@@ -199,7 +203,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @see #setDefaultLocale(Locale)
      */
     public @Nullable Number asNumber() {
-        return asNumber(defaultLocale);
+        return asNumber(effectiveLocale());
     }
 
     /**
@@ -252,7 +256,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
         if (formattedValue.isBlank()) {
             return false;
         }
-        return isTrueValue(formattedValue);
+        return CellConversionSupport.booleanValue(formattedValue);
     }
 
     /**
@@ -269,12 +273,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
         if (formattedValue.isBlank()) {
             return null;
         }
-        return isTrueValue(formattedValue);
-    }
-
-    private static boolean isTrueValue(String value) {
-        String val = value.trim().toLowerCase();
-        return val.equals("true") || val.equals("1") || val.equals("y") || val.equals("yes");
+        return CellConversionSupport.booleanValue(formattedValue);
     }
 
     /**
@@ -294,19 +293,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @return the parsed date-time, or {@code null} if blank
      */
     public @Nullable LocalDateTime asLocalDateTime() {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-
-        for (var formatter : dateTimeFormatPatterns) {
-            try {
-                return LocalDateTime.parse(formattedValue, formatter);
-            } catch (Exception e) {
-                /* skip */
-            }
-        }
-
-        throw new DateTimeParseException("Cannot parse LocalDateTime: " + formattedValue, formattedValue, 0);
+        return CellConversionSupport.dateTime(formattedValue, effectiveDateTimeFormats());
     }
 
     /**
@@ -339,17 +326,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @return the parsed date, or {@code null} if blank
      */
     public @Nullable LocalDate asLocalDate() {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-        for (var format : dateFormatPatterns) {
-            try {
-                return LocalDate.parse(formattedValue, format);
-            } catch (Exception e) {
-                /* skip */
-            }
-        }
-        return LocalDate.parse(formattedValue);
+        return CellConversionSupport.date(formattedValue, effectiveDateFormats());
     }
 
     /**
@@ -373,10 +350,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @return the parsed time, or {@code null} if blank
      */
     public @Nullable LocalTime asLocalTime() {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-        return LocalTime.parse(formattedValue);
+        return CellConversionSupport.time(formattedValue, null);
     }
 
     /**
@@ -387,10 +361,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
      * @return the parsed time, or {@code null} if blank
      */
     public @Nullable LocalTime asLocalTime(String format) {
-        if (formattedValue.isBlank()) {
-            return null;
-        }
-        return LocalTime.parse(formattedValue, DateTimeFormatter.ofPattern(format));
+        return CellConversionSupport.time(formattedValue, format);
     }
 
     /**
@@ -459,11 +430,7 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             return null;
         }
         try {
-            String cleaned = CURRENCY_SYMBOLS.matcher(
-                    formattedValue.replace("\u00A0", " "))
-                    .replaceAll("")
-                    .replace(" ", "")
-                    .trim();
+            String cleaned = CellConversionSupport.decimalText(formattedValue, effectiveLocale());
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
             log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, formattedValue);
@@ -584,6 +551,28 @@ public record CellData(int columnIndex, @Nullable String formattedValue) {
             return defaultValue;
         }
         return converter.apply(formattedValue);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof CellData cellData)) {
+            return false;
+        }
+        return columnIndex == cellData.columnIndex
+                && Objects.equals(formattedValue, cellData.formattedValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(columnIndex, formattedValue);
+    }
+
+    @Override
+    public String toString() {
+        return "CellData[columnIndex=" + columnIndex + ", formattedValue=" + formattedValue + "]";
     }
 
 }

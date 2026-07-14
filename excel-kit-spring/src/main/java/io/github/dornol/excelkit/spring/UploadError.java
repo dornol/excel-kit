@@ -13,11 +13,18 @@ public record UploadError(
         long fileRowNum,
         RowError.Type type,
         List<String> messages,
-        List<CellErrorResponse> cellErrors
+        List<CellErrorResponse> cellErrors,
+        List<String> rawValues
 ) {
     public UploadError {
         messages = messages == null ? List.of() : List.copyOf(messages);
         cellErrors = cellErrors == null ? List.of() : List.copyOf(cellErrors);
+        rawValues = rawValues == null ? List.of() : List.copyOf(rawValues);
+    }
+
+    public UploadError(long rowNum, long fileRowNum, RowError.Type type,
+                       List<String> messages, List<CellErrorResponse> cellErrors) {
+        this(rowNum, fileRowNum, type, messages, cellErrors, List.of());
     }
 
     public static UploadError from(RowError error) {
@@ -26,7 +33,8 @@ public record UploadError(
                 error.fileRowNum(),
                 error.type(),
                 error.messages(),
-                error.cellErrors().stream().map(CellErrorResponse::from).toList()
+                error.cellErrors().stream().map(CellErrorResponse::from).toList(),
+                error.rawValues()
         );
     }
 
@@ -37,7 +45,8 @@ public record UploadError(
                 result.fileRowNum(),
                 type,
                 result.messages(),
-                result.cellErrors().stream().map(CellErrorResponse::from).toList()
+                result.cellErrors().stream().map(CellErrorResponse::from).toList(),
+                result.rawValues()
         );
     }
 }

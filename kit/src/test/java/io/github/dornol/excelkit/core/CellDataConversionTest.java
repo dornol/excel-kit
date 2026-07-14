@@ -330,7 +330,7 @@ class CellDataConversionTest {
                         row.get("Name").asString("unknown"),
                         row.get("Quantity").asInt(0),
                         row.get("Price").asDouble(0.0)
-                )).build(is).read(r -> {
+                )).read(is, r -> {
                     assertTrue(r.success());
                     products.add(r.data());
                 });
@@ -368,7 +368,7 @@ class CellDataConversionTest {
             try (InputStream is = new ByteArrayInputStream(baos.toByteArray())) {
                 ExcelReader.<UUID>mapping(row ->
                         row.get("ID").as(UUID::fromString)
-                ).build(is).read(r -> {
+                ).read(is, r -> {
                     assertTrue(r.success());
                     ids.add(r.data());
                 });

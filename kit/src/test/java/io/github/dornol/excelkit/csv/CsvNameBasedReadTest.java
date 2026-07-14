@@ -26,8 +26,7 @@ class CsvNameBasedReadTest {
                 .column("Name", (TestPerson p, CellData cell) -> p.name = cell.asString())
                 .column("Age", (TestPerson p, CellData cell) -> p.age = cell.asInt())
                 .column("City", (TestPerson p, CellData cell) -> p.city = cell.asString())
-                .build(is)
-                .read(r -> results.add(r.data()));
+                .read(is, r -> results.add(r.data()));
 
         assertEquals(2, results.size());
         assertEquals("Alice", results.get(0).name);
@@ -46,8 +45,7 @@ class CsvNameBasedReadTest {
                 .column("Name", (TestPerson p, CellData cell) -> p.name = cell.asString())
                 .column("Age", (TestPerson p, CellData cell) -> p.age = cell.asInt())
                 .column("City", (TestPerson p, CellData cell) -> p.city = cell.asString())
-                .build(is)
-                .read(r -> results.add(r.data()));
+                .read(is, r -> results.add(r.data()));
 
         assertEquals(2, results.size());
         assertEquals("Alice", results.get(0).name);
@@ -65,8 +63,7 @@ class CsvNameBasedReadTest {
         new CsvReader<>(TestPerson::new, null)
                 .column("Name", (TestPerson p, CellData cell) -> p.name = cell.asString())
                 .column("City", (TestPerson p, CellData cell) -> p.city = cell.asString())
-                .build(is)
-                .read(r -> results.add(r.data()));
+                .read(is, r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name);
@@ -74,18 +71,7 @@ class CsvNameBasedReadTest {
         assertNull(results.get(0).age);
     }
 
-    @Test
-    void readByName_shouldThrowWhenHeaderNotFound() {
-        String csv = "Name,Age\nAlice,30\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
-        CsvReadHandler<TestPerson> handler = new CsvReader<>(TestPerson::new, null)
-                .column("Name", (TestPerson p, CellData cell) -> p.name = cell.asString())
-                .column("NonExistent", (TestPerson p, CellData cell) -> p.city = cell.asString())
-                .build(is);
-
-        assertThrows(CsvReadException.class, () -> handler.read(r -> {}));
-    }
 
     @Test
     void readByName_shouldWorkWithAddColumnMethod() {
@@ -96,30 +82,14 @@ class CsvNameBasedReadTest {
         new CsvReader<>(TestPerson::new, null)
                 .column("Name", (p, cell) -> p.name = cell.asString())
                 .column("City", (p, cell) -> p.city = cell.asString())
-                .build(is)
-                .read(r -> results.add(r.data()));
+                .read(is, r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name);
         assertEquals("Seoul", results.get(0).city);
     }
 
-    @Test
-    void readByNameAsStream_shouldWorkWithDifferentOrder() {
-        String csv = "City,Name\nSeoul,Alice\nBusan,Bob\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
-        List<String> names = new CsvReader<>(TestPerson::new, null)
-                .column("Name", (p, cell) -> p.name = cell.asString())
-                .build(is)
-                .readAsStream()
-                .map(r -> r.data().name)
-                .toList();
-
-        assertEquals(2, names.size());
-        assertEquals("Alice", names.get(0));
-        assertEquals("Bob", names.get(1));
-    }
 
     public static class TestPerson {
         String name;

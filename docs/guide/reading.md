@@ -8,8 +8,7 @@
 ExcelReader.setter(User::new)
     .column("Name", (u, cell) -> u.name = cell.asString()).required()
     .column("Age", (u, cell) -> u.age = cell.asInt())
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         if (result.success()) {
             User u = result.data();
         } else {
@@ -27,8 +26,7 @@ ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
         row.get("Name").asString(),
         row.get("Age").asInt(),
         row.get("City").asString()))
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         if (result.success()) {
             PersonRecord p = result.data();
         }
@@ -42,8 +40,7 @@ Header aliases are tried in order. The first alias found in the file is used.
 ```java
 ExcelReader.setter(User::new)
     .column(List.of("Name", "User Name", "이름"), (u, cell) -> u.name = cell.asString())
-    .build(inputStream)
-    .read(...);
+    .read(inputStream, ...);
 ```
 
 **RowData access methods:**
@@ -60,14 +57,13 @@ ExcelReader.setter(User::new)
 
 ```java
 ExcelReader.forMap()
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         Map<String, String> row = result.data();
         String name = row.get("Name");
     });
 
 // CSV equivalent
-CsvReader.forMap().build(inputStream).read(result -> { ... });
+CsvReader.forMap().read(inputStream, result -> { ... });
 ```
 
 ## Column Matching
@@ -78,7 +74,7 @@ CsvReader.forMap().build(inputStream).read(result -> { ... });
 ExcelReader.setter(User::new)
     .column("Name", (u, cell) -> u.name = cell.asString())
     .column("City", (u, cell) -> u.city = cell.asString())  // other columns ignored
-    .build(inputStream);
+    .read(inputStream, result -> { ... });
 ```
 
 ### Index-Based
@@ -88,7 +84,7 @@ ExcelReader.setter(User::new)
     .columnAt(0, (u, cell) -> u.name = cell.asString())
     .columnAt(2, (u, cell) -> u.city = cell.asString())
     .columnAt(4, (u, cell) -> u.phone = cell.asString())
-    .build(inputStream);
+    .read(inputStream, result -> { ... });
 ```
 
 Can be mixed with name-based mapping.
@@ -101,7 +97,7 @@ reader
     .skipColumn()
     .skipColumns(2)
     .column((u, cell) -> u.age = cell.asInt())
-    .build(inputStream);
+    .read(inputStream, result -> { ... });
 ```
 
 ## Required Columns
@@ -111,8 +107,7 @@ ExcelReader.setter(User::new)
     .column("Name", (u, c) -> u.setName(c.asString())).required()
     .column("Email", (u, c) -> u.setEmail(c.asString())).required()
     .column("Nickname", (u, c) -> u.setNick(c.asString()))  // optional
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         if (!result.success()) {
             // result.messages() -> "Required column 'Name' is empty"
         }
@@ -143,7 +138,7 @@ reader.read(
 Example import error response:
 
 ```java
-reader.build(inputStream).read(
+reader.read(inputStream,
     user -> importUser(user),
     error -> error.cellErrors().forEach(cell ->
         log.warn("file row {}, column {}, value {}: {}",
@@ -181,8 +176,7 @@ ExcelKitSchema<User> schema = ExcelKitSchema.<User>builder()
 schema.excelReader(User::new, validator)
     .strictHeaders()
     .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
-    .build(inputStream)
-    .read(user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
+    .read(inputStream, user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
 ```
 
 ## Advanced Options
@@ -217,7 +211,7 @@ ExcelReader.<Row>mapping(row -> new Row(
         row.get("Q1").asInt(), row.get("Q2").asInt(), row.get("Profit").asInt()))
     .headerRowIndex(2)  // last header row (0-based)
     .headerRows(3)      // 3 rows: 2 group + 1 column header
-    .build(in).read(result -> ...);
+    .read(in, result -> ...);
 ```
 
 **Specific sheet:**
@@ -225,20 +219,44 @@ ExcelReader.<Row>mapping(row -> new Row(
 reader.sheetIndex(1)  // 2nd sheet (0-based)
 ```
 
-**Stream-based reading:**
+**Early completion without exceptions:**
 ```java
-try (Stream<ReadResult<User>> stream = handler.readAsStream()) {
-    stream.filter(ReadResult::success)
-          .map(ReadResult::data)
-          .forEach(this::process);
-}
+reader.readWhile(inputStream, result -> {
+    process(result);
+    return shouldContinue(result); // false stops normally
+});
 ```
 
-> `readAsStream()` holds resources — always use try-with-resources.
+Callback reading is row-by-row and does not load the whole file into memory. A caller-provided
+`InputStream` remains caller-owned; use try-with-resources around it.
+`Path` and `InputStreamSource` are available consistently for `read`, `readStrict`, and
+`readWhile`. Path inputs are read directly and are never modified or deleted. Streams opened
+by an `InputStreamSource` are closed by excel-kit.
 
-Read handlers are one-shot. `read()`, `readStrict()`, and `readAsStream()` all
-consume the handler and its temporary resources. Build a new handler from a new
-`InputStream` if you need to read the same file again.
+Excel sheet discovery follows the same ownership rule: `getSheetNames(InputStream)` and
+`getSheetHeaders(InputStream, ...)` consume but do not close the supplied stream, while their
+`Path` and `InputStreamSource` overloads manage their own resources.
+
+Use `readWithSummary(...)` when aggregate counts and elapsed time are needed, or
+`readReport(input, maxCollectedErrors)` for a bounded error sample. Untrusted inputs can be
+guarded with `limits(new ReadLimits(maxBytes, maxSheets, maxColumns, maxCellCharacters))`.
+`headerPolicy(...)` provides common trim, case-insensitive, whitespace, and Unicode-normalized
+matching presets. Long-running reads can use `cancellationToken(...)` and
+`onReadProgress(interval, callback)` without transferring execution to a library thread.
+Byte limits are enforced while copying a stream, so oversized uploads are stopped before the
+entire body is materialized. `ReadLimitExceededException` exposes the limit kind, configured
+value, and observed value. Summary, report, and `readWhile` APIs accept `InputStream`, `Path`,
+and `InputStreamSource`; progress callbacks always receive a terminal event.
+For untrusted XLSX files, `securityPolicy(ReadSecurityPolicy.STRICT)` rejects formulas and
+external workbook links before sheet rows are mapped.
+Strict inspection also bounds each decompressed worksheet entry, total scanned bytes, and
+compression ratio. CSV callers can use `readDetected(...)` to apply sampled charset and
+delimiter detection without closing the caller stream.
+
+Before selecting a reader, `TabularFileDetector.detect(path)` identifies XLSX, legacy XLS,
+CSV, or unknown content from its signature instead of trusting the filename. Use
+`detectDetailed(input)` when confidence, charset, delimiter, and read-support metadata are
+needed. Caller-provided streams remain caller-owned.
 
 **Bean Validation:**
 ```java
@@ -256,6 +274,14 @@ ExcelReader.configureLargeFileSupport();  // call once at startup; JVM-global
 reader.onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count));
 ```
 
+**Row guards and blank rows:**
+```java
+reader
+    .skipBlankRows()
+    .stopAtBlankRows(3)
+    .maxRows(100_000);
+```
+
 **Percentage progress with `countRows()`:**
 ```java
 ExcelReader.setter(MyDto::new)
@@ -266,7 +292,7 @@ ExcelReader.setter(MyDto::new)
         int percent = (int) (processed * 100 / total);
         log.info("{}% ({}/{})", percent, processed, total);
     })
-    .build(inputStream).read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 ## Multi-Sheet Discovery
@@ -318,19 +344,30 @@ CellData.resetDateFormats();
 CellData.setDefaultLocale(Locale.US);  // default: Locale.KOREA
 ```
 
+Prefer reader-scoped conversion settings in server applications:
+
+```java
+CsvReader.<Order>mapping(row -> new Order(
+        row.get("Ordered At").asLocalDate(),
+        row.get("Amount").asBigDecimal()))
+    .cellConversion(c -> c
+        .locale(Locale.GERMANY)
+        .addDateFormat("dd.MM.yyyy"))
+    .read(inputStream, result -> { ... });
+```
+
 ## CSV Reading
 
 ```java
 CsvReader.setter(Product::new)
     .column("Name", (p, cell) -> p.name = cell.asString())
     .column("Price", (p, cell) -> p.price = cell.asInt())
-    .build(inputStream)
-    .read(result -> { ... });
+    .read(inputStream, result -> { ... });
 
 // Mapping mode
 CsvReader.<Person>mapping(row -> new Person(
         row.get("Name").asString(), row.get("Age").asInt()))
-    .build(inputStream).read(result -> { ... });
+    .read(inputStream, result -> { ... });
 ```
 
 CSV-specific options: see [CSV](csv.md).

@@ -40,8 +40,7 @@ class ExcelKitSchemaReadOptionsTest {
         List<RowError> errors = new ArrayList<>();
 
         aliasSchema.csvReader(TestPerson::new, null)
-                .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                .read(valid::add, errors::add);
+                .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), valid::add, errors::add);
 
         assertEquals(1, valid.size());
         assertEquals("Alice", valid.get(0).getName());
@@ -60,8 +59,7 @@ class ExcelKitSchemaReadOptionsTest {
         List<RowError> errors = new ArrayList<>();
 
         aliasSchema.excelReader(TestPerson::new, null)
-                .build(new ByteArrayInputStream(workbook))
-                .read(valid::add, errors::add);
+                .read(new ByteArrayInputStream(workbook), valid::add, errors::add);
 
         assertEquals(1, valid.size());
         assertEquals("Alice", valid.get(0).getName());
@@ -76,8 +74,7 @@ class ExcelKitSchemaReadOptionsTest {
         CsvReadException ex = assertThrows(CsvReadException.class, () ->
                 schema.csvReader(TestPerson::new, null)
                         .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
-                        .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                        .read(row -> {}));
+                        .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), row -> {}));
 
         assertTrue(rootMessage(ex).contains("Duplicate header 'Name'"));
     }
@@ -92,8 +89,7 @@ class ExcelKitSchemaReadOptionsTest {
         ExcelReadException ex = assertThrows(ExcelReadException.class, () ->
                 schema.excelReader(TestPerson::new, null)
                         .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
-                        .build(new ByteArrayInputStream(workbook))
-                        .read(row -> {}));
+                        .read(new ByteArrayInputStream(workbook), row -> {}));
 
         assertTrue(rootMessage(ex).contains("Duplicate header 'Name'"));
     }

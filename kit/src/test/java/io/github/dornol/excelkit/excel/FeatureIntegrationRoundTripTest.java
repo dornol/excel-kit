@@ -113,8 +113,7 @@ class FeatureIntegrationRoundTripTest {
                 row.get("Age").asInt(),
                 row.get("Status").asString()))
                 .password("pw")
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .readStrict(read::add);
+                .readStrict(new ByteArrayInputStream(out.toByteArray()), read::add);
 
         assertEquals(
                 java.util.List.of(new Person("Alice", 28, "A"), new Person("Bob", 45, "B")),

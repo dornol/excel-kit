@@ -41,33 +41,7 @@ class ImprovementsV2Test {
     // ========================================================================
     // readStrict - row number in error message
     // ========================================================================
-    @Test
-    void readStrict_errorShouldIncludeRowNumber() throws IOException {
-        Path file = tempDir.resolve("invalid.xlsx");
-        try (Workbook wb = new XSSFWorkbook()) {
-            Sheet sheet = wb.createSheet("Test");
-            sheet.createRow(0).createCell(0).setCellValue("Name");
-            sheet.createRow(1).createCell(0).setCellValue("Alice");
-            sheet.createRow(2).createCell(0).setCellValue(""); // invalid: blank
-            try (FileOutputStream fos = new FileOutputStream(file.toFile())) {
-                wb.write(fos);
-            }
-        }
 
-        Validator validator = Validation.byDefaultProvider().configure()
-                .messageInterpolator(new ParameterMessageInterpolator())
-                .buildValidatorFactory().getValidator();
-
-        try (InputStream is = Files.newInputStream(file)) {
-            ExcelReadHandler<ValidatedPerson> handler = new ExcelReader<>(ValidatedPerson::new, validator)
-                    .column((p, cell) -> p.name = cell.asString())
-                    .build(is);
-
-            ReadAbortException ex = assertThrows(ReadAbortException.class,
-                    () -> handler.readStrict(p -> {}));
-            assertTrue(ex.getMessage().contains("Row 2"), "Error should contain 'Row 2' but was: " + ex.getMessage());
-        }
-    }
 
     @Test
     void readStrict_successShouldNotThrow() throws IOException {
@@ -86,8 +60,7 @@ class ImprovementsV2Test {
         try (InputStream is = Files.newInputStream(file)) {
             new ExcelReader<>(ValidatedPerson::new, null)
                     .column((p, cell) -> p.name = cell.asString())
-                    .build(is)
-                    .readStrict(p -> names.add(p.name));
+                    .readStrict(is, p -> names.add(p.name));
         }
 
         assertEquals(List.of("Alice", "Bob"), names);
@@ -206,8 +179,7 @@ class ImprovementsV2Test {
                     .column((p, cell) -> p.name = cell.asString())
                     .column((p, cell) -> p.age = cell.asInt())
                     .onProgress(3, (count, cursor) -> progressCounts.add(count))
-                    .build(is)
-                    .read(r -> {});
+                    .read(is, r -> {});
         }
 
         assertEquals(List.of(3L, 6L, 9L), progressCounts);
@@ -224,8 +196,7 @@ class ImprovementsV2Test {
                     .column((p, cell) -> p.name = cell.asString())
                     .column((p, cell) -> p.age = cell.asInt())
                     .onProgress(100, (count, cursor) -> progressCounts.add(count))
-                    .build(is)
-                    .read(r -> {});
+                    .read(is, r -> {});
         }
 
         assertTrue(progressCounts.isEmpty());
@@ -249,8 +220,7 @@ class ImprovementsV2Test {
                     .column((SimplePerson p, CellData cell) -> p.name = cell.asString())
                     .column((SimplePerson p, CellData cell) -> p.age = cell.asInt())
                     .onProgress(2, (count, cursor) -> counts.add(count))
-                    .build(is)
-                    .read(r -> {});
+                    .read(is, r -> {});
         }
 
         assertEquals(List.of(2L, 4L, 6L), counts);

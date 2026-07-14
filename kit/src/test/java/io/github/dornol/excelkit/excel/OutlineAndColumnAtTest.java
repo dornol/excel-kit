@@ -98,8 +98,7 @@ class OutlineAndColumnAtTest {
                     .columnAt(0, (r, cell) -> r.first = cell.asString())
                     .columnAt(2, (r, cell) -> r.second = cell.asString())
                     .columnAt(4, (r, cell) -> r.third = cell.asString())
-                    .build(is)
-                    .read(result -> results.add(result.data()));
+                    .read(is, result -> results.add(result.data()));
         }
 
         assertEquals(1, results.size());
@@ -119,8 +118,7 @@ class OutlineAndColumnAtTest {
             new ExcelReader<>(TestRow::new, null)
                     .columnAt(2, (TestRow r, CellData cell) -> r.first = cell.asString())
                     .columnAt(0, (TestRow r, CellData cell) -> r.second = cell.asString())
-                    .build(is)
-                    .read(result -> results.add(result.data()));
+                    .read(is, result -> results.add(result.data()));
         }
 
         assertEquals(1, results.size());
@@ -137,8 +135,7 @@ class OutlineAndColumnAtTest {
         new CsvReader<>(TestRow::new, null)
                 .columnAt(0, (r, cell) -> r.first = cell.asString())
                 .columnAt(4, (r, cell) -> r.second = cell.asString())
-                .build(is)
-                .read(result -> results.add(result.data()));
+                .read(is, result -> results.add(result.data()));
 
         assertEquals(1, results.size());
         assertEquals("a0", results.get(0).first);
@@ -156,8 +153,7 @@ class OutlineAndColumnAtTest {
             new ExcelReader<>(TestRow::new, null)
                     .column("City", (TestRow r, CellData cell) -> r.first = cell.asString())
                     .columnAt(1, (r, cell) -> r.second = String.valueOf(cell.asInt()))
-                    .build(is)
-                    .read(result -> results.add(result.data()));
+                    .read(is, result -> results.add(result.data()));
         }
 
         assertEquals(1, results.size());

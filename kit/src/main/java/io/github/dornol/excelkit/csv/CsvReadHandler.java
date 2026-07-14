@@ -4,12 +4,18 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.ICSVParser;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.ProgressCallback;
+import io.github.dornol.excelkit.core.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.ReadStoppedException;
+import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.core.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
@@ -21,125 +27,79 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Reads CSV files and maps rows to Java objects.
  *
  * <h2>Resource management</h2>
  * On construction, the handler copies the input stream to a temporary file on disk.
- * These temp resources are released when:
- * <ul>
- *     <li>{@link #read(java.util.function.Consumer)} / {@link #readStrict(java.util.function.Consumer)}
- *         returns or throws — cleanup is automatic.</li>
- *     <li>The stream returned by {@link #readAsStream()} is closed — <strong>always use
- *         try-with-resources</strong>, since this stream also holds a background producer thread:
- *         <pre>{@code
- * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
- *     stream.forEach(result -> ...);
- * }
- *         }</pre>
- *         Abandoning the stream without closing it leaks the temp file until the JVM exits.</li>
- * </ul>
+ * Temporary resources are released when {@link #read(java.util.function.Consumer)},
+ * {@link #readWhile(java.util.function.Predicate)}, or {@link #readStrict(java.util.function.Consumer)}
+ * returns or throws.
  *
  * @param <T> The target row data type
  * @author dhkim
  * @since 2025-07-19
  */
-public class CsvReadHandler<T> extends AbstractReadHandler<T> {
+final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private static final Logger log = LoggerFactory.getLogger(CsvReadHandler.class);
+
+    CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config) {
+        this(input, config, false, null);
+    }
+
+    CsvReadHandler(Path path, CsvReadSessionConfig<T> config) {
+        this(InputStream.nullInputStream(), config, true, path);
+    }
+
+    private CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config,
+                           boolean externalPath, @Nullable Path path) {
+        super(input, config.supplier(), config.mapper(), config.validator(), ".csv",
+                config.options(), config.selectedColumns());
+        validateHeaderRowIndex(config.headerRowIndex());
+        if (config.columns() != null) validateColumns(config.columns());
+        this.columns = config.columns();
+        this.headerRowIndex = config.headerRowIndex();
+        this.delimiter = config.delimiter();
+        this.charset = config.charset();
+        this.quoteChar = config.quoteChar();
+        this.escapeChar = config.escapeChar();
+        this.strictQuotes = config.strictQuotes();
+        this.ignoreLeadingWhiteSpace = config.ignoreLeadingWhiteSpace();
+        this.progressInterval = config.progressInterval();
+        this.progressCallback = config.progressCallback();
+        if (externalPath) useExternalInput(path);
+        options(config.options());
+    }
 
     private final List<String> headerNames = new ArrayList<>();
     private final @Nullable List<ReadColumn<T>> columns;
     private final int headerRowIndex;
     private final char delimiter;
     private final Charset charset;
+    private final char quoteChar;
+    private final char escapeChar;
+    private final boolean strictQuotes;
+    private final boolean ignoreLeadingWhiteSpace;
     private final int progressInterval;
-    private final io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback;
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator) {
-        this(inputStream, columns, instanceSupplier, validator, 0, ',', StandardCharsets.UTF_8, 0, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier, @Nullable Validator validator, int headerRowIndex) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, ',', StandardCharsets.UTF_8, 0, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset, 0, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback) {
-        this(inputStream, columns, instanceSupplier, validator, headerRowIndex, delimiter, charset,
-                progressInterval, progressCallback, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    CsvReadHandler(InputStream inputStream, List<ReadColumn<T>> columns, Supplier<T> instanceSupplier,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        super(inputStream, instanceSupplier, validator, ".csv", strictHeaders, duplicateHeaderPolicy);
-        validateColumns(columns);
-        validateHeaderRowIndex(headerRowIndex);
-        this.columns = columns;
-        this.headerRowIndex = headerRowIndex;
-        this.delimiter = delimiter;
-        this.charset = charset;
-        this.progressInterval = progressInterval;
-        this.progressCallback = progressCallback;
-    }
-
-    /**
-     * Constructs a handler in mapping mode for immutable object construction.
-     */
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback) {
-        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
-                progressCallback, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        this(inputStream, rowMapper, validator, headerRowIndex, delimiter, charset, progressInterval,
-                progressCallback, strictHeaders, duplicateHeaderPolicy, null);
-    }
-
-    CsvReadHandler(InputStream inputStream, Function<RowData, T> rowMapper,
-                   @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-                   int progressInterval, io.github.dornol.excelkit.core.@Nullable ProgressCallback progressCallback,
-                   boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                   @Nullable Set<String> selectedMapColumns) {
-        super(inputStream, rowMapper, validator, ".csv", strictHeaders, duplicateHeaderPolicy, selectedMapColumns);
-        validateHeaderRowIndex(headerRowIndex);
-        this.columns = null;
-        this.headerRowIndex = headerRowIndex;
-        this.delimiter = delimiter;
-        this.charset = charset;
-        this.progressInterval = progressInterval;
-        this.progressCallback = progressCallback;
-    }
+    private final @Nullable ProgressCallback progressCallback;
 
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
         markConsumed();
+        Consumer<ReadResult<T>> guardedConsumer = guardedConsumer(consumer);
         try (CSVReader reader = buildCsvReader()) {
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);
@@ -147,132 +107,115 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
             String[] line;
             long rowCount = 0;
+            long emittedRows = 0;
+            int consecutiveBlankRows = 0;
 
             if (rowMapper != null) {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
-                    consumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount)));
+                    if (cancellationToken.isCancellationRequested()) throw new ReadStoppedException();
+                    List<String> rawValues = rawValues(line);
+                    if (isBlankValues(rawValues)) {
+                        consecutiveBlankRows++;
+                        if (stopAtBlankRows > 0 && consecutiveBlankRows >= stopAtBlankRows) {
+                            break;
+                        }
+                        if (skipBlankRows) {
+                            rowCount++;
+                            continue;
+                        }
+                    } else {
+                        consecutiveBlankRows = 0;
+                    }
+                    if (maxRows >= 0 && emittedRows >= maxRows) {
+                        break;
+                    }
+                    guardedConsumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
+                    emittedRows++;
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
                     }
+                    if (progressInterval > 0 && rowCount % progressInterval == 0) notifyReadProgress(rowCount, -1, -1);
                 }
             } else {
                 int[] resolvedIndices = resolveIndices();
                 while ((line = reader.readNext()) != null) {
-                    consumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount)));
+                    if (cancellationToken.isCancellationRequested()) throw new ReadStoppedException();
+                    List<String> rawValues = rawValues(line);
+                    if (isBlankValues(rawValues)) {
+                        consecutiveBlankRows++;
+                        if (stopAtBlankRows > 0 && consecutiveBlankRows >= stopAtBlankRows) {
+                            break;
+                        }
+                        if (skipBlankRows) {
+                            rowCount++;
+                            continue;
+                        }
+                    } else {
+                        consecutiveBlankRows = 0;
+                    }
+                    if (maxRows >= 0 && emittedRows >= maxRows) {
+                        break;
+                    }
+                    guardedConsumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
+                    emittedRows++;
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
                     }
+                    if (progressInterval > 0 && rowCount % progressInterval == 0) notifyReadProgress(rowCount, -1, -1);
                 }
             }
+        } catch (ReadStoppedException e) {
+            // Normal early completion requested by readWhile.
+            stoppedEarly = true;
+        } catch (ReadLimitExceededException e) {
+            throw e;
         } catch (CsvReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new CsvReadException("Failed to read CSV", e);
         } finally {
+            notifyReadCompletion(-1, -1);
             close();
         }
     }
 
-    /**
-     * Reads the CSV file as a stream of row results.
-     * <p>
-     * <strong>Important:</strong> The returned stream holds file resources (CSVReader, temp file).
-     * Always use try-with-resources to ensure proper cleanup:
-     * <pre>{@code
-     * try (Stream<ReadResult<T>> stream = handler.readAsStream()) {
-     *     stream.forEach(result -> ...);
-     * }
-     * }</pre>
-     *
-     * @return A stream of parsed and validated row results
-     */
+    boolean wasStoppedEarly() { return stoppedEarly; }
+
     @Override
-    public Stream<ReadResult<T>> readAsStream() {
-        markConsumed();
-        CSVReader reader = null;
-        try {
-            reader = buildCsvReader();
-            skipToHeader(reader);
-            String[] headerLine = readHeaderLine(reader);
-            if (headerLine == null) {
-                closeQuietly(reader);
-                throw new CsvReadException("CSV file is empty or missing header row");
+    public void readWhile(Predicate<ReadResult<T>> predicate) {
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
+        read(result -> {
+            boolean proceed;
+            try {
+                proceed = predicate.test(result);
+            } catch (RuntimeException e) {
+                failure.set(e);
+                throw new ReadStoppedException();
             }
-            prepareColumnHeaders(headerLine);
-
-            final boolean mappingMode = rowMapper != null;
-            final int[] resolvedIndices = mappingMode ? null : resolveIndices();
-            final Map<String, Integer> headerIndexMap = mappingMode ? buildHeaderIndexMap(headerNames, "CSV") : null;
-            if (mappingMode) {
-                validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
+            if (!proceed) {
+                throw new ReadStoppedException();
             }
-
-            final CSVReader csvReader = reader;
-            final AtomicLong streamRowCount = new AtomicLong(0);
-            Spliterator<ReadResult<T>> spliterator = new Spliterators.AbstractSpliterator<>(
-                    Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL) {
-                @Override
-                public boolean tryAdvance(Consumer<? super ReadResult<T>> action) {
-                    try {
-                        String[] line = csvReader.readNext();
-                        if (line == null) {
-                            closeQuietly(csvReader);
-                            close();
-                            return false;
-                        }
-                        long countBeforeIncrement = streamRowCount.get();
-                        ReadResult<T> result = mappingMode
-                                ? processRowMapping(line, headerIndexMap, fileRowNum(countBeforeIncrement))
-                                : processRow(line, resolvedIndices, fileRowNum(countBeforeIncrement));
-                        action.accept(result);
-                        long count = streamRowCount.incrementAndGet();
-                        if (progressCallback != null && progressInterval > 0
-                                && count % progressInterval == 0) {
-                            progressCallback.onProgress(count, null);
-                        }
-                        return true;
-                    } catch (Exception e) {
-                        closeQuietly(csvReader);
-                        close();
-                        throw new CsvReadException("Failed to read CSV row", e);
-                    }
-                }
-            };
-
-            reader = null; // ownership transferred to spliterator/onClose
-            return StreamSupport.stream(spliterator, false)
-                    .onClose(() -> {
-                        closeQuietly(csvReader);
-                        close();
-                    });
-        } catch (CsvReadException e) {
-            closeQuietly(reader);
-            close();
-            throw e;
-        } catch (Exception e) {
-            closeQuietly(reader);
-            close();
-            throw new CsvReadException("Failed to initialize CSV reading", e);
-        }
+        });
+        if (failure.get() != null) throw failure.get();
     }
 
-    private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum) {
+    private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum, List<String> rawValues) {
         if (columns == null || instanceSupplier == null) {
             throw new IllegalStateException("columns and instanceSupplier must not be null in setter mode");
         }
         T currentInstance = instanceSupplier.get();
         boolean success = true;
         List<String> messages = new ArrayList<>();
-        List<io.github.dornol.excelkit.core.CellError> cellErrors = new ArrayList<>();
+        List<CellError> cellErrors = new ArrayList<>();
 
         for (int i = 0; i < columns.size(); i++) {
             int actualIndex = resolvedIndices[i];
             String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
-            if (!mapColumn(columns.get(i), currentInstance, new CellData(actualIndex, columnValue),
+            if (!mapColumn(columns.get(i), currentInstance, cellData(actualIndex, columnValue),
                     actualIndex, headerNames, messages, cellErrors)) {
                 success = false;
             }
@@ -280,16 +223,21 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
         boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
         return new ReadResult<>(currentInstance, validationSuccess, messages.isEmpty() ? null : messages,
-                null, fileRowNum, cellErrors);
+                null, fileRowNum, cellErrors, rawValues);
     }
 
-    private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap, long fileRowNum) {
+    private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap, long fileRowNum,
+                                            List<String> rawValues) {
         List<CellData> cells = new ArrayList<>();
         for (int i = 0; i < line.length; i++) {
-            cells.add(new CellData(i, line[i]));
+            cells.add(cellData(i, line[i]));
         }
-        RowData rowData = new RowData(cells, headerNames, headerIndexMap);
-        return mapWithRowMapper(rowData, fileRowNum);
+        RowData rowData = new RowData(cells, headerNames, headerIndexMap, headerNormalizer);
+        return mapWithRowMapper(rowData, fileRowNum, rawValues);
+    }
+
+    private List<String> rawValues(String[] line) {
+        return Arrays.asList(line.clone());
     }
 
     private void skipToHeader(CSVReader reader) throws Exception {
@@ -335,7 +283,13 @@ public class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private CSVReader buildCsvReader() throws Exception {
-        CSVParser csvParser = new CSVParserBuilder().withSeparator(this.delimiter).build();
+        CSVParser csvParser = new CSVParserBuilder()
+                .withSeparator(this.delimiter)
+                .withQuoteChar(this.quoteChar)
+                .withEscapeChar(this.escapeChar)
+                .withStrictQuotes(this.strictQuotes)
+                .withIgnoreLeadingWhiteSpace(this.ignoreLeadingWhiteSpace)
+                .build();
         return new CSVReaderBuilder(new InputStreamReader(Files.newInputStream(getTempFile()), this.charset))
                 .withCSVParser(csvParser).build();
     }

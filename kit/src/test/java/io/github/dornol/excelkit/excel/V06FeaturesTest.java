@@ -157,8 +157,7 @@ class V06FeaturesTest {
                 new ExcelReader<>(Holder::new, null)
                         .sheetIndex(info.index())
                         .column((h, c) -> h.value = c.asString())
-                        .build(new ByteArrayInputStream(data))
-                        .read(r -> values.add(r.data().value));
+                        .read(new ByteArrayInputStream(data), r -> values.add(r.data().value));
                 allData.put(info.name(), values);
             }
 
@@ -241,8 +240,7 @@ class V06FeaturesTest {
 
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
             assertTrue(results.isEmpty());
         }
@@ -266,8 +264,7 @@ class V06FeaturesTest {
 
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
             assertEquals(2, results.size());
             assertEquals("val1", results.get(0).get("A"));
@@ -290,8 +287,7 @@ class V06FeaturesTest {
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
                     .headerRowIndex(1)
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));

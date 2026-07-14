@@ -88,7 +88,9 @@ public class ExcelWorkbook implements AutoCloseable {
     }
 
     private ExcelWorkbook(InitOptions opts) {
-        this.wb = new SXSSFWorkbook(opts.rowAccessWindowSize);
+        StreamingOptions streaming = opts.streamingOptions();
+        this.wb = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
+                streaming.compressTempFiles(), streaming.useSharedStrings());
         ExcelColor defaultColor = ExcelColor.WHITE;
         this.headerColor = new XSSFColor(new byte[]{
                 (byte) defaultColor.getR(),
@@ -111,23 +113,11 @@ public class ExcelWorkbook implements AutoCloseable {
      *
      * @since 0.17.0
      */
-    public static final class InitOptions {
-        private int rowAccessWindowSize = DEFAULT_ROW_ACCESS_WINDOW_SIZE;
+    public static final class InitOptions extends AbstractStreamingInitOptions<InitOptions> {
+        private InitOptions() { }
 
-        private InitOptions() {}
-
-        /**
-         * Sets the SXSSF row access window size. Must be set at construction time because
-         * POI's SXSSFWorkbook takes it as a constructor argument.
-         *
-         * @param size row window (must be positive)
-         * @return this options object for chaining
-         */
-        public InitOptions rowAccessWindowSize(int size) {
-            if (size <= 0) throw new IllegalArgumentException("rowAccessWindowSize must be positive");
-            this.rowAccessWindowSize = size;
-            return this;
-        }
+        @Override
+        protected InitOptions self() { return this; }
     }
 
     /**
@@ -143,7 +133,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook documentProperty(String key, String value) {
-        ExcelWriteSupport.applyDocumentProperty(wb, key, value);
+        ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
 
@@ -295,7 +285,7 @@ public class ExcelWorkbook implements AutoCloseable {
             throw new ExcelWriteException("Workbook is already finished");
         }
         finished = true;
-        ExcelWriteSupport.applyWorkbookProtection(wb, workbookPassword);
+        ExcelWorkbookSupport.applyProtection(wb, workbookPassword);
         return new ExcelHandler(wb, password);
     }
 

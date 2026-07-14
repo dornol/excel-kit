@@ -47,8 +47,7 @@ class CsvReaderMapModeTest {
             String csv = "Name,Age,City\nAlice,30,Seoul\nBob,25,Tokyo\n";
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(2, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -63,8 +62,7 @@ class CsvReaderMapModeTest {
             String csv = "Name,Age,City\nAlice,30,Seoul\n";
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(List.of("Name", "Age", "City"),
                     new ArrayList<>(results.get(0).keySet()));
@@ -81,8 +79,7 @@ class CsvReaderMapModeTest {
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
                     .dialect(CsvDialect.TSV)
-                    .build(new ByteArrayInputStream(tsv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(tsv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -95,8 +92,7 @@ class CsvReaderMapModeTest {
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
                     .delimiter('|')
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -110,8 +106,7 @@ class CsvReaderMapModeTest {
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
                     .charset(java.nio.charset.Charset.forName("EUC-KR"))
-                    .build(new ByteArrayInputStream(bytes))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(bytes), r -> results.add(r.data()));
 
             assertEquals("앨리스", results.get(0).get("이름"));
             assertEquals("서울", results.get(0).get("도시"));
@@ -123,8 +118,7 @@ class CsvReaderMapModeTest {
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
                     .headerRowIndex(2)
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -140,30 +134,13 @@ class CsvReaderMapModeTest {
                         lastCount.set(count);
                         callCount.incrementAndGet();
                     })
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> {});
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> {});
 
             assertEquals(3, callCount.get(), "onProgress fires at rows 2, 4, 6");
             assertEquals(6, lastCount.get());
         }
 
-        @Test
-        void forMap_readAsStream_producesSameRowsAsRead() {
-            String csv = "Name,Age\nAlice,30\nBob,25\n";
-            List<Map<String, String>> viaRead = new ArrayList<>();
-            CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> viaRead.add(r.data()));
 
-            List<Map<String, String>> viaStream = new ArrayList<>();
-            try (Stream<ReadResult<Map<String, String>>> s = CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .readAsStream()) {
-                s.forEach(r -> viaStream.add(r.data()));
-            }
-
-            assertEquals(viaRead, viaStream);
-        }
     }
 
     @Nested
@@ -240,8 +217,7 @@ class CsvReaderMapModeTest {
             String csv = "Name,Age\nAlice,30,extra1,extra2\n";
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals(2, results.get(0).size(),
@@ -259,8 +235,7 @@ class CsvReaderMapModeTest {
             String csv = "Name,,City\nAlice,30,Seoul\n";
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
@@ -276,8 +251,7 @@ class CsvReaderMapModeTest {
             String csv = "Name,Age,City\nAlice,,Seoul\n";
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertTrue(results.get(0).containsKey("Age"));
@@ -296,8 +270,7 @@ class CsvReaderMapModeTest {
             String csv = "A,B,A\nfirst,b-val,second\n";
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals(2, results.get(0).size(),
@@ -317,8 +290,7 @@ class CsvReaderMapModeTest {
 
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
-                    .build(new ByteArrayInputStream(withBom))
-                    .read(r -> results.add(r.data()));
+                    .read(new ByteArrayInputStream(withBom), r -> results.add(r.data()));
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"),

@@ -49,6 +49,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private int maxRows = Integer.MAX_VALUE;
     private boolean written = false;
+    private @Nullable TableOptions tableOptions;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -195,6 +196,16 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         return this;
     }
 
+    public ExcelSheetWriter<T> table(String name) {
+        return table(TableOptions.defaults(name));
+    }
+
+    public ExcelSheetWriter<T> table(TableOptions options) {
+        StructuredTableWriter.validateName(java.util.Objects.requireNonNull(options, "options cannot be null").name());
+        this.tableOptions = options;
+        return this;
+    }
+
     /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      *
@@ -217,13 +228,13 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         Cursor cursor = new Cursor(currentRow);
         int headerRowIndex = currentRow;
 
-        ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
+        ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
         int headerRowIdx = cursor.getRowOfSheet() - 1;
         ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
 
         SXSSFSheet activeSheet = this.sheet;
 
-        try (stream) {
+        {
             Iterator<T> it = stream.iterator();
             while (it.hasNext()) {
                 T rowData = it.next();
@@ -237,11 +248,11 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     int preambleRow = ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
                     cursor.setRowOfSheet(preambleRow);
                     headerRowIndex = preambleRow;
-                    ExcelWriteSupport.writeColumnHeaders(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
+                    ExcelHeaderWriter.write(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
                 }
-                ExcelWriteSupport.writeRowCells(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
+                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             }
         }
@@ -249,7 +260,19 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
         for (SXSSFSheet s : allSheets) {
-            ExcelWriteSupport.applyPostProcessing(s, columns, headerRowIndex, cfg);
+            ExcelSheetPostProcessor.apply(s, columns, headerRowIndex, cfg);
+        }
+        if (tableOptions != null) {
+            if (allSheets.size() > 1 && !tableOptions.perRolloverSheet()) {
+                throw new ExcelWriteException("Structured table spans multiple rollover sheets; enable perRolloverSheet");
+            }
+            for (int i = 0; i < allSheets.size(); i++) {
+                SXSSFSheet target = allSheets.get(i);
+                if (target.getLastRowNum() <= headerRowIndex) continue;
+                String name = allSheets.size() == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
+                StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columns.size(),
+                        tableOptions.style(), tableOptions.showRowStripes());
+            }
         }
 
         // Apply chart on last sheet
@@ -257,6 +280,12 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             SXSSFSheet lastSheet = allSheets.get(allSheets.size() - 1);
             ExcelWriteSupport.applyChart(lastSheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
         }
+    }
+
+    /** Writes rows from an Iterable without copying them. */
+    public void write(Iterable<T> rows) {
+        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
     }
 
     private SXSSFSheet createRolloverSheet(int rolloverIndex) {

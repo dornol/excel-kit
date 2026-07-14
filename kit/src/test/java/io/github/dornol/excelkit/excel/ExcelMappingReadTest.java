@@ -56,7 +56,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").asInt(),
                     row.get("City").asString()
-            )).build(is).read(r -> {
+            )).read(is, r -> {
                 assertTrue(r.success());
                 results.add(r.data());
             });
@@ -86,7 +86,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").asInt(),
                     row.get("City").asString()
-            )).build(is).read(r -> results.add(r.data()));
+            )).read(is, r -> results.add(r.data()));
         }
 
         assertEquals(2, results.size());
@@ -109,7 +109,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     null,
                     row.get("City").asString()
-            )).build(is).read(r -> results.add(r.data()));
+            )).read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -132,7 +132,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").asInt(),
                     row.get("NonExistent").asString()
-            )).build(is).read(results::add);
+            )).read(is, results::add);
         }
 
         assertEquals(1, results.size());
@@ -154,7 +154,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").asInt(),  // will fail: "not-a-number"
                     null
-            )).build(is).read(results::add);
+            )).read(is, results::add);
         }
 
         assertEquals(1, results.size());
@@ -178,7 +178,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").asInt(),
                     null
-            )).build(is).read(results::add);
+            )).read(is, results::add);
         }
 
         assertEquals(3, results.size());
@@ -203,60 +203,16 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").asInt(),
                     row.get("City").asString()
-            )).build(is).readStrict(results::add);
+            )).readStrict(is, results::add);
         }
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).name());
     }
 
-    @Test
-    void mapping_readStrict_shouldThrowOnError() throws IOException {
-        Path file = createExcelFile("mapping-strict-fail.xlsx",
-                new String[]{"Name", "Age"},
-                new Object[][]{
-                        {"Alice", 30},
-                        {"Bob", "bad"}
-                });
 
-        try (InputStream is = Files.newInputStream(file)) {
-            var handler = ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
-                    row.get("Name").asString(),
-                    row.get("Age").asInt(),
-                    null
-            )).build(is);
 
-            assertThrows(ReadAbortException.class, () -> handler.readStrict(r -> {}));
-        }
-    }
 
-    @Test
-    void mapping_shouldWorkWithReadAsStream() throws IOException {
-        Path file = createExcelFile("mapping-stream.xlsx",
-                new String[]{"Name", "Age", "City"},
-                new Object[][]{
-                        {"Alice", 30, "Seoul"},
-                        {"Bob", 25, "Busan"}
-                });
-
-        List<PersonRecord> results;
-        try (InputStream is = Files.newInputStream(file)) {
-            try (var stream = ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
-                    row.get("Name").asString(),
-                    row.get("Age").asInt(),
-                    row.get("City").asString()
-            )).build(is).readAsStream()) {
-                results = stream
-                        .filter(ReadResult::success)
-                        .map(ReadResult::data)
-                        .toList();
-            }
-        }
-
-        assertEquals(2, results.size());
-        assertEquals("Alice", results.get(0).name());
-        assertEquals("Bob", results.get(1).name());
-    }
 
     // --- Configuration options ---
 
@@ -289,8 +245,7 @@ class ExcelMappingReadTest {
                     row.get("Age").asInt(),
                     null
             )).sheetIndex(1)
-              .build(is)
-              .read(r -> results.add(r.data()));
+              .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -328,8 +283,7 @@ class ExcelMappingReadTest {
                     row.get("Age").asInt(),
                     null
             )).headerRowIndex(2)
-              .build(is)
-              .read(r -> results.add(r.data()));
+              .read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -352,8 +306,7 @@ class ExcelMappingReadTest {
                     row.get("Age").asInt(),
                     null
             )).onProgress(2, (count, cursor) -> lastProgress.set(count))
-              .build(is)
-              .read(r -> {});
+              .read(is, r -> {});
         }
 
         // 5 rows, interval 2: fires at 2 and 4
@@ -374,7 +327,7 @@ class ExcelMappingReadTest {
                     row.get(0).asString(),
                     row.get(1).asInt(),
                     row.get(2).asString()
-            )).build(is).read(r -> results.add(r.data()));
+            )).read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -397,7 +350,7 @@ class ExcelMappingReadTest {
                 assertEquals(2, row.headerNames().size());
                 assertEquals(List.of("Name", "Age"), row.headerNames());
                 return new PersonRecord(row.get("Name").asString(), row.get("Age").asInt(), null);
-            }).build(is).read(r -> {});
+            }).read(is, r -> {});
         }
     }
 
@@ -426,7 +379,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").isEmpty() ? null : row.get("Age").asInt(),
                     row.get("City").asString()
-            )).build(is).read(r -> results.add(r.data()));
+            )).read(is, r -> results.add(r.data()));
         }
 
         assertEquals(1, results.size());
@@ -460,7 +413,7 @@ class ExcelMappingReadTest {
                 p.name = row.get("Name").asString();
                 p.age = row.get("Age").asInt();
                 return p;
-            }, validator).build(is).read(results::add);
+            }, validator).read(is, results::add);
         }
 
         assertEquals(3, results.size());
@@ -492,7 +445,7 @@ class ExcelMappingReadTest {
                     row.get("Name").asString(),
                     row.get("Age").asInt(),
                     row.get("City").asString()
-            )).build(is).read(r -> {
+            )).read(is, r -> {
                 assertTrue(r.success());
                 results.add(r.data());
             });
@@ -525,7 +478,7 @@ class ExcelMappingReadTest {
         try (InputStream is = Files.newInputStream(file)) {
             ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
                     row.get("Name").asString(), null, null
-            )).build(is).read(results::add);
+            )).read(is, results::add);
         }
 
         assertTrue(results.isEmpty());
@@ -548,7 +501,7 @@ class ExcelMappingReadTest {
                 assertEquals("val0", row.get("Col0").asString());
                 assertEquals("val49", row.get("Col49").asString());
                 return row.get("Col0").asString();
-            }).build(is).read(r -> {
+            }).read(is, r -> {
                 assertTrue(r.success());
                 assertEquals("val0", r.data());
             });

@@ -52,8 +52,7 @@ class MapWriterReaderTest {
 
         List<Map<String, String>> results = new ArrayList<>();
         ExcelReader.forMap()
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
         assertEquals(2, results.size());
         assertEquals("Alice", results.get(0).get("Name"));
@@ -62,22 +61,7 @@ class MapWriterReaderTest {
         assertEquals("Tokyo", results.get(1).get("City"));
     }
 
-    @Test
-    void excelMapReader_readAsStream() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.forMap("Name").write(Stream.of(
-                Map.of("Name", "Alice"),
-                Map.of("Name", "Bob")
-        )).writeTo(out);
 
-        var results = ExcelReader.forMap()
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .readAsStream()
-                .toList();
-
-        assertEquals(2, results.size());
-        assertEquals("Alice", results.get(0).data().get("Name"));
-    }
 
     @Test
     void excelMapReader_withSheetIndex() throws IOException {
@@ -95,8 +79,7 @@ class MapWriterReaderTest {
         List<Map<String, String>> results = new ArrayList<>();
         ExcelReader.forMap()
                 .sheetIndex(1)
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("second", results.get(0).get("B"));
@@ -174,8 +157,7 @@ class MapWriterReaderTest {
 
         List<ReadResult<Map<String, String>>> results = new ArrayList<>();
         CsvReader.forMap()
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(results::add);
+                .read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
         assertEquals(2, results.size());
 
@@ -195,43 +177,9 @@ class MapWriterReaderTest {
         assertEquals("Tokyo", row1.get("City"));
     }
 
-    @Test
-    void csvMapReader_readAsStream() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        CsvWriter.forMap("Name", "Score").write(Stream.of(
-                Map.of("Name", "Alice", "Score", 95),
-                Map.of("Name", "Bob", "Score", 80)
-        )).writeTo(out);
 
-        List<ReadResult<Map<String, String>>> results;
-        try (var stream = CsvReader.forMap()
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .readAsStream()) {
-            results = stream.toList();
-        }
 
-        assertEquals(2, results.size());
-        assertTrue(results.get(0).success());
-        assertEquals("Alice", results.get(0).data().get("Name"));
-        assertEquals("95", results.get(0).data().get("Score"));
-        assertTrue(results.get(1).success());
-        assertEquals("Bob", results.get(1).data().get("Name"));
-        assertEquals("80", results.get(1).data().get("Score"));
-    }
 
-    @Test
-    void csvMapReader_readAsStream_closesResources() throws IOException {
-        String csv = "Name\nAlice\n";
-        var handler = CsvReader.forMap()
-                .build(new ByteArrayInputStream(csv.getBytes()));
-
-        try (var stream = handler.readAsStream()) {
-            List<ReadResult<Map<String, String>>> results = stream.toList();
-            assertEquals(1, results.size());
-            assertEquals("Alice", results.get(0).data().get("Name"));
-        }
-        // no exception means resources cleaned up properly
-    }
 
     @Test
     void csvMapReader_withDelimiter() throws IOException {
@@ -239,8 +187,7 @@ class MapWriterReaderTest {
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
                 .delimiter('\t')
-                .build(new ByteArrayInputStream(tsv.getBytes()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(tsv.getBytes()), r -> results.add(r.data()));
 
         assertEquals(2, results.size());
         assertEquals(Set.of("Name", "Age"), results.get(0).keySet());
@@ -256,8 +203,7 @@ class MapWriterReaderTest {
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
                 .dialect(CsvDialect.TSV)
-                .build(new ByteArrayInputStream(tsv.getBytes()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(tsv.getBytes()), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).get("Name"));
@@ -270,8 +216,7 @@ class MapWriterReaderTest {
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
                 .headerRowIndex(1)
-                .build(new ByteArrayInputStream(csv.getBytes()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(csv.getBytes()), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals(Set.of("Name", "Age"), results.get(0).keySet());
@@ -293,8 +238,7 @@ class MapWriterReaderTest {
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
                 .onProgress(2, (count, total) -> progressCounts.add(count))
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data()));
 
         // Verify data was actually read correctly
         assertEquals(4, results.size());
@@ -315,8 +259,7 @@ class MapWriterReaderTest {
 
         List<ReadResult<Map<String, String>>> results = new ArrayList<>();
         CsvReader.forMap()
-                .build(new ByteArrayInputStream(out.toByteArray()))
-                .read(results::add);
+                .read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
         assertEquals(2, results.size());
 
@@ -341,8 +284,7 @@ class MapWriterReaderTest {
         String csv = "";
         assertThrows(CsvReadException.class, () ->
                 CsvReader.forMap()
-                        .build(new ByteArrayInputStream(csv.getBytes()))
-                        .read(r -> {}));
+                        .read(new ByteArrayInputStream(csv.getBytes()), r -> {}));
     }
 
     @Test
@@ -350,8 +292,7 @@ class MapWriterReaderTest {
         String csv = "Name,Age\n";
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
-                .build(new ByteArrayInputStream(csv.getBytes()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(csv.getBytes()), r -> results.add(r.data()));
 
         assertTrue(results.isEmpty());
     }
@@ -363,8 +304,7 @@ class MapWriterReaderTest {
         String csv = "Name,Age,City\nAlice,30\n";
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
-                .build(new ByteArrayInputStream(csv.getBytes()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(csv.getBytes()), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).get("Name"));
@@ -382,8 +322,7 @@ class MapWriterReaderTest {
 
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
-                .build(new ByteArrayInputStream(csvBytes))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(csvBytes), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         // BOM should be stripped — key should be "Name", not "\uFEFFName"
@@ -405,8 +344,7 @@ class MapWriterReaderTest {
         String csv = "C,A,B\n3,1,2\n";
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
-                .build(new ByteArrayInputStream(csv.getBytes()))
-                .read(r -> results.add(r.data()));
+                .read(new ByteArrayInputStream(csv.getBytes()), r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         // LinkedHashMap preserves insertion order

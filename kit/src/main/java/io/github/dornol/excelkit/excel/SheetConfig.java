@@ -22,6 +22,34 @@ import java.util.function.Function;
  */
 class SheetConfig<T> {
 
+    SheetConfig() {}
+
+    SheetConfig(SheetConfig<T> source) {
+        rowHeightInPoints = source.rowHeightInPoints;
+        headerRowHeightInPoints = source.headerRowHeightInPoints;
+        autoFilter = source.autoFilter;
+        freezePaneCols = source.freezePaneCols;
+        freezePaneRows = source.freezePaneRows;
+        beforeHeaderWriter = source.beforeHeaderWriter;
+        afterDataWriter = source.afterDataWriter;
+        rowColorFunction = source.rowColorFunction;
+        rowStyleEntries.addAll(source.rowStyleEntries);
+        progressCallback = source.progressCallback;
+        progressInterval = source.progressInterval;
+        autoWidthSampleRows = source.autoWidthSampleRows;
+        sheetPassword = source.sheetPassword;
+        conditionalRules = source.conditionalRules == null ? null : List.copyOf(source.conditionalRules);
+        chartConfig = source.chartConfig;
+        printSetup = source.printSetup;
+        tabColor = source.tabColor == null ? null : source.tabColor.clone();
+        defaultStyleConfig = source.defaultStyleConfig;
+        summaryConfig = source.summaryConfig;
+        sheetNameFunction = source.sheetNameFunction;
+        groupComments = source.groupComments == null ? null : Map.copyOf(source.groupComments);
+        namedRanges = source.namedRanges == null ? null : Map.copyOf(source.namedRanges);
+        writeErrorPolicy = source.writeErrorPolicy;
+    }
+
     static final float DEFAULT_ROW_HEIGHT_POINTS = 20f;
 
     float rowHeightInPoints = DEFAULT_ROW_HEIGHT_POINTS;
@@ -49,6 +77,7 @@ class SheetConfig<T> {
     @Nullable Map<List<String>, ExcelCellComment> groupComments;
     /** Named ranges: name → column index. Applied after data is written. */
     @Nullable Map<String, Integer> namedRanges;
+    ExcelWriteErrorPolicy writeErrorPolicy = ExcelWriteErrorPolicy.LENIENT;
 
     record RowStyleEntry<T>(java.util.function.Predicate<T> predicate, RowStyleConfig style) {}
 

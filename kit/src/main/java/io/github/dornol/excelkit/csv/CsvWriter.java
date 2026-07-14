@@ -307,7 +307,8 @@ public class CsvWriter<T> {
      * @return A handler for streaming the resulting CSV
      */
     public CsvHandler write(Stream<T> stream) {
-        if (this.columns.isEmpty()) {
+        CsvWriteOptions<T> options = snapshotOptions();
+        if (options.columns().isEmpty()) {
             throw new CsvWriteException("columns setting required");
         }
         validateUniqueColumnNames();
@@ -315,13 +316,19 @@ public class CsvWriter<T> {
         Path tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".csv");
 
         try (OutputStream os = Files.newOutputStream(tempFile)) {
-            writeTempFile(stream, os);
+            writeTempFile(stream, os, options);
         } catch (Exception e) {
             cleanup(tempDir);
             throw new CsvWriteException("Failed to write CSV", e);
         }
 
         return new CsvHandler(tempDir, tempFile);
+    }
+
+    /** Writes rows from an Iterable without copying them. */
+    public CsvHandler write(Iterable<T> rows) {
+        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        return write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
     }
 
     private void cleanup(Path tempDir) {
@@ -349,25 +356,22 @@ public class CsvWriter<T> {
      * @param stream       The data stream
      * @param outputStream The output stream to write to
      */
-    private void writeTempFile(Stream<T> stream, OutputStream outputStream) {
+    private void writeTempFile(Stream<T> stream, OutputStream outputStream, CsvWriteOptions<T> options) {
         Stream<T> sequential = stream.sequential();
-        String joining = String.valueOf(this.delimiter);
-        try (
-                sequential;
-                var writer = new PrintWriter(new OutputStreamWriter(outputStream, this.charset))
-        ) {
+        String joining = String.valueOf(options.delimiter());
+        try (var writer = new PrintWriter(new OutputStreamWriter(outputStream, options.charset()))) {
             Cursor cursor = new Cursor();
             cursor.initRow();
 
             // UTF-8 BOM for Excel compatibility
-            if (this.bom) {
+            if (options.bom()) {
                 writer.write('\uFEFF');
             }
 
             // Write header row
-            writer.println(columns.stream()
+            writer.println(options.columns().stream()
                     .map(CsvColumn::getName)
-                    .map(this::escapeCsv)
+                    .map(value -> escapeCsv(value, options))
                     .collect(Collectors.joining(joining)));
             cursor.plusRow();
 
@@ -375,20 +379,20 @@ public class CsvWriter<T> {
             sequential.forEach(row -> {
                 cursor.plusTotal();
                 cursor.plusRow();
-                String line = columns.stream()
+                String line = options.columns().stream()
                         .map(col -> col.applyFunction(row, cursor))
-                        .map(this::escapeCsv)
+                        .map(value -> escapeCsv(value, options))
                         .collect(Collectors.joining(joining));
                 writer.println(line);
-                if (progressCallback != null && progressInterval > 0
-                        && cursor.getCurrentTotal() % progressInterval == 0) {
-                    progressCallback.onProgress(cursor.getCurrentTotal(), cursor);
+                if (options.progressCallback() != null && options.progressInterval() > 0
+                        && cursor.getCurrentTotal() % options.progressInterval() == 0) {
+                    options.progressCallback().onProgress(cursor.getCurrentTotal(), cursor);
                 }
             });
 
             // Write after-data content
-            if (this.afterDataWriter != null) {
-                this.afterDataWriter.write(writer);
+            if (options.afterDataWriter() != null) {
+                options.afterDataWriter().write(writer);
             }
         }
     }
@@ -401,13 +405,17 @@ public class CsvWriter<T> {
      * @return A properly escaped CSV field
      */
     private String escapeCsv(@Nullable Object input) {
+        return escapeCsv(input, snapshotOptions());
+    }
+
+    private String escapeCsv(@Nullable Object input, CsvWriteOptions<T> options) {
         if (input == null) {
-            return quoting == CsvQuoting.ALL ? "\"\"" : "";
+            return options.quoting() == CsvQuoting.ALL ? "\"\"" : "";
         }
         String value = input.toString();
         // CSV Injection defense: prefix formula-triggering characters with a single quote.
         // Also checks after leading spaces — Excel strips spaces before evaluating formulas.
-        if (csvInjectionDefense && !value.isEmpty()) {
+        if (options.csvInjectionDefense() && !value.isEmpty()) {
             char first = value.charAt(0);
             if (isFormulaCharacter(first)) {
                 value = "'" + value;
@@ -420,13 +428,13 @@ public class CsvWriter<T> {
                 }
             }
         }
-        boolean needsQuote = value.contains(String.valueOf(this.delimiter))
+        boolean needsQuote = value.contains(String.valueOf(options.delimiter()))
                 || value.contains("\"") || value.contains("\n") || value.contains("\r");
 
-        if (quoting == CsvQuoting.ALL) {
+        if (options.quoting() == CsvQuoting.ALL) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
-        if (quoting == CsvQuoting.NON_NUMERIC && !isNumeric(value)) {
+        if (options.quoting() == CsvQuoting.NON_NUMERIC && !isNumeric(value)) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
         if (needsQuote) {
@@ -434,6 +442,23 @@ public class CsvWriter<T> {
         }
         return value;
     }
+
+    private CsvWriteOptions<T> snapshotOptions() {
+        return new CsvWriteOptions<>(List.copyOf(columns), delimiter, charset, bom, afterDataWriter,
+                progressCallback, progressInterval, csvInjectionDefense, quoting);
+    }
+
+    private record CsvWriteOptions<T>(
+            List<CsvColumn<T>> columns,
+            char delimiter,
+            Charset charset,
+            boolean bom,
+            @Nullable CsvAfterDataWriter afterDataWriter,
+            @Nullable ProgressCallback progressCallback,
+            int progressInterval,
+            boolean csvInjectionDefense,
+            CsvQuoting quoting
+    ) {}
 
     private static boolean isNumeric(String value) {
         if (value.isEmpty()) return false;

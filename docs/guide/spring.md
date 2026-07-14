@@ -42,7 +42,7 @@ JSON and a readable HTML/text summary for manual testing:
 @PostMapping("/upload")
 public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
     UploadResult<User> result = ExcelKitUpload.excel(
-        file, in -> userReader.build(in));
+        file, (in, consumer) -> userReader.read(in, consumer));
     return ResponseEntity.ok(result);
 }
 ```
@@ -53,12 +53,26 @@ Validate size and filename extension before opening uploads:
 @PostMapping("/upload")
 public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
     MultipartFile checked = ExcelKitMultipartFile.requireSizeAtMost(
-        ExcelKitMultipartFile.requireExcelOrCsv(file), 5 * 1024 * 1024);
+        ExcelKitMultipartFile.requireExcelOrCsvContent(file), 5 * 1024 * 1024);
 
     return ResponseEntity.ok(ExcelKitUpload.excel(
-        checked, in -> userReader.build(in)));
+        checked, (in, consumer) -> userReader.read(in, consumer)));
 }
 ```
+
+For schema-backed uploads, pass the schema directly:
+
+```java
+@PostMapping("/upload")
+public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
+    MultipartFile checked = ExcelKitMultipartFile.requireExcelOrCsvContent(file);
+    return ResponseEntity.ok(ExcelKitUpload.excel(checked, userSchema, User::new, validator));
+}
+```
+
+`UploadResult.summary()` includes total rows, success/error counts, duration,
+filename, and file size. `UploadError.rawValues()` carries the source row values
+for correction screens.
 
 When users need a downloadable correction report, reuse the same upload parse
 path and convert the structured errors to CSV or Excel:
@@ -67,7 +81,7 @@ path and convert the structured errors to CSV or Excel:
 @PostMapping("/upload/errors.csv")
 public ResponseEntity<StreamingResponseBody> errorReport(MultipartFile file) {
     UploadResult<User> result = ExcelKitUpload.excel(
-        file, in -> userReader.build(in));
+        file, (in, consumer) -> userReader.read(in, consumer));
     return ExcelKitErrorResponse.csv(result, "read-errors");
 }
 ```
@@ -79,6 +93,11 @@ Schema-based upload templates can be streamed empty or with sample rows:
 public ResponseEntity<StreamingResponseBody> excelTemplate() {
     return ExcelKitTemplateResponse.excel(
         userSchema, "users-template", List.of(new User("Alice", 30)));
+}
+
+@GetMapping("/template-guided.xlsx")
+public ResponseEntity<StreamingResponseBody> guidedTemplate() {
+    return ExcelKitTemplateResponse.excelWithGuidance(userSchema, "users-template");
 }
 
 @GetMapping("/template.csv")
@@ -139,3 +158,10 @@ Flux<MyData> flux = repository.findAll();
 ExcelHandler handler = writer.write(flux.toStream());
 // Flux.toStream() handles backpressure — not loaded entirely into memory.
 ```
+## Signature validation and limits
+
+Schema uploads can apply core `ReadLimits`, and `readDetected(...)` validates XLSX/CSV content
+by signature rather than trusting the filename or HTTP content type. Limit failures retain
+their structured `ReadLimitExceededException` details for mapping to HTTP 413 responses.
+`UploadCollectionLimits` independently bounds retained successful rows and errors while
+`UploadSummary` continues to report complete counts; truncation flags identify sampled results.

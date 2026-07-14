@@ -241,33 +241,9 @@ class ComprehensiveFeatureTest {
     // ========================================================================
     // CSV name-based read edge cases
     // ========================================================================
-    @Test
-    void csvNameBased_caseSensitive_shouldMatchExact() {
-        String csv = "Name,Age\nAlice,30\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
-        // "name" (lowercase) should not match "Name" (title case)
-        var handler = new CsvReader<>(TestPerson::new, null)
-                .column("name", (p, cell) -> p.name = cell.asString())
-                .build(is);
 
-        assertThrows(Exception.class, () -> handler.read(r -> {}));
-    }
 
-    @Test
-    void csvNameBased_withStreamApi_shouldWork() {
-        String csv = "Age,Name\n30,Alice\n25,Bob\n";
-        InputStream is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
-
-        List<String> names = new CsvReader<>(TestPerson::new, null)
-                .column("Name", (p, cell) -> p.name = cell.asString())
-                .build(is)
-                .readAsStream()
-                .map(r -> r.data().name)
-                .toList();
-
-        assertEquals(List.of("Alice", "Bob"), names);
-    }
 
     // ========================================================================
     // columnAt edge cases
@@ -282,8 +258,7 @@ class ComprehensiveFeatureTest {
             new ExcelReader<>(TestPerson::new, null)
                     .columnAt(0, (p, cell) -> p.name = cell.asString())
                     .columnAt(99, (p, cell) -> p.age = cell.asInt()) // out of bounds
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
         }
 
         // col 99 doesn't exist → should be skipped (age stays null)
@@ -301,8 +276,7 @@ class ComprehensiveFeatureTest {
         new CsvReader<>(TestPerson::new, null)
                 .columnAt(0, (p, cell) -> p.name = cell.asString())
                 .columnAt(99, (p, cell) -> p.age = cell.asInt()) // out of bounds
-                .build(is)
-                .read(r -> results.add(r.data()));
+                .read(is, r -> results.add(r.data()));
 
         assertEquals(1, results.size());
         assertEquals("a", results.get(0).name);

@@ -56,7 +56,7 @@ public class ReadShowcaseController {
     @ResponseBody
     public ResponseEntity<?> readByNameExcel(MultipartFile file, HttpServletRequest request) {
         UploadResult<ProductReadDto> result = ExcelKitUpload.excel(file,
-                is -> PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
+                (is, consumer) -> PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).read(is, consumer));
         log.info("Read by name (Excel): {} success, {} errors", result.successCount(), result.errorCount());
         return renderReport(result, request);
     }
@@ -65,7 +65,7 @@ public class ReadShowcaseController {
     @ResponseBody
     public ResponseEntity<?> readByNameCsv(MultipartFile file, HttpServletRequest request) {
         UploadResult<ProductReadDto> result = ExcelKitUpload.csv(file,
-                is -> PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
+                (is, consumer) -> PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).read(is, consumer));
         log.info("Read by name (CSV): {} success, {} errors", result.successCount(), result.errorCount());
         return renderReport(result, request);
     }
@@ -83,9 +83,11 @@ public class ReadShowcaseController {
     private UploadResult<ProductReadDto> readUploadedFile(MultipartFile file) {
         String filename = file.getOriginalFilename();
         if (filename != null && filename.toLowerCase().endsWith(".csv")) {
-            return ExcelKitUpload.csv(file, is -> PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).build(is));
+            return ExcelKitUpload.csv(file,
+                    (is, consumer) -> PRODUCT_SCHEMA.csvReader(ProductReadDto::new, null).read(is, consumer));
         }
-        return ExcelKitUpload.excel(file, is -> PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).build(is));
+        return ExcelKitUpload.excel(file,
+                (is, consumer) -> PRODUCT_SCHEMA.excelReader(ProductReadDto::new, null).read(is, consumer));
     }
 
     private ResponseEntity<?> renderReport(UploadResult<ProductReadDto> report, HttpServletRequest request) {
@@ -119,8 +121,7 @@ public class ReadShowcaseController {
                     .columnAt(0, (p, cell) -> p.setName(cell.asString()))
                     .columnAt(2, (p, cell) -> p.setPrice(cell.asInt()))
                     .columnAt(4, (p, cell) -> p.setDiscount(cell.asDouble()))
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         if (result.success()) results.add(result.data());
                     });
         }
@@ -143,8 +144,7 @@ public class ReadShowcaseController {
         try (InputStream is = file.getInputStream()) {
             List<Map<String, String>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(is)
-                    .read(r -> results.add(r.data()));
+                    .read(is, r -> results.add(r.data()));
 
             StringBuilder sb = new StringBuilder();
             sb.append("=== Map-Based Read Result ===\n");
@@ -190,7 +190,7 @@ public class ReadShowcaseController {
                     String.valueOf(row.get("Price").asInt(0)),
                     String.valueOf(row.get("Quantity").asInt(0)),
                     String.valueOf(row.get("Discount").asDouble(0.0))
-            }).build(is).read(result -> {
+            }).read(is, result -> {
                 if (result.success()) {
                     String[] data = result.data();
                     results.add("Name=%s, Price=%s, Qty=%s, Discount=%s".formatted(

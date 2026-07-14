@@ -7,6 +7,7 @@ import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,7 +183,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
         int templateLastRow = templateLastRowBySheet.getOrDefault(activeSheetIndex, -1);
         if (row <= templateLastRow) {
             // Row exists in template — write via underlying XSSFSheet to avoid SXSSFWorkbook flush conflict
-            org.apache.poi.xssf.usermodel.XSSFSheet xssfSheet = templateWb.getSheetAt(activeSheetIndex);
+            XSSFSheet xssfSheet = templateWb.getSheetAt(activeSheetIndex);
             Row sheetRow = xssfSheet.getRow(row);
             if (sheetRow == null) {
                 sheetRow = xssfSheet.createRow(row);

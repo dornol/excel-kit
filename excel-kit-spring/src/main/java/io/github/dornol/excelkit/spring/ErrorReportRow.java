@@ -11,6 +11,7 @@ public record ErrorReportRow(
         @Nullable Integer columnIndex,
         @Nullable String headerName,
         @Nullable String cellValue,
-        String message
+        String message,
+        String rawValues
 ) {
 }

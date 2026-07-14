@@ -4,6 +4,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -76,6 +78,55 @@ public final class ExcelKitMultipartFile {
      */
     public static MultipartFile requireExcelOrCsv(MultipartFile file) {
         return requireExtension(file, EXCEL_AND_CSV_EXTENSIONS.toArray(String[]::new));
+    }
+
+    /**
+     * Requires an Excel or CSV extension and verifies that the uploaded content
+     * looks like the declared format.
+     *
+     * @param file upload file
+     * @return the same file for fluent validation before passing it to {@link ExcelKitUpload}
+     * @since 0.19.0
+     */
+    public static MultipartFile requireExcelOrCsvContent(MultipartFile file) {
+        requireExcelOrCsv(file);
+        String extension = extensionOf(file.getOriginalFilename());
+        byte[] prefix = readPrefix(file, 4096);
+        if (extension.equals("xlsx") || extension.equals("xlsm")) {
+            if (prefix.length < 4 || prefix[0] != 'P' || prefix[1] != 'K') {
+                throw new ExcelKitUploadException("Upload file content is not a valid XLSX/XLSM package");
+            }
+            return file;
+        }
+        if (extension.equals("csv")) {
+            requireTextCsv(prefix);
+            return file;
+        }
+        throw new ExcelKitUploadException("Unsupported upload file extension: " + extension);
+    }
+
+    private static byte[] readPrefix(MultipartFile file, int maxBytes) {
+        try (InputStream inputStream = open(file)) {
+            return inputStream.readNBytes(maxBytes);
+        } catch (IOException e) {
+            throw new ExcelKitUploadException("Failed to inspect upload file: " + safeOriginalFilename(file), e);
+        }
+    }
+
+    private static void requireTextCsv(byte[] prefix) {
+        if (prefix.length == 0) {
+            throw new ExcelKitUploadException("Upload file is empty");
+        }
+        for (byte b : prefix) {
+            if (b == 0) {
+                throw new ExcelKitUploadException("Upload file content is not text CSV");
+            }
+        }
+        try {
+            StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(prefix));
+        } catch (CharacterCodingException e) {
+            throw new ExcelKitUploadException("Upload file content is not UTF-8 CSV", e);
+        }
     }
 
     private static Set<String> normalizeExtensions(String... extensions) {

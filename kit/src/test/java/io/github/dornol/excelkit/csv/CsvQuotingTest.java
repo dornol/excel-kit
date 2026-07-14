@@ -242,8 +242,7 @@ class CsvQuotingTest {
         List<ReadResult<Item>> results = new ArrayList<>();
         CsvReader.<Item>mapping(row ->
                 new Item(row.get("Name").asString(), row.get("Value").asInt(), 0)
-        ).build(new ByteArrayInputStream(out.toByteArray()))
-                .read(results::add);
+        ).read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
         assertEquals(2, results.size());
         assertTrue(results.get(0).success());
@@ -267,8 +266,7 @@ class CsvQuotingTest {
         List<ReadResult<Item>> results = new ArrayList<>();
         CsvReader.<Item>mapping(row ->
                 new Item(row.get("Name").asString(), row.get("Value").asInt(), 0)
-        ).build(new ByteArrayInputStream(out.toByteArray()))
-                .read(results::add);
+        ).read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).data().name());

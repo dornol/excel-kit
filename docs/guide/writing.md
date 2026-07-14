@@ -53,6 +53,19 @@ Custom format: `.format("#,##0.00")` or use `ExcelDataFormat` presets.
 
 Full type table: [Reference](reference.md#excelDataType-reference)
 
+## Write Error Policy
+
+By default, Excel writing is lenient: a value extraction failure becomes a blank
+cell, and a cell type mismatch falls back to text. Use fail-fast mode when a bad
+cell should abort the export:
+
+```java
+ExcelWriter.<Product>create()
+    .writeErrorPolicy(ExcelWriteErrorPolicy.FAIL_FAST)
+    .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
+    .write(products);
+```
+
 ## Column DSL
 
 ```java
@@ -253,3 +266,22 @@ writer
 ```
 
 For manual control, use `SheetContext.namedRange()` in `afterData` callbacks.
+## Streaming initialization
+
+SXSSF memory and disk behavior can be selected when the writer is created:
+
+```java
+ExcelWriter.<Row>create(options -> options
+        .rowAccessWindowSize(500)
+        .compressTempFiles(true)
+        .useSharedStrings(false));
+```
+
+Use `.table("RowsTable")` to create an Excel structured table over the generated header and
+data range.
+For shared configuration, pass `new StreamingOptions(windowSize, compressTempFiles,
+useSharedStrings)` through the initialization options. `TableOptions` controls style, row
+stripes, and whether rollover sheets receive uniquely suffixed tables.
+Structured tables are also available on `ExcelWorkbook.sheet(...)` and template list writers.
+Table names are checked workbook-wide without regard to case, and template tables validate
+that the expected header row contains every configured column.

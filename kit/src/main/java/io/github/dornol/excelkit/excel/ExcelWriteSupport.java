@@ -3,14 +3,18 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellRangeAddressList;
+import org.apache.poi.ss.util.AreaReference;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 
 import org.jspecify.annotations.Nullable;
 
@@ -49,24 +53,6 @@ class ExcelWriteSupport {
             row = cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
         }
         return row;
-    }
-
-    /**
-     * Applies all post-processing steps (column widths, validations, outlines, hiding,
-     * protection, conditional formatting, print setup, tab color) to a single sheet.
-     */
-    static <T> void applyPostProcessing(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
-                                         int headerRowIndex, SheetConfig<T> cfg) {
-        applyColumnWidths(sheet, columns);
-        applyDataValidations(sheet, columns, headerRowIndex);
-        applyColumnOutline(sheet, columns);
-        applyColumnHidden(sheet, columns);
-        applySheetProtection(sheet, cfg.sheetPassword);
-        applyConditionalFormatting(sheet, cfg.conditionalRules, headerRowIndex,
-                columns.size(), sheet.getLastRowNum());
-        applyPrintSetup(sheet, cfg.printSetup, headerRowIndex);
-        applyTabColor(sheet, cfg.tabColor);
-        applyNamedRanges(sheet, cfg.namedRanges, headerRowIndex);
     }
 
     /**
@@ -128,7 +114,7 @@ class ExcelWriteSupport {
             font.setBold(baseFont.getBold());
             font.setFontHeight(baseFont.getFontHeight());
             font.setFontName(baseFont.getFontName());
-            ((org.apache.poi.xssf.usermodel.XSSFFont) font).setColor(
+            ((XSSFFont) font).setColor(
                     new XSSFColor(new byte[]{(byte) fontColor[0], (byte) fontColor[1], (byte) fontColor[2]}));
             style.setFont(font);
             return style;
@@ -305,67 +291,6 @@ class ExcelWriteSupport {
         }
     }
 
-    static <T> void writeRowCells(SXSSFSheet sheet, Cursor cursor, T rowData,
-                                   List<ExcelColumn<T>> columns, SheetConfig<T> cfg,
-                                   Map<String, CellStyle> rowStyleCache, SXSSFWorkbook wb) {
-        SXSSFRow row = sheet.createRow(cursor.getRowOfSheet());
-        row.setHeightInPoints(cfg.rowHeightInPoints);
-        cursor.plusRow();
-
-        ExcelColor rowColor = (cfg.rowColorFunction != null) ? cfg.rowColorFunction.apply(rowData) : null;
-
-        // Resolve conditional row style (first match wins)
-        @Nullable RowStyleConfig matchedRowStyle = null;
-        for (SheetConfig.RowStyleEntry<T> entry : cfg.rowStyleEntries) {
-            if (entry.predicate().test(rowData)) {
-                matchedRowStyle = entry.style();
-                break;
-            }
-        }
-
-        for (int j = 0; j < columns.size(); j++) {
-            SXSSFCell cell = row.createCell(j);
-            ExcelColumn<T> column = columns.get(j);
-            @Nullable Object columnData = column.applyFunction(rowData, cursor);
-            column.setColumnData(cell, columnData);
-
-            // Resolve effective color: cellColor > rowStyle.bg > rowColor > column default
-            ExcelColor effectiveColor = null;
-            CellColorFunction<T> cellColorFn = column.getCellColorFunction();
-            if (cellColorFn != null) {
-                effectiveColor = cellColorFn.apply(columnData, rowData);
-            }
-            if (effectiveColor == null && matchedRowStyle != null && matchedRowStyle.backgroundColor != null) {
-                effectiveColor = matchedRowStyle.backgroundColor;
-            }
-            if (effectiveColor == null) {
-                effectiveColor = rowColor;
-            }
-
-            if (matchedRowStyle != null && matchedRowStyle.hasAnyStyle()) {
-                cell.setCellStyle(resolveRowStyle(column.getStyle(), effectiveColor, matchedRowStyle, rowStyleCache, wb));
-            } else if (effectiveColor != null) {
-                cell.setCellStyle(resolveColorStyle(column.getStyle(), effectiveColor, rowStyleCache, wb));
-            } else {
-                cell.setCellStyle(column.getStyle());
-            }
-
-            if (cfg.autoWidthSampleRows > 0 && cursor.getRowOfSheet() < cfg.autoWidthSampleRows) {
-                column.fitColumnWidthByValue(columnData);
-            }
-
-            // Cell comment
-            Function<T, @Nullable String> commentFn = column.getCommentFunction();
-            if (commentFn != null) {
-                String commentText = commentFn.apply(rowData);
-                if (commentText != null) {
-                    addCellComment(cell, commentText, null,
-                            column.getCommentWidth(), column.getCommentHeight(), wb);
-                }
-            }
-        }
-    }
-
     static void addCellComment(SXSSFCell cell, String text, SXSSFWorkbook wb) {
         addCellComment(cell, text, null, 0, 0, wb);
     }
@@ -387,26 +312,6 @@ class ExcelWriteSupport {
             comment.setAuthor(author);
         }
         cell.setCellComment(comment);
-    }
-
-    static void applySheetProtection(SXSSFSheet sheet, @Nullable String password) {
-        if (password != null) {
-            sheet.protectSheet(password);
-        }
-    }
-
-    static <T> void applyConditionalFormatting(SXSSFSheet sheet, @Nullable List<ExcelConditionalRule> rules,
-                                                int headerRowIndex, int columnCount, int lastDataRow) {
-        if (rules == null) return;
-        for (ExcelConditionalRule rule : rules) {
-            rule.apply(sheet, headerRowIndex, columnCount, lastDataRow);
-        }
-    }
-
-    static void applyPrintSetup(SXSSFSheet sheet, @Nullable ExcelPrintSetup printSetup, int headerRowIndex) {
-        if (printSetup != null) {
-            printSetup.apply(sheet, headerRowIndex);
-        }
     }
 
     static void applyChart(SXSSFSheet sheet, @Nullable ExcelChartConfig chartConfig,
@@ -464,8 +369,8 @@ class ExcelWriteSupport {
                 if (rowStyle.italic != null) newFont.setItalic(rowStyle.italic);
                 if (rowStyle.strikethrough != null) newFont.setStrikeout(rowStyle.strikethrough);
                 if (rowStyle.fontColor != null) {
-                    newFont.setColor(org.apache.poi.xssf.usermodel.XSSFFont.DEFAULT_FONT_COLOR);
-                    if (newFont instanceof org.apache.poi.xssf.usermodel.XSSFFont xf) {
+                    newFont.setColor(XSSFFont.DEFAULT_FONT_COLOR);
+                    if (newFont instanceof XSSFFont xf) {
                         xf.setColor(new XSSFColor(new byte[]{
                                 (byte) rowStyle.fontColor.getR(),
                                 (byte) rowStyle.fontColor.getG(),
@@ -478,34 +383,6 @@ class ExcelWriteSupport {
         });
     }
 
-    static <T> void applyDataValidations(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
-                                          int headerRowIndex) {
-        DataValidationHelper helper = sheet.getDataValidationHelper();
-        for (int j = 0; j < columns.size(); j++) {
-            ExcelColumn<T> column = columns.get(j);
-            String[] options = column.getDropdownOptions();
-            if (options != null) {
-                DataValidationConstraint constraint = helper.createExplicitListConstraint(options);
-                CellRangeAddressList range = new CellRangeAddressList(
-                        headerRowIndex + 1, EXCEL_MAX_ROWS, j, j);
-                DataValidation validation = helper.createValidation(constraint, range);
-                validation.setSuppressDropDownArrow(false);
-                validation.setShowErrorBox(true);
-                sheet.addValidationData(validation);
-            }
-            ExcelValidation excelValidation = column.getValidation();
-            if (excelValidation != null) {
-                excelValidation.apply(helper, sheet, j, headerRowIndex);
-            }
-        }
-    }
-
-    static <T> void applyColumnWidths(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
-        for (int j = 0; j < columns.size(); j++) {
-            sheet.setColumnWidth(j, columns.get(j).getColumnWidth());
-        }
-    }
-
     static <T> int initSheetPreamble(SXSSFSheet sheet, SXSSFWorkbook wb,
                                       List<ExcelColumn<T>> columns,
                                       @Nullable BeforeHeaderWriter writer) {
@@ -514,30 +391,6 @@ class ExcelWriteSupport {
             currentRow = writer.write(new SheetContext(sheet, wb, currentRow, columns));
         }
         return currentRow;
-    }
-
-    static <T> void applyColumnHidden(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
-        for (int j = 0; j < columns.size(); j++) {
-            if (columns.get(j).isHidden()) {
-                sheet.setColumnHidden(j, true);
-            }
-        }
-    }
-
-    static <T> void applyColumnOutline(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
-        int i = 0;
-        while (i < columns.size()) {
-            int level = columns.get(i).getOutlineLevel();
-            if (level > 0) {
-                int start = i;
-                while (i < columns.size() && columns.get(i).getOutlineLevel() == level) {
-                    i++;
-                }
-                sheet.groupColumn(start, i - 1);
-            } else {
-                i++;
-            }
-        }
     }
 
     static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
@@ -552,34 +405,6 @@ class ExcelWriteSupport {
     static void checkProgress(Cursor cursor, int interval, @Nullable ProgressCallback callback) {
         if (callback != null && interval > 0 && cursor.getCurrentTotal() % interval == 0) {
             callback.onProgress(cursor.getCurrentTotal(), cursor);
-        }
-    }
-
-    static void applyWorkbookProtection(SXSSFWorkbook wb, @Nullable String password) {
-        if (password != null) {
-            wb.getXSSFWorkbook().lockStructure();
-            wb.getXSSFWorkbook().setWorkbookPassword(password, null);
-        }
-    }
-
-    static void applyDocumentProperty(SXSSFWorkbook wb, String key, String value) {
-        var props = wb.getXSSFWorkbook().getProperties();
-        var core = props.getCoreProperties();
-        switch (key.toLowerCase(java.util.Locale.ROOT)) {
-            case "title" -> core.setTitle(value);
-            case "subject" -> core.setSubjectProperty(value);
-            case "author", "creator" -> core.setCreator(value);
-            case "keywords" -> core.setKeywords(value);
-            case "description" -> core.setDescription(value);
-            case "category" -> core.setCategory(value);
-            default -> {
-                var custom = props.getCustomProperties();
-                if (custom.contains(key)) {
-                    custom.getProperty(key).setLpwstr(value);
-                } else {
-                    custom.addProperty(key, value);
-                }
-            }
         }
     }
 
@@ -608,4 +433,5 @@ class ExcelWriteSupport {
             name.setRefersToFormula(ref);
         }
     }
+
 }

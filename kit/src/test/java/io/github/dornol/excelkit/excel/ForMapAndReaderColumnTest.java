@@ -216,8 +216,7 @@ class ForMapAndReaderColumnTest {
                     .column((p, cell) -> p.name = cell.asString())
                     .column((p, cell) -> p.age = cell.asInt())
                     .column((p, cell) -> p.city = cell.asString())
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).data().name);
@@ -245,8 +244,7 @@ class ForMapAndReaderColumnTest {
                     .column("Name", (p, cell) -> p.name = cell.asString())
                     .column("Age", (p, cell) -> p.age = cell.asInt())
                     .columnAt(3, (p, cell) -> p.city = cell.asString())  // jump to Note, store as city
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(r -> {});
+                    .read(new ByteArrayInputStream(out.toByteArray()), r -> {});
 
             assertEquals("Alice", result.name);
             assertEquals(30, result.age);
@@ -262,8 +260,7 @@ class ForMapAndReaderColumnTest {
                     .column((p, cell) -> p.name = cell.asString())
                     .column((p, cell) -> p.age = cell.asInt())
                     .column((p, cell) -> p.city = cell.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).data().name);
@@ -280,8 +277,7 @@ class ForMapAndReaderColumnTest {
                     .column((p, cell) -> p.name = cell.asString())
                     .skipColumn()
                     .column((p, cell) -> p.city = cell.asString())
-                    .build(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)))
-                    .read(r -> {});
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> {});
 
             assertEquals("keep", result.name);
             assertEquals("keep2", result.city);
@@ -306,8 +302,7 @@ class ForMapAndReaderColumnTest {
             // Read with only "Name" and "City" selected
             List<ReadResult<Map<String, String>>> results = new ArrayList<>();
             ExcelReader.forMap("Name", "City")
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
             assertEquals(2, results.size());
             Map<String, String> row1 = results.get(0).data();
@@ -327,8 +322,7 @@ class ForMapAndReaderColumnTest {
 
             List<ReadResult<Map<String, String>>> results = new ArrayList<>();
             ExcelReader.forMap()
-                    .build(new ByteArrayInputStream(out.toByteArray()))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(out.toByteArray()), results::add);
 
             assertEquals(1, results.size());
             assertEquals(2, results.get(0).data().size());
@@ -340,8 +334,7 @@ class ForMapAndReaderColumnTest {
             String csv = "Name,Age,City\nAlice,30,Seoul\nBob,25,Tokyo\n";
             List<ReadResult<Map<String, String>>> results = new ArrayList<>();
             CsvReader.forMap("Name", "City")
-                    .build(new ByteArrayInputStream(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
-                    .read(results::add);
+                    .read(new ByteArrayInputStream(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8)), results::add);
 
             assertEquals(2, results.size());
             Map<String, String> row1 = results.get(0).data();

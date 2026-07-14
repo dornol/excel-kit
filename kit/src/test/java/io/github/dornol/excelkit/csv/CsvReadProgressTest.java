@@ -23,8 +23,7 @@ class CsvReadProgressTest {
         new CsvReader<>(Holder::new, null)
                 .column((h, c) -> h.value = c.asString())
                 .onProgress(3, (count, cursor) -> counts.add(count))
-                .build(is)
-                .read(r -> {});
+                .read(is, r -> {});
 
         assertEquals(List.of(3L, 6L, 9L), counts);
     }
@@ -38,27 +37,12 @@ class CsvReadProgressTest {
         new CsvReader<>(Holder::new, null)
                 .column((h, c) -> h.value = c.asString())
                 .onProgress(100, (count, cursor) -> counts.add(count))
-                .build(is)
-                .read(r -> {});
+                .read(is, r -> {});
 
         assertTrue(counts.isEmpty());
     }
 
-    @Test
-    void readProgress_viaReadAsStream_shouldAlsoFire() {
-        String csv = "Name\nA\nB\nC\nD\n";
-        var is = new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8));
 
-        List<Long> counts = new ArrayList<>();
-        new CsvReader<>(Holder::new, null)
-                .column((h, c) -> h.value = c.asString())
-                .onProgress(2, (count, cursor) -> counts.add(count))
-                .build(is)
-                .readAsStream()
-                .forEach(r -> {});
-
-        assertEquals(List.of(2L, 4L), counts);
-    }
 
     @Test
     void readProgress_invalidInterval_shouldThrow() {

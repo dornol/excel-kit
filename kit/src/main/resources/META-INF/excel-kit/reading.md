@@ -9,8 +9,7 @@
 new ExcelReader<>(User::new, validator)  // validator is optional (null to skip)
     .column("Name", (u, cell) -> u.name = cell.asString())
     .column("Age", (u, cell) -> u.age = cell.asInt())
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         if (result.success()) { User u = result.data(); }
         else { log.warn("Read failed: {}", result.messages()); }
     });
@@ -22,14 +21,13 @@ ExcelReader.<PersonRecord>mapping(row -> new PersonRecord(
     row.get("Name").asString(),
     row.get("Age").asInt(),
     row.get("City").asString()
-)).build(inputStream).read(result -> { ... });
+)).read(inputStream, result -> { ... });
 ```
 
 ### 3. Map Mode (No POJO)
 ```java
 ExcelReader.forMap()
-    .build(inputStream)
-    .read(result -> {
+    .read(inputStream, result -> {
         Map<String, String> row = result.data();
         String name = row.get("Name");
     });
@@ -103,7 +101,7 @@ reader
     .strictHeaders()        // fail fast when configured headers are missing
     .onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count))
     .countRows()            // opt-in pre-scan for total row count (v0.16.15+, Excel only)
-    .build(inputStream);
+    .read(inputStream, result -> { ... });
 ```
 
 With `countRows()`, `cursor.getTotalRows()` returns the total data row count in the progress callback (otherwise `-1`).
@@ -117,8 +115,7 @@ Files written with multi-level `group(...)` have blank column-header cells due t
 ExcelReader.<Record>mapping(row -> ...)
     .headerRowIndex(1)     // last header row is row index 1
     .headerRows(2)         // 2 header rows (group row + column header row)
-    .build(in)
-    .read(result -> ...);
+    .read(in, result -> ...);
 ```
 
 Default `headerRows(1)` = existing single-row behavior. Empty-string headers preserved.
@@ -130,11 +127,9 @@ Default `headerRows(1)` = existing single-row behavior. Empty-string headers pre
 | `.read(Consumer<ReadResult<T>>)` | Process each row (skips failures) |
 | `.read(Consumer<T> onSuccess, Consumer<RowError> onError)` | Split success/error callbacks (v0.16.12+) |
 | `.readStrict(Consumer<ReadResult<T>>)` | Throws on first validation failure |
-| `.readAsStream()` | Returns `Stream<ReadResult<T>>` |
+| `.readWhile(Predicate<ReadResult<T>>)` | Stops normally when the callback returns false |
 
-Read handlers are one-shot. `read()`, `readStrict()`, and `readAsStream()` all
-consume the handler and its temporary resources. Build a new handler from a new
-`InputStream` if you need to read the same file again.
+Reader configurations are reusable; each call creates an independent one-shot session.
 
 ### Split success/error callbacks (v0.16.12+)
 
@@ -176,11 +171,20 @@ users to a specific row, header, and submitted value.
 schema.excelReader(User::new, validator)
     .strictHeaders()
     .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
-    .build(inputStream)
-    .read(user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
+    .read(inputStream, user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
 ```
 
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
+
+## Summaries, bounded reports, and file detection
+
+`readWithSummary(...)` returns a `ReadSummary` with total, successful, and failed row counts,
+early-stop state, and elapsed time. `readReport(input, maxCollectedErrors)` adds a bounded
+error sample and an `errorsTruncated` indicator.
+
+`TabularFileDetector.detect(path)` distinguishes XLSX, XLS, CSV, and unknown content by
+signature. `detectDetailed(input)` also reports confidence, charset, delimiter, and whether
+excel-kit supports reading the detected format. Caller-provided streams remain caller-owned.
 
 ## Multi-Sheet Discovery
 
@@ -197,14 +201,14 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, sheetIndex, head
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
 // Setter mode
-new ExcelReader<>(User::new, validator).column(...).build(in).read(result -> {
+new ExcelReader<>(User::new, validator).column(...).read(in, result -> {
     if (!result.success()) {
         // result.messages() contains validation errors
     }
 });
 
 // Mapping mode
-ExcelReader.mapping(row -> new Person(...), validator).build(in);
+ExcelReader.mapping(row -> new Person(...), validator).read(in, result -> { ... });
 ```
 
 ## CSV Reading
@@ -215,15 +219,15 @@ Same API pattern as Excel reading:
 // Setter mode
 new CsvReader<>(Product::new, null)
     .column("Name", (p, cell) -> p.name = cell.asString())
-    .build(inputStream).read(result -> { ... });
+    .read(inputStream, result -> { ... });
 
 // Mapping mode
 CsvReader.<Product>mapping(row -> new Product(
     row.get("Name").asString(), row.get("Price").asInt()
-)).build(inputStream).read(result -> { ... });
+)).read(inputStream, result -> { ... });
 
 // Map mode
-CsvReader.forMap().build(inputStream).read(result -> {
+CsvReader.forMap().read(inputStream, result -> {
     Map<String, String> row = result.data();
 });
 ```

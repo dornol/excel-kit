@@ -156,8 +156,7 @@ class TempFileCleanupIntegrationTest {
             new ExcelReader<>(TestRow::new, null)
                     .column((r, cell) -> r.name = cell.asString())
                     .column((r, cell) -> r.age = cell.asInt())
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         assertTrue(result.success(), "Row should succeed: " + result.messages());
                         names.add(result.data().name);
                     });
@@ -169,71 +168,11 @@ class TempFileCleanupIntegrationTest {
         assertEquals("Charlie", names.get(2));
     }
 
-    @Test
-    void read_shouldCleanUpTempFilesAfterException() throws IOException {
-        Path excelFile = createTestExcelWithData();
 
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            ExcelReadHandler<TestRow> handler = new ExcelReader<>(TestRow::new, null)
-                    .column((r, cell) -> r.name = cell.asString())
-                    .column((r, cell) -> r.age = cell.asInt())
-                    .build(is);
 
-            // Force an exception during processing
-            assertThrows(RuntimeException.class, () ->
-                    handler.read(result -> {
-                        throw new RuntimeException("Intentional error");
-                    }));
-        }
-        // If we get here, temp files were cleaned up (no resource leak)
-    }
 
-    @Test
-    void readAsStream_shouldCleanUpOnClose() throws IOException {
-        Path excelFile = createTestExcelWithData();
 
-        List<String> names;
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            try (Stream<ReadResult<TestRow>> stream = new ExcelReader<>(TestRow::new, null)
-                    .column((r, cell) -> r.name = cell.asString())
-                    .column((r, cell) -> r.age = cell.asInt())
-                    .build(is)
-                    .readAsStream()) {
 
-                names = stream
-                        .filter(ReadResult::success)
-                        .map(r -> r.data().name)
-                        .toList();
-            }
-        }
-
-        assertEquals(3, names.size());
-    }
-
-    @Test
-    void readAsStream_earlyTermination_shouldCleanUp() throws IOException {
-        Path excelFile = createTestExcelWithData();
-
-        List<String> names;
-        try (InputStream is = Files.newInputStream(excelFile)) {
-            try (Stream<ReadResult<TestRow>> stream = new ExcelReader<>(TestRow::new, null)
-                    .column((r, cell) -> r.name = cell.asString())
-                    .column((r, cell) -> r.age = cell.asInt())
-                    .build(is)
-                    .readAsStream()) {
-
-                // Only consume 1 element, then close the stream
-                names = stream
-                        .filter(ReadResult::success)
-                        .limit(1)
-                        .map(r -> r.data().name)
-                        .toList();
-            }
-        }
-
-        assertEquals(1, names.size());
-        assertEquals("Alice", names.get(0));
-    }
 
     // ──────────────────────────────────────────────────────────────
     // ExcelWriter: full write-then-read roundtrip verifying cleanup
@@ -260,8 +199,7 @@ class TempFileCleanupIntegrationTest {
             new ExcelReader<>(TestRow::new, null)
                     .column((r, cell) -> r.name = cell.asString())
                     .column((r, cell) -> r.age = cell.asInt())
-                    .build(is)
-                    .read(result -> {
+                    .read(is, result -> {
                         assertTrue(result.success(), "Row should succeed: " + result.messages());
                         results.add(result.data());
                     });

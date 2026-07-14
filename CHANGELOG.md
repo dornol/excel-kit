@@ -4,6 +4,93 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-07-11
+
+### Added
+
+- Symmetric `Path` and `InputStreamSource` overloads for `read`, `readStrict`, and `readWhile`.
+- `Path` and `InputStreamSource` overloads for Excel sheet metadata discovery.
+- `ReadSummary`, bounded `ReadReport`, detailed `ReadProgress`, and cooperative cancellation APIs.
+- Header normalization presets through `HeaderPolicy`.
+- Defensive input, sheet, column, and cell-size limits through `ReadLimits`.
+- Signature-based `TabularFileDetector` for XLSX, XLS, CSV, and unknown inputs.
+- Excel structured table creation through `ExcelWriter.table(...)`.
+- SXSSF temporary-file compression and shared-string initialization options.
+- CI-generated japicmp reports against the latest published baseline.
+- Structured `ReadLimitExceededException` details and pre-copy stream byte enforcement.
+- Detailed file detection confidence, charset, delimiter, and read-support metadata.
+- Shared immutable `StreamingOptions` and rollover/multi-sheet structured tables.
+- Signature-validated Spring uploads with core `ReadLimits` integration.
+- Optional Excel formula and external-link rejection through `ReadSecurityPolicy`.
+- Structured tables for template list writers and `Iterable` template inputs.
+- Bounded XLSX security scanning with entry, total-byte, and compression-ratio limits.
+- Spring upload result collection limits with independent truncation indicators.
+- CSV automatic charset/delimiter detection and deterministic malformed-input fuzz coverage.
+
+### Changed
+
+- Excel metadata methods no longer close caller-provided `InputStream` instances.
+- Reader executions now snapshot column and selected-header collections.
+- Reader `Path` inputs are read directly without copying the source file to a temporary file.
+- Excel and CSV read-handler implementations are no longer public API types.
+- Exceptions thrown by a `readWhile` predicate are propagated unchanged.
+- `readWhile` returns `ReadSummary`; summary/report methods now support all input source types.
+- Detailed read progress always emits a terminal completion/cancellation event.
+- API compatibility CI now fails for non-allowlisted binary incompatibilities.
+- Reader summary/report aggregation is shared internally to keep Excel and CSV behavior aligned.
+- japicmp exceptions are signature-scoped and document their baseline expiry.
+
+## [0.20.0] - 2026-07-11
+
+### Added
+
+- Direct `read(input, ...)`, `readWhile(...)`, `Path`, and `InputStreamSource` APIs for Excel and CSV readers.
+- Reader `maxErrors(...)` guards with structured `ReadAbortReason` details.
+- Excel/CSV header normalization via `headerNormalizer(UnaryOperator<String>)`.
+- `Iterable` inputs for Excel and CSV writers.
+- Spring `UploadReader` callback integration without exposing read handlers.
+- CI compatibility coverage for minimum-tested and current POI/OpenCSV versions.
+
+### Changed
+
+- Caller-provided input streams and writer streams are now caller-owned and are not closed by excel-kit.
+- Reader executions use immutable common option snapshots.
+- Excel stream reading no longer uses a producer thread and blocking queue.
+
+### Removed
+
+- `readAsStream()` in favor of callback-based `read(...)` and `readWhile(...)`.
+- Handler-based `build(input)` in favor of direct Reader execution methods.
+
+## [0.19.0] - 2026-07-01
+
+### Added
+
+- Reader-scoped `CellConversionConfig` via `cellConversion(...)` on Excel and
+  CSV readers for locale/date parsing without mutating global `CellData` state.
+- `ExcelWriteErrorPolicy` with `writeErrorPolicy(FAIL_FAST)` for aborting Excel
+  writes on value extraction or cell type write failures.
+- CSV reader parser options for quote character, escape character, strict quotes,
+  and leading whitespace handling.
+- Schema convenience APIs for Excel writer init options and validator-free
+  schema readers.
+- Schema-level reader/writer defaults for strict headers, duplicate header
+  policy, cell conversion, row limits, blank-row handling, and Excel write
+  error policy.
+- Spring upload shortcuts for schema-backed Excel/CSV uploads.
+- Spring upload content validation helper `requireExcelOrCsvContent(...)`.
+- Reader row guards via `maxRows(...)`, `skipBlankRows(...)`, and
+  `stopAtBlankRows(...)`.
+- Raw source row values on read errors, upload errors, and downloadable error
+  reports.
+- Upload summary metadata with row counts, duration, filename, and file size.
+- Guided Excel template response helper with required-column guidance.
+
+### Changed
+
+- `CellData` number cleanup now respects the configured locale's grouping and
+  decimal separators.
+
 ## [0.18.4] - 2026-06-30
 
 ### Added

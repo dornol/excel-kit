@@ -6,6 +6,7 @@ import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 
 import org.jspecify.annotations.Nullable;
 
@@ -51,6 +52,7 @@ public class TemplateListWriter<T> {
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final SheetConfig<T> cfg = new SheetConfig<>();
+    private @Nullable TableOptions tableOptions;
 
     TemplateListWriter(ExcelTemplateWriter parent, SXSSFWorkbook wb, SXSSFSheet sheet,
                        int startRow, Map<String, CellStyle> cellStyleCache, int sheetIndex) {
@@ -209,6 +211,16 @@ public class TemplateListWriter<T> {
         return this;
     }
 
+    public TemplateListWriter<T> table(String name) {
+        return table(TableOptions.defaults(name));
+    }
+
+    public TemplateListWriter<T> table(TableOptions options) {
+        StructuredTableWriter.validateName(java.util.Objects.requireNonNull(options, "options cannot be null").name());
+        this.tableOptions = options;
+        return this;
+    }
+
     /**
      * Sets default column styles that apply to all columns unless overridden per-column.
      *
@@ -235,6 +247,11 @@ public class TemplateListWriter<T> {
         return writeInternal(stream, false);
     }
 
+    public ExcelTemplateWriter write(Iterable<T> rows) {
+        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        return write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
+    }
+
     /**
      * Writes column headers at the start row, followed by data rows.
      * <p>
@@ -247,6 +264,11 @@ public class TemplateListWriter<T> {
         return writeInternal(stream, true);
     }
 
+    public ExcelTemplateWriter writeWithHeaders(Iterable<T> rows) {
+        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        return writeWithHeaders(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
+    }
+
     private ExcelTemplateWriter writeInternal(Stream<T> stream, boolean writeHeaders) {
         if (columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
@@ -256,24 +278,39 @@ public class TemplateListWriter<T> {
         Cursor cursor = new Cursor(startRow);
         int headerRowIndex = startRow;
 
-        if (writeHeaders) {
-            CellStyle headerStyle = ExcelStyleSupporter.headerStyle(wb,
-                    new org.apache.poi.xssf.usermodel.XSSFColor(
-                            new byte[]{(byte) 255, (byte) 255, (byte) 255}));
-            ExcelWriteSupport.writeColumnHeaders(sheet, cursor, columns, headerStyle);
+        if (tableOptions != null && !writeHeaders) {
+            if (startRow == 0) throw new ExcelWriteException("Template table requires a header row before startRow");
+            StructuredTableWriter.validateExistingHeaders(sheet, startRow - 1, columns.size());
         }
 
-        try (stream) {
-            stream.forEach(rowData -> {
-                cursor.plusTotal();
-                ExcelWriteSupport.writeRowCells(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
-                ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
-            });
+        if (writeHeaders) {
+            CellStyle headerStyle = ExcelStyleSupporter.headerStyle(wb,
+                    new XSSFColor(
+                            new byte[]{(byte) 255, (byte) 255, (byte) 255}));
+            ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle);
         }
+
+        stream.sequential().forEach(rowData -> {
+            cursor.plusTotal();
+            ExcelRowWriter.write(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
+            ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
+        });
 
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
-        ExcelWriteSupport.applyColumnWidths(sheet, columns);
+        if (tableOptions != null) {
+            int tableHeaderRow = writeHeaders ? startRow : startRow - 1;
+            if (tableHeaderRow < 0) {
+                throw new ExcelWriteException("Template table requires an existing header row before startRow");
+            }
+            int lastDataRow = cursor.getRowOfSheet() - 1;
+            if (lastDataRow > tableHeaderRow) {
+                StructuredTableWriter.apply(sheet, tableOptions.name(), tableHeaderRow, lastDataRow,
+                        columns.size(), tableOptions.style(), tableOptions.showRowStripes());
+            }
+        }
+
+        ExcelSheetPostProcessor.applyColumnWidths(sheet, columns);
 
         parent.updateLastWrittenRow(sheetIndex, nextRow - 1);
         return parent;

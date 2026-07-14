@@ -1,11 +1,7 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.TypeTestDto;
-import io.github.dornol.excelkit.example.app.dto.TypeTestReadDto;
 import io.github.dornol.excelkit.excel.*;
-import jakarta.validation.Validator;
-
-import java.io.InputStream;
 import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -37,23 +33,4 @@ public class TypeTestExcelMapper {
                 .write(stream);
     }
 
-    public static ExcelReadHandler<TypeTestReadDto> getReadHandler(InputStream inputStream, Validator validator) {
-        return new ExcelReader<>(TypeTestReadDto::new, validator)
-                .column((d, c) -> d.setNo(c.asLong()))
-                .column((d, c) -> d.setStringVal(c.asString()))
-                .column((d, c) -> d.setLongVal(c.asLong()))
-                .column((d, c) -> d.setInteger(c.asInt()))
-                .column((d, c) -> d.setLocalDateTime(c.asLocalDateTime()))
-                .column((d, c) -> d.setLocalDate(c.asLocalDate()))
-                .column((d, c) -> d.setLocalTime(c.asLocalTime()))
-                .column((d, c) -> d.setDoubleVal(c.asDouble()))
-                .column((d, c) -> d.setDoubleVal(c.asDouble()))
-                .column((d, c) -> d.setFloatVal(c.asFloat()))
-                .column((d, c) -> d.setFloatVal(c.asFloat()))
-                .column((d, c) -> d.setBooleanVal(c.asBoolean()))
-                .column((d, c) -> d.setLongBigDecimal(c.asBigDecimal()))
-                .column((d, c) -> d.setDoubleBigDecimal(c.asBigDecimal()))
-                .column((d, c) -> d.setDoubleBigDecimal(c.asBigDecimal()))
-                .build(inputStream);
-    }
 }

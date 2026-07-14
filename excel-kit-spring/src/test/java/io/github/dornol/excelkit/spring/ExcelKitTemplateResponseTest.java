@@ -43,6 +43,14 @@ class ExcelKitTemplateResponseTest {
     }
 
     @Test
+    void excelWithGuidance_setsDownloadHeaders() {
+        var response = ExcelKitTemplateResponse.excelWithGuidance(SCHEMA, "template");
+
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
     void csv_acceptsSampleRows() {
         var response = ExcelKitTemplateResponse.csv(SCHEMA, "template",
                 List.of(new Product("Notebook", 1200)));
