@@ -10,3 +10,5 @@ io.github.dornol.excelkit.excel.ExcelReader#readWhile(io.github.dornol.excelkit.
 # Expires at the 0.21.0 baseline: handler engines intentionally left the public API.
 io.github.dornol.excelkit.csv.CsvReadHandler
 io.github.dornol.excelkit.excel.ExcelReadHandler
+# Expires at the 0.21.0 baseline: reader execution internals are no longer public API.
+io.github.dornol.excelkit.core.internal.ReaderExecutionSupport
