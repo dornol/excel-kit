@@ -63,11 +63,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected CancellationToken cancellationToken = CancellationToken.NONE;
     protected @Nullable ReadProgressCallback readProgressCallback;
     protected ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
-    private final AtomicLong successCount = new AtomicLong();
-    private final AtomicLong errorCount = new AtomicLong();
-    private final long startedNanos = System.nanoTime();
+    private final ReadLifecycle lifecycle = new ReadLifecycle();
     protected boolean stoppedEarly;
-    private final AtomicBoolean consumed = new AtomicBoolean(false);
 
     protected AbstractReadHandler(InputStream input, @Nullable Supplier<T> supplier,
             @Nullable Function<RowData,T> mapper, @Nullable Validator validator, String extension,
@@ -307,32 +304,23 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
                 throw new ReadStoppedException();
             }
             if (!result.success()) {
-                errorCount.incrementAndGet();
+                lifecycle.record(false);
                 long count = errors.incrementAndGet();
                 if (maxErrors >= 0 && count > maxErrors) {
                     throw new ReadAbortException("Maximum read errors exceeded: " + maxErrors,
                             ReadAbortReason.MAX_ERRORS_EXCEEDED, maxErrors, count);
                 }
-            } else successCount.incrementAndGet();
+            } else lifecycle.record(true);
             consumer.accept(result);
         };
     }
 
     protected void notifyReadProgress(long processedRows, int sheetIndex, long totalRows) {
-        if (readProgressCallback != null) {
-            readProgressCallback.onProgress(new ReadProgress(processedRows, successCount.get(), errorCount.get(),
-                    sheetIndex, totalRows, java.time.Duration.ofNanos(System.nanoTime() - startedNanos),
-                    false, false));
-        }
+        lifecycle.progress(processedRows, sheetIndex, totalRows, readProgressCallback);
     }
 
     protected void notifyReadCompletion(int sheetIndex, long totalRows) {
-        if (readProgressCallback != null) {
-            long processed = successCount.get() + errorCount.get();
-            readProgressCallback.onProgress(new ReadProgress(processed, successCount.get(), errorCount.get(),
-                    sheetIndex, totalRows, java.time.Duration.ofNanos(System.nanoTime() - startedNanos),
-                    true, cancellationToken.isCancellationRequested()));
-        }
+        lifecycle.complete(sheetIndex, totalRows, cancellationToken.isCancellationRequested(), readProgressCallback);
     }
 
     /**
@@ -388,9 +376,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * can only be consumed once.
      */
     protected void markConsumed() {
-        if (!consumed.compareAndSet(false, true)) {
-            throw new ExcelKitException("Read handler has already been consumed");
-        }
+        lifecycle.markConsumed();
     }
 
     /**
