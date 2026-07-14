@@ -183,7 +183,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     private ExcelWriter(InitOptions opts) {
-        StreamingOptions streaming = opts.streamingOptions();
+        StreamingOptions streaming = opts.state.options();
         this.wb = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
                 streaming.compressTempFiles(), streaming.useSharedStrings());
         ExcelColor defaultColor = ExcelColor.WHITE;
@@ -209,11 +209,30 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      *
      * @since 0.17.0
      */
-    public static final class InitOptions extends AbstractStreamingInitOptions<InitOptions> {
+    public static final class InitOptions {
+        private final StreamingInitOptionsState state = new StreamingInitOptionsState();
+
         private InitOptions() { }
 
-        @Override
-        protected InitOptions self() { return this; }
+        public InitOptions rowAccessWindowSize(int size) {
+            state.rowAccessWindowSize(size);
+            return this;
+        }
+
+        public InitOptions compressTempFiles(boolean enabled) {
+            state.compressTempFiles(enabled);
+            return this;
+        }
+
+        public InitOptions useSharedStrings(boolean enabled) {
+            state.useSharedStrings(enabled);
+            return this;
+        }
+
+        public InitOptions streaming(StreamingOptions options) {
+            state.streaming(options);
+            return this;
+        }
     }
 
     /**
