@@ -306,8 +306,9 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         if (cfg.defaultStyleConfig != null) {
             c.applyDefaults(cfg.defaultStyleConfig);
         }
-        ExcelDataType dataType = c.dataType != null ? c.dataType : ExcelDataType.STRING;
-        String dataFormat = c.dataFormat != null ? c.dataFormat : dataType.getDefaultFormat();
+        ExcelDataType dataType = c.dataType;
+        String dataFormat = c.dataFormat != null ? c.dataFormat
+                : (dataType != null ? dataType.getDefaultFormat() : null);
 
         CellStyleParams params = new CellStyleParams(c.alignment, dataFormat,
                 c.backgroundColor, c.bold, c.fontSize, c.borderStyle, c.locked,
@@ -316,7 +317,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 c.verticalAlignment, c.wrapText, c.fontName, c.indentation);
         CellStyle style = ExcelStyleSupporter.cellStyle(wb, params, cellStyleCache);
 
-        return new ExcelColumn<>(name, function, style, dataType.getSetter(), c);
+        return new ExcelColumn<>(name, function, style,
+                dataType != null ? dataType.getSetter() : ExcelDataType.STRING.getSetter(), c);
     }
 
 }

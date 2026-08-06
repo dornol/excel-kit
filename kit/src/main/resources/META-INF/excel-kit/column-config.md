@@ -4,11 +4,16 @@
 
 ## Data Types
 
-Set via `.type(...)`, for example `ExcelDataType.INTEGER` or `ExcelDataType.DATE`:
+When `.type(...)` is omitted, the type is inferred from the first non-null value in the
+column. Explicit `.type(...)` settings always win. If every value is `null`, the column
+falls back to `STRING`.
+
+You can set a type explicitly via `.type(...)`, for example `ExcelDataType.INTEGER` or
+`ExcelDataType.DATE`:
 
 | Type | Java Type | Default Format |
 |------|-----------|----------------|
-| `STRING` (default) | String | — |
+| `STRING` | String or unknown value | — |
 | `INTEGER` | Number | `#,##0` |
 | `LONG` | Number | `#,##0` |
 | `DOUBLE` | Number | `#,##0.00` |

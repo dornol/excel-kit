@@ -32,11 +32,15 @@ ch.writeTo(Path.of("rows.csv"));
 
 ## Data Types
 
-Set via `.type(...)`, for example `ExcelDataType.INTEGER` or `ExcelDataType.DATE`:
+Types are inferred from the first non-null value when `.type(...)` is omitted. Use
+`.type(...)` when a column needs an explicit or semantic type; explicit types always win.
+Columns whose values are all `null` fall back to `STRING`.
+
+You can still set types explicitly, for example `ExcelDataType.INTEGER` or `ExcelDataType.DATE`:
 
 | Type | Java Type | Default Format |
 |------|-----------|----------------|
-| `STRING` (default) | String | — |
+| `STRING` | String or unknown value | — |
 | `INTEGER` | Number | `#,##0` |
 | `LONG` | Number | `#,##0` |
 | `DOUBLE` | Number | `#,##0.00` |

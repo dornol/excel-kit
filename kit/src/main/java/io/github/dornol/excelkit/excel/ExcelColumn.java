@@ -35,8 +35,11 @@ public class ExcelColumn<T> {
     private static final int WIDTH_BASE_PADDING = 1024;
     private final String name;
     private final RowFunction<T, @Nullable Object> function;
-    private final CellStyle style;
-    private final ExcelColumnSetter columnSetter;
+    private CellStyle style;
+    private ExcelColumnSetter columnSetter;
+    private @Nullable ExcelDataType dataType;
+    private final boolean explicitDataType;
+    private final boolean explicitDataFormat;
     private final int minWidth;
     private final int maxWidth;
     private final boolean fixedWidth;
@@ -68,6 +71,9 @@ public class ExcelColumn<T> {
         this.function = function;
         this.style = style;
         this.columnSetter = columnSetter;
+        this.dataType = config.dataType;
+        this.explicitDataType = config.dataType != null;
+        this.explicitDataFormat = config.dataFormat != null;
         this.minWidth = config.minWidth;
         this.maxWidth = config.maxWidth;
         this.fixedWidth = config.fixedWidth;
@@ -151,6 +157,20 @@ public class ExcelColumn<T> {
             } else {
                 cell.setCellValue("");
                 return;
+            }
+        }
+        if (!explicitDataType && dataType == null) {
+            dataType = ExcelDataType.infer(columnData);
+            if (dataType != null) {
+                columnSetter = dataType.getSetter();
+                if (!explicitDataFormat && dataType.getDefaultFormat() != null) {
+                    var workbook = cell.getSheet().getWorkbook();
+                    CellStyle inferredStyle = workbook.createCellStyle();
+                    inferredStyle.cloneStyleFrom(style);
+                    inferredStyle.setDataFormat(workbook.createDataFormat()
+                            .getFormat(dataType.getDefaultFormat()));
+                    style = inferredStyle;
+                }
             }
         }
         try {
@@ -288,11 +308,8 @@ public class ExcelColumn<T> {
             if (defaults != null) {
                 this.applyDefaults(defaults);
             }
-            if (this.dataType == null) {
-                this.type(ExcelDataType.STRING);
-            }
             if (this.dataFormat == null) {
-                this.dataFormat = this.dataType.getDefaultFormat();
+                this.dataFormat = this.dataType != null ? this.dataType.getDefaultFormat() : null;
             }
             if (this.style == null) {
                 CellStyleParams params = new CellStyleParams(
@@ -308,7 +325,8 @@ public class ExcelColumn<T> {
                         writer.getWb(), params, writer.getCellStyleCache());
             }
             if (this.columnSetter == null) {
-                this.columnSetter = this.dataType.getSetter();
+                this.columnSetter = this.dataType != null
+                        ? this.dataType.getSetter() : ExcelDataType.STRING.getSetter();
             }
             return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter, this);
         }

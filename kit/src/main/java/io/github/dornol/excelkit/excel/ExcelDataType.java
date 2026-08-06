@@ -168,6 +168,25 @@ public enum ExcelDataType {
     }, null)
     ;
 
+    static @Nullable ExcelDataType infer(@Nullable Object value) {
+        if (value == null) return null;
+        if (value instanceof String) return STRING;
+        if (value instanceof Boolean) return BOOLEAN_TO_YN;
+        if (value instanceof Byte || value instanceof Short || value instanceof Integer) return INTEGER;
+        if (value instanceof Long) return LONG;
+        if (value instanceof Float) return FLOAT;
+        if (value instanceof Double) return DOUBLE;
+        if (value instanceof BigDecimal) return BIG_DECIMAL_TO_DOUBLE;
+        if (value instanceof LocalDateTime) return DATETIME;
+        if (value instanceof LocalDate) return DATE;
+        if (value instanceof LocalTime) return TIME;
+        if (value instanceof ExcelHyperlink) return HYPERLINK;
+        if (value instanceof ExcelImage) return IMAGE;
+        if (value instanceof ExcelRichText) return RICH_TEXT;
+        if (value instanceof Number) return DOUBLE;
+        return STRING;
+    }
+
     private final ExcelColumnSetter setter;
     private final @Nullable String defaultFormat;
 

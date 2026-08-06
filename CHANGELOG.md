@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-08-06
+
+### Added
+
+- Automatic Excel column type inference for non-null values in `ExcelWriter` and
+  `ExcelSheetWriter`, including numeric, date/time, hyperlink, image, and rich-text values.
+- Automatic default number/date formats for inferred numeric and date/time columns.
+- Comprehensive regression coverage for inferred types, null-leading columns, explicit type
+  overrides, custom formats, and both column writer APIs.
+
+### Changed
+
+- Columns without an explicit `.type(...)` now infer their writer type from the first non-null
+  value. Explicit types remain authoritative.
+- Columns whose values are all `null` retain the `STRING` fallback behavior.
+
 ## [0.21.0] - 2026-07-11
 
 ### Added
