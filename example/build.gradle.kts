@@ -16,7 +16,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1")
+    implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.1.0")
     implementation(libs.poi.ooxml)
     implementation(libs.opencsv)
     implementation(project(":kit"))
