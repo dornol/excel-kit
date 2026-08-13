@@ -17,6 +17,7 @@ import io.github.dornol.excelkit.core.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.ReadStoppedException;
 import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.RowError;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -187,6 +188,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
+        java.util.Objects.requireNonNull(predicate, "predicate cannot be null");
         AtomicReference<RuntimeException> failure = new AtomicReference<>();
         read(result -> {
             boolean proceed;
@@ -209,20 +211,27 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
         T currentInstance = instanceSupplier.get();
         boolean success = true;
+        boolean mappingFailure = false;
         List<String> messages = new ArrayList<>();
         List<CellError> cellErrors = new ArrayList<>();
 
         for (int i = 0; i < columns.size(); i++) {
             int actualIndex = resolvedIndices[i];
             String columnValue = (actualIndex < line.length) ? line[actualIndex] : null;
-            if (!mapColumn(columns.get(i), currentInstance, cellData(actualIndex, columnValue),
+            ReadColumn<T> column = columns.get(i);
+            CellData cell = cellData(actualIndex, columnValue);
+            if (!mapColumn(column, currentInstance, cell,
                     actualIndex, headerNames, messages, cellErrors)) {
                 success = false;
+                if (!(column.isRequired() && cell.isEmpty())) mappingFailure = true;
             }
         }
 
         boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
-        return new ReadResult<>(currentInstance, validationSuccess, messages.isEmpty() ? null : messages,
+        RowError.Type errorType = validationSuccess ? null
+                : mappingFailure ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
+        return new ReadResult<>(currentInstance, validationSuccess, errorType,
+                messages.isEmpty() ? null : messages,
                 null, fileRowNum, cellErrors, rawValues);
     }
 

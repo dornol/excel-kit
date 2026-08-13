@@ -292,11 +292,13 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return A handler to execute Excel parsing
      */
     private ExcelReadHandler<T> createHandler(InputStream inputStream) {
+        java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null");
         inputStream = limitInput(inputStream);
         return new ExcelReadHandler<>(inputStream, sessionConfig());
     }
 
     private ExcelReadHandler<T> createHandler(Path path) {
+        java.util.Objects.requireNonNull(path, "path cannot be null");
         return new ExcelReadHandler<>(path, sessionConfig());
     }
 
@@ -309,18 +311,23 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     /** Reads an input stream without closing it. */
     public void read(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        requireCallback(consumer, "consumer");
         createHandler(inputStream).read(consumer);
     }
 
     public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        requireCallback(consumer, "consumer");
         return summarize(createHandler(inputStream), consumer);
     }
 
     public ReadSummary readWithSummary(Path path, Consumer<ReadResult<T>> consumer) {
+        requireCallback(consumer, "consumer");
         return summarize(createHandler(path), consumer);
     }
 
     public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        requireInputSource(source);
+        requireCallback(consumer, "consumer");
         return withInputSource(source, input -> readWithSummary(input, consumer),
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
@@ -331,14 +338,18 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
+        requireMaxCollectedErrors(maxCollectedErrors);
         return report(createHandler(inputStream), maxCollectedErrors);
     }
 
     public ReadReport readReport(Path path, int maxCollectedErrors) {
+        requireMaxCollectedErrors(maxCollectedErrors);
         return report(createHandler(path), maxCollectedErrors);
     }
 
     public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
+        requireInputSource(source);
+        requireMaxCollectedErrors(maxCollectedErrors);
         return withInputSource(source, input -> readReport(input, maxCollectedErrors),
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
@@ -349,51 +360,69 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        requireCallback(onSuccess, "onSuccess");
+        requireCallback(onError, "onError");
         createHandler(inputStream).read(onSuccess, onError);
     }
 
     public void readStrict(InputStream inputStream, Consumer<T> consumer) {
+        requireCallback(consumer, "consumer");
         createHandler(inputStream).readStrict(consumer);
     }
 
     public ReadSummary readWhile(InputStream inputStream, Predicate<ReadResult<T>> predicate) {
+        requireCallback(predicate, "predicate");
         return readWhile(createHandler(inputStream), predicate);
     }
 
     /** Reads directly from a caller-owned path without modifying or deleting it. */
     public void read(Path path, Consumer<ReadResult<T>> consumer) {
+        requireCallback(consumer, "consumer");
         createHandler(path).read(consumer);
     }
 
     public void read(Path path, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        requireCallback(onSuccess, "onSuccess");
+        requireCallback(onError, "onError");
         createHandler(path).read(onSuccess, onError);
     }
 
     public void readStrict(Path path, Consumer<T> consumer) {
+        requireCallback(consumer, "consumer");
         createHandler(path).readStrict(consumer);
     }
 
     public ReadSummary readWhile(Path path, Predicate<ReadResult<T>> predicate) {
+        requireCallback(predicate, "predicate");
         return readWhile(createHandler(path), predicate);
     }
 
     /** Opens and closes the source-owned stream. */
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        requireInputSource(source);
+        requireCallback(consumer, "consumer");
         withInputSource(source, input -> { read(input, consumer); return null; },
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
+        requireInputSource(source);
+        requireCallback(onSuccess, "onSuccess");
+        requireCallback(onError, "onError");
         withInputSource(source, input -> { read(input, onSuccess, onError); return null; },
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public void readStrict(InputStreamSource source, Consumer<T> consumer) {
+        requireInputSource(source);
+        requireCallback(consumer, "consumer");
         withInputSource(source, input -> { readStrict(input, consumer); return null; },
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
+        requireInputSource(source);
+        requireCallback(predicate, "predicate");
         return withInputSource(source, input -> readWhile(input, predicate),
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }

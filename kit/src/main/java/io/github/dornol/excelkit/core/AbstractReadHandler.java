@@ -298,6 +298,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     protected Consumer<ReadResult<T>> guardedConsumer(Consumer<ReadResult<T>> consumer) {
+        java.util.Objects.requireNonNull(consumer, "consumer cannot be null");
         AtomicLong errors = new AtomicLong();
         return result -> {
             if (cancellationToken.isCancellationRequested()) {
@@ -331,11 +332,12 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @throws ReadAbortException if any row fails validation or mapping
      */
     public void readStrict(Consumer<T> consumer) {
+        java.util.Objects.requireNonNull(consumer, "consumer cannot be null");
         AtomicLong rowNum = new AtomicLong(0);
         read(result -> {
             long row = rowNum.incrementAndGet();
             if (!result.success()) {
-                String detail = (result.messages() != null && !result.messages().isEmpty())
+                String detail = !result.messages().isEmpty()
                         ? String.join("; ", result.messages()) : "Unknown error";
                 throw new ReadAbortException("Row " + row + " read failed: " + detail);
             }
@@ -357,14 +359,16 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @since 0.16.12
      */
     public void read(Consumer<T> onSuccess, Consumer<RowError> onError) {
+        java.util.Objects.requireNonNull(onSuccess, "onSuccess cannot be null");
+        java.util.Objects.requireNonNull(onError, "onError cannot be null");
         AtomicLong rowNum = new AtomicLong(0);
         read(result -> {
             long n = rowNum.incrementAndGet();
             if (result.success()) {
                 onSuccess.accept(result.data());
             } else {
-                List<String> msgs = result.messages() != null ? result.messages() : List.of();
-                RowError.Type type = result.cause() != null ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
+                List<String> msgs = result.messages();
+                RowError.Type type = result.errorType();
                 onError.accept(new RowError(n, result.fileRowNum(), type, msgs, result.cause(),
                         result.cellErrors(), result.rawValues()));
             }

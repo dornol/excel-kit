@@ -15,8 +15,8 @@ import java.util.List;
  * @param type      the category of failure
  * @param messages  human-readable messages (validation violations or error descriptions);
  *                  never {@code null}, may be empty
- * @param cause     the underlying exception for mapping/conversion failures;
- *                  {@code null} for validation-only failures
+ * @param cause     the underlying exception when one is available; setter mapping
+ *                  failures may have a {@code null} cause
  * @param cellErrors structured cell-level errors, if available
  * @param rawValues raw source row values, if available
  *

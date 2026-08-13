@@ -10,9 +10,11 @@ import java.util.List;
  * @param <T>      The type of the parsed row data
  * @param data     The actual parsed object (null on failure)
  * @param success  Indicates whether the row was successfully parsed and validated
- * @param messages Any validation or processing messages (e.g. errors or warnings)
- * @param cause    The underlying exception for mapping-stage failures, if any;
- *                 {@code null} for validation-only failures
+ * @param errorType the category of failure, or {@code null} for successful rows
+ * @param messages Any validation or processing messages (e.g. errors or warnings),
+ *                 always immutable and never {@code null}
+ * @param cause    The underlying exception when one is available; setter mapping
+ *                 failures may have a {@code null} cause
  * @param fileRowNum 1-based physical row number in the source file, or {@code -1} if unknown
  * @param cellErrors structured cell-level errors, if available
  * @param rawValues raw source row values, if available
@@ -23,20 +25,33 @@ import java.util.List;
 public record ReadResult<T>(
         @Nullable T data,
         boolean success,
-        @Nullable List<String> messages,
+        RowError.@Nullable Type errorType,
+        List<String> messages,
         @Nullable Throwable cause,
         long fileRowNum,
         List<CellError> cellErrors,
         List<String> rawValues
 ) {
     public ReadResult {
+        errorType = success ? null : errorType == null
+                ? (cause == null ? RowError.Type.VALIDATION : RowError.Type.MAPPING) : errorType;
+        messages = messages == null ? List.of() : List.copyOf(messages);
         cellErrors = cellErrors == null ? List.of() : List.copyOf(cellErrors);
         rawValues = rawValues == null ? List.of() : List.copyOf(rawValues);
     }
 
     public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
                       @Nullable Throwable cause, long fileRowNum, List<CellError> cellErrors) {
-        this(data, success, messages, cause, fileRowNum, cellErrors, List.of());
+        this(data, success, null, messages, cause, fileRowNum, cellErrors, List.of());
+    }
+
+    /**
+     * Backward-compatible constructor with raw values but without an explicit error type.
+     */
+    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
+                      @Nullable Throwable cause, long fileRowNum,
+                      List<CellError> cellErrors, List<String> rawValues) {
+        this(data, success, null, messages, cause, fileRowNum, cellErrors, rawValues);
     }
 
     /**
@@ -44,7 +59,7 @@ public record ReadResult<T>(
      */
     public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
                       @Nullable Throwable cause, long fileRowNum) {
-        this(data, success, messages, cause, fileRowNum, List.of());
+        this(data, success, null, messages, cause, fileRowNum, List.of(), List.of());
     }
 
     /**
@@ -57,7 +72,7 @@ public record ReadResult<T>(
      */
     public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
                       @Nullable Throwable cause) {
-        this(data, success, messages, cause, -1, List.of());
+        this(data, success, null, messages, cause, -1, List.of(), List.of());
     }
 
     /**
@@ -68,6 +83,6 @@ public record ReadResult<T>(
      * @param messages validation or processing messages
      */
     public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages) {
-        this(data, success, messages, null, -1, List.of());
+        this(data, success, null, messages, null, -1, List.of(), List.of());
     }
 }

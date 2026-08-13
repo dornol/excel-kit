@@ -40,7 +40,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected final List<ReadColumn<T>> columns = new ArrayList<>();
     protected final @Nullable Supplier<T> instanceSupplier;
     protected final @Nullable Function<RowData, T> rowMapper;
-    protected final @Nullable Validator validator;
+    protected @Nullable Validator validator;
     protected int headerRowIndex = 0;
     protected @Nullable ProgressCallback progressCallback;
     protected int progressInterval;
@@ -75,6 +75,17 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return (SELF) this;
     }
 
+    /**
+     * Configures the Bean Validation provider used to validate each mapped row.
+     *
+     * @param validator Bean Validation provider
+     * @return this reader for chaining
+     */
+    public SELF validator(Validator validator) {
+        this.validator = java.util.Objects.requireNonNull(validator, "validator cannot be null");
+        return self();
+    }
+
     protected void requireNotMapMode(String method) {
         if (mapMode) {
             throw new IllegalStateException(
@@ -104,7 +115,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      */
     public SELF column(BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(BiConsumer)");
-        columns.add(new ReadColumn<>(setter));
+        columns.add(new ReadColumn<>(java.util.Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -113,7 +124,8 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      */
     public SELF column(String headerName, BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(String, BiConsumer)");
-        columns.add(new ReadColumn<>(headerName, setter));
+        columns.add(new ReadColumn<>(headerName,
+                java.util.Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -123,7 +135,8 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      */
     public SELF column(List<String> headerAliases, BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(List, BiConsumer)");
-        columns.add(new ReadColumn<>(headerAliases, setter));
+        columns.add(new ReadColumn<>(headerAliases,
+                java.util.Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -132,7 +145,8 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      */
     public SELF columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
         requireNotMapMode("columnAt(int, BiConsumer)");
-        columns.add(new ReadColumn<>(null, columnIndex, setter));
+        columns.add(new ReadColumn<>(null, columnIndex,
+                java.util.Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -179,7 +193,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
             throw new IllegalArgumentException("progress interval must be positive");
         }
         this.progressInterval = interval;
-        this.progressCallback = callback;
+        this.progressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
         return self();
     }
 
@@ -231,6 +245,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @since 0.19.0
      */
     public SELF cellConversion(Consumer<CellConversionConfig.Builder> configurer) {
+        java.util.Objects.requireNonNull(configurer, "configurer cannot be null");
         CellConversionConfig.Builder builder = CellConversionConfig.builder();
         configurer.accept(builder);
         return cellConversion(builder.build());
@@ -365,6 +380,27 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         }
     }
 
+    protected InputStream requireInputStream(InputStream inputStream) {
+        return java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null");
+    }
+
+    protected java.nio.file.Path requirePath(java.nio.file.Path path) {
+        return java.util.Objects.requireNonNull(path, "path cannot be null");
+    }
+
+    protected InputStreamSource requireInputSource(InputStreamSource source) {
+        return java.util.Objects.requireNonNull(source, "source cannot be null");
+    }
+
+    protected <C> C requireCallback(C callback, String name) {
+        return java.util.Objects.requireNonNull(callback, name + " cannot be null");
+    }
+
+    protected int requireMaxCollectedErrors(int maximum) {
+        if (maximum < 0) throw new IllegalArgumentException("maxCollectedErrors must be non-negative");
+        return maximum;
+    }
+
     protected ReadSummary summarizeRead(Consumer<Consumer<ReadResult<T>>> execution,
             BooleanSupplier stoppedEarly, Consumer<ReadResult<T>> consumer) {
         long started = System.nanoTime();
@@ -385,8 +421,8 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         ReadSummary summary = summarizeRead(execution, stoppedEarly, result -> {
             row[0]++;
             if (!result.success() && errors.size() < maximum) errors.add(new RowError(row[0],
-                    result.fileRowNum(), result.cause() == null ? RowError.Type.VALIDATION : RowError.Type.MAPPING,
-                    result.messages() == null ? List.of() : result.messages(), result.cause(),
+                    result.fileRowNum(), result.errorType(),
+                    result.messages(), result.cause(),
                     result.cellErrors(), result.rawValues()));
         });
         return new ReadReport(summary, errors, summary.errorRows() > errors.size());

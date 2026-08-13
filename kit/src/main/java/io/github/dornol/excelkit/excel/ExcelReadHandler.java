@@ -10,6 +10,7 @@ import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.core.ReadStoppedException;
 import io.github.dornol.excelkit.core.ReadLimitExceededException;
@@ -156,6 +157,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
+        java.util.Objects.requireNonNull(predicate, "predicate cannot be null");
         markConsumed();
         AtomicReference<RuntimeException> failure = new AtomicReference<>();
         try {
@@ -312,6 +314,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private final Consumer<ReadResult<T>> consumer;
         private @Nullable List<String> messages;
         private @Nullable List<CellError> cellErrors;
+        private boolean mappingFailure;
         private int @Nullable [] resolvedIndices;
         private @Nullable Map<String, Integer> headerIndexMap;
         private long dataRowCount;
@@ -345,6 +348,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             currentRow.clear();
             messages = null;
             cellErrors = null;
+            mappingFailure = false;
         }
 
         /**
@@ -395,7 +399,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 boolean mappingSuccess = mapValuesToInstance();
                 boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
-                result = new ReadResult<>(currentInstance, validationSuccess, messages, null, rowNum + 1L,
+                RowError.Type errorType = validationSuccess ? null
+                        : mappingFailure ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
+                result = new ReadResult<>(currentInstance, validationSuccess, errorType, messages, null, rowNum + 1L,
                         cellErrors == null ? List.of() : cellErrors, rawValues);
             }
 
@@ -507,6 +513,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 if (!mapColumn(columns.get(i), currentInstance, currentRow.get(actualIndex),
                         actualIndex, headerNames, getOrCreateMessages(), getOrCreateCellErrors())) {
                     success = false;
+                    if (!(columns.get(i).isRequired() && currentRow.get(actualIndex).isEmpty())) {
+                        mappingFailure = true;
+                    }
                 }
             }
 
