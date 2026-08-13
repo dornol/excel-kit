@@ -95,6 +95,10 @@ The core artifact keeps format integrations as `compileOnly`. Add
 missing at runtime, the corresponding reader reports the required artifact and feature
 with an actionable error message.
 
+For untrusted Excel input, use `ReadSecurityPolicy.STRICT`. It rejects formulas and
+external workbook links and bounds scanned entry size, total scan bytes, compression ratio,
+and ZIP entry count. `ReadSecurityException.reason()` identifies the violated rule.
+
 ## Supported Formats
 
 | Format | Read | Write | Notes |

@@ -5,6 +5,14 @@ public final class RuntimeDependencyGuard {
     private RuntimeDependencyGuard() {
     }
 
+    /**
+     * Verifies that a runtime class is available and reports the required artifact when it is not.
+     *
+     * @param className class to resolve without initializing it
+     * @param artifact Maven coordinates or dependency name to add
+     * @param feature feature that requires the dependency
+     * @throws ExcelKitException if the class cannot be loaded
+     */
     public static void require(String className, String artifact, String feature) {
         try {
             Class.forName(className, false, RuntimeDependencyGuard.class.getClassLoader());
