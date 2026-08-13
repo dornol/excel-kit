@@ -141,7 +141,10 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
                     }
-                    if (progressInterval > 0 && rowCount % progressInterval == 0) notifyReadProgress(rowCount, -1, -1);
+                    if (readOptions.readProgressInterval() > 0
+                            && rowCount % readOptions.readProgressInterval() == 0) {
+                        notifyReadProgress(rowCount, -1, -1);
+                    }
                 }
             } else {
                 int[] resolvedIndices = resolveIndices();
@@ -169,7 +172,10 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
                     }
-                    if (progressInterval > 0 && rowCount % progressInterval == 0) notifyReadProgress(rowCount, -1, -1);
+                    if (readOptions.readProgressInterval() > 0
+                            && rowCount % readOptions.readProgressInterval() == 0) {
+                        notifyReadProgress(rowCount, -1, -1);
+                    }
                 }
             }
         } catch (ReadStoppedException e) {

@@ -328,7 +328,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
 
     public SELF onReadProgress(int interval, ReadProgressCallback callback) {
         if (interval <= 0) throw new IllegalArgumentException("progress interval must be positive");
-        configuration.progressInterval = interval;
+        configuration.readProgressInterval = interval;
         configuration.readProgressCallback = Objects.requireNonNull(callback, "callback cannot be null");
         return self();
     }

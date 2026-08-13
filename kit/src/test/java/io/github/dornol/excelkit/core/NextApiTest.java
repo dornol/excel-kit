@@ -136,6 +136,18 @@ class NextApiTest {
         assertEquals(1, progress.get(0).successRows());
     }
 
+    @Test void legacyAndDetailedProgressIntervalsAreIndependent() {
+        var legacy = new java.util.ArrayList<Long>();
+        var detailed = new java.util.ArrayList<ReadProgress>();
+        CsvReader.<Person>mapping(row -> new Person(row.get("Name").asString()))
+                .onProgress(2, (count, cursor) -> legacy.add(count))
+                .onReadProgress(3, detailed::add)
+                .read(csv("Name\nA\nB\nC\nD\nE\nF\n"), result -> {});
+
+        assertEquals(java.util.List.of(2L, 4L, 6L), legacy);
+        assertEquals(2, detailed.stream().filter(progress -> !progress.completed()).count());
+    }
+
     @Test void writerSupportsStreamingOptionsAndStructuredTable() throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ExcelWriter.<Person>create(options -> options.rowAccessWindowSize(1)

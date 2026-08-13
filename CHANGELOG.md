@@ -34,6 +34,7 @@ All notable changes to this project will be documented in this file.
   values into mutable execution fields.
 - Reader validator configuration is now owned by the same internal configuration object as the
   other common reader settings.
+- Legacy and detailed reader progress callbacks now keep independent intervals.
 
 ## [0.22.0] - 2026-08-06
 

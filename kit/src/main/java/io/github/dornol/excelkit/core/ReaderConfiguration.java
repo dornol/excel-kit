@@ -22,12 +22,13 @@ final class ReaderConfiguration {
     UnaryOperator<String> headerNormalizer = UnaryOperator.identity();
     ReadLimits limits = ReadLimits.UNLIMITED;
     CancellationToken cancellationToken = CancellationToken.NONE;
+    int readProgressInterval;
     @Nullable ReadProgressCallback readProgressCallback;
     ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
 
     ReadOptions snapshot() {
         return new ReadOptions(strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows,
                 skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer, limits, cancellationToken,
-                readProgressCallback, securityPolicy);
+                readProgressInterval, readProgressCallback, securityPolicy);
     }
 }
