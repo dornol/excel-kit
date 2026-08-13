@@ -46,6 +46,22 @@ class UsabilityImprovementsTest {
     }
 
     @Test
+    void detectedDialectOnlyAppliesToThatRead() {
+        var values = new java.util.ArrayList<String>();
+        var reader = CsvReader.<String>mapping(row -> row.get("Name").asString());
+        reader
+                .readDetected(new ByteArrayInputStream("Name;Age\nA;1\n".getBytes(StandardCharsets.UTF_8)),
+                        result -> values.add(result.data()));
+        assertEquals(List.of("A"), values);
+
+        var next = new java.util.ArrayList<String>();
+        reader
+                .read(new ByteArrayInputStream("Name,Age\nB,2\n".getBytes(StandardCharsets.UTF_8)),
+                        result -> next.add(result.data()));
+        assertEquals(List.of("B"), next);
+    }
+
+    @Test
     void duplicateHeaderMessageIncludesPositions() {
         var exception = assertThrows(ExcelKitException.class, () ->
                 CsvReader.<String>mapping(row -> row.get("Name").asString())

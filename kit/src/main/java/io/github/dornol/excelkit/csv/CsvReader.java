@@ -362,9 +362,16 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         if (detection.type() != TabularFileType.CSV) {
             throw new CsvReadException("Expected CSV content but detected " + detection.type());
         }
-        if (detection.charset() != null) this.charset = detection.charset();
-        if (detection.delimiter() != null) this.delimiter = detection.delimiter();
-        read(buffered, consumer);
+        Charset configuredCharset = charset;
+        char configuredDelimiter = delimiter;
+        try {
+            if (detection.charset() != null) this.charset = detection.charset();
+            if (detection.delimiter() != null) this.delimiter = detection.delimiter();
+            read(buffered, consumer);
+        } finally {
+            charset = configuredCharset;
+            delimiter = configuredDelimiter;
+        }
     }
 
     public void readDetected(Path path, Consumer<ReadResult<T>> consumer) {
@@ -393,9 +400,16 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         if (detection.type() != TabularFileType.CSV) {
             throw new CsvReadException("Expected CSV content but detected " + detection.type());
         }
-        if (detection.charset() != null) this.charset = detection.charset();
-        if (detection.delimiter() != null) this.delimiter = detection.delimiter();
-        return readWithSummary(buffered, consumer);
+        Charset configuredCharset = charset;
+        char configuredDelimiter = delimiter;
+        try {
+            if (detection.charset() != null) this.charset = detection.charset();
+            if (detection.delimiter() != null) this.delimiter = detection.delimiter();
+            return readWithSummary(buffered, consumer);
+        } finally {
+            charset = configuredCharset;
+            delimiter = configuredDelimiter;
+        }
     }
 
     public ReadSummary readDetectedWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {

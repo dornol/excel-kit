@@ -825,7 +825,9 @@ ExcelWorkbookReader.create()
 
 ### 보류
 
-- CSV delimiter/charset 자동 감지: 명시적 `CsvDialect`가 있고 오탐 위험이 있으므로 실제 요구 전에는 추가하지 않는다.
+- CSV delimiter/charset 자동 감지 고도화: 현재 `readDetected()`는 구현되어 있으며, 추가 추정 규칙은
+  오탐 위험이 있으므로 실제 요구 전에는 늘리지 않는다. 감지한 dialect는 해당 실행에만 적용하고
+  reusable reader 설정을 보존한다.
 - column converter/error-message DSL: 현재 setter lambda로 표현 가능하며 overload 복잡도가 커질 수 있다.
 - password API 재설계: 현재 검증과 secret 노출 방지를 우선 점검하고 새 credentials 타입은 만들지 않는다.
 - 상세 progress event: 실제 SSE/UI 요구가 확인되기 전에는 기존 callback을 유지한다.

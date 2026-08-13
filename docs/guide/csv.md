@@ -75,6 +75,9 @@ CsvReader.<Row>mapping(this::map)
     .readDetectedWithSummary(source, result -> { ... });
 ```
 
+Detected settings apply only to that read operation; the reusable reader keeps its configured
+charset and delimiter for subsequent reads.
+
 `readDetected(InputStreamSource, ...)` and `readDetectedWithSummary(...)` close streams opened by
 the source. Caller-owned `InputStream` instances remain open.
 
