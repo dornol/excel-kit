@@ -3,16 +3,16 @@ package io.github.dornol.excelkit.core;
 import java.util.List;
 
 /** Applies common cancellation, blank-row, and emitted-row limits to a read stream. */
-public final class ReadRowPolicy {
+final class ReadRowPolicy {
     private final ReadOptions options;
     private long emittedRows;
     private int consecutiveBlankRows;
 
-    public ReadRowPolicy(ReadOptions options) {
+    ReadRowPolicy(ReadOptions options) {
         this.options = options;
     }
 
-    public Decision evaluate(List<String> rawValues) {
+    Decision evaluate(List<String> rawValues) {
         if (options.cancellationToken().isCancellationRequested()) {
             throw new ReadStoppedException();
         }
@@ -34,9 +34,9 @@ public final class ReadRowPolicy {
         return Decision.PROCESS;
     }
 
-    public void recordEmitted() {
+    void recordEmitted() {
         emittedRows++;
     }
 
-    public enum Decision { PROCESS, SKIP, STOP }
+    enum Decision { PROCESS, SKIP, STOP }
 }

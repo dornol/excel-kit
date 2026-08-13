@@ -53,6 +53,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected final @Nullable Set<String> selectedMapColumns;
     protected final ReadOptions readOptions;
     private final ReadLifecycle lifecycle = new ReadLifecycle();
+    private final ReadRowPolicy rowPolicy;
     protected boolean stoppedEarly;
 
     protected AbstractReadHandler(InputStream input, @Nullable Supplier<T> supplier,
@@ -65,6 +66,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.validator = validator;
         this.selectedMapColumns = selectedColumns;
         this.readOptions = Objects.requireNonNull(readOptions, "readOptions cannot be null");
+        this.rowPolicy = new ReadRowPolicy(this.readOptions);
         initTempFile(Objects.requireNonNull(input, "input cannot be null"), extension);
     }
 
@@ -79,6 +81,21 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
 
     protected List<String> rawValues(List<CellData> cells) {
         return cells.stream().map(CellData::formattedValue).toList();
+    }
+
+    protected static final int PROCESS_ROW = 0;
+    protected static final int SKIP_ROW = 1;
+    protected static final int STOP_READING = 2;
+
+    /** Evaluates common row handling without exposing the internal policy type. */
+    protected final int evaluateRow(List<String> rawValues) {
+        ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
+        return decision == ReadRowPolicy.Decision.PROCESS ? PROCESS_ROW
+                : decision == ReadRowPolicy.Decision.SKIP ? SKIP_ROW : STOP_READING;
+    }
+
+    protected final void recordEmittedRow() {
+        rowPolicy.recordEmitted();
     }
 
     /**

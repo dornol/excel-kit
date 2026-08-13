@@ -10,7 +10,6 @@ import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.ReadRowPolicy;
 import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.core.ReadStoppedException;
@@ -320,7 +319,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private int @Nullable [] resolvedIndices;
         private @Nullable Map<String, Integer> headerIndexMap;
         private long dataRowCount;
-        private final ReadRowPolicy rowPolicy = new ReadRowPolicy(readOptions);
         private final @Nullable Cursor cursor;
 
         public SheetHandler(Consumer<ReadResult<T>> consumer, long totalRows) {
@@ -378,11 +376,11 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
 
             List<String> rawValues = rawValues(currentRow);
-            ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
-            if (decision == ReadRowPolicy.Decision.STOP) {
+            int rowDecision = evaluateRow(rawValues);
+            if (rowDecision == STOP_READING) {
                 throw new StopReadingException();
             }
-            if (decision == ReadRowPolicy.Decision.SKIP) {
+            if (rowDecision == SKIP_ROW) {
                 return;
             }
 
@@ -406,7 +404,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             consumer.accept(result);
 
             dataRowCount++;
-            rowPolicy.recordEmitted();
+            recordEmittedRow();
             if (progressCallback != null && progressInterval > 0
                     && dataRowCount % progressInterval == 0) {
                 progressCallback.onProgress(dataRowCount, cursor);

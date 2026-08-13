@@ -36,6 +36,7 @@ All notable changes to this project will be documented in this file.
   other common reader settings.
 - Legacy and detailed reader progress callbacks now keep independent intervals.
 - CSV and Excel readers now share row-policy handling for cancellation, blank rows, and row limits.
+- Internal row-policy implementation is no longer exposed as public API.
 
 ## [0.22.0] - 2026-08-06
 

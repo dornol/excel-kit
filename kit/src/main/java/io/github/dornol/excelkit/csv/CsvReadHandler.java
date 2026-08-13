@@ -13,7 +13,6 @@ import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.ReadRowPolicy;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.ReadStoppedException;
@@ -112,21 +111,20 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
             String[] line;
             long rowCount = 0;
-            ReadRowPolicy rowPolicy = new ReadRowPolicy(readOptions);
 
             if (rowMapper != null) {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
                     List<String> rawValues = rawValues(line);
-                    ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
-                    if (decision == ReadRowPolicy.Decision.STOP) break;
-                    if (decision == ReadRowPolicy.Decision.SKIP) {
+                    int rowDecision = evaluateRow(rawValues);
+                    if (rowDecision == STOP_READING) break;
+                    if (rowDecision == SKIP_ROW) {
                         rowCount++;
                         continue;
                     }
                     guardedConsumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
-                    rowPolicy.recordEmitted();
+                    recordEmittedRow();
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
@@ -140,14 +138,14 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 int[] resolvedIndices = resolveIndices();
                 while ((line = reader.readNext()) != null) {
                     List<String> rawValues = rawValues(line);
-                    ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
-                    if (decision == ReadRowPolicy.Decision.STOP) break;
-                    if (decision == ReadRowPolicy.Decision.SKIP) {
+                    int rowDecision = evaluateRow(rawValues);
+                    if (rowDecision == STOP_READING) break;
+                    if (rowDecision == SKIP_ROW) {
                         rowCount++;
                         continue;
                     }
                     guardedConsumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
-                    rowPolicy.recordEmitted();
+                    recordEmittedRow();
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
