@@ -898,6 +898,7 @@ breaking change를 허용하더라도 사용자가 한 번에 이동할 수 있�
 ### 호환성과 contract 테스트
 
 - Excel/CSV 공통 reader option contract suite
+- 공통 contract test로 `maxRows`, `readWhile`, cell limit, cancellation, InputStream ownership 검증
 - resource ownership별 close 여부
 - 임시 파일 cleanup
 - one-shot session과 reusable configuration 구분
