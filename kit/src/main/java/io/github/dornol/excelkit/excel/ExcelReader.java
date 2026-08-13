@@ -20,6 +20,7 @@ import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.ReadSummary;
 import io.github.dornol.excelkit.core.ReadReport;
 import io.github.dornol.excelkit.core.ReadSession;
+import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 
 /**
@@ -45,6 +46,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      */
     public ExcelReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         super(instanceSupplier, validator);
+        RuntimeDependencyGuard.require("org.apache.poi.xssf.eventusermodel.XSSFReader",
+                "org.apache.poi:poi-ooxml", "ExcelReader");
     }
 
     /**
@@ -56,6 +59,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     private ExcelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         super(rowMapper, validator);
+        RuntimeDependencyGuard.require("org.apache.poi.xssf.eventusermodel.XSSFReader",
+                "org.apache.poi:poi-ooxml", "ExcelReader");
     }
 
     /**

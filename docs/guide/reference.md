@@ -90,6 +90,11 @@ schema.excelReader(row -> new BookRecord(
 - **JDK 17+**
 - Apache POI 5.x for Excel operations
 
+The core artifact keeps format integrations as `compileOnly`. Add
+`org.apache.poi:poi-ooxml` for Excel and `com.opencsv:opencsv` for CSV. If one is
+missing at runtime, the corresponding reader reports the required artifact and feature
+with an actionable error message.
+
 ## Supported Formats
 
 | Format | Read | Write | Notes |

@@ -32,6 +32,7 @@ import io.github.dornol.excelkit.core.ReadReport;
 import io.github.dornol.excelkit.core.ReadSession;
 import io.github.dornol.excelkit.core.TabularFileDetector;
 import io.github.dornol.excelkit.core.TabularFileType;
+import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
 
 /**
  * Builder-style class for configuring CSV row readers.
@@ -47,10 +48,10 @@ import io.github.dornol.excelkit.core.TabularFileType;
 public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
-    private char quoteChar = ICSVParser.DEFAULT_QUOTE_CHARACTER;
-    private char escapeChar = ICSVParser.DEFAULT_ESCAPE_CHARACTER;
-    private boolean strictQuotes = ICSVParser.DEFAULT_STRICT_QUOTES;
-    private boolean ignoreLeadingWhiteSpace = ICSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE;
+    private char quoteChar = '"';
+    private char escapeChar = '\\';
+    private boolean strictQuotes = false;
+    private boolean ignoreLeadingWhiteSpace = false;
     private int detectionSampleBytes = TabularFileDetector.DEFAULT_SAMPLE_BYTES;
 
     /**
@@ -58,6 +59,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      */
     public CsvReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         super(instanceSupplier, validator);
+        RuntimeDependencyGuard.require("com.opencsv.CSVReader", "com.opencsv:opencsv", "CsvReader");
     }
 
     /**
@@ -94,6 +96,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     private CsvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         super(rowMapper, validator);
+        RuntimeDependencyGuard.require("com.opencsv.CSVReader", "com.opencsv:opencsv", "CsvReader");
     }
 
     /**
