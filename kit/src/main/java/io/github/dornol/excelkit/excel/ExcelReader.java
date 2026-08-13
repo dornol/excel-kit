@@ -186,8 +186,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
             return map;
         };
         ExcelReader<Map<String, String>> reader = ExcelReader.mapping(mapMapper);
-        reader.mapMode = true;
-        reader.selectedMapColumns(selectedColumns);
+        reader.enableMapMode(selectedColumns);
         return reader;
     }
 
@@ -289,10 +288,10 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private ExcelReadSessionConfig<T> sessionConfig() {
-        return new ExcelReadSessionConfig<>(rowMapper == null ? List.copyOf(columns) : null,
+        return new ExcelReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
                 instanceSupplier, rowMapper, configuredValidator(), sheetIndex, configuredHeaderRowIndex(), headerRows,
-                configuredProgressInterval(), configuredProgressCallback(), password, countRows,
-                selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), snapshotReadOptions());
+                password, countRows,
+                configuredSelectedMapColumns(), snapshotReadOptions());
     }
 
     /** Reads an input stream without closing it. */

@@ -13,6 +13,5 @@ import java.util.function.Supplier;
 record CsvReadSessionConfig<T>(@Nullable List<ReadColumn<T>> columns,
         @Nullable Supplier<T> supplier, @Nullable Function<RowData,T> mapper,
         @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
-        int progressInterval, @Nullable ProgressCallback progressCallback,
         @Nullable Set<String> selectedColumns, char quoteChar, char escapeChar,
         boolean strictQuotes, boolean ignoreLeadingWhiteSpace, ReadOptions options) {}

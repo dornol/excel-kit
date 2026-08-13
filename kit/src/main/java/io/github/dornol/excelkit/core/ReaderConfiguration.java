@@ -29,6 +29,6 @@ final class ReaderConfiguration {
     ReadOptions snapshot() {
         return new ReadOptions(strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows,
                 skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer, limits, cancellationToken,
-                readProgressInterval, readProgressCallback, securityPolicy);
+                progressInterval, progressCallback, readProgressInterval, readProgressCallback, securityPolicy);
     }
 }

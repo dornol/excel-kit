@@ -37,6 +37,9 @@ All notable changes to this project will be documented in this file.
 - Legacy and detailed reader progress callbacks now keep independent intervals.
 - CSV and Excel readers now share row-policy handling for cancellation, blank rows, and row limits.
 - Internal row-policy implementation is no longer exposed as public API.
+- Legacy progress settings now travel through the immutable reader options snapshot alongside
+  detailed progress settings.
+- Map-mode selection and column collections are encapsulated and snapshotted when a session starts.
 
 ## [0.22.0] - 2026-08-06
 

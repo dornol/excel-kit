@@ -12,6 +12,5 @@ import java.util.function.Supplier;
 record ExcelReadSessionConfig<T>(@Nullable List<ReadColumn<T>> columns,
         @Nullable Supplier<T> supplier, @Nullable Function<RowData,T> mapper,
         @Nullable Validator validator, int sheetIndex, int headerRowIndex, int headerRows,
-        int progressInterval, @Nullable ProgressCallback progressCallback,
         @Nullable String password, boolean countRows, @Nullable Set<String> selectedColumns,
         ReadOptions options) {}

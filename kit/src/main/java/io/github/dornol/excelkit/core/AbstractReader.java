@@ -40,8 +40,8 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected final @Nullable Supplier<T> instanceSupplier;
     protected final @Nullable Function<RowData, T> rowMapper;
     private final ReaderConfiguration configuration = new ReaderConfiguration();
-    protected boolean mapMode = false;
-    protected @Nullable Set<String> selectedMapColumns;
+    private boolean mapMode;
+    private @Nullable Set<String> selectedMapColumns;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
@@ -94,20 +94,21 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return configuration.headerRowIndex;
     }
 
-    protected final int configuredProgressInterval() {
-        return configuration.progressInterval;
-    }
-
-    protected final @Nullable ProgressCallback configuredProgressCallback() {
-        return configuration.progressCallback;
-    }
-
     void addColumn(ReadColumn<T> column) {
         columns.add(column);
     }
 
-    protected void selectedMapColumns(@Nullable Set<String> selectedColumns) {
+    protected final void enableMapMode(@Nullable Set<String> selectedColumns) {
+        mapMode = true;
         this.selectedMapColumns = selectedColumns == null ? null : new LinkedHashSet<>(selectedColumns);
+    }
+
+    protected final List<ReadColumn<T>> configuredColumns() {
+        return List.copyOf(columns);
+    }
+
+    protected final @Nullable Set<String> configuredSelectedMapColumns() {
+        return selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns);
     }
 
     /**

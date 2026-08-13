@@ -100,8 +100,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         this.sheetIndex = config.sheetIndex();
         this.headerRowIndex = config.headerRowIndex();
         this.headerRows = config.headerRows();
-        this.progressInterval = config.progressInterval();
-        this.progressCallback = config.progressCallback();
         this.password = config.password();
         this.countRows = config.countRows();
         if (externalPath) useExternalInput(path);
@@ -112,8 +110,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final int sheetIndex;
     private final int headerRowIndex;
     private final int headerRows;
-    private final int progressInterval;
-    private final @Nullable ProgressCallback progressCallback;
     private final @Nullable String password;
     private final boolean countRows;
 
@@ -323,7 +319,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
         public SheetHandler(Consumer<ReadResult<T>> consumer, long totalRows) {
             this.consumer = consumer;
-            if (progressCallback != null) {
+            if (readOptions.progressCallback() != null) {
                 this.cursor = new Cursor();
                 if (totalRows >= 0) {
                     this.cursor.setTotalRows(totalRows);
@@ -405,9 +401,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             dataRowCount++;
             recordEmittedRow();
-            if (progressCallback != null && progressInterval > 0
-                    && dataRowCount % progressInterval == 0) {
-                progressCallback.onProgress(dataRowCount, cursor);
+            if (readOptions.progressCallback() != null && readOptions.progressInterval() > 0
+                    && dataRowCount % readOptions.progressInterval() == 0) {
+                readOptions.progressCallback().onProgress(dataRowCount, cursor);
             }
             if (readOptions.readProgressInterval() > 0
                     && dataRowCount % readOptions.readProgressInterval() == 0) {

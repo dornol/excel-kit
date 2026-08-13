@@ -17,6 +17,8 @@ public record ReadOptions(
         UnaryOperator<String> headerNormalizer,
         ReadLimits limits,
         CancellationToken cancellationToken,
+        int progressInterval,
+        @Nullable ProgressCallback progressCallback,
         int readProgressInterval,
         @Nullable ReadProgressCallback readProgressCallback,
         ReadSecurityPolicy securityPolicy
@@ -30,6 +32,7 @@ public record ReadOptions(
         if (maxRows < -1) throw new IllegalArgumentException("maxRows must be >= -1");
         if (stopAtBlankRows < 0) throw new IllegalArgumentException("stopAtBlankRows must be non-negative");
         if (maxErrors < -1) throw new IllegalArgumentException("maxErrors must be >= -1");
+        if (progressInterval < 0) throw new IllegalArgumentException("progressInterval must be non-negative");
         if (readProgressInterval < 0) throw new IllegalArgumentException("readProgressInterval must be non-negative");
     }
 }

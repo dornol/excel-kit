@@ -190,8 +190,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
             return map;
         };
         CsvReader<Map<String, String>> reader = CsvReader.mapping(mapMapper);
-        reader.mapMode = true;
-        reader.selectedMapColumns(selectedColumns);
+        reader.enableMapMode(selectedColumns);
         return reader;
     }
 
@@ -293,10 +292,9 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private CsvReadSessionConfig<T> sessionConfig() {
-        return new CsvReadSessionConfig<>(rowMapper == null ? List.copyOf(columns) : null,
+        return new CsvReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
                 instanceSupplier, rowMapper, configuredValidator(), configuredHeaderRowIndex(), delimiter, charset,
-                configuredProgressInterval(), configuredProgressCallback(),
-                selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), quoteChar,
+                configuredSelectedMapColumns(), quoteChar,
                 escapeChar, strictQuotes, ignoreLeadingWhiteSpace, snapshotReadOptions());
     }
 

@@ -82,8 +82,6 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         this.escapeChar = config.escapeChar();
         this.strictQuotes = config.strictQuotes();
         this.ignoreLeadingWhiteSpace = config.ignoreLeadingWhiteSpace();
-        this.progressInterval = config.progressInterval();
-        this.progressCallback = config.progressCallback();
         if (externalPath) useExternalInput(path);
         validateReadOptions();
     }
@@ -97,8 +95,6 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final char escapeChar;
     private final boolean strictQuotes;
     private final boolean ignoreLeadingWhiteSpace;
-    private final int progressInterval;
-    private final @Nullable ProgressCallback progressCallback;
 
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
@@ -126,8 +122,9 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     guardedConsumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
                     recordEmittedRow();
                     rowCount++;
-                    if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
-                        progressCallback.onProgress(rowCount, null);
+                    if (readOptions.progressCallback() != null && readOptions.progressInterval() > 0
+                            && rowCount % readOptions.progressInterval() == 0) {
+                        readOptions.progressCallback().onProgress(rowCount, null);
                     }
                     if (readOptions.readProgressInterval() > 0
                             && rowCount % readOptions.readProgressInterval() == 0) {
@@ -147,8 +144,9 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     guardedConsumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
                     recordEmittedRow();
                     rowCount++;
-                    if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
-                        progressCallback.onProgress(rowCount, null);
+                    if (readOptions.progressCallback() != null && readOptions.progressInterval() > 0
+                            && rowCount % readOptions.progressInterval() == 0) {
+                        readOptions.progressCallback().onProgress(rowCount, null);
                     }
                     if (readOptions.readProgressInterval() > 0
                             && rowCount % readOptions.readProgressInterval() == 0) {
