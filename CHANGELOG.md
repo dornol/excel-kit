@@ -43,6 +43,8 @@ All notable changes to this project will be documented in this file.
 - Legacy progress callback dispatch is now shared by CSV and Excel read handlers.
 - Added reusable `ReaderOptions`, null-safe row/cell accessors, CSV detection source/summary APIs,
   configurable detection sampling, and `readAll(...)` convenience methods.
+- Added `ExcelWorkbookReader` with per-sheet readers/schemas, sheet-level reports, bounded errors,
+  and continue/stop failure policies.
 
 ## [0.22.0] - 2026-08-06
 
