@@ -139,6 +139,11 @@ matrix의 모든 가능한 조합을 매번 실행할 필요는 없다. 최소 �
 OpenCSV 5.12.0)을 JDK 21에서 검증한다. 별도 CI 축에서는 현재 dependency 조합을 JDK 17,
 21, 25에서 검증한다.
 
+공개 API 비교는 0.22.0 baseline을 사용한다. Reader lifecycle/configuration 재설계로
+`AbstractReader`, `AbstractReadHandler`, `ReadOptions`, `CsvReader`, `ExcelReader`의
+기존 protected 상태와 상속 경계가 변경된 항목만 `.japicmp-allowlist`에 명시적으로 허용한다.
+그 외의 호환성 변경은 CI에서 실패한다.
+
 ### 누락된 의존성의 오류 경험
 
 가능한 진입점에서는 일반적인 `NoClassDefFoundError`보다 필요한 artifact를 알려주는 메시지를

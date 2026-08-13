@@ -17,3 +17,10 @@ io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,ja
 io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List,java.lang.Throwable,long)
 io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List,java.lang.Throwable,long,java.util.List)
 io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List,java.lang.Throwable,long,java.util.List,java.util.List)
+
+# Deliberate reader configuration/lifecycle redesign from the 0.22.0 baseline.
+io.github.dornol.excelkit.core.AbstractReader
+io.github.dornol.excelkit.core.AbstractReadHandler
+io.github.dornol.excelkit.core.ReadOptions
+io.github.dornol.excelkit.csv.CsvReader
+io.github.dornol.excelkit.excel.ExcelReader
