@@ -14,6 +14,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -75,7 +76,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.rowMapper = mapper;
         this.validator = validator;
         this.selectedMapColumns = selectedColumns;
-        initTempFile(java.util.Objects.requireNonNull(input, "input cannot be null"), extension);
+        initTempFile(Objects.requireNonNull(input, "input cannot be null"), extension);
     }
 
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
@@ -133,7 +134,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     protected final void useExternalInput(Path path) {
-        if (!Files.isRegularFile(java.util.Objects.requireNonNull(path, "path cannot be null"))) {
+        if (!Files.isRegularFile(Objects.requireNonNull(path, "path cannot be null"))) {
             close();
             throw new ExcelKitException("Input path is not a regular file: " + path);
         }
@@ -166,10 +167,10 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         this.securityPolicy = options.securityPolicy();
         if (limits.maxInputBytes() >= 0) {
             try {
-                if (Files.size(java.util.Objects.requireNonNull(getTempFile())) > limits.maxInputBytes()) {
+                if (Files.size(Objects.requireNonNull(getTempFile())) > limits.maxInputBytes()) {
                     close();
                     throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES,
-                            limits.maxInputBytes(), Files.size(java.util.Objects.requireNonNull(getTempFile())));
+                            limits.maxInputBytes(), Files.size(Objects.requireNonNull(getTempFile())));
                 }
             } catch (java.io.IOException e) {
                 close();
@@ -180,7 +181,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     protected Consumer<ReadResult<T>> guardedConsumer(Consumer<ReadResult<T>> consumer) {
-        java.util.Objects.requireNonNull(consumer, "consumer cannot be null");
+        Objects.requireNonNull(consumer, "consumer cannot be null");
         AtomicLong errors = new AtomicLong();
         return result -> {
             if (cancellationToken.isCancellationRequested()) {

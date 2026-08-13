@@ -19,6 +19,7 @@ import io.github.dornol.excelkit.core.ProgressCallback;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -327,7 +328,7 @@ public class CsvWriter<T> {
 
     /** Writes rows from an Iterable without copying them. */
     public CsvHandler write(Iterable<T> rows) {
-        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        Objects.requireNonNull(rows, "rows cannot be null");
         return write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
     }
 

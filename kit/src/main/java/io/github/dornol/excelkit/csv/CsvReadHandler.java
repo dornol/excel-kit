@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -190,7 +191,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
-        java.util.Objects.requireNonNull(predicate, "predicate cannot be null");
+        Objects.requireNonNull(predicate, "predicate cannot be null");
         AtomicReference<RuntimeException> failure = new AtomicReference<>();
         read(result -> {
             boolean proceed;

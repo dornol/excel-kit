@@ -14,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -258,7 +259,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     public ExcelWriter<T> table(TableOptions options) {
-        java.util.Objects.requireNonNull(options, "options cannot be null");
+        Objects.requireNonNull(options, "options cannot be null");
         StructuredTableWriter.validateName(options.name());
         this.tableOptions = options;
         return this;
@@ -715,7 +716,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
     /** Writes rows from an Iterable without copying them. */
     public ExcelHandler write(Iterable<T> rows) {
-        java.util.Objects.requireNonNull(rows, "rows cannot be null");
+        Objects.requireNonNull(rows, "rows cannot be null");
         return write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
     }
 

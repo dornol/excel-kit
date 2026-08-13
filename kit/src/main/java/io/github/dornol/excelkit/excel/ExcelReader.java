@@ -278,13 +278,13 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return A handler to execute Excel parsing
      */
     private ExcelReadHandler<T> createHandler(InputStream inputStream) {
-        java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null");
+        Objects.requireNonNull(inputStream, "inputStream cannot be null");
         inputStream = limitInput(inputStream);
         return new ExcelReadHandler<>(inputStream, sessionConfig());
     }
 
     private ExcelReadHandler<T> createHandler(Path path) {
-        java.util.Objects.requireNonNull(path, "path cannot be null");
+        Objects.requireNonNull(path, "path cannot be null");
         return new ExcelReadHandler<>(path, sessionConfig());
     }
 
@@ -423,12 +423,12 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public static List<ExcelSheetInfo> getSheetNames(Path path) {
-        java.util.Objects.requireNonNull(path, "path cannot be null");
+        Objects.requireNonNull(path, "path cannot be null");
         return ExcelMetadataReader.sheetNames((InputStreamSource) () -> Files.newInputStream(path));
     }
 
     public static List<ExcelSheetInfo> getSheetNames(InputStreamSource source) {
-        java.util.Objects.requireNonNull(source, "source cannot be null");
+        Objects.requireNonNull(source, "source cannot be null");
         return ExcelMetadataReader.sheetNames(source);
     }
 
@@ -445,12 +445,12 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public static List<String> getSheetHeaders(Path path, int sheetIndex, int headerRowIndex) {
-        java.util.Objects.requireNonNull(path, "path cannot be null");
+        Objects.requireNonNull(path, "path cannot be null");
         return ExcelMetadataReader.headers((InputStreamSource) () -> Files.newInputStream(path), sheetIndex, headerRowIndex);
     }
 
     public static List<String> getSheetHeaders(InputStreamSource source, int sheetIndex, int headerRowIndex) {
-        java.util.Objects.requireNonNull(source, "source cannot be null");
+        Objects.requireNonNull(source, "source cannot be null");
         return ExcelMetadataReader.headers(source, sheetIndex, headerRowIndex);
     }
 

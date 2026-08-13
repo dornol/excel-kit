@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
   exception categories they can actually handle.
 - API compatibility CI now compares against `0.22.0` and explicitly excludes the intentionally
   redesigned reader/result classes until the next major release.
+- Common null-check expressions now use consistent `Objects` imports across reader and writer
+  implementations.
 
 ## [0.22.0] - 2026-08-06
 

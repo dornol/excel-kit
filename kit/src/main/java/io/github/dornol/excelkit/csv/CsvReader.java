@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -281,13 +282,13 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      * @return A handler to execute CSV parsing
      */
     private CsvReadHandler<T> createHandler(InputStream inputStream) {
-        java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null");
+        Objects.requireNonNull(inputStream, "inputStream cannot be null");
         inputStream = limitInput(inputStream);
         return new CsvReadHandler<>(inputStream, sessionConfig());
     }
 
     private CsvReadHandler<T> createHandler(Path path) {
-        java.util.Objects.requireNonNull(path, "path cannot be null");
+        Objects.requireNonNull(path, "path cannot be null");
         return new CsvReadHandler<>(path, sessionConfig());
     }
 

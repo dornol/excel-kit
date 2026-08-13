@@ -13,6 +13,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -212,9 +213,9 @@ public class ExcelKitSchema<T> {
          * Creates a schema column.
          */
         public SchemaColumn {
-            java.util.Objects.requireNonNull(name, "name cannot be null");
-            java.util.Objects.requireNonNull(writeFunction, "writeFunction cannot be null");
-            java.util.Objects.requireNonNull(readSetter, "readSetter cannot be null");
+            Objects.requireNonNull(name, "name cannot be null");
+            Objects.requireNonNull(writeFunction, "writeFunction cannot be null");
+            Objects.requireNonNull(readSetter, "readSetter cannot be null");
             readHeaderNames = normalizeReadHeaderNames(name, readHeaderNames);
         }
 
@@ -244,7 +245,7 @@ public class ExcelKitSchema<T> {
         }
 
         private static List<String> normalizeReadHeaderNames(String name, List<String> aliases) {
-            java.util.Objects.requireNonNull(aliases, "readHeaderNames cannot be null");
+            Objects.requireNonNull(aliases, "readHeaderNames cannot be null");
             List<String> normalized = new ArrayList<>();
             normalized.add(name);
             for (String alias : aliases) {
@@ -431,17 +432,17 @@ public class ExcelKitSchema<T> {
         }
 
         public Builder<T> duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
-            this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+            this.duplicateHeaderPolicy = Objects.requireNonNull(policy, "policy cannot be null");
             return this;
         }
 
         public Builder<T> cellConversion(CellConversionConfig config) {
-            this.cellConversionConfig = java.util.Objects.requireNonNull(config, "config cannot be null");
+            this.cellConversionConfig = Objects.requireNonNull(config, "config cannot be null");
             return this;
         }
 
         public Builder<T> writeErrorPolicy(ExcelWriteErrorPolicy policy) {
-            this.writeErrorPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+            this.writeErrorPolicy = Objects.requireNonNull(policy, "policy cannot be null");
             return this;
         }
 

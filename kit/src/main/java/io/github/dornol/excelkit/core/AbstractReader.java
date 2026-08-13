@@ -6,6 +6,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -60,14 +61,14 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
-        this.instanceSupplier = java.util.Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
+        this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.rowMapper = null;
         this.validator = validator;
     }
 
     protected AbstractReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         this.instanceSupplier = null;
-        this.rowMapper = java.util.Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
+        this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
         this.validator = validator;
     }
 
@@ -82,7 +83,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @return this reader for chaining
      */
     public SELF validator(Validator validator) {
-        this.validator = java.util.Objects.requireNonNull(validator, "validator cannot be null");
+        this.validator = Objects.requireNonNull(validator, "validator cannot be null");
         return self();
     }
 
@@ -115,7 +116,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      */
     public SELF column(BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(BiConsumer)");
-        columns.add(new ReadColumn<>(java.util.Objects.requireNonNull(setter, "setter cannot be null")));
+        columns.add(new ReadColumn<>(Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -125,7 +126,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     public SELF column(String headerName, BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(String, BiConsumer)");
         columns.add(new ReadColumn<>(headerName,
-                java.util.Objects.requireNonNull(setter, "setter cannot be null")));
+                Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -136,7 +137,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     public SELF column(List<String> headerAliases, BiConsumer<T, CellData> setter) {
         requireNotMapMode("column(List, BiConsumer)");
         columns.add(new ReadColumn<>(headerAliases,
-                java.util.Objects.requireNonNull(setter, "setter cannot be null")));
+                Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -146,7 +147,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     public SELF columnAt(int columnIndex, BiConsumer<T, CellData> setter) {
         requireNotMapMode("columnAt(int, BiConsumer)");
         columns.add(new ReadColumn<>(null, columnIndex,
-                java.util.Objects.requireNonNull(setter, "setter cannot be null")));
+                Objects.requireNonNull(setter, "setter cannot be null")));
         return self();
     }
 
@@ -193,7 +194,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
             throw new IllegalArgumentException("progress interval must be positive");
         }
         this.progressInterval = interval;
-        this.progressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
+        this.progressCallback = Objects.requireNonNull(callback, "callback cannot be null");
         return self();
     }
 
@@ -225,7 +226,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * Sets duplicate header handling. Defaults to {@link DuplicateHeaderPolicy#FIRST}.
      */
     public SELF duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
-        this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+        this.duplicateHeaderPolicy = Objects.requireNonNull(policy, "policy cannot be null");
         return self();
     }
 
@@ -235,7 +236,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @since 0.19.0
      */
     public SELF cellConversion(CellConversionConfig config) {
-        this.cellConversionConfig = java.util.Objects.requireNonNull(config, "config cannot be null");
+        this.cellConversionConfig = Objects.requireNonNull(config, "config cannot be null");
         return self();
     }
 
@@ -245,7 +246,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @since 0.19.0
      */
     public SELF cellConversion(Consumer<CellConversionConfig.Builder> configurer) {
-        java.util.Objects.requireNonNull(configurer, "configurer cannot be null");
+        Objects.requireNonNull(configurer, "configurer cannot be null");
         CellConversionConfig.Builder builder = CellConversionConfig.builder();
         configurer.accept(builder);
         return cellConversion(builder.build());
@@ -308,33 +309,33 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
 
     /** Normalizes headers before matching names and aliases. Original names remain available for diagnostics. */
     public SELF headerNormalizer(UnaryOperator<String> normalizer) {
-        this.headerNormalizer = java.util.Objects.requireNonNull(normalizer, "normalizer cannot be null");
+        this.headerNormalizer = Objects.requireNonNull(normalizer, "normalizer cannot be null");
         return self();
     }
 
     public SELF headerPolicy(HeaderPolicy policy) {
-        return headerNormalizer(java.util.Objects.requireNonNull(policy, "policy cannot be null").normalizer());
+        return headerNormalizer(Objects.requireNonNull(policy, "policy cannot be null").normalizer());
     }
 
     public SELF limits(ReadLimits limits) {
-        this.limits = java.util.Objects.requireNonNull(limits, "limits cannot be null");
+        this.limits = Objects.requireNonNull(limits, "limits cannot be null");
         return self();
     }
 
     public SELF cancellationToken(CancellationToken token) {
-        this.cancellationToken = java.util.Objects.requireNonNull(token, "token cannot be null");
+        this.cancellationToken = Objects.requireNonNull(token, "token cannot be null");
         return self();
     }
 
     public SELF onReadProgress(int interval, ReadProgressCallback callback) {
         if (interval <= 0) throw new IllegalArgumentException("progress interval must be positive");
         this.progressInterval = interval;
-        this.readProgressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
+        this.readProgressCallback = Objects.requireNonNull(callback, "callback cannot be null");
         return self();
     }
 
     public SELF securityPolicy(ReadSecurityPolicy policy) {
-        this.securityPolicy = java.util.Objects.requireNonNull(policy, "policy cannot be null");
+        this.securityPolicy = Objects.requireNonNull(policy, "policy cannot be null");
         return self();
     }
 
@@ -345,7 +346,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     }
 
     protected InputStream limitInput(InputStream input) {
-        java.util.Objects.requireNonNull(input, "input cannot be null");
+        Objects.requireNonNull(input, "input cannot be null");
         long maximum = limits.maxInputBytes();
         if (maximum < 0) return input;
         return new FilterInputStream(input) {
@@ -372,9 +373,9 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
 
     protected <R> R executeFromSource(InputStreamSource source, Function<InputStream,R> execution,
             BiFunction<String,IOException,? extends RuntimeException> exceptionFactory) {
-        java.util.Objects.requireNonNull(source, "source cannot be null");
-        java.util.Objects.requireNonNull(execution, "execution cannot be null");
-        java.util.Objects.requireNonNull(exceptionFactory, "exceptionFactory cannot be null");
+        Objects.requireNonNull(source, "source cannot be null");
+        Objects.requireNonNull(execution, "execution cannot be null");
+        Objects.requireNonNull(exceptionFactory, "exceptionFactory cannot be null");
         try (InputStream input = source.openStream()) {
             return execution.apply(input);
         } catch (IOException e) {
@@ -383,19 +384,19 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     }
 
     protected InputStream requireInputStream(InputStream inputStream) {
-        return java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null");
+        return Objects.requireNonNull(inputStream, "inputStream cannot be null");
     }
 
     protected java.nio.file.Path requirePath(java.nio.file.Path path) {
-        return java.util.Objects.requireNonNull(path, "path cannot be null");
+        return Objects.requireNonNull(path, "path cannot be null");
     }
 
     protected InputStreamSource requireInputSource(InputStreamSource source) {
-        return java.util.Objects.requireNonNull(source, "source cannot be null");
+        return Objects.requireNonNull(source, "source cannot be null");
     }
 
     protected <C> C requireCallback(C callback, String name) {
-        return java.util.Objects.requireNonNull(callback, name + " cannot be null");
+        return Objects.requireNonNull(callback, name + " cannot be null");
     }
 
     protected int requireMaxCollectedErrors(int maximum) {

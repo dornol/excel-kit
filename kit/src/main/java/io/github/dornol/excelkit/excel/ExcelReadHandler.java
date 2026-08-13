@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -157,7 +158,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     @Override
     public void readWhile(Predicate<ReadResult<T>> predicate) {
-        java.util.Objects.requireNonNull(predicate, "predicate cannot be null");
+        Objects.requireNonNull(predicate, "predicate cannot be null");
         markConsumed();
         AtomicReference<RuntimeException> failure = new AtomicReference<>();
         try {
