@@ -1,5 +1,19 @@
-# Deliberate breaking API changes for the next major release.
-# These classes were intentionally redesigned after the 0.22.0 baseline.
-io.github.dornol.excelkit.core.AbstractReader
-io.github.dornol.excelkit.core.AbstractReadHandler
-io.github.dornol.excelkit.core.ReadResult
+# Deliberate breaking members for the next major release.
+# These constructors/helpers were intentionally redesigned after the 0.22.0 baseline.
+io.github.dornol.excelkit.core.AbstractReader#withInputSource(io.github.dornol.excelkit.core.InputStreamSource,java.util.function.Function,java.util.function.BiFunction)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,jakarta.validation.Validator,java.lang.String)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy,java.util.Set)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy,java.util.Set,io.github.dornol.excelkit.core.CellConversionConfig)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy,java.util.Set,io.github.dornol.excelkit.core.CellConversionConfig,long,boolean,int)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Function,jakarta.validation.Validator,java.lang.String)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Function,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Function,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy,java.util.Set)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Function,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy,java.util.Set,io.github.dornol.excelkit.core.CellConversionConfig)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Function,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy,java.util.Set,io.github.dornol.excelkit.core.CellConversionConfig,long,boolean,int)
+io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,java.util.function.Function,jakarta.validation.Validator,java.lang.String,io.github.dornol.excelkit.core.ReadOptions,java.util.Set)
+io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List,java.lang.Throwable)
+io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List)
+io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List,java.lang.Throwable,long)
+io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List,java.lang.Throwable,long,java.util.List)
+io.github.dornol.excelkit.core.ReadResult#ReadResult(java.lang.Object,boolean,java.util.List,java.lang.Throwable,long,java.util.List,java.util.List)
