@@ -26,7 +26,6 @@ import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 /**
  * Abstract base class for file read handlers (Excel, CSV).
@@ -51,41 +50,31 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected final @Nullable Function<RowData, T> rowMapper;
     /** Optional bean validator for row validation. */
     protected final @Nullable Validator validator;
-    protected boolean strictHeaders;
-    protected DuplicateHeaderPolicy duplicateHeaderPolicy;
     protected final @Nullable Set<String> selectedMapColumns;
-    protected @Nullable CellConversionConfig cellConversionConfig;
-    protected long maxRows;
-    protected boolean skipBlankRows;
-    protected int stopAtBlankRows;
-    protected long maxErrors = -1;
-    protected UnaryOperator<String> headerNormalizer = UnaryOperator.identity();
-    protected ReadLimits limits = ReadLimits.UNLIMITED;
-    protected CancellationToken cancellationToken = CancellationToken.NONE;
-    protected @Nullable ReadProgressCallback readProgressCallback;
-    protected ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
+    protected final ReadOptions readOptions;
     private final ReadLifecycle lifecycle = new ReadLifecycle();
     protected boolean stoppedEarly;
 
     protected AbstractReadHandler(InputStream input, @Nullable Supplier<T> supplier,
             @Nullable Function<RowData, T> mapper, @Nullable Validator validator, String extension,
-            @Nullable Set<String> selectedColumns) {
+            @Nullable Set<String> selectedColumns, ReadOptions readOptions) {
         if ((supplier == null) == (mapper == null))
             throw new IllegalArgumentException("Exactly one of supplier or mapper is required");
         this.instanceSupplier = supplier;
         this.rowMapper = mapper;
         this.validator = validator;
         this.selectedMapColumns = selectedColumns;
+        this.readOptions = Objects.requireNonNull(readOptions, "readOptions cannot be null");
         initTempFile(Objects.requireNonNull(input, "input cannot be null"), extension);
     }
 
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
-        if (formattedValue != null && limits.maxCellCharacters() >= 0
-                && formattedValue.length() > limits.maxCellCharacters()) {
+        if (formattedValue != null && readOptions.limits().maxCellCharacters() >= 0
+                && formattedValue.length() > readOptions.limits().maxCellCharacters()) {
             throw new ReadLimitExceededException(ReadLimitExceededException.Limit.CELL_CHARACTERS,
-                    limits.maxCellCharacters(), formattedValue.length());
+                    readOptions.limits().maxCellCharacters(), formattedValue.length());
         }
-        return new CellData(columnIndex, formattedValue, cellConversionConfig);
+        return new CellData(columnIndex, formattedValue, readOptions.cellConversionConfig());
     }
 
     protected boolean isBlankValues(List<String> values) {
@@ -151,48 +140,35 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     /** Reads until the callback returns false. Returning false is normal completion. */
     public abstract void readWhile(Predicate<ReadResult<T>> predicate);
 
-    /** Applies the immutable configuration snapshot for this one-shot session. */
-    public AbstractReadHandler<T> options(ReadOptions options) {
-        this.strictHeaders = options.strictHeaders();
-        this.duplicateHeaderPolicy = options.duplicateHeaderPolicy();
-        this.cellConversionConfig = options.cellConversionConfig();
-        this.maxRows = options.maxRows();
-        this.skipBlankRows = options.skipBlankRows();
-        this.stopAtBlankRows = options.stopAtBlankRows();
-        this.maxErrors = options.maxErrors();
-        this.headerNormalizer = options.headerNormalizer();
-        this.limits = options.limits();
-        this.cancellationToken = options.cancellationToken();
-        this.readProgressCallback = options.readProgressCallback();
-        this.securityPolicy = options.securityPolicy();
-        if (limits.maxInputBytes() >= 0) {
+    /** Validates input against the immutable configuration snapshot for this session. */
+    protected final void validateReadOptions() {
+        if (readOptions.limits().maxInputBytes() >= 0) {
             try {
-                if (Files.size(Objects.requireNonNull(getTempFile())) > limits.maxInputBytes()) {
+                if (Files.size(Objects.requireNonNull(getTempFile())) > readOptions.limits().maxInputBytes()) {
                     close();
                     throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES,
-                            limits.maxInputBytes(), Files.size(Objects.requireNonNull(getTempFile())));
+                            readOptions.limits().maxInputBytes(), Files.size(Objects.requireNonNull(getTempFile())));
                 }
             } catch (java.io.IOException e) {
                 close();
                 throw new ExcelKitException("Failed to inspect input size", e);
             }
         }
-        return this;
     }
 
     protected Consumer<ReadResult<T>> guardedConsumer(Consumer<ReadResult<T>> consumer) {
         Objects.requireNonNull(consumer, "consumer cannot be null");
         AtomicLong errors = new AtomicLong();
         return result -> {
-            if (cancellationToken.isCancellationRequested()) {
+            if (readOptions.cancellationToken().isCancellationRequested()) {
                 throw new ReadStoppedException();
             }
             if (!result.success()) {
                 lifecycle.record(false);
                 long count = errors.incrementAndGet();
-                if (maxErrors >= 0 && count > maxErrors) {
-                    throw new ReadAbortException("Maximum read errors exceeded: " + maxErrors,
-                            ReadAbortReason.MAX_ERRORS_EXCEEDED, maxErrors, count);
+                if (readOptions.maxErrors() >= 0 && count > readOptions.maxErrors()) {
+                    throw new ReadAbortException("Maximum read errors exceeded: " + readOptions.maxErrors(),
+                            ReadAbortReason.MAX_ERRORS_EXCEEDED, readOptions.maxErrors(), count);
                 }
             } else lifecycle.record(true);
             consumer.accept(result);
@@ -200,11 +176,12 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     protected void notifyReadProgress(long processedRows, int sheetIndex, long totalRows) {
-        lifecycle.progress(processedRows, sheetIndex, totalRows, readProgressCallback);
+        lifecycle.progress(processedRows, sheetIndex, totalRows, readOptions.readProgressCallback());
     }
 
     protected void notifyReadCompletion(int sheetIndex, long totalRows) {
-        lifecycle.complete(sheetIndex, totalRows, cancellationToken.isCancellationRequested(), readProgressCallback);
+        lifecycle.complete(sheetIndex, totalRows, readOptions.cancellationToken().isCancellationRequested(),
+                readOptions.readProgressCallback());
     }
 
     /**
@@ -290,7 +267,8 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     }
 
     private HeaderResolver headerResolver() {
-        return new HeaderResolver(strictHeaders, duplicateHeaderPolicy, headerNormalizer, limits.maxColumns());
+        return new HeaderResolver(readOptions.strictHeaders(), readOptions.duplicateHeaderPolicy(),
+                readOptions.headerNormalizer(), readOptions.limits().maxColumns());
     }
 
     /**

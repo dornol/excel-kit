@@ -30,6 +30,8 @@ All notable changes to this project will be documented in this file.
   support component.
 - Mutable format-independent reader settings are now isolated in an internal configuration object;
   execution receives an immutable `ReadOptions` snapshot.
+- Read handlers now retain the immutable `ReadOptions` snapshot directly instead of copying its
+  values into mutable execution fields.
 
 ## [0.22.0] - 2026-08-06
 

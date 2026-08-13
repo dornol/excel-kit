@@ -71,7 +71,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config,
                            boolean externalPath, @Nullable Path path) {
         super(input, config.supplier(), config.mapper(), config.validator(), ".csv",
-                config.selectedColumns());
+                config.selectedColumns(), config.options());
         validateHeaderRowIndex(config.headerRowIndex());
         if (config.columns() != null) validateColumns(config.columns());
         this.columns = config.columns();
@@ -85,7 +85,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         this.progressInterval = config.progressInterval();
         this.progressCallback = config.progressCallback();
         if (externalPath) useExternalInput(path);
-        options(config.options());
+        validateReadOptions();
     }
 
     private final List<String> headerNames = new ArrayList<>();
@@ -118,21 +118,21 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
-                    if (cancellationToken.isCancellationRequested()) throw new ReadStoppedException();
+                    if (readOptions.cancellationToken().isCancellationRequested()) throw new ReadStoppedException();
                     List<String> rawValues = rawValues(line);
                     if (isBlankValues(rawValues)) {
                         consecutiveBlankRows++;
-                        if (stopAtBlankRows > 0 && consecutiveBlankRows >= stopAtBlankRows) {
+                        if (readOptions.stopAtBlankRows() > 0 && consecutiveBlankRows >= readOptions.stopAtBlankRows()) {
                             break;
                         }
-                        if (skipBlankRows) {
+                        if (readOptions.skipBlankRows()) {
                             rowCount++;
                             continue;
                         }
                     } else {
                         consecutiveBlankRows = 0;
                     }
-                    if (maxRows >= 0 && emittedRows >= maxRows) {
+                    if (readOptions.maxRows() >= 0 && emittedRows >= readOptions.maxRows()) {
                         break;
                     }
                     guardedConsumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
@@ -146,21 +146,21 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 int[] resolvedIndices = resolveIndices();
                 while ((line = reader.readNext()) != null) {
-                    if (cancellationToken.isCancellationRequested()) throw new ReadStoppedException();
+                    if (readOptions.cancellationToken().isCancellationRequested()) throw new ReadStoppedException();
                     List<String> rawValues = rawValues(line);
                     if (isBlankValues(rawValues)) {
                         consecutiveBlankRows++;
-                        if (stopAtBlankRows > 0 && consecutiveBlankRows >= stopAtBlankRows) {
+                        if (readOptions.stopAtBlankRows() > 0 && consecutiveBlankRows >= readOptions.stopAtBlankRows()) {
                             break;
                         }
-                        if (skipBlankRows) {
+                        if (readOptions.skipBlankRows()) {
                             rowCount++;
                             continue;
                         }
                     } else {
                         consecutiveBlankRows = 0;
                     }
-                    if (maxRows >= 0 && emittedRows >= maxRows) {
+                    if (readOptions.maxRows() >= 0 && emittedRows >= readOptions.maxRows()) {
                         break;
                     }
                     guardedConsumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
@@ -243,7 +243,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         for (int i = 0; i < line.length; i++) {
             cells.add(cellData(i, line[i]));
         }
-        RowData rowData = new RowData(cells, headerNames, headerIndexMap, headerNormalizer);
+        RowData rowData = new RowData(cells, headerNames, headerIndexMap, readOptions.headerNormalizer());
         return mapWithRowMapper(rowData, fileRowNum, rawValues);
     }
 

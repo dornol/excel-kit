@@ -91,7 +91,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config,
                              boolean externalPath, @Nullable Path path) {
         super(input, config.supplier(), config.mapper(), config.validator(), ".xlsx",
-                config.selectedColumns());
+                config.selectedColumns(), config.options());
         if (config.columns() != null) validateColumns(config.columns());
         validateSheetIndex(config.sheetIndex());
         validateHeaderRowIndex(config.headerRowIndex());
@@ -105,7 +105,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         this.password = config.password();
         this.countRows = config.countRows();
         if (externalPath) useExternalInput(path);
-        options(config.options());
+        validateReadOptions();
     }
 
     private final @Nullable List<ReadColumn<T>> columns;
@@ -198,7 +198,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             decryptedFile = decryptFile(getTempFile(), password);
             fileToRead = decryptedFile;
         }
-        ExcelSecurityScanner.scan(fileToRead, securityPolicy);
+        ExcelSecurityScanner.scan(fileToRead, readOptions.securityPolicy());
         try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile())) {
             long totalRows = -1;
             if (countRows) {
@@ -206,7 +206,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
 
             XSSFReader reader = new XSSFReader(pkg);
-            ExcelSheetNavigator.enforceLimit(reader, limits.maxSheets());
+            ExcelSheetNavigator.enforceLimit(reader, readOptions.limits().maxSheets());
 
             SharedStrings ss = reader.getSharedStringsTable();
             StylesTable styles = reader.getStylesTable();
@@ -340,7 +340,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          */
         @Override
         public void startRow(int rowNum) {
-            if (cancellationToken.isCancellationRequested()) {
+            if (readOptions.cancellationToken().isCancellationRequested()) {
                 throw new ReadStoppedException();
             }
             if (instanceSupplier != null) {
@@ -380,22 +380,23 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             List<String> rawValues = rawValues(currentRow);
             if (isBlankValues(rawValues)) {
                 consecutiveBlankRows++;
-                if (stopAtBlankRows > 0 && consecutiveBlankRows >= stopAtBlankRows) {
+                if (readOptions.stopAtBlankRows() > 0 && consecutiveBlankRows >= readOptions.stopAtBlankRows()) {
                     throw new StopReadingException();
                 }
-                if (skipBlankRows) {
+                if (readOptions.skipBlankRows()) {
                     return;
                 }
             } else {
                 consecutiveBlankRows = 0;
             }
-            if (maxRows >= 0 && emittedRowCount >= maxRows) {
+            if (readOptions.maxRows() >= 0 && emittedRowCount >= readOptions.maxRows()) {
                 throw new StopReadingException();
             }
 
             ReadResult<T> result;
             if (rowMapper != null) {
-                RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap, headerNormalizer);
+            RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap,
+                    readOptions.headerNormalizer());
                 result = mapWithRowMapper(rowData, rowNum + 1L, rawValues);
             } else {
                 boolean mappingSuccess = mapValuesToInstance();
