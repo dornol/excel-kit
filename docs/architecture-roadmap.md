@@ -913,6 +913,7 @@ breaking change를 허용하더라도 사용자가 한 번에 이동할 수 있�
 - Stream API 제거 전후 throughput과 peak memory
 - `countRows()` 사전 scan 비용
 - Path 입력과 InputStream 입력의 복사 비용
+- 다중 sheet package 공유 경로와 sheet별 package 재오픈 경로
 
 허용 regression은 변경 전에 수치로 정한다. 예를 들어 일반 `read()` throughput 5% 이내,
 peak memory 10% 이내처럼 기준을 명시하고 CI benchmark는 변동성을 고려해 별도로 운영한다.

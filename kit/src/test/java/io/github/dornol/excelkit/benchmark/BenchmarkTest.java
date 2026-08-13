@@ -8,6 +8,8 @@ import io.github.dornol.excelkit.excel.ExcelHandler;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWorkbook;
 import io.github.dornol.excelkit.excel.ExcelWriter;
+import io.github.dornol.excelkit.excel.ExcelWorkbookReader;
+import io.github.dornol.excelkit.excel.WorkbookReadReport;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -409,6 +411,69 @@ class BenchmarkTest {
         assertEquals(rows, count.get());
     }
 
+    @Test
+    void excelRead_100k_rows_pathInput() throws IOException {
+        int rows = 100_000;
+        Path file = tempDir.resolve("read_path_100k.xlsx");
+        writeExcelRows(file, rows);
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+        AtomicLong count = new AtomicLong();
+        ExcelReader.forMap().read(file, result -> count.incrementAndGet());
+
+        printResult("Excel Read 100K rows (Path)", rows,
+                System.currentTimeMillis() - startTime, Files.size(file), usedMemoryMB() - startMem);
+        assertEquals(rows, count.get());
+    }
+
+    @Test
+    void excelRead_100k_rows_inputStreamWithCountRows() throws IOException {
+        int rows = 100_000;
+        Path file = tempDir.resolve("read_count_rows_100k.xlsx");
+        writeExcelRows(file, rows);
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+        AtomicLong count = new AtomicLong();
+        try (FileInputStream input = new FileInputStream(file.toFile())) {
+            ExcelReader.forMap().countRows().read(input, result -> count.incrementAndGet());
+        }
+
+        printResult("Excel Read 100K rows (InputStream + countRows)", rows,
+                System.currentTimeMillis() - startTime, Files.size(file), usedMemoryMB() - startMem);
+        assertEquals(rows, count.get());
+    }
+
+    @Test
+    void excelRead_multiSheet_50kRowsEach_sharedPackage() throws IOException {
+        int rowsPerSheet = 50_000;
+        Path file = tempDir.resolve("read_multi_sheet_50k.xlsx");
+        try (ExcelWorkbook workbook = ExcelWorkbook.create()) {
+            workbook.<int[]>sheet("Numbers")
+                    .column("ID", row -> row[0])
+                    .column("Value", row -> row[1])
+                    .write(generateRows(rowsPerSheet, 3));
+            workbook.<String>sheet("Strings")
+                    .column("Name", value -> value)
+                    .write(IntStream.range(0, rowsPerSheet).mapToObj(i -> "Item-" + i));
+            workbook.finish().writeTo(file);
+        }
+
+        long startMem = usedMemoryMB();
+        long startTime = System.currentTimeMillis();
+        AtomicLong count = new AtomicLong();
+        WorkbookReadReport report = ExcelWorkbookReader.create()
+                .sheet("Numbers", ExcelReader.forMap(), result -> count.incrementAndGet())
+                .sheet("Strings", ExcelReader.forMap(), result -> count.incrementAndGet())
+                .read(file);
+
+        printResult("ExcelWorkbookReader 2 sheets × 50K rows", rowsPerSheet * 2,
+                System.currentTimeMillis() - startTime, Files.size(file), usedMemoryMB() - startMem);
+        assertTrue(report.successful());
+        assertEquals(rowsPerSheet * 2L, count.get());
+    }
+
     // ============================================================
     // CSV Reading
     // ============================================================
@@ -488,6 +553,17 @@ class BenchmarkTest {
                     }
                     return row;
                 });
+    }
+
+    private void writeExcelRows(Path file, int rows) throws IOException {
+        try (OutputStream output = Files.newOutputStream(file)) {
+            ExcelWriter.<int[]>create()
+                    .column("ID", row -> row[0], c -> c.type(ExcelDataType.INTEGER))
+                    .column("Name", row -> "User-" + row[0])
+                    .column("Score", row -> row[1], c -> c.type(ExcelDataType.DOUBLE))
+                    .write(generateRows(rows, 3))
+                    .writeTo(output);
+        }
     }
 
     private long usedMemoryMB() {
