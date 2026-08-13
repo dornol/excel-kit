@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core;
 
+import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.UnaryOperator;
@@ -7,6 +8,7 @@ import java.util.function.UnaryOperator;
 /** Mutable format-independent settings owned by a reader instance. */
 final class ReaderConfiguration {
 
+    @Nullable Validator validator;
     int headerRowIndex;
     @Nullable ProgressCallback progressCallback;
     int progressInterval;

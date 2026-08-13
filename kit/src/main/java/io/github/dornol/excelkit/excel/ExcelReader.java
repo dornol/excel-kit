@@ -290,7 +290,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     private ExcelReadSessionConfig<T> sessionConfig() {
         return new ExcelReadSessionConfig<>(rowMapper == null ? List.copyOf(columns) : null,
-                instanceSupplier, rowMapper, validator, sheetIndex, configuredHeaderRowIndex(), headerRows,
+                instanceSupplier, rowMapper, configuredValidator(), sheetIndex, configuredHeaderRowIndex(), headerRows,
                 configuredProgressInterval(), configuredProgressCallback(), password, countRows,
                 selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), snapshotReadOptions());
     }

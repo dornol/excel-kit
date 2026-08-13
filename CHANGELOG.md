@@ -32,6 +32,8 @@ All notable changes to this project will be documented in this file.
   execution receives an immutable `ReadOptions` snapshot.
 - Read handlers now retain the immutable `ReadOptions` snapshot directly instead of copying its
   values into mutable execution fields.
+- Reader validator configuration is now owned by the same internal configuration object as the
+  other common reader settings.
 
 ## [0.22.0] - 2026-08-06
 

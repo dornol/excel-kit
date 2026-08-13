@@ -39,7 +39,6 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected final List<ReadColumn<T>> columns = new ArrayList<>();
     protected final @Nullable Supplier<T> instanceSupplier;
     protected final @Nullable Function<RowData, T> rowMapper;
-    protected @Nullable Validator validator;
     private final ReaderConfiguration configuration = new ReaderConfiguration();
     protected boolean mapMode = false;
     protected @Nullable Set<String> selectedMapColumns;
@@ -47,13 +46,13 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.rowMapper = null;
-        this.validator = validator;
+        configuration.validator = validator;
     }
 
     protected AbstractReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         this.instanceSupplier = null;
         this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
-        this.validator = validator;
+        configuration.validator = validator;
     }
 
     private SELF self() {
@@ -67,8 +66,12 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @return this reader for chaining
      */
     public SELF validator(Validator validator) {
-        this.validator = Objects.requireNonNull(validator, "validator cannot be null");
+        configuration.validator = Objects.requireNonNull(validator, "validator cannot be null");
         return self();
+    }
+
+    protected final @Nullable Validator configuredValidator() {
+        return configuration.validator;
     }
 
     protected void requireNotMapMode(String method) {
