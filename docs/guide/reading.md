@@ -4,6 +4,20 @@
 
 ## Setter Mode — Mutable Objects
 
+### Explicit execution sessions
+
+For advanced lifecycle control, open a session explicitly:
+
+```java
+try (ReadSession<Person> session = CsvReader.<Person>mapping(this::map).open(path)) {
+    List<Person> people = session.readAll();
+}
+```
+
+Sessions created from `Path` or `InputStreamSource` own their input resources. A session opened
+from a caller-owned `InputStream` does not close that stream. The existing direct `read(...)` APIs
+remain available for the shorter form.
+
 ```java
 ExcelReader.setter(User::new)
     .column("Name", (u, cell) -> u.name = cell.asString()).required()

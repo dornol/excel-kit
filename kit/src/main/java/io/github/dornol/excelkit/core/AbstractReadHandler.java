@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * @author dhkim
  * @since 2025-07-19
  */
-public abstract class AbstractReadHandler<T> extends TempResourceContainer {
+public abstract class AbstractReadHandler<T> extends TempResourceContainer implements ReadSession<T> {
     private static final Logger log = LoggerFactory.getLogger(AbstractReadHandler.class);
 
     /** Supplier for creating new row instances (setter mode). */

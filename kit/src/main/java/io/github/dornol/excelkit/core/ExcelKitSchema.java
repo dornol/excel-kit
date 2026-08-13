@@ -141,6 +141,11 @@ public class ExcelKitSchema<T> {
         return SchemaReaderFactory.excelMapping(readOptions(), rowMapper, validator);
     }
 
+    /** Creates a schema-configured Excel mapping reader without Bean Validation. */
+    public ExcelReader<T> excelReader(Function<RowData, T> rowMapper) {
+        return excelReader(rowMapper, null);
+    }
+
     /**
      * Creates a new {@link CsvReader} pre-configured with this schema's columns (setter mode).
      * <p>
@@ -174,6 +179,11 @@ public class ExcelKitSchema<T> {
      */
     public CsvReader<T> csvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         return SchemaReaderFactory.csvMapping(readOptions(), rowMapper, validator);
+    }
+
+    /** Creates a schema-configured CSV mapping reader without Bean Validation. */
+    public CsvReader<T> csvReader(Function<RowData, T> rowMapper) {
+        return csvReader(rowMapper, null);
     }
 
     private SchemaReaderFactory.SchemaReadOptions readOptions() {

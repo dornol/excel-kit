@@ -19,6 +19,7 @@ import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.ReadSummary;
 import io.github.dornol.excelkit.core.ReadReport;
+import io.github.dornol.excelkit.core.ReadSession;
 
 /**
  * Builder-style class for configuring Excel row readers.
@@ -285,6 +286,26 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private ExcelReadHandler<T> createHandler(Path path) {
         requirePath(path);
         return new ExcelReadHandler<>(path, sessionConfig());
+    }
+
+    /** Opens a reusable execution session backed by a caller-owned stream. */
+    public ReadSession<T> open(InputStream inputStream) {
+        return createHandler(inputStream);
+    }
+
+    /** Opens a session whose path resource is owned by the session. */
+    public ReadSession<T> open(Path path) {
+        return createHandler(path);
+    }
+
+    /** Opens a session from a source; the source stream is closed after session initialization. */
+    public ReadSession<T> open(InputStreamSource source) {
+        requireInputSource(source);
+        try (InputStream input = source.openStream()) {
+            return createHandler(input);
+        } catch (IOException e) {
+            throw new ExcelReadException("Failed to open Excel input", e);
+        }
     }
 
     private ExcelReadSessionConfig<T> sessionConfig() {

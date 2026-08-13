@@ -46,6 +46,7 @@ All notable changes to this project will be documented in this file.
 - Added `ExcelWorkbookReader` with per-sheet readers/schemas, sheet-level reports, bounded errors,
   and continue/stop failure policies.
 - Added an optional cumulative `ReadLimits.maxTotalCells` guard for untrusted CSV/Excel input.
+- Added explicit `ReadSession<T>` lifecycle APIs and schema mapping overloads without validators.
 
 ## [0.22.0] - 2026-08-06
 

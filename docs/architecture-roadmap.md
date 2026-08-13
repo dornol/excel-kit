@@ -9,7 +9,7 @@
 ## 현재 상태
 
 이 문서의 초기 제안 중 reader options snapshot, `maxErrors()`, `readWhile()`, header
-normalization, CSV 자동 감지, 그리고 다중 sheet 일괄 읽기는 현재 구현되어 있다.
+normalization, CSV 자동 감지, 다중 sheet 일괄 읽기, 명시적 `ReadSession`은 현재 구현되어 있다.
 
 excel-kit은 다음 영역을 이미 폭넓게 지원한다.
 
@@ -166,7 +166,7 @@ loading 테스트로 확인해야 하며, 불가능한 경우 설치 문서와 t
 - Excel-only와 CSV-only sample이 각각 필요한 의존성만으로 실행된다.
 - 지원 범위 밖 버전에 대한 보장 여부와 issue reporting 기준을 문서화한다.
 
-## 제안 2: Reader 실행 API와 리소스 소유권 개편
+## 제안 2: Reader 실행 API와 리소스 소유권 개편 — 구현 완료
 
 ### 문제
 
@@ -422,7 +422,7 @@ ExcelWriteOptions writeOptions = writer.snapshotOptions();
 - Excel과 CSV 공통 옵션 parity를 단일 parameterized test로 검증한다.
 - Reader와 Writer의 public 흐름이 모두 `factory → configuration/columns → execution`을 따른다.
 
-## 제안 4: Schema의 immutable object mapping 개선 — 보류
+## 제안 4: Schema의 immutable object mapping 개선 — 부분 구현, 고급 constructor mapping 보류
 
 ### 검토한 문제
 

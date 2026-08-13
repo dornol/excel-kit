@@ -29,6 +29,7 @@ import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.ReadSummary;
 import io.github.dornol.excelkit.core.ReadReport;
+import io.github.dornol.excelkit.core.ReadSession;
 import io.github.dornol.excelkit.core.TabularFileDetector;
 import io.github.dornol.excelkit.core.TabularFileType;
 
@@ -297,6 +298,26 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private CsvReadHandler<T> createHandler(Path path) {
         requirePath(path);
         return new CsvReadHandler<>(path, sessionConfig());
+    }
+
+    /** Opens a reusable execution session backed by a caller-owned stream. */
+    public ReadSession<T> open(InputStream inputStream) {
+        return createHandler(inputStream);
+    }
+
+    /** Opens a session whose path resource is owned by the session. */
+    public ReadSession<T> open(Path path) {
+        return createHandler(path);
+    }
+
+    /** Opens a session from a source; the source stream is closed after session initialization. */
+    public ReadSession<T> open(InputStreamSource source) {
+        requireInputSource(source);
+        try (InputStream input = source.openStream()) {
+            return createHandler(input);
+        } catch (IOException e) {
+            throw new CsvReadException("Failed to open CSV input", e);
+        }
     }
 
     private CsvReadSessionConfig<T> sessionConfig() {
