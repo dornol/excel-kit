@@ -294,8 +294,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     private CsvReadSessionConfig<T> sessionConfig() {
         return new CsvReadSessionConfig<>(rowMapper == null ? List.copyOf(columns) : null,
-                instanceSupplier, rowMapper, validator, headerRowIndex, delimiter, charset,
-                progressInterval, progressCallback,
+                instanceSupplier, rowMapper, validator, configuredHeaderRowIndex(), delimiter, charset,
+                configuredProgressInterval(), configuredProgressCallback(),
                 selectedMapColumns == null ? null : Set.copyOf(selectedMapColumns), quoteChar,
                 escapeChar, strictQuotes, ignoreLeadingWhiteSpace, snapshotReadOptions());
     }

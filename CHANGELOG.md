@@ -28,6 +28,8 @@ All notable changes to this project will be documented in this file.
 - Reader handler creation and execution now uses shared internal stream/path execution helpers.
 - Reader execution aggregation is now isolated from fluent reader configuration in an internal
   support component.
+- Mutable format-independent reader settings are now isolated in an internal configuration object;
+  execution receives an immutable `ReadOptions` snapshot.
 
 ## [0.22.0] - 2026-08-06
 
