@@ -67,133 +67,15 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
     protected boolean stoppedEarly;
 
     protected AbstractReadHandler(InputStream input, @Nullable Supplier<T> supplier,
-            @Nullable Function<RowData,T> mapper, @Nullable Validator validator, String extension,
-            ReadOptions options, @Nullable Set<String> selectedColumns) {
+            @Nullable Function<RowData, T> mapper, @Nullable Validator validator, String extension,
+            @Nullable Set<String> selectedColumns) {
         if ((supplier == null) == (mapper == null))
             throw new IllegalArgumentException("Exactly one of supplier or mapper is required");
         this.instanceSupplier = supplier;
         this.rowMapper = mapper;
         this.validator = validator;
-        this.strictHeaders = options.strictHeaders();
-        this.duplicateHeaderPolicy = options.duplicateHeaderPolicy();
         this.selectedMapColumns = selectedColumns;
-        this.cellConversionConfig = options.cellConversionConfig();
-        this.maxRows = options.maxRows();
-        this.skipBlankRows = options.skipBlankRows();
-        this.stopAtBlankRows = options.stopAtBlankRows();
         initTempFile(java.util.Objects.requireNonNull(input, "input cannot be null"), extension);
-    }
-
-    /**
-     * Constructs a read handler in setter mode by validating inputs and initializing a temporary file.
-     *
-     * @param inputStream      The input stream of the uploaded file
-     * @param instanceSupplier A supplier to instantiate new row objects
-     * @param validator        Optional bean validator for validating mapped instances
-     * @param extension        File extension for the temporary file (e.g., ".xlsx", ".csv")
-     */
-    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator, String extension) {
-        this(inputStream, instanceSupplier, validator, extension, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        this(inputStream, instanceSupplier, validator, extension, strictHeaders, duplicateHeaderPolicy, null);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                                  @Nullable Set<String> selectedMapColumns) {
-        this(inputStream, instanceSupplier, validator, extension, strictHeaders, duplicateHeaderPolicy,
-                selectedMapColumns, null);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                                  @Nullable Set<String> selectedMapColumns,
-                                  @Nullable CellConversionConfig cellConversionConfig) {
-        this(inputStream, instanceSupplier, validator, extension, strictHeaders, duplicateHeaderPolicy,
-                selectedMapColumns, cellConversionConfig, -1, false, 0);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Supplier<T> instanceSupplier, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                                  @Nullable Set<String> selectedMapColumns,
-                                  @Nullable CellConversionConfig cellConversionConfig,
-                                  long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        if (inputStream == null) {
-            throw new IllegalArgumentException("InputStream cannot be null");
-        }
-        if (instanceSupplier == null) {
-            throw new IllegalArgumentException("Instance supplier cannot be null");
-        }
-        this.instanceSupplier = instanceSupplier;
-        this.rowMapper = null;
-        this.validator = validator;
-        this.strictHeaders = strictHeaders;
-        this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
-        this.selectedMapColumns = selectedMapColumns;
-        this.cellConversionConfig = cellConversionConfig;
-        this.maxRows = maxRows;
-        this.skipBlankRows = skipBlankRows;
-        this.stopAtBlankRows = stopAtBlankRows;
-        initTempFile(inputStream, extension);
-    }
-
-    /**
-     * Constructs a read handler in mapping mode for immutable object construction.
-     *
-     * @param inputStream The input stream of the uploaded file
-     * @param rowMapper   A function that creates an instance from a {@link RowData}
-     * @param validator   Optional bean validator for validating mapped instances
-     * @param extension   File extension for the temporary file (e.g., ".xlsx", ".csv")
-     */
-    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator, String extension) {
-        this(inputStream, rowMapper, validator, extension, false, DuplicateHeaderPolicy.FIRST);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy) {
-        this(inputStream, rowMapper, validator, extension, strictHeaders, duplicateHeaderPolicy, null);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                                  @Nullable Set<String> selectedMapColumns) {
-        this(inputStream, rowMapper, validator, extension, strictHeaders, duplicateHeaderPolicy,
-                selectedMapColumns, null);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                                  @Nullable Set<String> selectedMapColumns,
-                                  @Nullable CellConversionConfig cellConversionConfig) {
-        this(inputStream, rowMapper, validator, extension, strictHeaders, duplicateHeaderPolicy,
-                selectedMapColumns, cellConversionConfig, -1, false, 0);
-    }
-
-    protected AbstractReadHandler(InputStream inputStream, Function<RowData, T> rowMapper, @Nullable Validator validator,
-                                  String extension, boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                                  @Nullable Set<String> selectedMapColumns,
-                                  @Nullable CellConversionConfig cellConversionConfig,
-                                  long maxRows, boolean skipBlankRows, int stopAtBlankRows) {
-        if (inputStream == null) {
-            throw new IllegalArgumentException("InputStream cannot be null");
-        }
-        if (rowMapper == null) {
-            throw new IllegalArgumentException("Row mapper cannot be null");
-        }
-        this.instanceSupplier = null;
-        this.rowMapper = rowMapper;
-        this.validator = validator;
-        this.strictHeaders = strictHeaders;
-        this.duplicateHeaderPolicy = java.util.Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
-        this.selectedMapColumns = selectedMapColumns;
-        this.cellConversionConfig = cellConversionConfig;
-        this.maxRows = maxRows;
-        this.skipBlankRows = skipBlankRows;
-        this.stopAtBlankRows = stopAtBlankRows;
-        initTempFile(inputStream, extension);
     }
 
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
@@ -332,17 +214,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @throws ReadAbortException if any row fails validation or mapping
      */
     public void readStrict(Consumer<T> consumer) {
-        java.util.Objects.requireNonNull(consumer, "consumer cannot be null");
-        AtomicLong rowNum = new AtomicLong(0);
-        read(result -> {
-            long row = rowNum.incrementAndGet();
-            if (!result.success()) {
-                String detail = !result.messages().isEmpty()
-                        ? String.join("; ", result.messages()) : "Unknown error";
-                throw new ReadAbortException("Row " + row + " read failed: " + detail);
-            }
-            consumer.accept(result.data());
-        });
+        ReadResultCallbacks.strict(this::read, consumer);
     }
 
     /**
@@ -359,20 +231,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
      * @since 0.16.12
      */
     public void read(Consumer<T> onSuccess, Consumer<RowError> onError) {
-        java.util.Objects.requireNonNull(onSuccess, "onSuccess cannot be null");
-        java.util.Objects.requireNonNull(onError, "onError cannot be null");
-        AtomicLong rowNum = new AtomicLong(0);
-        read(result -> {
-            long n = rowNum.incrementAndGet();
-            if (result.success()) {
-                onSuccess.accept(result.data());
-            } else {
-                List<String> msgs = result.messages();
-                RowError.Type type = result.errorType();
-                onError.accept(new RowError(n, result.fileRowNum(), type, msgs, result.cause(),
-                        result.cellErrors(), result.rawValues()));
-            }
-        });
+        ReadResultCallbacks.route(this::read, onSuccess, onError);
     }
 
     /**

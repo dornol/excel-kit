@@ -68,7 +68,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config,
                            boolean externalPath, @Nullable Path path) {
         super(input, config.supplier(), config.mapper(), config.validator(), ".csv",
-                config.options(), config.selectedColumns());
+                config.selectedColumns());
         validateHeaderRowIndex(config.headerRowIndex());
         if (config.columns() != null) validateColumns(config.columns());
         this.columns = config.columns();

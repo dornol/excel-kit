@@ -90,7 +90,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config,
                              boolean externalPath, @Nullable Path path) {
         super(input, config.supplier(), config.mapper(), config.validator(), ".xlsx",
-                config.options(), config.selectedColumns());
+                config.selectedColumns());
         if (config.columns() != null) validateColumns(config.columns());
         validateSheetIndex(config.sheetIndex());
         validateHeaderRowIndex(config.headerRowIndex());
