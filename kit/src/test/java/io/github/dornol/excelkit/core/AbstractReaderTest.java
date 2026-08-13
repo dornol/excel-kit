@@ -2,8 +2,12 @@ package io.github.dornol.excelkit.core;
 
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.excel.ExcelReader;
+import jakarta.validation.Validation;
+import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,6 +41,107 @@ class AbstractReaderTest {
             reader.columnAt(0, (obj, cell) -> {});
             reader.columnAt(5, (obj, cell) -> {});
             assertNotNull(reader);
+        }
+    }
+
+    @Nested
+    class ValidatorConfiguration {
+
+        @Test
+        void validator_isFluentOnExcelReader() {
+            try (var factory = Validation.byDefaultProvider()
+                    .configure()
+                    .messageInterpolator(new ParameterMessageInterpolator())
+                    .buildValidatorFactory()) {
+                var reader = ExcelReader.setter(Object::new);
+                assertSame(reader, reader.validator(factory.getValidator()));
+            }
+        }
+
+        @Test
+        void validator_isFluentOnCsvReader() {
+            try (var factory = Validation.byDefaultProvider()
+                    .configure()
+                    .messageInterpolator(new ParameterMessageInterpolator())
+                    .buildValidatorFactory()) {
+                var reader = CsvReader.setter(Object::new);
+                assertSame(reader, reader.validator(factory.getValidator()));
+            }
+        }
+
+        @Test
+        void validator_rejectsNull() {
+            var reader = ExcelReader.setter(Object::new);
+            assertThrows(NullPointerException.class, () -> reader.validator(null));
+        }
+    }
+
+    @Nested
+    class NullConfiguration {
+
+        @Test
+        void columnCallbacks_rejectNull() {
+            var reader = ExcelReader.setter(Object::new);
+
+            assertThrows(NullPointerException.class, () -> reader.column(null));
+            assertThrows(NullPointerException.class, () -> reader.column("Name", null));
+            assertThrows(NullPointerException.class, () -> reader.column(List.of("Name"), null));
+            assertThrows(NullPointerException.class, () -> reader.columnAt(0, null));
+        }
+
+        @Test
+        void callbacksAndConfigurers_rejectNull() {
+            var reader = CsvReader.setter(Object::new);
+
+            assertThrows(NullPointerException.class, () -> reader.onProgress(1, null));
+            assertThrows(NullPointerException.class, () -> reader.onReadProgress(1, null));
+            assertThrows(NullPointerException.class,
+                    () -> reader.cellConversion((java.util.function.Consumer<CellConversionConfig.Builder>) null));
+        }
+
+        @Test
+        void readEntryPoints_rejectNullBeforeExecution() {
+            var excel = ExcelReader.forMap();
+            var csv = CsvReader.forMap();
+            var input = java.io.InputStream.nullInputStream();
+
+            assertThrows(NullPointerException.class, () -> excel.read(input, null));
+            assertThrows(NullPointerException.class, () -> csv.read(input, null));
+            assertThrows(NullPointerException.class, () -> excel.readWhile(input, null));
+            assertThrows(NullPointerException.class, () -> csv.readWhile(input, null));
+            assertThrows(NullPointerException.class, () -> excel.read((InputStreamSource) null, result -> {}));
+            assertThrows(IllegalArgumentException.class, () -> csv.readReport(input, -1));
+        }
+    }
+
+    @Nested
+    class ReadResultMessages {
+
+        @Test
+        void messages_areNonNullAndImmutable() {
+            var result = new ReadResult<String>("value", true, null);
+
+            assertTrue(result.messages().isEmpty());
+            assertThrows(UnsupportedOperationException.class,
+                    () -> result.messages().add("unexpected"));
+        }
+
+        @Test
+        void messages_areCopied() {
+            var messages = new java.util.ArrayList<>(List.of("initial"));
+            var result = new ReadResult<String>("value", false, messages);
+
+            messages.add("later");
+
+            assertEquals(List.of("initial"), result.messages());
+        }
+
+        @Test
+        void legacyConstructor_infersErrorTypeFromCause() {
+            var result = new ReadResult<String>("value", false, List.of("mapping failed"),
+                    new IllegalArgumentException("bad value"), 2L, List.of(), List.of("bad"));
+
+            assertEquals(RowError.Type.MAPPING, result.errorType());
         }
     }
 

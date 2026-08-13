@@ -164,6 +164,7 @@ class ExcelReaderBranchTest {
             assertEquals(3, results.size());
             for (var r : results) {
                 assertFalse(r.success(), "Row should fail when setter throws");
+                assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, r.errorType());
                 assertNotNull(r.messages());
                 assertEquals(1, r.messages().size(), "Should have exactly one error message");
                 assertTrue(r.messages().get(0).contains("setter broke!"));
@@ -200,7 +201,7 @@ class ExcelReaderBranchTest {
 
             for (var r : results) {
                 assertTrue(r.success());
-                assertNull(r.messages());
+                assertTrue(r.messages().isEmpty());
             }
         }
 

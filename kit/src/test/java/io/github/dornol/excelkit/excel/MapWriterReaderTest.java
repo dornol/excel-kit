@@ -163,7 +163,7 @@ class MapWriterReaderTest {
 
         // Verify first row
         assertTrue(results.get(0).success());
-        assertNull(results.get(0).messages());
+        assertTrue(results.get(0).messages().isEmpty());
         Map<String, String> row0 = results.get(0).data();
         assertEquals(Set.of("Name", "City"), row0.keySet());
         assertEquals("Alice", row0.get("Name"));

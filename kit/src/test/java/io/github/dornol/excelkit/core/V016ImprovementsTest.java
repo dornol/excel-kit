@@ -345,6 +345,7 @@ class V016ImprovementsTest {
 
             assertEquals(1, results.size());
             assertFalse(results.get(0).success(), "Required column with blank value should fail");
+            assertEquals(RowError.Type.VALIDATION, results.get(0).errorType());
             assertNotNull(results.get(0).messages());
             assertTrue(results.get(0).messages().stream().anyMatch(m -> m.contains("Required")));
         }
@@ -380,6 +381,7 @@ class V016ImprovementsTest {
 
             assertEquals(1, results.size());
             assertFalse(results.get(0).success());
+            assertEquals(RowError.Type.VALIDATION, results.get(0).errorType());
             assertTrue(results.get(0).messages().stream().anyMatch(m -> m.contains("Required")));
         }
 
