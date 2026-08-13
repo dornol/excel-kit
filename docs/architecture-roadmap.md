@@ -743,6 +743,7 @@ Java의 `Flow.Publisher<T>` 또는 Reactor `Flux<T>` 지원은 core에 직접 �
 - Excel과 CSV Writer가 `Iterable<T>`과 `Stream<T>` 입력을 동일하게 제공한다.
 - 전달받은 Stream은 성공, extractor 예외, output 예외 모두에서 Writer가 닫지 않는다.
 - 빈 Iterable, 반복 중간 예외, extractor 예외에서도 workbook과 임시 파일이 정리된다.
+- 공통 contract test로 반복 입력 예외, 출력 stream 예외, caller Stream ownership을 검증한다.
 - Iterable은 전체 복사 없이 한 행씩 소비된다.
 - Stream 소유권 변경과 try-with-resources migration을 문서화한다.
 
