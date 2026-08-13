@@ -66,6 +66,12 @@ class NextApiTest {
                 .read(csv("A\nlong\n"), result -> fail("must not deliver an oversized cell")));
     }
 
+    @Test void columnLimitAppliesToDataRowsWiderThanHeader() {
+        assertThrows(ReadLimitExceededException.class, () -> CsvReader.forMap()
+                .limits(new ReadLimits(-1, -1, 1, -1))
+                .read(csv("A\n1,2\n"), result -> fail("must reject a wide data row")));
+    }
+
     @Test void excelSheetLimitAbortsBeforeRows() throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {

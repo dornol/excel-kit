@@ -71,12 +71,25 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     }
 
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
+        if (readOptions.limits().maxColumns() >= 0
+                && columnIndex >= readOptions.limits().maxColumns()) {
+            throw new ReadLimitExceededException(ReadLimitExceededException.Limit.COLUMNS,
+                    readOptions.limits().maxColumns(), columnIndex + 1L);
+        }
         if (formattedValue != null && readOptions.limits().maxCellCharacters() >= 0
                 && formattedValue.length() > readOptions.limits().maxCellCharacters()) {
             throw new ReadLimitExceededException(ReadLimitExceededException.Limit.CELL_CHARACTERS,
                     readOptions.limits().maxCellCharacters(), formattedValue.length());
         }
         return new CellData(columnIndex, formattedValue, readOptions.cellConversionConfig());
+    }
+
+    protected final void validateColumnCount(int columnCount) {
+        if (readOptions.limits().maxColumns() >= 0
+                && columnCount > readOptions.limits().maxColumns()) {
+            throw new ReadLimitExceededException(ReadLimitExceededException.Limit.COLUMNS,
+                    readOptions.limits().maxColumns(), columnCount);
+        }
     }
 
     protected List<String> rawValues(List<CellData> cells) {

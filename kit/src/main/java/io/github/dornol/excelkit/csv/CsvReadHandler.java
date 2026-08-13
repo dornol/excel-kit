@@ -185,6 +185,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum, List<String> rawValues) {
+        validateColumnCount(line.length);
         if (columns == null || instanceSupplier == null) {
             throw new IllegalStateException("columns and instanceSupplier must not be null in setter mode");
         }
@@ -215,6 +216,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
     private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap, long fileRowNum,
                                             List<String> rawValues) {
+        validateColumnCount(line.length);
         List<CellData> cells = new ArrayList<>();
         for (int i = 0; i < line.length; i++) {
             cells.add(cellData(i, line[i]));

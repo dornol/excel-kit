@@ -808,12 +808,13 @@ ExcelWorkbookReader.create()
 - 한 sheet 실패 시 나머지 sheet 처리 여부
 - workbook package 공유와 password reader fallback
 
-### 독립 검토 2: 안전 제한 점검
+### 부분 구현: 안전 제한 점검
 
 새로운 거대 options 객체를 바로 만들지 않고 현재 보호 기능의 누락부터 점검한다.
 
 - 기존 `maxRows()`, `maxErrors()`, Spring upload size 제한의 적용 범위
 - 최대 열 수와 cell text 길이
+- 헤더보다 넓은 데이터 행이 `maxColumns` 제한을 우회하지 않는지 검증
 - Apache POI zip bomb 방어 설정과 library 전역 설정 충돌 가능성
 - shared strings, 압축 해제 비율과 ZIP entry 크기
 - 기존 URL image byte 제한 외 timeout, redirect, content type 정책
