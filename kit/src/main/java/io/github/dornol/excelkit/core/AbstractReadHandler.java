@@ -77,10 +77,6 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         return new CellData(columnIndex, formattedValue, readOptions.cellConversionConfig());
     }
 
-    protected boolean isBlankValues(List<String> values) {
-        return values.stream().allMatch(value -> value == null || value.isBlank());
-    }
-
     protected List<String> rawValues(List<CellData> cells) {
         return cells.stream().map(CellData::formattedValue).toList();
     }

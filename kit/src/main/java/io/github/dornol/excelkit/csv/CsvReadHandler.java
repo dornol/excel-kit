@@ -13,6 +13,7 @@ import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.ReadRowPolicy;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.ReadStoppedException;
@@ -111,32 +112,21 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
             String[] line;
             long rowCount = 0;
-            long emittedRows = 0;
-            int consecutiveBlankRows = 0;
+            ReadRowPolicy rowPolicy = new ReadRowPolicy(readOptions);
 
             if (rowMapper != null) {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
                 while ((line = reader.readNext()) != null) {
-                    if (readOptions.cancellationToken().isCancellationRequested()) throw new ReadStoppedException();
                     List<String> rawValues = rawValues(line);
-                    if (isBlankValues(rawValues)) {
-                        consecutiveBlankRows++;
-                        if (readOptions.stopAtBlankRows() > 0 && consecutiveBlankRows >= readOptions.stopAtBlankRows()) {
-                            break;
-                        }
-                        if (readOptions.skipBlankRows()) {
-                            rowCount++;
-                            continue;
-                        }
-                    } else {
-                        consecutiveBlankRows = 0;
-                    }
-                    if (readOptions.maxRows() >= 0 && emittedRows >= readOptions.maxRows()) {
-                        break;
+                    ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
+                    if (decision == ReadRowPolicy.Decision.STOP) break;
+                    if (decision == ReadRowPolicy.Decision.SKIP) {
+                        rowCount++;
+                        continue;
                     }
                     guardedConsumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
-                    emittedRows++;
+                    rowPolicy.recordEmitted();
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);
@@ -149,25 +139,15 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 int[] resolvedIndices = resolveIndices();
                 while ((line = reader.readNext()) != null) {
-                    if (readOptions.cancellationToken().isCancellationRequested()) throw new ReadStoppedException();
                     List<String> rawValues = rawValues(line);
-                    if (isBlankValues(rawValues)) {
-                        consecutiveBlankRows++;
-                        if (readOptions.stopAtBlankRows() > 0 && consecutiveBlankRows >= readOptions.stopAtBlankRows()) {
-                            break;
-                        }
-                        if (readOptions.skipBlankRows()) {
-                            rowCount++;
-                            continue;
-                        }
-                    } else {
-                        consecutiveBlankRows = 0;
-                    }
-                    if (readOptions.maxRows() >= 0 && emittedRows >= readOptions.maxRows()) {
-                        break;
+                    ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
+                    if (decision == ReadRowPolicy.Decision.STOP) break;
+                    if (decision == ReadRowPolicy.Decision.SKIP) {
+                        rowCount++;
+                        continue;
                     }
                     guardedConsumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
-                    emittedRows++;
+                    rowPolicy.recordEmitted();
                     rowCount++;
                     if (progressCallback != null && progressInterval > 0 && rowCount % progressInterval == 0) {
                         progressCallback.onProgress(rowCount, null);

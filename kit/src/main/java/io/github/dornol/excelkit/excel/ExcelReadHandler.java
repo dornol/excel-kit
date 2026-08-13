@@ -10,6 +10,7 @@ import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.ReadRowPolicy;
 import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.core.ReadStoppedException;
@@ -319,8 +320,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private int @Nullable [] resolvedIndices;
         private @Nullable Map<String, Integer> headerIndexMap;
         private long dataRowCount;
-        private long emittedRowCount;
-        private int consecutiveBlankRows;
+        private final ReadRowPolicy rowPolicy = new ReadRowPolicy(readOptions);
         private final @Nullable Cursor cursor;
 
         public SheetHandler(Consumer<ReadResult<T>> consumer, long totalRows) {
@@ -378,19 +378,12 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
 
             List<String> rawValues = rawValues(currentRow);
-            if (isBlankValues(rawValues)) {
-                consecutiveBlankRows++;
-                if (readOptions.stopAtBlankRows() > 0 && consecutiveBlankRows >= readOptions.stopAtBlankRows()) {
-                    throw new StopReadingException();
-                }
-                if (readOptions.skipBlankRows()) {
-                    return;
-                }
-            } else {
-                consecutiveBlankRows = 0;
-            }
-            if (readOptions.maxRows() >= 0 && emittedRowCount >= readOptions.maxRows()) {
+            ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
+            if (decision == ReadRowPolicy.Decision.STOP) {
                 throw new StopReadingException();
+            }
+            if (decision == ReadRowPolicy.Decision.SKIP) {
+                return;
             }
 
             ReadResult<T> result;
@@ -413,7 +406,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             consumer.accept(result);
 
             dataRowCount++;
-            emittedRowCount++;
+            rowPolicy.recordEmitted();
             if (progressCallback != null && progressInterval > 0
                     && dataRowCount % progressInterval == 0) {
                 progressCallback.onProgress(dataRowCount, cursor);

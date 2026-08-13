@@ -35,6 +35,7 @@ All notable changes to this project will be documented in this file.
 - Reader validator configuration is now owned by the same internal configuration object as the
   other common reader settings.
 - Legacy and detailed reader progress callbacks now keep independent intervals.
+- CSV and Excel readers now share row-policy handling for cancellation, blank rows, and row limits.
 
 ## [0.22.0] - 2026-08-06
 
