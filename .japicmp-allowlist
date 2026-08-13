@@ -1,2 +1,5 @@
-# Keep this file empty unless a deliberate breaking change is temporarily required.
-# The API comparison baseline is the latest published release (currently 0.22.0).
+# Deliberate breaking API changes for the next major release.
+# These classes were intentionally redesigned after the 0.22.0 baseline.
+io.github.dornol.excelkit.core.AbstractReader
+io.github.dornol.excelkit.core.AbstractReadHandler
+io.github.dornol.excelkit.core.ReadResult

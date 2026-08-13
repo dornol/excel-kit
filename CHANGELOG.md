@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
   `validationFailure` factories; legacy overloaded constructors were removed.
 - Callback, writer, and cleanup exception boundaries now catch only the checked or runtime
   exception categories they can actually handle.
+- API compatibility CI now compares against `0.22.0` and explicitly excludes the intentionally
+  redesigned reader/result classes until the next major release.
 
 ## [0.22.0] - 2026-08-06
 
