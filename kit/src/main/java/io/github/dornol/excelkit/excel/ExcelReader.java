@@ -2,27 +2,13 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.AbstractReader;
 import io.github.dornol.excelkit.core.RowData;
-import io.github.dornol.excelkit.core.TempResourceCreator;
 import jakarta.validation.Validator;
-import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.util.XMLHelper;
-import org.apache.poi.xssf.eventusermodel.XSSFReader;
-import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
-import org.apache.poi.xssf.model.SharedStrings;
-import org.apache.poi.xssf.model.StylesTable;
-import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Consumer;
@@ -326,9 +312,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        requireInputSource(source);
         requireCallback(consumer, "consumer");
-        return withInputSource(source, input -> readWithSummary(input, consumer),
+        return executeFromSource(source, input -> readWithSummary(input, consumer),
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
@@ -348,9 +333,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
-        requireInputSource(source);
         requireMaxCollectedErrors(maxCollectedErrors);
-        return withInputSource(source, input -> readReport(input, maxCollectedErrors),
+        return executeFromSource(source, input -> readReport(input, maxCollectedErrors),
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
@@ -399,31 +383,27 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     /** Opens and closes the source-owned stream. */
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        requireInputSource(source);
         requireCallback(consumer, "consumer");
-        withInputSource(source, input -> { read(input, consumer); return null; },
+        executeFromSource(source, input -> { read(input, consumer); return null; },
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
-        requireInputSource(source);
         requireCallback(onSuccess, "onSuccess");
         requireCallback(onError, "onError");
-        withInputSource(source, input -> { read(input, onSuccess, onError); return null; },
+        executeFromSource(source, input -> { read(input, onSuccess, onError); return null; },
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public void readStrict(InputStreamSource source, Consumer<T> consumer) {
-        requireInputSource(source);
         requireCallback(consumer, "consumer");
-        withInputSource(source, input -> { readStrict(input, consumer); return null; },
+        executeFromSource(source, input -> { readStrict(input, consumer); return null; },
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
     public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
-        requireInputSource(source);
         requireCallback(predicate, "predicate");
-        return withInputSource(source, input -> readWhile(input, predicate),
+        return executeFromSource(source, input -> readWhile(input, predicate),
                 (message, error) -> new ExcelReadException("Failed to open Excel input", error));
     }
 
@@ -439,46 +419,17 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return A list of {@link ExcelSheetInfo} records containing sheet names and indices
      */
     public static List<ExcelSheetInfo> getSheetNames(InputStream inputStream) {
-        Path tempDir = null;
-        Path tempFile = null;
-        try {
-            tempDir = TempResourceCreator.createTempDirectory();
-            tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            Files.copy(java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null"),
-                    tempFile, StandardCopyOption.REPLACE_EXISTING);
-
-            try (OPCPackage pkg = OPCPackage.open(tempFile.toFile())) {
-                XSSFReader reader = new XSSFReader(pkg);
-                XSSFReader.SheetIterator sheetsData = (XSSFReader.SheetIterator) reader.getSheetsData();
-                List<ExcelSheetInfo> result = new ArrayList<>();
-                int index = 0;
-                while (sheetsData.hasNext()) {
-                    try (InputStream ignored = sheetsData.next()) {
-                        result.add(new ExcelSheetInfo(index, sheetsData.getSheetName()));
-                    }
-                    index++;
-                }
-                return result;
-            }
-        } catch (Exception e) {
-            throw new ExcelReadException("Failed to read sheet names", e);
-        } finally {
-            cleanupTemp(tempDir, tempFile);
-        }
+        return ExcelMetadataReader.sheetNames(inputStream);
     }
 
     public static List<ExcelSheetInfo> getSheetNames(Path path) {
         java.util.Objects.requireNonNull(path, "path cannot be null");
-        return getSheetNames((InputStreamSource) () -> Files.newInputStream(path));
+        return ExcelMetadataReader.sheetNames((InputStreamSource) () -> Files.newInputStream(path));
     }
 
     public static List<ExcelSheetInfo> getSheetNames(InputStreamSource source) {
         java.util.Objects.requireNonNull(source, "source cannot be null");
-        try (InputStream input = source.openStream()) {
-            return getSheetNames(input);
-        } catch (IOException e) {
-            throw new ExcelReadException("Failed to open Excel input", e);
-        }
+        return ExcelMetadataReader.sheetNames(source);
     }
 
     /**
@@ -490,132 +441,17 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return A list of header names
      */
     public static List<String> getSheetHeaders(InputStream inputStream, int sheetIndex, int headerRowIndex) {
-        if (sheetIndex < 0) {
-            throw new IllegalArgumentException("sheetIndex must be non-negative");
-        }
-        if (headerRowIndex < 0) {
-            throw new IllegalArgumentException("headerRowIndex must be non-negative");
-        }
-        Path tempDir = null;
-        Path tempFile = null;
-        try {
-            tempDir = TempResourceCreator.createTempDirectory();
-            tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            Files.copy(java.util.Objects.requireNonNull(inputStream, "inputStream cannot be null"),
-                    tempFile, StandardCopyOption.REPLACE_EXISTING);
-
-            try (OPCPackage pkg = OPCPackage.open(tempFile.toFile())) {
-                XSSFReader reader = new XSSFReader(pkg);
-                SharedStrings ss = reader.getSharedStringsTable();
-                StylesTable styles = reader.getStylesTable();
-
-                XMLReader parser = XMLHelper.newXMLReader();
-                HeaderExtractor extractor = new HeaderExtractor(headerRowIndex);
-                XSSFSheetXMLHandler sheetParser = new XSSFSheetXMLHandler(styles, ss, extractor, false);
-                parser.setContentHandler(sheetParser);
-
-                Iterator<InputStream> sheetsData = reader.getSheetsData();
-                int currentIndex = 0;
-                boolean found = false;
-                while (sheetsData.hasNext()) {
-                    try (InputStream sheet = sheetsData.next()) {
-                        if (currentIndex == sheetIndex) {
-                            parser.parse(new InputSource(sheet));
-                            found = true;
-                            break;
-                        }
-                    }
-                    currentIndex++;
-                }
-                if (!found) {
-                    throw new ExcelReadException("Sheet index " + sheetIndex + " not found. File has "
-                            + currentIndex + " sheet(s).");
-                }
-                return extractor.getHeaders();
-            }
-        } catch (ExcelReadException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ExcelReadException("Failed to read sheet headers", e);
-        } finally {
-            cleanupTemp(tempDir, tempFile);
-        }
+        return ExcelMetadataReader.headers(inputStream, sheetIndex, headerRowIndex);
     }
 
     public static List<String> getSheetHeaders(Path path, int sheetIndex, int headerRowIndex) {
         java.util.Objects.requireNonNull(path, "path cannot be null");
-        return getSheetHeaders((InputStreamSource) () -> Files.newInputStream(path), sheetIndex, headerRowIndex);
+        return ExcelMetadataReader.headers((InputStreamSource) () -> Files.newInputStream(path), sheetIndex, headerRowIndex);
     }
 
     public static List<String> getSheetHeaders(InputStreamSource source, int sheetIndex, int headerRowIndex) {
         java.util.Objects.requireNonNull(source, "source cannot be null");
-        try (InputStream input = source.openStream()) {
-            return getSheetHeaders(input, sheetIndex, headerRowIndex);
-        } catch (IOException e) {
-            throw new ExcelReadException("Failed to open Excel input", e);
-        }
+        return ExcelMetadataReader.headers(source, sheetIndex, headerRowIndex);
     }
 
-    private static final Logger log = LoggerFactory.getLogger(ExcelReader.class);
-
-    private static void cleanupTemp(Path tempDir, Path tempFile) {
-        if (tempFile != null) {
-            try {
-                Files.deleteIfExists(tempFile);
-            } catch (IOException e) {
-                log.warn("Failed to delete temp file: {}", tempFile, e);
-                tempFile.toFile().deleteOnExit();
-            }
-        }
-        if (tempDir != null) {
-            try {
-                Files.deleteIfExists(tempDir);
-            } catch (IOException e) {
-                log.warn("Failed to delete temp dir: {}", tempDir, e);
-                tempDir.toFile().deleteOnExit();
-            }
-        }
-    }
-
-    /**
-     * Internal handler for extracting header names only.
-     */
-    private static class HeaderExtractor extends DefaultHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
-        private final int headerRowIndex;
-        private final List<String> headers = new ArrayList<>();
-        private final List<String> currentRow = new ArrayList<>();
-        private boolean done = false;
-
-        HeaderExtractor(int headerRowIndex) {
-            this.headerRowIndex = headerRowIndex;
-        }
-
-        @Override
-        public void startRow(int rowNum) {
-            currentRow.clear();
-        }
-
-        @Override
-        public void endRow(int rowNum) {
-            if (rowNum == headerRowIndex) {
-                headers.addAll(currentRow);
-                done = true;
-            }
-        }
-
-        @Override
-        public void cell(String cellReference, String formattedValue, XSSFComment comment) {
-            if (!done) {
-                int colIndex = ExcelReadSupport.getColumnIndex(cellReference);
-                while (currentRow.size() < colIndex) {
-                    currentRow.add("");
-                }
-                currentRow.add(formattedValue != null ? formattedValue : "");
-            }
-        }
-
-        List<String> getHeaders() {
-            return headers;
-        }
-    }
 }

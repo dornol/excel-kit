@@ -370,9 +370,11 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         };
     }
 
-    protected <R> R withInputSource(InputStreamSource source, Function<InputStream,R> execution,
+    protected <R> R executeFromSource(InputStreamSource source, Function<InputStream,R> execution,
             BiFunction<String,IOException,? extends RuntimeException> exceptionFactory) {
         java.util.Objects.requireNonNull(source, "source cannot be null");
+        java.util.Objects.requireNonNull(execution, "execution cannot be null");
+        java.util.Objects.requireNonNull(exceptionFactory, "exceptionFactory cannot be null");
         try (InputStream input = source.openStream()) {
             return execution.apply(input);
         } catch (IOException e) {

@@ -338,9 +338,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        requireInputSource(source);
         requireCallback(consumer, "consumer");
-        return withInputSource(source, input -> readWithSummary(input, consumer),
+        return executeFromSource(source, input -> readWithSummary(input, consumer),
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
@@ -360,9 +359,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
-        requireInputSource(source);
         requireMaxCollectedErrors(maxCollectedErrors);
-        return withInputSource(source, input -> readReport(input, maxCollectedErrors),
+        return executeFromSource(source, input -> readReport(input, maxCollectedErrors),
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
@@ -414,31 +412,27 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
-        requireInputSource(source);
         requireCallback(consumer, "consumer");
-        withInputSource(source, input -> { read(input, consumer); return null; },
+        executeFromSource(source, input -> { read(input, consumer); return null; },
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
-        requireInputSource(source);
         requireCallback(onSuccess, "onSuccess");
         requireCallback(onError, "onError");
-        withInputSource(source, input -> { read(input, onSuccess, onError); return null; },
+        executeFromSource(source, input -> { read(input, onSuccess, onError); return null; },
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     public void readStrict(InputStreamSource source, Consumer<T> consumer) {
-        requireInputSource(source);
         requireCallback(consumer, "consumer");
-        withInputSource(source, input -> { readStrict(input, consumer); return null; },
+        executeFromSource(source, input -> { readStrict(input, consumer); return null; },
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
     public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
-        requireInputSource(source);
         requireCallback(predicate, "predicate");
-        return withInputSource(source, input -> readWhile(input, predicate),
+        return executeFromSource(source, input -> readWhile(input, predicate),
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
