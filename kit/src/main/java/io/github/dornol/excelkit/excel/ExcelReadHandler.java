@@ -187,6 +187,25 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     boolean wasStoppedEarly() { return stoppedEarly; }
 
+    void readSharedPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
+        markConsumed();
+        try {
+            ExcelSecurityScanner.scan(getTempFile(), readOptions.securityPolicy());
+            readPackage(pkg, guardedConsumer(consumer));
+        } catch (ReadStoppedException ignored) {
+            stoppedEarly = true;
+        } catch (ReadLimitExceededException | ReadSecurityException e) {
+            throw e;
+        } catch (ExcelReadException | ReadAbortException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelReadException("Failed to read excel", e);
+        } finally {
+            notifyReadCompletion(sheetIndex, -1);
+            close();
+        }
+    }
+
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
         Path fileToRead = getTempFile();
         Path decryptedFile = null;
@@ -196,6 +215,20 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         }
         ExcelSecurityScanner.scan(fileToRead, readOptions.securityPolicy());
         try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile())) {
+            readPackage(pkg, consumer);
+        } finally {
+            if (decryptedFile != null) {
+                try {
+                    Files.deleteIfExists(decryptedFile);
+                } catch (IOException e) {
+                    log.warn("Failed to delete decrypted temp file: {}", decryptedFile, e);
+                    decryptedFile.toFile().deleteOnExit();
+                }
+            }
+        }
+    }
+
+    private void readPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer) throws Exception {
             long totalRows = -1;
             if (countRows) {
                 totalRows = preScanRowCount(pkg);
@@ -216,16 +249,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 try { parser.parse(new InputSource(sheet)); }
                 catch (StopReadingException ignored) { /* configured row stop */ }
             });
-        } finally {
-            if (decryptedFile != null) {
-                try {
-                    Files.deleteIfExists(decryptedFile);
-                } catch (IOException e) {
-                    log.warn("Failed to delete decrypted temp file: {}", decryptedFile, e);
-                    decryptedFile.toFile().deleteOnExit();
-                }
-            }
-        }
     }
 
     /**

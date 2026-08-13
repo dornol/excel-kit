@@ -20,6 +20,7 @@ import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.ReadSummary;
 import io.github.dornol.excelkit.core.ReadReport;
 import io.github.dornol.excelkit.core.ReadSession;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 
 /**
  * Builder-style class for configuring Excel row readers.
@@ -361,6 +362,15 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private ReadSummary summarize(ExcelReadHandler<T> handler, Consumer<ReadResult<T>> consumer) {
         return summarizeRead(
                 handler::read, handler::wasStoppedEarly, consumer);
+    }
+
+    boolean canSharePackage() {
+        return password == null;
+    }
+
+    ReadSummary readSharedPackage(Path path, OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
+        ExcelReadHandler<T> handler = createHandler(path);
+        return summarizeRead(callback -> handler.readSharedPackage(pkg, callback), handler::wasStoppedEarly, consumer);
     }
 
     public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {

@@ -8,6 +8,7 @@ import io.github.dornol.excelkit.core.ReadSummary;
 import io.github.dornol.excelkit.core.RowError;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,7 +52,7 @@ public final class ExcelWorkbookReader {
         Objects.requireNonNull(name, "name cannot be null");
         Objects.requireNonNull(reader, "reader cannot be null");
         Objects.requireNonNull(consumer, "consumer cannot be null");
-        plans.add(new SheetPlan(name, null, (path, index, errors) -> execute(reader, consumer, path, index, errors)));
+        plans.add(new SheetPlan(name, null, new ReaderSheetExecution<>(reader, consumer)));
         return this;
     }
 
@@ -60,8 +61,7 @@ public final class ExcelWorkbookReader {
         if (index < 0) throw new IllegalArgumentException("index must be non-negative");
         Objects.requireNonNull(reader, "reader cannot be null");
         Objects.requireNonNull(consumer, "consumer cannot be null");
-        plans.add(new SheetPlan(null, index, (path, resolved, errors) ->
-                execute(reader, consumer, path, resolved, errors)));
+        plans.add(new SheetPlan(null, index, new ReaderSheetExecution<>(reader, consumer)));
         return this;
     }
 
@@ -107,23 +107,30 @@ public final class ExcelWorkbookReader {
         Objects.requireNonNull(path, "path cannot be null");
         List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(path);
         List<SheetReadReport> reports = new ArrayList<>();
-        for (SheetPlan plan : plans) {
-            int index = plan.index != null ? plan.index : resolveSheetIndex(plan.name, sheets);
-            String name = sheets.stream().filter(sheet -> sheet.index() == index)
-                    .map(ExcelSheetInfo::name).findFirst().orElse("#" + index);
-            if (index >= sheets.size()) {
-                SheetReadReport report = failure(name, index,
-                        new ExcelKitException("Sheet index " + index + " is not present"));
-                reports.add(report);
-                if (failurePolicy == SheetFailurePolicy.STOP) break;
-                continue;
+        boolean sharePackage = !plans.isEmpty() && plans.stream().allMatch(SheetPlan::canSharePackage);
+        try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile()) : null) {
+            for (SheetPlan plan : plans) {
+                int index = plan.index != null ? plan.index : resolveSheetIndex(plan.name, sheets);
+                String name = sheets.stream().filter(sheet -> sheet.index() == index)
+                        .map(ExcelSheetInfo::name).findFirst().orElse("#" + index);
+                if (index >= sheets.size()) {
+                    SheetReadReport report = failure(name, index,
+                            new ExcelKitException("Sheet index " + index + " is not present"));
+                    reports.add(report);
+                    if (failurePolicy == SheetFailurePolicy.STOP) break;
+                    continue;
+                }
+                try {
+                    reports.add(sharePackage
+                            ? plan.readShared(path, index, name, maxErrorsPerSheet, pkg)
+                            : plan.read(path, index, name, maxErrorsPerSheet));
+                } catch (RuntimeException e) {
+                    reports.add(failure(name, index, e));
+                    if (failurePolicy == SheetFailurePolicy.STOP) break;
+                }
             }
-            try {
-                reports.add(plan.read(path, index, name, maxErrorsPerSheet));
-            } catch (RuntimeException e) {
-                reports.add(failure(name, index, e));
-                if (failurePolicy == SheetFailurePolicy.STOP) break;
-            }
+        } catch (Exception e) {
+            throw new ExcelKitException("Failed to open workbook", e);
         }
         return new WorkbookReadReport(reports);
     }
@@ -159,9 +166,61 @@ public final class ExcelWorkbookReader {
         return new SheetReadReport("#" + index, index, summary, errors, errorsTruncated[0], null);
     }
 
+    private static <T> SheetReadReport executeShared(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer,
+                                                      Path path, int index, int maximumErrors, OPCPackage pkg) {
+        reader.sheetIndex(index);
+        List<RowError> errors = new ArrayList<>();
+        boolean[] errorsTruncated = {false};
+        long[] rowOrdinal = {0};
+        ReadSummary summary = reader.readSharedPackage(path, pkg, result -> {
+            rowOrdinal[0]++;
+            consumer.accept(result);
+            if (!result.success()) {
+                if (errors.size() < maximumErrors) {
+                    errors.add(new RowError(rowOrdinal[0], result.fileRowNum(), result.errorType(), result.messages(),
+                            result.cause(), result.cellErrors(), result.rawValues()));
+                } else {
+                    errorsTruncated[0] = true;
+                }
+            }
+        });
+        return new SheetReadReport("#" + index, index, summary, errors, errorsTruncated[0], null);
+    }
+
     @FunctionalInterface
     private interface SheetExecution {
         SheetReadReport read(Path path, int index, int maximumErrors);
+
+        default boolean canSharePackage() { return false; }
+
+        default SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg) {
+            return read(path, index, maximumErrors);
+        }
+    }
+
+    private static final class ReaderSheetExecution<T> implements SheetExecution {
+        private final ExcelReader<T> reader;
+        private final Consumer<ReadResult<T>> consumer;
+
+        private ReaderSheetExecution(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer) {
+            this.reader = reader;
+            this.consumer = consumer;
+        }
+
+        @Override
+        public SheetReadReport read(Path path, int index, int maximumErrors) {
+            return execute(reader, consumer, path, index, maximumErrors);
+        }
+
+        @Override
+        public boolean canSharePackage() {
+            return reader.canSharePackage();
+        }
+
+        @Override
+        public SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg) {
+            return executeShared(reader, consumer, path, index, maximumErrors, pkg);
+        }
     }
 
     private static final class SheetPlan {
@@ -177,6 +236,14 @@ public final class ExcelWorkbookReader {
 
         private SheetReadReport read(Path path, int index, String name, int maximumErrors) {
             SheetReadReport result = execution.read(path, index, maximumErrors);
+            return new SheetReadReport(name, index, result.summary(), result.errors(),
+                    result.errorsTruncated(), result.failure());
+        }
+
+        private boolean canSharePackage() { return execution.canSharePackage(); }
+
+        private SheetReadReport readShared(Path path, int index, String name, int maximumErrors, OPCPackage pkg) {
+            SheetReadReport result = execution.readShared(path, index, maximumErrors, pkg);
             return new SheetReadReport(name, index, result.summary(), result.errors(),
                     result.errorsTruncated(), result.failure());
         }

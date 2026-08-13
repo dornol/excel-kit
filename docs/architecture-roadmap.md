@@ -788,10 +788,12 @@ reader.headerNormalizer(header ->
 - 읽기 lifecycle과 조기 종료는 제안 6의 callback API와 `readWhile()`에서 다룬다.
 - Writer 입력과 Stream 소유권은 제안 7에서 다룬다.
 
-### 독립 검토 1: 다중 sheet 일괄 읽기
+### 구현 완료: 다중 sheet 일괄 읽기
 
-하나의 workbook에서 서로 다른 DTO/schema를 가진 여러 sheet를 실제로 import해야 하는 요구가 생기면
-별도 설계 제안으로 승격한다.
+`ExcelWorkbookReader`가 하나의 workbook에서 서로 다른 DTO/schema를 가진 여러 sheet를 읽는다.
+일반적인 비밀번호 reader 구성에서는 sheet별로 `OPCPackage`를 다시 열지 않고 하나의 package를
+순차 공유한다. 비밀번호 reader가 하나라도 포함되면 암호화 처리의 안전성을 위해 기존 개별 오픈
+경로로 fallback한다.
 
 ```java
 ExcelWorkbookReader.create()
@@ -804,7 +806,7 @@ ExcelWorkbookReader.create()
 - 서로 다른 DTO generic 타입을 한 builder에서 표현하는 방법
 - sheet별 header와 오류 처리 정책
 - 한 sheet 실패 시 나머지 sheet 처리 여부
-- workbook을 sheet마다 복사하거나 reopen하지 않는 단일 session
+- workbook package 공유와 password reader fallback
 
 ### 독립 검토 2: 안전 제한 점검
 
@@ -916,7 +918,8 @@ peak memory 10% 이내처럼 기준을 명시하고 CI benchmark는 변동성을
 | 6 | Stream API 제거와 `readWhile()` | 높음 | 중간 | 큼 |
 | 7 | Writer `Iterable` 입력/Stream 소유권 | 중간 | 낮음 | 동작 변경 |
 | 8 | Header normalization | 중간~높음 | 낮음~중간 | 없음 |
-| 향후 검토 | 다중 sheet, 안전 제한 | 요구 확인 필요 | 항목별 상이 | 미정 |
+| 완료 | 다중 sheet와 package 공유 | 높음 | 중간 | 없음 |
+| 향후 검토 | 안전 제한 추가 점검 | 요구 확인 필요 | 항목별 상이 | 미정 |
 
 가장 먼저 할 수 있는 작업은 현재 의존성 정책을 문서와 CI의 명시적인 지원 계약으로 만드는 것이다.
 가장 큰 public API 결정은 Reader lifecycle이며, 이후 schema, Spring adapter, 오류 모델의 형태를 좌우한다.
