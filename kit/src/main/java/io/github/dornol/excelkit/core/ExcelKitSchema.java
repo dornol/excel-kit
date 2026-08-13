@@ -89,18 +89,7 @@ public class ExcelKitSchema<T> {
      * @since 0.19.0
      */
     public ExcelWriter<T> excelWriter(Consumer<ExcelWriter.InitOptions> configurer) {
-        ExcelWriter<T> writer = ExcelWriter.<T>create(configurer);
-        if (writeErrorPolicy != null) {
-            writer.writeErrorPolicy(writeErrorPolicy);
-        }
-        for (SchemaColumn<T> col : columns) {
-            if (col.writeConfigurer() != null) {
-                writer.column(col.name(), col.writeFunction(), col.writeConfigurer());
-            } else {
-                writer.column(col.name(), col.writeFunction());
-            }
-        }
-        return writer;
+        return SchemaWriterFactory.excel(columns, writeErrorPolicy, configurer);
     }
 
     /**
@@ -110,11 +99,7 @@ public class ExcelKitSchema<T> {
      * @return A configured CsvWriter instance
      */
     public CsvWriter<T> csvWriter() {
-        CsvWriter<T> writer = CsvWriter.create();
-        for (SchemaColumn<T> col : columns) {
-            writer.column(col.name(), col.writeFunction());
-        }
-        return writer;
+        return SchemaWriterFactory.csv(columns);
     }
 
     /**
@@ -129,15 +114,7 @@ public class ExcelKitSchema<T> {
      * @return A configured ExcelReader instance
      */
     public ExcelReader<T> excelReader(Supplier<T> supplier, @Nullable Validator validator) {
-        ExcelReader<T> reader = new ExcelReader<>(supplier, validator);
-        for (SchemaColumn<T> col : columns) {
-            reader.column(col.readHeaderNames(), col.readSetter());
-            if (col.required()) {
-                reader.required();
-            }
-        }
-        applyReaderDefaults(reader);
-        return reader;
+        return SchemaReaderFactory.excelSetter(columns, readOptions(), supplier, validator);
     }
 
     /**
@@ -160,9 +137,7 @@ public class ExcelKitSchema<T> {
      * @return A configured ExcelReader instance in mapping mode
      */
     public ExcelReader<T> excelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        ExcelReader<T> reader = ExcelReader.mapping(rowMapper, validator);
-        applyReaderDefaults(reader);
-        return reader;
+        return SchemaReaderFactory.excelMapping(readOptions(), rowMapper, validator);
     }
 
     /**
@@ -177,15 +152,7 @@ public class ExcelKitSchema<T> {
      * @return A configured CsvReader instance
      */
     public CsvReader<T> csvReader(Supplier<T> supplier, @Nullable Validator validator) {
-        CsvReader<T> reader = new CsvReader<>(supplier, validator);
-        for (SchemaColumn<T> col : columns) {
-            reader.column(col.readHeaderNames(), col.readSetter());
-            if (col.required()) {
-                reader.required();
-            }
-        }
-        applyReaderDefaults(reader);
-        return reader;
+        return SchemaReaderFactory.csvSetter(columns, readOptions(), supplier, validator);
     }
 
     /**
@@ -205,28 +172,12 @@ public class ExcelKitSchema<T> {
      * @return A configured CsvReader instance in mapping mode
      */
     public CsvReader<T> csvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        CsvReader<T> reader = CsvReader.mapping(rowMapper, validator);
-        applyReaderDefaults(reader);
-        return reader;
+        return SchemaReaderFactory.csvMapping(readOptions(), rowMapper, validator);
     }
 
-    private <R extends AbstractReader<T, R>> void applyReaderDefaults(R reader) {
-        reader.duplicateHeaderPolicy(duplicateHeaderPolicy);
-        if (strictHeaders) {
-            reader.strictHeaders();
-        }
-        if (cellConversionConfig != null) {
-            reader.cellConversion(cellConversionConfig);
-        }
-        if (maxRows >= 0) {
-            reader.maxRows(maxRows);
-        }
-        if (skipBlankRows) {
-            reader.skipBlankRows();
-        }
-        if (stopAtBlankRows > 0) {
-            reader.stopAtBlankRows(stopAtBlankRows);
-        }
+    private SchemaReaderFactory.SchemaReadOptions readOptions() {
+        return new SchemaReaderFactory.SchemaReadOptions(strictHeaders, duplicateHeaderPolicy,
+                cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
     }
 
     /**
