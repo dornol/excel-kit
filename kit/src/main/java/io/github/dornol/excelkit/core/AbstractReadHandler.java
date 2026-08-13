@@ -98,6 +98,13 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer {
         rowPolicy.recordEmitted();
     }
 
+    protected final void notifyLegacyProgress(long processedRows, @Nullable Cursor cursor) {
+        if (readOptions.progressCallback() != null && readOptions.progressInterval() > 0
+                && processedRows % readOptions.progressInterval() == 0) {
+            readOptions.progressCallback().onProgress(processedRows, cursor);
+        }
+    }
+
     /**
      * Validates that headerRowIndex is non-negative.
      *

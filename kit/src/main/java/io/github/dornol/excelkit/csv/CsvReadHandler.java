@@ -122,10 +122,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     guardedConsumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
                     recordEmittedRow();
                     rowCount++;
-                    if (readOptions.progressCallback() != null && readOptions.progressInterval() > 0
-                            && rowCount % readOptions.progressInterval() == 0) {
-                        readOptions.progressCallback().onProgress(rowCount, null);
-                    }
+                    notifyLegacyProgress(rowCount, null);
                     if (readOptions.readProgressInterval() > 0
                             && rowCount % readOptions.readProgressInterval() == 0) {
                         notifyReadProgress(rowCount, -1, -1);
@@ -144,10 +141,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     guardedConsumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
                     recordEmittedRow();
                     rowCount++;
-                    if (readOptions.progressCallback() != null && readOptions.progressInterval() > 0
-                            && rowCount % readOptions.progressInterval() == 0) {
-                        readOptions.progressCallback().onProgress(rowCount, null);
-                    }
+                    notifyLegacyProgress(rowCount, null);
                     if (readOptions.readProgressInterval() > 0
                             && rowCount % readOptions.readProgressInterval() == 0) {
                         notifyReadProgress(rowCount, -1, -1);

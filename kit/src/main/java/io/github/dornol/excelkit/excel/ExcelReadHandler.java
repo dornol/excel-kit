@@ -401,10 +401,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             dataRowCount++;
             recordEmittedRow();
-            if (readOptions.progressCallback() != null && readOptions.progressInterval() > 0
-                    && dataRowCount % readOptions.progressInterval() == 0) {
-                readOptions.progressCallback().onProgress(dataRowCount, cursor);
-            }
+            notifyLegacyProgress(dataRowCount, cursor);
             if (readOptions.readProgressInterval() > 0
                     && dataRowCount % readOptions.readProgressInterval() == 0) {
                 notifyReadProgress(dataRowCount, sheetIndex, cursor == null ? -1 : cursor.getTotalRows());

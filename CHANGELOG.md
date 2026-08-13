@@ -40,6 +40,7 @@ All notable changes to this project will be documented in this file.
 - Legacy progress settings now travel through the immutable reader options snapshot alongside
   detailed progress settings.
 - Map-mode selection and column collections are encapsulated and snapshotted when a session starts.
+- Legacy progress callback dispatch is now shared by CSV and Excel read handlers.
 
 ## [0.22.0] - 2026-08-06
 
