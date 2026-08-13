@@ -278,13 +278,13 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return A handler to execute Excel parsing
      */
     private ExcelReadHandler<T> createHandler(InputStream inputStream) {
-        Objects.requireNonNull(inputStream, "inputStream cannot be null");
+        requireInputStream(inputStream);
         inputStream = limitInput(inputStream);
         return new ExcelReadHandler<>(inputStream, sessionConfig());
     }
 
     private ExcelReadHandler<T> createHandler(Path path) {
-        Objects.requireNonNull(path, "path cannot be null");
+        requirePath(path);
         return new ExcelReadHandler<>(path, sessionConfig());
     }
 

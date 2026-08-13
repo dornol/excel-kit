@@ -16,6 +16,7 @@ import java.util.function.UnaryOperator;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.function.BiFunction;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -387,7 +388,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return Objects.requireNonNull(inputStream, "inputStream cannot be null");
     }
 
-    protected java.nio.file.Path requirePath(java.nio.file.Path path) {
+    protected Path requirePath(Path path) {
         return Objects.requireNonNull(path, "path cannot be null");
     }
 

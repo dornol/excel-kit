@@ -282,13 +282,13 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      * @return A handler to execute CSV parsing
      */
     private CsvReadHandler<T> createHandler(InputStream inputStream) {
-        Objects.requireNonNull(inputStream, "inputStream cannot be null");
+        requireInputStream(inputStream);
         inputStream = limitInput(inputStream);
         return new CsvReadHandler<>(inputStream, sessionConfig());
     }
 
     private CsvReadHandler<T> createHandler(Path path) {
-        Objects.requireNonNull(path, "path cannot be null");
+        requirePath(path);
         return new CsvReadHandler<>(path, sessionConfig());
     }
 
