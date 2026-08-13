@@ -262,7 +262,7 @@ Excel sheet discovery follows the same ownership rule: `getSheetNames(InputStrea
 
 Use `readWithSummary(...)` when aggregate counts and elapsed time are needed, or
 `readReport(input, maxCollectedErrors)` for a bounded error sample. Untrusted inputs can be
-guarded with `limits(new ReadLimits(maxBytes, maxSheets, maxColumns, maxCellCharacters))`.
+guarded with `limits(new ReadLimits(maxBytes, maxSheets, maxColumns, maxCellCharacters, maxTotalCells))`.
 `headerPolicy(...)` provides common trim, case-insensitive, whitespace, and Unicode-normalized
 matching presets. Long-running reads can use `cancellationToken(...)` and
 `onReadProgress(interval, callback)` without transferring execution to a library thread.

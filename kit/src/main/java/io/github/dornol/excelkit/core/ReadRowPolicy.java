@@ -6,6 +6,7 @@ import java.util.List;
 final class ReadRowPolicy {
     private final ReadOptions options;
     private long emittedRows;
+    private long totalCells;
     private int consecutiveBlankRows;
 
     ReadRowPolicy(ReadOptions options) {
@@ -27,6 +28,13 @@ final class ReadRowPolicy {
             }
         } else {
             consecutiveBlankRows = 0;
+        }
+        if (options.limits().maxTotalCells() >= 0) {
+            totalCells += rawValues.size();
+            if (totalCells > options.limits().maxTotalCells()) {
+                throw new ReadLimitExceededException(ReadLimitExceededException.Limit.TOTAL_CELLS,
+                        options.limits().maxTotalCells(), totalCells);
+            }
         }
         if (options.maxRows() >= 0 && emittedRows >= options.maxRows()) {
             return Decision.STOP;

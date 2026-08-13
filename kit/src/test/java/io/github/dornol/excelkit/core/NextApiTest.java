@@ -50,6 +50,13 @@ class NextApiTest {
         assertTrue(consumed.get() < content.length);
     }
 
+    @Test void totalCellLimitAbortsCsvRead() {
+        assertThrows(ReadLimitExceededException.class, () ->
+                CsvReader.<String>mapping(row -> row.get("Name").asString())
+                        .limits(new ReadLimits(-1, -1, -1, -1, 1))
+                        .read(csv("Name\nA\nB\n"), result -> {}));
+    }
+
     @Test void columnAndCellLimitsAbortCsvRead() {
         assertThrows(ExcelKitException.class, () -> CsvReader.forMap()
                 .limits(new ReadLimits(-1, -1, 1, -1))

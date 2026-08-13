@@ -8,6 +8,9 @@
 
 ## 현재 상태
 
+이 문서의 초기 제안 중 reader options snapshot, `maxErrors()`, `readWhile()`, header
+normalization, CSV 자동 감지, 그리고 다중 sheet 일괄 읽기는 현재 구현되어 있다.
+
 excel-kit은 다음 영역을 이미 폭넓게 지원한다.
 
 - Excel/CSV 스트리밍 읽기와 쓰기

@@ -2,7 +2,7 @@ package io.github.dornol.excelkit.core;
 
 /** Raised when a defensive reader limit is exceeded. */
 public final class ReadLimitExceededException extends ExcelKitException {
-    public enum Limit { INPUT_BYTES, SHEETS, COLUMNS, CELL_CHARACTERS }
+    public enum Limit { INPUT_BYTES, SHEETS, COLUMNS, CELL_CHARACTERS, TOTAL_CELLS }
     private final Limit limit;
     private final long configured;
     private final long actual;
