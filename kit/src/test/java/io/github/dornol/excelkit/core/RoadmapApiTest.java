@@ -183,6 +183,15 @@ class RoadmapApiTest {
         CsvWriter.<Person>create().column("Name", Person::name)
                 .write(List.of(new Person("B"))).writeTo(output);
         assertTrue(output.toString(StandardCharsets.UTF_8).contains("B"));
+
+        AtomicBoolean excelClosed = new AtomicBoolean();
+        Stream<Person> excelStream = Stream.of(new Person("C"))
+                .onClose(() -> excelClosed.set(true));
+        ExcelWriter.<Person>create().column("Name", Person::name)
+                .write(excelStream).writeTo(new ByteArrayOutputStream());
+        assertFalse(excelClosed.get());
+        excelStream.close();
+        assertTrue(excelClosed.get());
     }
 
     private static ByteArrayInputStream input(String csv) {
