@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 
 - Fluent `validator(Validator)` configuration for Excel and CSV readers.
 - Explicit `ReadResult.errorType()` classification for mapping and validation failures.
+- Shared Excel/CSV reader contract tests covering limits, cancellation, early stop, and resource ownership.
+- Writer cleanup contract tests covering iterator and output stream failures.
+- Benchmark coverage for Excel `Path` input, `countRows()`, and multi-sheet package sharing.
+- Actionable runtime dependency diagnostics for missing POI or OpenCSV integrations.
+- ZIP entry count protection through `ReadSecurityPolicy.maxZipEntries()`.
 
 ### Changed
 
@@ -47,6 +52,12 @@ All notable changes to this project will be documented in this file.
   and continue/stop failure policies.
 - Added an optional cumulative `ReadLimits.maxTotalCells` guard for untrusted CSV/Excel input.
 - Added explicit `ReadSession<T>` lifecycle APIs and schema mapping overloads without validators.
+- Multi-sheet Excel reads now reuse one `OPCPackage` for non-encrypted readers; password readers
+  retain the isolated fallback path.
+- `maxColumns` now applies to data rows as well as headers.
+- STRICT security scanning now detects external workbook links declared in worksheet relationship files.
+- Detected CSV charset and delimiter settings now apply only to the current read operation.
+- Dependency compatibility CI now verifies the minimum POI/OpenCSV combination on JDK 17.
 
 ## [0.22.0] - 2026-08-06
 
