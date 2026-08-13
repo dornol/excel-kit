@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.23.0] - 2026-08-13
 
 ### Added
 
@@ -58,6 +58,8 @@ All notable changes to this project will be documented in this file.
 - STRICT security scanning now detects external workbook links declared in worksheet relationship files.
 - Detected CSV charset and delimiter settings now apply only to the current read operation.
 - Dependency compatibility CI now verifies the minimum POI/OpenCSV combination on JDK 17.
+
+## [Unreleased]
 
 ## [0.22.0] - 2026-08-06
 
