@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file.
 - Setter conversion failures are reported as `RowError.Type.MAPPING`, while required-field
   and Bean Validation failures remain `RowError.Type.VALIDATION`.
 - Reader callbacks and configuration functions now reject `null` arguments immediately.
+- Schema reader/writer construction is delegated to dedicated internal factories.
+- `ReadResult` creation now uses explicit `success`, `failure`, `mappingFailure`, and
+  `validationFailure` factories; legacy overloaded constructors were removed.
 
 ## [0.22.0] - 2026-08-06
 

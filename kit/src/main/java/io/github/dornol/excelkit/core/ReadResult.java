@@ -40,49 +40,32 @@ public record ReadResult<T>(
         rawValues = rawValues == null ? List.of() : List.copyOf(rawValues);
     }
 
-    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
-                      @Nullable Throwable cause, long fileRowNum, List<CellError> cellErrors) {
-        this(data, success, null, messages, cause, fileRowNum, cellErrors, List.of());
+    public static <T> ReadResult<T> success(@Nullable T data) {
+        return success(data, -1, List.of(), List.of());
     }
 
-    /**
-     * Backward-compatible constructor with raw values but without an explicit error type.
-     */
-    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
-                      @Nullable Throwable cause, long fileRowNum,
-                      List<CellError> cellErrors, List<String> rawValues) {
-        this(data, success, null, messages, cause, fileRowNum, cellErrors, rawValues);
+    public static <T> ReadResult<T> success(@Nullable T data, long fileRowNum,
+                                            List<CellError> cellErrors, List<String> rawValues) {
+        return new ReadResult<>(data, true, null, List.of(), null, fileRowNum, cellErrors, rawValues);
     }
 
-    /**
-     * Backward-compatible constructor with a file row number but without cell errors.
-     */
-    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
-                      @Nullable Throwable cause, long fileRowNum) {
-        this(data, success, null, messages, cause, fileRowNum, List.of(), List.of());
+    public static <T> ReadResult<T> failure(@Nullable T data, RowError.Type errorType,
+                                            @Nullable List<String> messages,
+                                            @Nullable Throwable cause, long fileRowNum,
+                                            List<CellError> cellErrors, List<String> rawValues) {
+        if (errorType == null) throw new NullPointerException("errorType cannot be null");
+        return new ReadResult<>(data, false, errorType, messages, cause, fileRowNum, cellErrors, rawValues);
     }
 
-    /**
-     * Backward-compatible constructor without a file row number.
-     *
-     * @param data     parsed object (null on failure)
-     * @param success  whether parsing/validation succeeded
-     * @param messages validation or processing messages
-     * @param cause    underlying mapping exception, if any
-     */
-    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages,
-                      @Nullable Throwable cause) {
-        this(data, success, null, messages, cause, -1, List.of(), List.of());
+    public static <T> ReadResult<T> mappingFailure(@Nullable T data, List<String> messages,
+                                                   @Nullable Throwable cause, long fileRowNum,
+                                                   List<CellError> cellErrors, List<String> rawValues) {
+        return failure(data, RowError.Type.MAPPING, messages, cause, fileRowNum, cellErrors, rawValues);
     }
 
-    /**
-     * Backward-compatible constructor without a cause.
-     *
-     * @param data     parsed object (null on failure)
-     * @param success  whether parsing/validation succeeded
-     * @param messages validation or processing messages
-     */
-    public ReadResult(@Nullable T data, boolean success, @Nullable List<String> messages) {
-        this(data, success, null, messages, null, -1, List.of(), List.of());
+    public static <T> ReadResult<T> validationFailure(@Nullable T data, List<String> messages,
+                                                      long fileRowNum, List<CellError> cellErrors,
+                                                      List<String> rawValues) {
+        return failure(data, RowError.Type.VALIDATION, messages, null, fileRowNum, cellErrors, rawValues);
     }
 }

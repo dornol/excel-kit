@@ -63,15 +63,15 @@ final class RowMappingSupport {
             instance = mapper.apply(rowData);
         } catch (Exception exception) {
             log.warn("Row mapping failed", exception);
-            return new ReadResult<>(null, false,
-                    RowError.Type.MAPPING, List.of("Row mapping failed: " + exception.getMessage()), exception,
+            return ReadResult.mappingFailure(null,
+                    List.of("Row mapping failed: " + exception.getMessage()), exception,
                     fileRow, List.of(), rawValues);
         }
         List<String> messages = new ArrayList<>();
         boolean valid = validate(instance, validator, messages);
-        return new ReadResult<>(instance, valid, valid ? null : RowError.Type.VALIDATION,
-                messages.isEmpty() ? null : messages,
-                null, fileRow, List.of(), rawValues);
+        return valid
+                ? ReadResult.success(instance, fileRow, List.of(), rawValues)
+                : ReadResult.validationFailure(instance, messages, fileRow, List.of(), rawValues);
     }
 
     private static String header(int index, List<String> headers) {

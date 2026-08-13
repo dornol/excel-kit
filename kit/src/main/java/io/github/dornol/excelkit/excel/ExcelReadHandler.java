@@ -399,10 +399,13 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             } else {
                 boolean mappingSuccess = mapValuesToInstance();
                 boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
-                RowError.Type errorType = validationSuccess ? null
-                        : mappingFailure ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
-                result = new ReadResult<>(currentInstance, validationSuccess, errorType, messages, null, rowNum + 1L,
-                        cellErrors == null ? List.of() : cellErrors, rawValues);
+                long fileRowNum = rowNum + 1L;
+                List<CellError> errors = cellErrors == null ? List.of() : cellErrors;
+                result = validationSuccess
+                        ? ReadResult.success(currentInstance, fileRowNum, errors, rawValues)
+                        : ReadResult.failure(currentInstance,
+                        mappingFailure ? RowError.Type.MAPPING : RowError.Type.VALIDATION,
+                        messages, null, fileRowNum, errors, rawValues);
             }
 
             consumer.accept(result);

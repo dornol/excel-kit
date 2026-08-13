@@ -119,7 +119,7 @@ class AbstractReaderTest {
 
         @Test
         void messages_areNonNullAndImmutable() {
-            var result = new ReadResult<String>("value", true, null);
+            var result = ReadResult.success("value");
 
             assertTrue(result.messages().isEmpty());
             assertThrows(UnsupportedOperationException.class,
@@ -129,7 +129,7 @@ class AbstractReaderTest {
         @Test
         void messages_areCopied() {
             var messages = new java.util.ArrayList<>(List.of("initial"));
-            var result = new ReadResult<String>("value", false, messages);
+            var result = ReadResult.validationFailure("value", messages, -1, List.of(), List.of());
 
             messages.add("later");
 
@@ -138,7 +138,7 @@ class AbstractReaderTest {
 
         @Test
         void legacyConstructor_infersErrorTypeFromCause() {
-            var result = new ReadResult<String>("value", false, List.of("mapping failed"),
+            var result = ReadResult.mappingFailure("value", List.of("mapping failed"),
                     new IllegalArgumentException("bad value"), 2L, List.of(), List.of("bad"));
 
             assertEquals(RowError.Type.MAPPING, result.errorType());

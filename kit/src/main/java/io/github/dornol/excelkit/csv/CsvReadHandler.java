@@ -228,11 +228,10 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
 
         boolean validationSuccess = success && validateIfNeeded(currentInstance, messages);
-        RowError.Type errorType = validationSuccess ? null
-                : mappingFailure ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
-        return new ReadResult<>(currentInstance, validationSuccess, errorType,
-                messages.isEmpty() ? null : messages,
-                null, fileRowNum, cellErrors, rawValues);
+        if (validationSuccess) return ReadResult.success(currentInstance, fileRowNum, cellErrors, rawValues);
+        return ReadResult.failure(currentInstance,
+                mappingFailure ? RowError.Type.MAPPING : RowError.Type.VALIDATION,
+                messages, null, fileRowNum, cellErrors, rawValues);
     }
 
     private ReadResult<T> processRowMapping(String[] line, Map<String, Integer> headerIndexMap, long fileRowNum,
