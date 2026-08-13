@@ -828,6 +828,9 @@ ExcelWorkbookReader.create()
 - CSV delimiter/charset 자동 감지 고도화: 현재 `readDetected()`는 구현되어 있으며, 추가 추정 규칙은
   오탐 위험이 있으므로 실제 요구 전에는 늘리지 않는다. 감지한 dialect는 해당 실행에만 적용하고
   reusable reader 설정을 보존한다.
+- 이름 기반 `ColumnKey<T>`: 현재는 `column(...)`/`columnAt(...)`의 순서·위치 기반 setter 매핑과
+  `RowData.get(String)`/`RowData.get(int)`의 mapping API로 충분하므로 보류한다. 도입하더라도
+  reflection이나 자동 record 매핑 없이 명시적인 converter를 가진 작은 타입으로 검토한다.
 - column converter/error-message DSL: 현재 setter lambda로 표현 가능하며 overload 복잡도가 커질 수 있다.
 - password API 재설계: 현재 검증과 secret 노출 방지를 우선 점검하고 새 credentials 타입은 만들지 않는다.
 - 상세 progress event: 실제 SSE/UI 요구가 확인되기 전에는 기존 callback을 유지한다.
@@ -917,7 +920,7 @@ peak memory 10% 이내처럼 기준을 명시하고 CI benchmark는 변동성을
 | 1 | 선택적 의존성 정책/호환성 matrix | 높음 | 낮음~중간 | 없음 |
 | 2 | Reader 실행 API | 매우 높음 | 높음 | 매우 큼 |
 | 3 | Reader/Writer options snapshot | 높음 | 중간 | 낮음~중간 |
-| 보류 | Schema immutable mapping 개선 | 불확실 | 높음 | 큼 |
+| 보류 | Schema immutable mapping/`ColumnKey` 개선 | 불확실 | 높음 | 큼 |
 | 5 | `maxErrors()` | 중간~높음 | 낮음~중간 | 없음 |
 | 완료 | Stream API 제거와 `readWhile()` | 높음 | 중간 | 큼 |
 | 완료 | Writer `Iterable` 입력/Stream 소유권 | 중간 | 낮음 | 동작 변경 |
