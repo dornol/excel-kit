@@ -135,6 +135,10 @@ Gradle property로 테스트 의존성 버전을 덮어쓸 수 있게 하면 동
 matrix의 모든 가능한 조합을 매번 실행할 필요는 없다. 최소 조합과 현재 조합을 필수로 두고,
 추가 조합은 주기적 workflow 또는 release 검증에서 실행할 수 있다.
 
+현재 CI는 최소 조합(POI 5.2.5, OpenCSV 5.9)을 JDK 17에서, 현재 조합(POI 5.5.1,
+OpenCSV 5.12.0)을 JDK 21에서 검증한다. 별도 CI 축에서는 현재 dependency 조합을 JDK 17,
+21, 25에서 검증한다.
+
 ### 누락된 의존성의 오류 경험
 
 가능한 진입점에서는 일반적인 `NoClassDefFoundError`보다 필요한 artifact를 알려주는 메시지를
