@@ -41,6 +41,8 @@ All notable changes to this project will be documented in this file.
   detailed progress settings.
 - Map-mode selection and column collections are encapsulated and snapshotted when a session starts.
 - Legacy progress callback dispatch is now shared by CSV and Excel read handlers.
+- Added reusable `ReaderOptions`, null-safe row/cell accessors, CSV detection source/summary APIs,
+  configurable detection sampling, and `readAll(...)` convenience methods.
 
 ## [0.22.0] - 2026-08-06
 

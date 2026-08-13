@@ -26,6 +26,27 @@ final class ReaderConfiguration {
     @Nullable ReadProgressCallback readProgressCallback;
     ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
 
+    void apply(ReaderOptions options) {
+        validator = options.validator();
+        headerRowIndex = options.headerRowIndex();
+        progressInterval = options.progressInterval();
+        progressCallback = options.progressCallback();
+        ReadOptions snapshot = options.toReadOptions();
+        strictHeaders = snapshot.strictHeaders();
+        duplicateHeaderPolicy = snapshot.duplicateHeaderPolicy();
+        cellConversionConfig = snapshot.cellConversionConfig();
+        maxRows = snapshot.maxRows();
+        skipBlankRows = snapshot.skipBlankRows();
+        stopAtBlankRows = snapshot.stopAtBlankRows();
+        maxErrors = snapshot.maxErrors();
+        headerNormalizer = snapshot.headerNormalizer();
+        limits = snapshot.limits();
+        cancellationToken = snapshot.cancellationToken();
+        readProgressInterval = snapshot.readProgressInterval();
+        readProgressCallback = snapshot.readProgressCallback();
+        securityPolicy = snapshot.securityPolicy();
+    }
+
     ReadOptions snapshot() {
         return new ReadOptions(strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows,
                 skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer, limits, cancellationToken,

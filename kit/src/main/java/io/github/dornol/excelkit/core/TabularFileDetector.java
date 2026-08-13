@@ -7,10 +7,28 @@ import java.nio.file.Path;
 
 /** Signature-based file type detection that does not depend on filename extensions. */
 public final class TabularFileDetector {
+    public static final int DEFAULT_SAMPLE_BYTES = 8192;
     private TabularFileDetector() {}
 
     public static TabularFileType detect(Path path) {
         return detectDetailed(path).type();
+    }
+
+    public static TabularFileType detect(InputStreamSource source) {
+        return detectDetailed(source).type();
+    }
+
+    public static TabularDetectionResult detectDetailed(InputStreamSource source) {
+        return detectDetailed(source, DEFAULT_SAMPLE_BYTES);
+    }
+
+    public static TabularDetectionResult detectDetailed(InputStreamSource source, int sampleBytes) {
+        java.util.Objects.requireNonNull(source, "source cannot be null");
+        try (InputStream input = source.openStream()) {
+            return detectDetailed(new java.io.BufferedInputStream(input), sampleBytes);
+        } catch (IOException e) {
+            throw new ExcelKitException("Failed to inspect input", e);
+        }
     }
 
     public static TabularDetectionResult detectDetailed(Path path) {
@@ -27,11 +45,17 @@ public final class TabularFileDetector {
     }
 
     public static TabularDetectionResult detectDetailed(InputStream input) {
+        return detectDetailed(input, DEFAULT_SAMPLE_BYTES);
+    }
+
+    /** Detects from a mark-capable stream using at most {@code sampleBytes}. */
+    public static TabularDetectionResult detectDetailed(InputStream input, int sampleBytes) {
         java.util.Objects.requireNonNull(input, "input cannot be null");
+        if (sampleBytes < 64) throw new IllegalArgumentException("sampleBytes must be at least 64");
         if (!input.markSupported()) throw new IllegalArgumentException("input must support mark/reset");
         try {
-            input.mark(8192);
-            byte[] bytes = input.readNBytes(8192);
+            input.mark(sampleBytes);
+            byte[] bytes = input.readNBytes(sampleBytes);
             input.reset();
             if (starts(bytes, 0x50, 0x4b, 0x03, 0x04)) return new TabularDetectionResult(
                     TabularFileType.XLSX, DetectionConfidence.HIGH, null, null);

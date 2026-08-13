@@ -55,11 +55,15 @@ final class HeaderResolver {
                     maximumColumns, headers.size());
         }
         Map<String, Integer> result = new LinkedHashMap<>();
+        Map<String, List<Integer>> occurrences = new LinkedHashMap<>();
         for (int i = 0; i < headers.size(); i++) {
             String original = headers.get(i);
             String normalized = normalize(original);
-            if (duplicatePolicy == DuplicateHeaderPolicy.FAIL && result.containsKey(normalized))
-                throw new ExcelKitException("Duplicate header '" + original + "' found in " + source);
+            List<Integer> positions = occurrences.computeIfAbsent(normalized, ignored -> new java.util.ArrayList<>());
+            positions.add(i);
+            if (duplicatePolicy == DuplicateHeaderPolicy.FAIL && positions.size() > 1)
+                throw new ExcelKitException("Duplicate header '" + original + "' at columns "
+                        + positions + " in " + source);
             if (duplicatePolicy == DuplicateHeaderPolicy.LAST) result.put(normalized, i);
             else result.putIfAbsent(normalized, i);
         }

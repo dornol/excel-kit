@@ -50,6 +50,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char escapeChar = ICSVParser.DEFAULT_ESCAPE_CHARACTER;
     private boolean strictQuotes = ICSVParser.DEFAULT_STRICT_QUOTES;
     private boolean ignoreLeadingWhiteSpace = ICSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE;
+    private int detectionSampleBytes = TabularFileDetector.DEFAULT_SAMPLE_BYTES;
 
     /**
      * Constructs a CsvReader in setter mode with instance supplier and optional validator.
@@ -274,6 +275,13 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         return this;
     }
 
+    /** Sets the number of bytes sampled by {@link #readDetected} (default 8192). */
+    public CsvReader<T> detectionSampleBytes(int sampleBytes) {
+        if (sampleBytes < 64) throw new IllegalArgumentException("sampleBytes must be at least 64");
+        this.detectionSampleBytes = sampleBytes;
+        return this;
+    }
+
     /**
      * Finalizes the configuration and builds a {@link CsvReadHandler} for parsing the given CSV stream.
      *
@@ -304,13 +312,32 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         executeInputStream(inputStream, this::createHandler, handler -> handler.read(consumer));
     }
 
+    /** Reads all successful rows into a list and fails on the first mapping or validation error. */
+    public List<T> readAll(InputStream inputStream) {
+        List<T> rows = new java.util.ArrayList<>();
+        readStrict(inputStream, rows::add);
+        return List.copyOf(rows);
+    }
+
+    public List<T> readAll(Path path) {
+        List<T> rows = new java.util.ArrayList<>();
+        readStrict(path, rows::add);
+        return List.copyOf(rows);
+    }
+
+    public List<T> readAll(InputStreamSource source) {
+        List<T> rows = new java.util.ArrayList<>();
+        readStrict(source, rows::add);
+        return List.copyOf(rows);
+    }
+
     /** Detects text charset and delimiter from a sample before reading without closing the caller stream. */
     public void readDetected(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         requireInputStream(inputStream);
         requireCallback(consumer, "consumer");
         BufferedInputStream buffered = inputStream instanceof BufferedInputStream existing
                 ? existing : new BufferedInputStream(inputStream);
-        var detection = TabularFileDetector.detectDetailed(buffered);
+        var detection = TabularFileDetector.detectDetailed(buffered, detectionSampleBytes);
         if (detection.type() != TabularFileType.CSV) {
             throw new CsvReadException("Expected CSV content but detected " + detection.type());
         }
@@ -324,6 +351,49 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         requireCallback(consumer, "consumer");
         try (InputStream input = Files.newInputStream(path)) { readDetected(input, consumer); }
         catch (IOException e) { throw new CsvReadException("Failed to open CSV input", e); }
+    }
+
+    /** Reads detected CSV content from a source whose stream is owned by the reader. */
+    public void readDetected(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        requireInputSource(source);
+        try (InputStream input = source.openStream()) {
+            readDetected(input, consumer);
+        } catch (IOException e) {
+            throw new CsvReadException("Failed to open CSV input", e);
+        }
+    }
+
+    public ReadSummary readDetectedWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
+        requireInputStream(inputStream);
+        requireCallback(consumer, "consumer");
+        BufferedInputStream buffered = inputStream instanceof BufferedInputStream existing
+                ? existing : new BufferedInputStream(inputStream);
+        var detection = TabularFileDetector.detectDetailed(buffered, detectionSampleBytes);
+        if (detection.type() != TabularFileType.CSV) {
+            throw new CsvReadException("Expected CSV content but detected " + detection.type());
+        }
+        if (detection.charset() != null) this.charset = detection.charset();
+        if (detection.delimiter() != null) this.delimiter = detection.delimiter();
+        return readWithSummary(buffered, consumer);
+    }
+
+    public ReadSummary readDetectedWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
+        requireInputSource(source);
+        try (InputStream input = source.openStream()) {
+            return readDetectedWithSummary(input, consumer);
+        } catch (IOException e) {
+            throw new CsvReadException("Failed to open CSV input", e);
+        }
+    }
+
+    public ReadSummary readDetectedWithSummary(Path path, Consumer<ReadResult<T>> consumer) {
+        requirePath(path);
+        requireCallback(consumer, "consumer");
+        try (InputStream input = Files.newInputStream(path)) {
+            return readDetectedWithSummary(input, consumer);
+        } catch (IOException e) {
+            throw new CsvReadException("Failed to open CSV input", e);
+        }
     }
 
     public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {

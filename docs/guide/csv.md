@@ -66,6 +66,18 @@ CsvReader.setter(Product::new)
     .read(inputStream, result -> { ... });
 ```
 
+CSV content can be detected from a sample before parsing. The detected charset and delimiter are
+applied automatically; the sample size defaults to 8192 bytes:
+
+```java
+CsvReader.<Row>mapping(this::map)
+    .detectionSampleBytes(16 * 1024)
+    .readDetectedWithSummary(source, result -> { ... });
+```
+
+`readDetected(InputStreamSource, ...)` and `readDetectedWithSummary(...)` close streams opened by
+the source. Caller-owned `InputStream` instances remain open.
+
 ### Mapping Mode
 
 ```java

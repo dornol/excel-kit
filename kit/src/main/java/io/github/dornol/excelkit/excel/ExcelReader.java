@@ -300,6 +300,25 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         executeInputStream(inputStream, this::createHandler, handler -> handler.read(consumer));
     }
 
+    /** Reads all successful rows into a list and fails on the first mapping or validation error. */
+    public List<T> readAll(InputStream inputStream) {
+        List<T> rows = new java.util.ArrayList<>();
+        readStrict(inputStream, rows::add);
+        return List.copyOf(rows);
+    }
+
+    public List<T> readAll(Path path) {
+        List<T> rows = new java.util.ArrayList<>();
+        readStrict(path, rows::add);
+        return List.copyOf(rows);
+    }
+
+    public List<T> readAll(InputStreamSource source) {
+        List<T> rows = new java.util.ArrayList<>();
+        readStrict(source, rows::add);
+        return List.copyOf(rows);
+    }
+
     public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
         return executeWithInputStream(inputStream, this::createHandler,

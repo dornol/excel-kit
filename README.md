@@ -298,7 +298,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Headers | Strict header validation, duplicate header policies, single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values |
-| Control flow | `readWhile()` for normal early stop, `readStrict()` for fail-fast, `maxErrors()` for error limits |
+| Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
 | Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files |
 

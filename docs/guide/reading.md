@@ -182,6 +182,28 @@ schema.excelReader(User::new)
 
 ## Advanced Options
 
+### Reusable reader options and list results
+
+Common reader settings can be shared across reader instances:
+
+```java
+ReaderOptions options = ReaderOptions.builder()
+    .strictHeaders(true)
+    .maxRows(10_000)
+    .skipBlankRows(true)
+    .limits(new ReadLimits(10 * 1024 * 1024, 10, 100, 10_000))
+    .build();
+
+List<Person> people = ExcelReader.<Person>mapping(this::map)
+    .options(options)
+    .readAll(inputStream);
+```
+
+`readAll(...)` returns only successful rows and uses the same fail-fast behavior as
+`readStrict(...)`. For mapping code that tolerates optional columns, use `row.getOrNull("Name")`.
+For blank numeric cells, `cell.asOptionalInt()`, `asOptionalLong()`, and `asOptionalDouble()` avoid
+manual nullable checks.
+
 **Header row index** (files with metadata rows above header):
 ```java
 reader.headerRowIndex(2)  // 3rd row as header (0-based)

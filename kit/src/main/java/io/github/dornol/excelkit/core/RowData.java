@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides access to all cell data in a single row, indexed by header name or column position.
@@ -39,9 +40,9 @@ public class RowData {
 
     public RowData(List<CellData> cells, List<String> headerNames, Map<String, Integer> headerIndex,
                    UnaryOperator<String> headerNormalizer) {
-        this.cells = cells;
-        this.headerNames = headerNames;
-        this.headerIndex = headerIndex;
+        this.cells = List.copyOf(cells);
+        this.headerNames = List.copyOf(headerNames);
+        this.headerIndex = Map.copyOf(headerIndex);
         this.headerNormalizer = java.util.Objects.requireNonNull(headerNormalizer, "headerNormalizer cannot be null");
     }
 
@@ -60,6 +61,12 @@ public class RowData {
                     "Header '" + headerName + "' not found. Available headers: " + headerNames);
         }
         return getCell(idx);
+    }
+
+    /** Gets a cell by header name, or returns {@code null} when the header is absent. */
+    public @Nullable CellData getOrNull(String headerName) {
+        Integer idx = headerIndex.get(normalize(headerName));
+        return idx == null ? null : getCell(idx);
     }
 
     /**

@@ -70,6 +70,12 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
+    /** Applies reusable common reader settings. Format-specific settings are unchanged. */
+    public SELF options(ReaderOptions options) {
+        configuration.apply(Objects.requireNonNull(options, "options cannot be null"));
+        return self();
+    }
+
     protected final @Nullable Validator configuredValidator() {
         return configuration.validator;
     }

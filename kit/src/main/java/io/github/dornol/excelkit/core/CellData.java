@@ -19,6 +19,9 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.Function;
 
 /**
@@ -217,6 +220,12 @@ public final class CellData {
         return number != null ? number.longValue() : null;
     }
 
+    /** Returns the parsed long value as an empty optional for blank cells. */
+    public OptionalLong asOptionalLong() {
+        Long value = asLong();
+        return value == null ? OptionalLong.empty() : OptionalLong.of(value);
+    }
+
     /**
      * Converts the value to {@link Integer}.
      * Returns {@code null} if the value is empty or blank.
@@ -233,6 +242,12 @@ public final class CellData {
             throw new IllegalArgumentException("Value out of range: " + longValue);
         }
         return longValue.intValue();
+    }
+
+    /** Returns the parsed integer value as an empty optional for blank cells. */
+    public OptionalInt asOptionalInt() {
+        Integer value = asInt();
+        return value == null ? OptionalInt.empty() : OptionalInt.of(value);
     }
 
     /**
@@ -401,6 +416,12 @@ public final class CellData {
     public @Nullable Double asDouble() {
         Number number = asNumber();
         return number != null ? number.doubleValue() : null;
+    }
+
+    /** Returns the parsed double value as an empty optional for blank cells. */
+    public OptionalDouble asOptionalDouble() {
+        Double value = asDouble();
+        return value == null ? OptionalDouble.empty() : OptionalDouble.of(value);
     }
 
     /**
