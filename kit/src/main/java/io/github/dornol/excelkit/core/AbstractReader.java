@@ -18,9 +18,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.BiFunction;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
@@ -374,14 +371,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
 
     protected <R> R executeFromSource(InputStreamSource source, Function<InputStream,R> execution,
             BiFunction<String,IOException,? extends RuntimeException> exceptionFactory) {
-        Objects.requireNonNull(source, "source cannot be null");
-        Objects.requireNonNull(execution, "execution cannot be null");
-        Objects.requireNonNull(exceptionFactory, "exceptionFactory cannot be null");
-        try (InputStream input = source.openStream()) {
-            return execution.apply(input);
-        } catch (IOException e) {
-            throw exceptionFactory.apply("Failed to open input", e);
-        }
+        return ReaderExecutionSupport.executeFromSource(source, execution, exceptionFactory);
     }
 
     protected InputStream requireInputStream(InputStream inputStream) {
@@ -400,38 +390,26 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected <H, R> R executeWithInputStream(InputStream inputStream,
                                                Function<InputStream, H> handlerFactory,
                                                Function<H, R> execution) {
-        requireInputStream(inputStream);
-        Objects.requireNonNull(handlerFactory, "handlerFactory cannot be null");
-        Objects.requireNonNull(execution, "execution cannot be null");
-        return execution.apply(handlerFactory.apply(inputStream));
+        return ReaderExecutionSupport.executeWithInputStream(inputStream, handlerFactory, execution);
     }
 
     protected <H> void executeInputStream(InputStream inputStream,
                                           Function<InputStream, H> handlerFactory,
                                           Consumer<H> execution) {
-        executeWithInputStream(inputStream, handlerFactory, handler -> {
-            execution.accept(handler);
-            return null;
-        });
+        ReaderExecutionSupport.executeInputStream(inputStream, handlerFactory, execution);
     }
 
     /** Creates a format-specific path handler and executes one operation against it. */
     protected <H, R> R executeWithPath(Path path,
                                        Function<Path, H> handlerFactory,
                                        Function<H, R> execution) {
-        requirePath(path);
-        Objects.requireNonNull(handlerFactory, "handlerFactory cannot be null");
-        Objects.requireNonNull(execution, "execution cannot be null");
-        return execution.apply(handlerFactory.apply(path));
+        return ReaderExecutionSupport.executeWithPath(path, handlerFactory, execution);
     }
 
     protected <H> void executePath(Path path,
                                    Function<Path, H> handlerFactory,
                                    Consumer<H> execution) {
-        executeWithPath(path, handlerFactory, handler -> {
-            execution.accept(handler);
-            return null;
-        });
+        ReaderExecutionSupport.executePath(path, handlerFactory, execution);
     }
 
     protected <C> C requireCallback(C callback, String name) {
@@ -445,45 +423,16 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
 
     protected ReadSummary summarizeRead(Consumer<Consumer<ReadResult<T>>> execution,
             BooleanSupplier stoppedEarly, Consumer<ReadResult<T>> consumer) {
-        long started = System.nanoTime();
-        long[] counts = new long[3];
-        execution.accept(result -> {
-            counts[0]++;
-            if (result.success()) counts[1]++; else counts[2]++;
-            consumer.accept(result);
-        });
-        return summary(counts, stoppedEarly, started);
+        return ReaderExecutionSupport.summarizeRead(execution, stoppedEarly, consumer);
     }
 
     protected ReadReport collectReadReport(Consumer<Consumer<ReadResult<T>>> execution,
             BooleanSupplier stoppedEarly, int maximum) {
-        if (maximum < 0) throw new IllegalArgumentException("maxCollectedErrors must be non-negative");
-        List<RowError> errors = new ArrayList<>();
-        long[] row = {0};
-        ReadSummary summary = summarizeRead(execution, stoppedEarly, result -> {
-            row[0]++;
-            if (!result.success() && errors.size() < maximum) errors.add(new RowError(row[0],
-                    result.fileRowNum(), result.errorType(),
-                    result.messages(), result.cause(),
-                    result.cellErrors(), result.rawValues()));
-        });
-        return new ReadReport(summary, errors, summary.errorRows() > errors.size());
+        return ReaderExecutionSupport.collectReadReport(execution, stoppedEarly, maximum);
     }
 
     protected ReadSummary summarizeReadWhile(Consumer<Predicate<ReadResult<T>>> execution,
             BooleanSupplier stoppedEarly, Predicate<ReadResult<T>> predicate) {
-        long started = System.nanoTime();
-        long[] counts = new long[3];
-        execution.accept(result -> {
-            counts[0]++;
-            if (result.success()) counts[1]++; else counts[2]++;
-            return predicate.test(result);
-        });
-        return summary(counts, stoppedEarly, started);
-    }
-
-    private static ReadSummary summary(long[] counts, BooleanSupplier stoppedEarly, long started) {
-        return new ReadSummary(counts[0], counts[1], counts[2], stoppedEarly.getAsBoolean(),
-                Duration.ofNanos(System.nanoTime() - started));
+        return ReaderExecutionSupport.summarizeReadWhile(execution, stoppedEarly, predicate);
     }
 }

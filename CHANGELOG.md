@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
   implementations.
 - Excel and CSV handler creation now shares the common input stream and path validation helpers.
 - Reader handler creation and execution now uses shared internal stream/path execution helpers.
+- Reader execution aggregation is now isolated from fluent reader configuration in an internal
+  support component.
 
 ## [0.22.0] - 2026-08-06
 
