@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 - Schema reader/writer construction is delegated to dedicated internal factories.
 - `ReadResult` creation now uses explicit `success`, `failure`, `mappingFailure`, and
   `validationFailure` factories; legacy overloaded constructors were removed.
+- Callback, writer, and cleanup exception boundaries now catch only the checked or runtime
+  exception categories they can actually handle.
 
 ## [0.22.0] - 2026-08-06
 

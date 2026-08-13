@@ -31,7 +31,7 @@ final class RowMappingSupport {
         try {
             setter.accept(instance, cell);
             return true;
-        } catch (Exception exception) {
+        } catch (RuntimeException exception) {
             String header = header(index, headers);
             String message = "Failed to set column '" + header + "': value='"
                     + cell.formattedValue() + "', reason=" + exception.getMessage();
@@ -61,7 +61,7 @@ final class RowMappingSupport {
         T instance;
         try {
             instance = mapper.apply(rowData);
-        } catch (Exception exception) {
+        } catch (RuntimeException exception) {
             log.warn("Row mapping failed", exception);
             return ReadResult.mappingFailure(null,
                     List.of("Row mapping failed: " + exception.getMessage()), exception,

@@ -322,7 +322,7 @@ public class ExcelConditionalRule {
                 dataBar.setMinLength(0L);
                 dataBar.setMaxLength(100L);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("Failed to apply data bar conditional formatting", e);
         }
     }
@@ -351,7 +351,7 @@ public class ExcelConditionalRule {
                     cfvo.setVal(String.valueOf(i * (100 / thresholdCount)));
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("Failed to apply icon set conditional formatting", e);
         }
     }

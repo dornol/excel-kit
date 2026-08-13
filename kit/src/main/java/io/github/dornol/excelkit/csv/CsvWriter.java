@@ -317,7 +317,7 @@ public class CsvWriter<T> {
 
         try (OutputStream os = Files.newOutputStream(tempFile)) {
             writeTempFile(stream, os, options);
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             cleanup(tempDir);
             throw new CsvWriteException("Failed to write CSV", e);
         }

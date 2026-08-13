@@ -515,7 +515,7 @@ public class ExcelChartConfig {
                 dLbls.addNewShowCatName().setVal(false);
                 dLbls.addNewShowSerName().setVal(false);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // Best-effort: if CT API is unavailable or fails, skip data labels silently
         }
     }

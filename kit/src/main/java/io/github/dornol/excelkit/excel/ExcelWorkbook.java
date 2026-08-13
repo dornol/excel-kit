@@ -317,7 +317,7 @@ public class ExcelWorkbook implements AutoCloseable {
         if (!finished) {
             try {
                 wb.close();
-            } catch (Exception e) {
+            } catch (RuntimeException | java.io.IOException e) {
                 log.warn("Failed to close workbook", e);
             }
         }

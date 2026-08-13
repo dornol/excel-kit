@@ -35,7 +35,7 @@ class SXSSFSheetHelper {
             var field = SXSSFSheet.class.getDeclaredField("_sh");
             field.setAccessible(true);
             return (XSSFSheet) field.get(sheet);
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException | RuntimeException e) {
             log.warn("Failed to access underlying XSSFSheet via reflection. "
                     + "Features requiring XSSFSheet (charts, tab colors) will be unavailable.", e);
             return null;

@@ -697,7 +697,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         } catch (ExcelWriteException e) {
             closeWorkbookQuietly();
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             closeWorkbookQuietly();
             throw new ExcelWriteException("Failed to write excel", e);
         }
@@ -837,7 +837,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private void closeWorkbookQuietly() {
         try {
             wb.close();
-        } catch (Exception e) {
+        } catch (RuntimeException | java.io.IOException e) {
             log.warn("Failed to close workbook after error", e);
         }
     }

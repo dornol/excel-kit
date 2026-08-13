@@ -5,6 +5,7 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.ICSVParser;
+import com.opencsv.exceptions.CsvValidationException;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.CellConversionConfig;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -176,7 +178,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             throw e;
         } catch (CsvReadException | ReadAbortException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException | CsvValidationException | RuntimeException e) {
             throw new CsvReadException("Failed to read CSV", e);
         } finally {
             notifyReadCompletion(-1, -1);
@@ -248,7 +250,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         return Arrays.asList(line.clone());
     }
 
-    private void skipToHeader(CSVReader reader) throws Exception {
+    private void skipToHeader(CSVReader reader) throws IOException, CsvValidationException {
         for (int i = 0; i < headerRowIndex; i++) {
             if (reader.readNext() == null) {
                 throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
@@ -256,7 +258,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
-    private String[] readHeaderLine(CSVReader reader) throws Exception {
+    private String[] readHeaderLine(CSVReader reader) throws IOException, CsvValidationException {
         String[] headerLine = reader.readNext();
         if (headerLine == null) {
             throw new CsvReadException("CSV file is empty or missing header row");
@@ -281,7 +283,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         if (reader == null) return;
         try {
             reader.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             // Log at debug level — closeQuietly is used in cleanup paths
             // where reporting errors is less critical
             if (log.isDebugEnabled()) {
@@ -290,7 +292,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
-    private CSVReader buildCsvReader() throws Exception {
+    private CSVReader buildCsvReader() throws IOException {
         CSVParser csvParser = new CSVParserBuilder()
                 .withSeparator(this.delimiter)
                 .withQuoteChar(this.quoteChar)
