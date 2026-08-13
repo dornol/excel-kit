@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file.
 - Common null-check expressions now use consistent `Objects` imports across reader and writer
   implementations.
 - Excel and CSV handler creation now shares the common input stream and path validation helpers.
+- Reader handler creation and execution now uses shared internal stream/path execution helpers.
 
 ## [0.22.0] - 2026-08-06
 

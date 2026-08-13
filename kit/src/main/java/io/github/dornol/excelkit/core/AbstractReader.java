@@ -396,6 +396,44 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return Objects.requireNonNull(source, "source cannot be null");
     }
 
+    /** Creates a format-specific handler and executes one operation against it. */
+    protected <H, R> R executeWithInputStream(InputStream inputStream,
+                                               Function<InputStream, H> handlerFactory,
+                                               Function<H, R> execution) {
+        requireInputStream(inputStream);
+        Objects.requireNonNull(handlerFactory, "handlerFactory cannot be null");
+        Objects.requireNonNull(execution, "execution cannot be null");
+        return execution.apply(handlerFactory.apply(inputStream));
+    }
+
+    protected <H> void executeInputStream(InputStream inputStream,
+                                          Function<InputStream, H> handlerFactory,
+                                          Consumer<H> execution) {
+        executeWithInputStream(inputStream, handlerFactory, handler -> {
+            execution.accept(handler);
+            return null;
+        });
+    }
+
+    /** Creates a format-specific path handler and executes one operation against it. */
+    protected <H, R> R executeWithPath(Path path,
+                                       Function<Path, H> handlerFactory,
+                                       Function<H, R> execution) {
+        requirePath(path);
+        Objects.requireNonNull(handlerFactory, "handlerFactory cannot be null");
+        Objects.requireNonNull(execution, "execution cannot be null");
+        return execution.apply(handlerFactory.apply(path));
+    }
+
+    protected <H> void executePath(Path path,
+                                   Function<Path, H> handlerFactory,
+                                   Consumer<H> execution) {
+        executeWithPath(path, handlerFactory, handler -> {
+            execution.accept(handler);
+            return null;
+        });
+    }
+
     protected <C> C requireCallback(C callback, String name) {
         return Objects.requireNonNull(callback, name + " cannot be null");
     }

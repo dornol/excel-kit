@@ -303,7 +303,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     /** Reads an input stream without closing it. */
     public void read(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
-        createHandler(inputStream).read(consumer);
+        executeInputStream(inputStream, this::createHandler, handler -> handler.read(consumer));
     }
 
     /** Detects text charset and delimiter from a sample before reading without closing the caller stream. */
@@ -330,12 +330,14 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
-        return summarize(createHandler(inputStream), consumer);
+        return executeWithInputStream(inputStream, this::createHandler,
+                handler -> summarize(handler, consumer));
     }
 
     public ReadSummary readWithSummary(Path path, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
-        return summarize(createHandler(path), consumer);
+        return executeWithPath(path, this::createHandler,
+                handler -> summarize(handler, consumer));
     }
 
     public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
@@ -351,12 +353,14 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
         requireMaxCollectedErrors(maxCollectedErrors);
-        return report(inputStream, maxCollectedErrors);
+        return executeWithInputStream(inputStream, this::createHandler,
+                handler -> report(handler, maxCollectedErrors));
     }
 
     public ReadReport readReport(Path path, int maxCollectedErrors) {
         requireMaxCollectedErrors(maxCollectedErrors);
-        return report(createHandler(path), maxCollectedErrors);
+        return executeWithPath(path, this::createHandler,
+                handler -> report(handler, maxCollectedErrors));
     }
 
     public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
@@ -377,39 +381,42 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {
         requireCallback(onSuccess, "onSuccess");
         requireCallback(onError, "onError");
-        createHandler(inputStream).read(onSuccess, onError);
+        executeInputStream(inputStream, this::createHandler,
+                handler -> handler.read(onSuccess, onError));
     }
 
     public void readStrict(InputStream inputStream, Consumer<T> consumer) {
         requireCallback(consumer, "consumer");
-        createHandler(inputStream).readStrict(consumer);
+        executeInputStream(inputStream, this::createHandler, handler -> handler.readStrict(consumer));
     }
 
     public ReadSummary readWhile(InputStream inputStream, Predicate<ReadResult<T>> predicate) {
         requireCallback(predicate, "predicate");
-        return readWhile(createHandler(inputStream), predicate);
+        return executeWithInputStream(inputStream, this::createHandler,
+                handler -> readWhile(handler, predicate));
     }
 
     /** Reads directly from a caller-owned path without modifying or deleting it. */
     public void read(Path path, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
-        createHandler(path).read(consumer);
+        executePath(path, this::createHandler, handler -> handler.read(consumer));
     }
 
     public void read(Path path, Consumer<T> onSuccess, Consumer<RowError> onError) {
         requireCallback(onSuccess, "onSuccess");
         requireCallback(onError, "onError");
-        createHandler(path).read(onSuccess, onError);
+        executePath(path, this::createHandler, handler -> handler.read(onSuccess, onError));
     }
 
     public void readStrict(Path path, Consumer<T> consumer) {
         requireCallback(consumer, "consumer");
-        createHandler(path).readStrict(consumer);
+        executePath(path, this::createHandler, handler -> handler.readStrict(consumer));
     }
 
     public ReadSummary readWhile(Path path, Predicate<ReadResult<T>> predicate) {
         requireCallback(predicate, "predicate");
-        return readWhile(createHandler(path), predicate);
+        return executeWithPath(path, this::createHandler,
+                handler -> readWhile(handler, predicate));
     }
 
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
