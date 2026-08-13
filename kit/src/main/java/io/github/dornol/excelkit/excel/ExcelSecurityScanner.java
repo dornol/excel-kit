@@ -13,12 +13,16 @@ final class ExcelSecurityScanner {
     private ExcelSecurityScanner() {}
 
     static void scan(Path file, ReadSecurityPolicy policy) throws IOException {
-        if (policy.allowFormulas() && policy.allowExternalLinks()) return;
         long total = 0;
+        int entryCount = 0;
         try (ZipFile zip = new ZipFile(file.toFile())) {
-            var entries = zip.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
+            var zipEntries = zip.entries();
+            while (zipEntries.hasMoreElements()) {
+                ZipEntry entry = zipEntries.nextElement();
+                if (++entryCount > policy.maxZipEntries()) {
+                    throw security(ReadSecurityException.Reason.ZIP_ENTRIES,
+                            "Workbook exceeds ZIP entry limit: " + policy.maxZipEntries());
+                }
                 String name = entry.getName();
                 if (!policy.allowExternalLinks()) {
                     if (name.startsWith("xl/externalLinks/")) {

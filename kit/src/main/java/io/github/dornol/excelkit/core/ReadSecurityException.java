@@ -2,7 +2,7 @@ package io.github.dornol.excelkit.core;
 
 /** Raised when workbook content violates a configured security policy. */
 public final class ReadSecurityException extends ExcelKitException {
-    public enum Reason { FORMULA, EXTERNAL_LINK, ENTRY_SIZE, TOTAL_SCAN_SIZE, COMPRESSION_RATIO }
+    public enum Reason { FORMULA, EXTERNAL_LINK, ENTRY_SIZE, TOTAL_SCAN_SIZE, COMPRESSION_RATIO, ZIP_ENTRIES }
     private final Reason reason;
     public ReadSecurityException(Reason reason, String message) {
         super(message);

@@ -822,6 +822,7 @@ ExcelWorkbookReader.create()
 - Apache POI zip bomb 방어 설정과 library 전역 설정 충돌 가능성
 - worksheet relationship에 선언된 external workbook link 판별
 - shared strings, 압축 해제 비율과 ZIP entry 크기
+- ZIP entry 개수 제한 (`ReadSecurityPolicy.maxZipEntries()`)
 - 기존 URL image byte 제한 외 timeout, redirect, content type 정책
 
 기본값을 변경할 때는 정상적인 대용량 파일과 서버 자원 보호 사이의 기준을 benchmark와 fixture로

@@ -112,6 +112,22 @@ class NextApiTest {
         assertEquals(ReadSecurityException.Reason.EXTERNAL_LINK, error.reason());
     }
 
+    @Test void securityPolicyRejectsTooManyZipEntries() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (var zip = new java.util.zip.ZipOutputStream(output)) {
+            for (int i = 0; i < 3; i++) {
+                zip.putNextEntry(new java.util.zip.ZipEntry("entry-" + i));
+                zip.write('x');
+                zip.closeEntry();
+            }
+        }
+        ReadSecurityPolicy policy = new ReadSecurityPolicy(true, true, 1024, 4096, 100.0, 2);
+        ReadSecurityException error = assertThrows(ReadSecurityException.class, () ->
+                ExcelReader.forMap().securityPolicy(policy)
+                        .read(new ByteArrayInputStream(output.toByteArray()), result -> fail()));
+        assertEquals(ReadSecurityException.Reason.ZIP_ENTRIES, error.reason());
+    }
+
     @Test void cancellationStopsBetweenRows() {
         AtomicBoolean cancelled = new AtomicBoolean();
         var values = new java.util.ArrayList<Person>();
