@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Fluent `validator(Validator)` configuration for Excel and CSV readers.
+- Explicit `ReadResult.errorType()` classification for mapping and validation failures.
+
+### Changed
+
+- `ReadResult.messages()` is now always an immutable, non-null list.
+- Setter conversion failures are reported as `RowError.Type.MAPPING`, while required-field
+  and Bean Validation failures remain `RowError.Type.VALIDATION`.
+- Reader callbacks and configuration functions now reject `null` arguments immediately.
+
 ## [0.22.0] - 2026-08-06
 
 ### Added

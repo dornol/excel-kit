@@ -23,14 +23,14 @@ Not annotation-based — columns are defined programmatically via builder chains
 | Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).writeTo(path)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` → `wb.finish().writeTo(path)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list(...).write(stream, out)` |
-| Read Excel (setter) | `ExcelReader<T>` | `ExcelReader.setter(T::new).column("Name", T::setName).required().read(in, r -> ...)` |
+| Read Excel (setter) | `ExcelReader<T>` | `ExcelReader.setter(T::new).validator(validator).column("Name", T::setName).required().read(in, r -> ...)` |
 | Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().read(in, r -> r.data().get("Name"))` |
 | Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).read(in, r -> ...)` |
 | Summarize a read | `ReadSummary` / `ReadReport` | `reader.readWithSummary(in, r -> ...)` / `reader.readReport(in, 100)` |
 | Detect tabular input | `TabularFileDetector` | `TabularFileDetector.detect(path)` or `.detectDetailed(in)` |
 | Write CSV | `CsvWriter<T>` | `.column("Name", T::getName).write(stream).writeTo(path)` |
 | Write CSV (map) | `CsvWriter.forMap(...)` | `CsvWriter.forMap("Name", "Age").write(stream).writeTo(path)` |
-| Read CSV (setter) | `CsvReader<T>` | `CsvReader.setter(T::new).column("Name", T::setName).read(in, r -> ...)` |
+| Read CSV (setter) | `CsvReader<T>` | `CsvReader.setter(T::new).validator(validator).column("Name", T::setName).read(in, r -> ...)` |
 | Read CSV (map) | `CsvReader.forMap()` | `CsvReader.forMap().read(in, r -> r.data().get("Name"))` |
 
 ## Detailed Documentation

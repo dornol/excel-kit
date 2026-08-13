@@ -1,14 +1,2 @@
-# Expires when 0.21.0 becomes the comparison baseline: internal snapshot constructor changed.
-io.github.dornol.excelkit.core.ReadOptions#ReadOptions(boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy,io.github.dornol.excelkit.core.CellConversionConfig,long,boolean,int,long,java.util.function.UnaryOperator)
-# Expires at the 0.21.0 baseline: readWhile now returns ReadSummary.
-io.github.dornol.excelkit.csv.CsvReader#readWhile(java.io.InputStream,java.util.function.Predicate)
-io.github.dornol.excelkit.csv.CsvReader#readWhile(java.nio.file.Path,java.util.function.Predicate)
-io.github.dornol.excelkit.csv.CsvReader#readWhile(io.github.dornol.excelkit.core.InputStreamSource,java.util.function.Predicate)
-io.github.dornol.excelkit.excel.ExcelReader#readWhile(java.io.InputStream,java.util.function.Predicate)
-io.github.dornol.excelkit.excel.ExcelReader#readWhile(java.nio.file.Path,java.util.function.Predicate)
-io.github.dornol.excelkit.excel.ExcelReader#readWhile(io.github.dornol.excelkit.core.InputStreamSource,java.util.function.Predicate)
-# Expires at the 0.21.0 baseline: handler engines intentionally left the public API.
-io.github.dornol.excelkit.csv.CsvReadHandler
-io.github.dornol.excelkit.excel.ExcelReadHandler
-# Expires at the 0.21.0 baseline: reader execution internals are no longer public API.
-io.github.dornol.excelkit.core.internal.ReaderExecutionSupport
+# Keep this file empty unless a deliberate breaking change is temporarily required.
+# The API comparison baseline is the latest published release (currently 0.22.0).

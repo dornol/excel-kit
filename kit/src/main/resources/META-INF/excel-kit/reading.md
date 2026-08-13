@@ -6,7 +6,8 @@
 
 ### 1. Setter Mode (Mutable Objects)
 ```java
-new ExcelReader<>(User::new, validator)  // validator is optional (null to skip)
+ExcelReader.setter(User::new)
+    .validator(validator)
     .column("Name", (u, cell) -> u.name = cell.asString())
     .column("Age", (u, cell) -> u.age = cell.asInt())
     .read(inputStream, result -> {
@@ -168,7 +169,8 @@ users to a specific row, header, and submitted value.
 `ExcelKitSchema` generated readers support the same header controls:
 
 ```java
-schema.excelReader(User::new, validator)
+schema.excelReader(User::new)
+    .validator(validator)
     .strictHeaders()
     .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
     .read(inputStream, user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
@@ -201,14 +203,14 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, sheetIndex, head
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
 // Setter mode
-new ExcelReader<>(User::new, validator).column(...).read(in, result -> {
+ExcelReader.setter(User::new).validator(validator).column(...).read(in, result -> {
     if (!result.success()) {
         // result.messages() contains validation errors
     }
 });
 
 // Mapping mode
-ExcelReader.mapping(row -> new Person(...), validator).read(in, result -> { ... });
+ExcelReader.mapping(row -> new Person(...)).validator(validator).read(in, result -> { ... });
 ```
 
 ## CSV Reading

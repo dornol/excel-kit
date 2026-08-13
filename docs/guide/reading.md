@@ -173,7 +173,8 @@ ExcelKitSchema<User> schema = ExcelKitSchema.<User>builder()
     .column("Age", User::getAge, User::setAge)
     .build();
 
-schema.excelReader(User::new, validator)
+schema.excelReader(User::new)
+    .validator(validator)
     .strictHeaders()
     .duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL)
     .read(inputStream, user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
@@ -261,7 +262,8 @@ needed. Caller-provided streams remain caller-owned.
 **Bean Validation:**
 ```java
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-ExcelReader<User> reader = ExcelReader.setter(User::new, validator);
+ExcelReader<User> reader = ExcelReader.setter(User::new)
+    .validator(validator);
 ```
 
 **Large file support:**

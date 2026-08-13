@@ -149,6 +149,15 @@ ExcelReader.setter(User::new)
     .read(inputStream, result -> { ... });
 ```
 
+Bean Validation can be added to any Excel or CSV reader:
+
+```java
+ExcelReader.setter(User::new)
+    .validator(validator)
+    .column("Name", (u, cell) -> u.setName(cell.asString()))
+    .read(inputStream, result -> { ... });
+```
+
 Header aliases, strict header validation, and duplicate header policy are available for Excel and CSV:
 
 ```java

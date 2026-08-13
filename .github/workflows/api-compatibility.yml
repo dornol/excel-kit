@@ -7,7 +7,7 @@ on:
     inputs:
       baseline:
         description: Published version to compare
-        default: 0.20.0
+        default: 0.22.0
         required: true
 
 permissions:
