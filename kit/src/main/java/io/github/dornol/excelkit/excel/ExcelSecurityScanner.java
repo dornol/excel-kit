@@ -20,8 +20,21 @@ final class ExcelSecurityScanner {
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
                 String name = entry.getName();
-                if (!policy.allowExternalLinks() && name.startsWith("xl/externalLinks/"))
-                    throw security(ReadSecurityException.Reason.EXTERNAL_LINK, "External workbook links are not allowed");
+                if (!policy.allowExternalLinks()) {
+                    if (name.startsWith("xl/externalLinks/")) {
+                        throw security(ReadSecurityException.Reason.EXTERNAL_LINK,
+                                "External workbook links are not allowed");
+                    }
+                    if (name.endsWith(".rels")) {
+                        validateEntry(entry, policy);
+                        try (InputStream input = zip.getInputStream(entry)) {
+                            if (containsExternalWorkbookLink(input, policy.maxScannedEntryBytes())) {
+                                throw security(ReadSecurityException.Reason.EXTERNAL_LINK,
+                                        "External workbook links are not allowed");
+                            }
+                        }
+                    }
+                }
                 if (!policy.allowFormulas() && name.startsWith("xl/worksheets/") && name.endsWith(".xml")) {
                     validateEntry(entry, policy);
                     try (InputStream input = zip.getInputStream(entry)) {
@@ -60,6 +73,18 @@ final class ExcelSecurityScanner {
             }
         }
         return new ScanResult(false, bytes);
+    }
+
+    private static boolean containsExternalWorkbookLink(InputStream input, long maximum) throws IOException {
+        StringBuilder content = new StringBuilder();
+        for (int value; (value = input.read()) >= 0;) {
+            if (content.length() >= maximum) {
+                throw security(ReadSecurityException.Reason.ENTRY_SIZE,
+                        "Relationship entry exceeds security scan entry limit");
+            }
+            content.append((char) value);
+        }
+        return content.indexOf("externalLink") >= 0;
     }
 
     private static ReadSecurityException security(ReadSecurityException.Reason reason, String message) {

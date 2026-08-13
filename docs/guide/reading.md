@@ -285,7 +285,8 @@ entire body is materialized. `ReadLimitExceededException` exposes the limit kind
 value, and observed value. Summary, report, and `readWhile` APIs accept `InputStream`, `Path`,
 and `InputStreamSource`; progress callbacks always receive a terminal event.
 For untrusted XLSX files, `securityPolicy(ReadSecurityPolicy.STRICT)` rejects formulas and
-external workbook links before sheet rows are mapped.
+external workbook links (including links declared through worksheet relationship files) before
+sheet rows are mapped.
 Strict inspection also bounds each decompressed worksheet entry, total scanned bytes, and
 compression ratio. CSV callers can use `readDetected(...)` to apply sampled charset and
 delimiter detection without closing the caller stream.

@@ -98,6 +98,20 @@ class NextApiTest {
         assertEquals(ReadSecurityException.Reason.FORMULA, error.reason());
     }
 
+    @Test void strictSecurityPolicyRejectsExternalWorkbookRelationship() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (var zip = new java.util.zip.ZipOutputStream(output)) {
+            zip.putNextEntry(new java.util.zip.ZipEntry("xl/worksheets/_rels/sheet1.xml.rels"));
+            zip.write("<Relationships><Relationship Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLink\"/></Relationships>"
+                    .getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        ReadSecurityException error = assertThrows(ReadSecurityException.class, () ->
+                ExcelReader.forMap().securityPolicy(ReadSecurityPolicy.STRICT)
+                        .read(new ByteArrayInputStream(output.toByteArray()), result -> fail()));
+        assertEquals(ReadSecurityException.Reason.EXTERNAL_LINK, error.reason());
+    }
+
     @Test void cancellationStopsBetweenRows() {
         AtomicBoolean cancelled = new AtomicBoolean();
         var values = new java.util.ArrayList<Person>();

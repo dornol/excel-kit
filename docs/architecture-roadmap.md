@@ -816,6 +816,7 @@ ExcelWorkbookReader.create()
 - 최대 열 수와 cell text 길이
 - 헤더보다 넓은 데이터 행이 `maxColumns` 제한을 우회하지 않는지 검증
 - Apache POI zip bomb 방어 설정과 library 전역 설정 충돌 가능성
+- worksheet relationship에 선언된 external workbook link 판별
 - shared strings, 압축 해제 비율과 ZIP entry 크기
 - 기존 URL image byte 제한 외 timeout, redirect, content type 정책
 
