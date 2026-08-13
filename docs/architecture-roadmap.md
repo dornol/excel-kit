@@ -544,7 +544,7 @@ public enum ReadAbortReason {
 - `ReadAbortException`으로 strict failure와 최대 오류 수 초과를 구별할 수 있다.
 - `read()`, 분리 callback `read()`, `readWhile()`에서 동일한 오류 count 규칙을 사용한다.
 
-## 제안 6: Java Stream 읽기 API 제거
+## 구현 완료: Java Stream 읽기 API 제거
 
 ### 문제
 
@@ -575,7 +575,7 @@ callback 기반 `read()`도 파일 전체를 메모리에 올리지 않고 한 �
 
 ### 결정
 
-`ExcelReadHandler.readAsStream()`과 `CsvReadHandler.readAsStream()`을 제거한다. 2번의 새 Reader API에도
+`ExcelReadHandler.readAsStream()`과 `CsvReadHandler.readAsStream()`은 제거되었다. 2번의 새 Reader API에도
 `reader.stream(input)`은 추가하지 않는다. callback 기반 `read()`를 유일한 일반 스트리밍 API로 둔다.
 
 ```java
@@ -664,11 +664,11 @@ reader.read(input, result -> {
 - Excel과 CSV가 동일한 `readWhile()` 동작을 제공한다.
 - 제거 전후 throughput과 peak memory를 비교하고 허용 regression 기준을 통과한다.
 
-## 제안 7: Writer의 `Iterable` 입력과 Stream 소유권 정리
+## 구현 완료: Writer의 `Iterable` 입력과 Stream 소유권 정리
 
 ### 문제
 
-현재 주요 쓰기 API는 `Stream<T>`를 입력으로 받고 내부에서 try-with-resources로 닫는다.
+현재 쓰기 API는 `Stream<T>`와 `Iterable<T>`를 입력으로 받고 Stream은 caller가 소유한다.
 편리하지만 호출자가 만든 stream, 특히 DB cursor나 네트워크 리소스를 감싼 stream의 소유권을
 library가 가져간다는 점이 메서드 signature에 나타나지 않는다.
 
@@ -919,8 +919,8 @@ peak memory 10% 이내처럼 기준을 명시하고 CI benchmark는 변동성을
 | 3 | Reader/Writer options snapshot | 높음 | 중간 | 낮음~중간 |
 | 보류 | Schema immutable mapping 개선 | 불확실 | 높음 | 큼 |
 | 5 | `maxErrors()` | 중간~높음 | 낮음~중간 | 없음 |
-| 6 | Stream API 제거와 `readWhile()` | 높음 | 중간 | 큼 |
-| 7 | Writer `Iterable` 입력/Stream 소유권 | 중간 | 낮음 | 동작 변경 |
+| 완료 | Stream API 제거와 `readWhile()` | 높음 | 중간 | 큼 |
+| 완료 | Writer `Iterable` 입력/Stream 소유권 | 중간 | 낮음 | 동작 변경 |
 | 8 | Header normalization | 중간~높음 | 낮음~중간 | 없음 |
 | 완료 | 다중 sheet와 package 공유 | 높음 | 중간 | 없음 |
 | 향후 검토 | 안전 제한 추가 점검 | 요구 확인 필요 | 항목별 상이 | 미정 |
