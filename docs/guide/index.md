@@ -21,7 +21,7 @@ infrastructure concerns.
 | [Multi-Sheet](multi-sheet.md) | ExcelWorkbook, auto-rollover, tab color | `ExcelWorkbook.create()`, `maxRows()`, `tabColor()` |
 | [Protection](protection.md) | Sheet/workbook protection, password encryption | `protectSheet()`, `protectWorkbook()`, `password()` |
 | [CSV](csv.md) | CSV write/read, dialect, quoting | `CsvWriter.create()`, `CsvReader.setter()`, `dialect()` |
-| [Spring](spring.md) | MVC, WebFlux integration | `ExcelKitResponse.excel()`, `UploadResult` |
+| [Spring](spring.md) | MVC helpers, WebFlux manual integration | `ExcelKitResponse.excel()`, `UploadResult` |
 | [Reference](reference.md) | Data types, formats, schema, exceptions, notes | `ExcelDataType`, `ExcelDataFormat`, `ExcelKitSchema` |
 | [Release](release.md) | Release preparation and verification | `verify-maven-central.sh`, GitHub Actions |
 | [Architecture Roadmap](../architecture-roadmap.md) | Dependency policy, breaking-change candidates, API/resource redesign | Compatibility matrix, reader lifecycle, option snapshots, error limits |

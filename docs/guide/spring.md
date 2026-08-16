@@ -14,6 +14,14 @@ implementation("io.github.dornol:excel-kit-spring:<version>")
 with proper Content-Type, Content-Disposition (including RFC 5987 Korean
 filename encoding), and Cache-Control.
 
+The default cache max-age is 10 seconds. For a different duration, configure
+the response builder directly:
+
+```java
+return ExcelKitResponse.excel("report", Duration.ofMinutes(1))
+    .body(handler::writeTo);
+```
+
 ```java
 @GetMapping("/download")
 public ResponseEntity<StreamingResponseBody> download() {
@@ -122,7 +130,13 @@ ExcelHandler handler = service.buildReport();
 handler.writeTo(outputStream, "P@ssw0rd!");
 ```
 
-## Spring WebFlux
+## Spring WebFlux manual integration
+
+`excel-kit-spring` is a Spring MVC helper module and does not provide WebFlux
+response or upload helper classes. The example below shows how to bridge the
+blocking Apache POI writer from a WebFlux controller when an application needs
+that integration. Run the blocking write on `boundedElastic` and manage the
+pipe lifecycle carefully.
 
 Apache POI is blocking I/O — wrap on `boundedElastic`:
 
@@ -156,7 +170,8 @@ With reactive repositories:
 ```java
 Flux<MyData> flux = repository.findAll();
 ExcelHandler handler = writer.write(flux.toStream());
-// Flux.toStream() handles backpressure — not loaded entirely into memory.
+// This is a blocking bridge consumed by the writer; keep the write on
+// boundedElastic and size the stream/limits for the expected export volume.
 ```
 ## Signature validation and limits
 

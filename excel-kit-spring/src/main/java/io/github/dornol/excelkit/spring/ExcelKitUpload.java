@@ -60,18 +60,6 @@ public final class ExcelKitUpload {
         }
     }
 
-    public static <T> UploadResult<T> validateExcel(
-            MultipartFile file,
-            UploadReader<T> reader) {
-        return excel(file, reader);
-    }
-
-    public static <T> UploadResult<T> validateCsv(
-            MultipartFile file,
-            UploadReader<T> reader) {
-        return csv(file, reader);
-    }
-
     public static <T> UploadResult<T> excel(
             MultipartFile file,
             UploadReader<T> reader) {
