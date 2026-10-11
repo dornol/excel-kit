@@ -34,14 +34,44 @@ public final class ExcelKitResponse {
         return builder(filename, DownloadFileType.EXCEL);
     }
 
+    /**
+     * Creates an Excel response builder with a custom cache max-age.
+     *
+     * @param filename the download filename
+     * @param cacheMaxAge the cache duration
+     * @return a response builder with download and cache headers
+     */
+    public static ResponseEntity.BodyBuilder excel(String filename, Duration cacheMaxAge) {
+        return builder(filename, DownloadFileType.EXCEL, cacheMaxAge);
+    }
+
     public static ResponseEntity.BodyBuilder csv(String filename) {
         return builder(filename, DownloadFileType.CSV);
     }
 
+    /**
+     * Creates a CSV response builder with a custom cache max-age.
+     *
+     * @param filename the download filename
+     * @param cacheMaxAge the cache duration
+     * @return a response builder with download and cache headers
+     */
+    public static ResponseEntity.BodyBuilder csv(String filename, Duration cacheMaxAge) {
+        return builder(filename, DownloadFileType.CSV, cacheMaxAge);
+    }
+
     public static ResponseEntity.BodyBuilder builder(String filename, DownloadFileType type) {
+        return builder(filename, type, DEFAULT_CACHE_MAX_AGE);
+    }
+
+    public static ResponseEntity.BodyBuilder builder(
+            String filename, DownloadFileType type, Duration cacheMaxAge) {
+        if (cacheMaxAge == null || cacheMaxAge.isNegative()) {
+            throw new IllegalArgumentException("cacheMaxAge must not be null or negative");
+        }
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, type.contentDisposition(filename))
                 .header(HttpHeaders.CONTENT_TYPE, type.getContentType())
-                .header(HttpHeaders.CACHE_CONTROL, "max-age=" + DEFAULT_CACHE_MAX_AGE.toSeconds());
+                .header(HttpHeaders.CACHE_CONTROL, "max-age=" + cacheMaxAge.toSeconds());
     }
 }

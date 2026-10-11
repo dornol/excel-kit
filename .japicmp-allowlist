@@ -1,5 +1,7 @@
 # Deliberate breaking members for the next major release.
 # These constructors/helpers were intentionally redesigned after the 0.22.0 baseline.
+io.github.dornol.excelkit.spring.ExcelKitUpload#validateCsv(org.springframework.web.multipart.MultipartFile,io.github.dornol.excelkit.spring.UploadReader)
+io.github.dornol.excelkit.spring.ExcelKitUpload#validateExcel(org.springframework.web.multipart.MultipartFile,io.github.dornol.excelkit.spring.UploadReader)
 io.github.dornol.excelkit.core.AbstractReader#withInputSource(io.github.dornol.excelkit.core.InputStreamSource,java.util.function.Function,java.util.function.BiFunction)
 io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,jakarta.validation.Validator,java.lang.String)
 io.github.dornol.excelkit.core.AbstractReadHandler#AbstractReadHandler(java.io.InputStream,java.util.function.Supplier,jakarta.validation.Validator,java.lang.String,boolean,io.github.dornol.excelkit.core.DuplicateHeaderPolicy)

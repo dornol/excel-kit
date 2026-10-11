@@ -321,7 +321,7 @@ Measured on Apple M-series, JDK 21. Pure write throughput (excludes DB/network I
 
 ## Documentation
 
-For the full feature guide (all column options, styling, validation, Spring WebFlux integration,
+For the full feature guide (all column options, styling, validation, Spring WebFlux manual integration,
 security details, migration guide, etc.), see:
 
 - **[Full Guide](docs/guide/index.md)** — complete API reference with code examples

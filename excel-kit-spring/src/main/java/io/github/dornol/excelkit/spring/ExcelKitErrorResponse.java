@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.Collection;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -24,7 +25,23 @@ public final class ExcelKitErrorResponse {
     }
 
     public static ResponseEntity<StreamingResponseBody> csv(
+            UploadResult<?> result, String filename, Duration cacheMaxAge) {
+        return csv(result.errors(), filename, cacheMaxAge);
+    }
+
+    public static ResponseEntity<StreamingResponseBody> csv(
             Collection<UploadError> errors, String filename) {
+        return csv(errors, filename, ExcelKitResponse.csv(filename));
+    }
+
+    public static ResponseEntity<StreamingResponseBody> csv(
+            Collection<UploadError> errors, String filename, Duration cacheMaxAge) {
+        return csv(errors, filename, ExcelKitResponse.csv(filename, cacheMaxAge));
+    }
+
+    private static ResponseEntity<StreamingResponseBody> csv(
+            Collection<UploadError> errors, String filename,
+            ResponseEntity.BodyBuilder response) {
         var handler = CsvWriter.<ErrorReportRow>create()
                 .column("rowNum", ErrorReportRow::rowNum)
                 .column("fileRowNum", ErrorReportRow::fileRowNum)
@@ -35,7 +52,7 @@ public final class ExcelKitErrorResponse {
                 .column("rawValues", ErrorReportRow::rawValues)
                 .write(reportRows(errors));
 
-        return ExcelKitResponse.csv(handler, filename);
+        return response.body(handler::writeTo);
     }
 
     public static ResponseEntity<StreamingResponseBody> excel(
@@ -44,7 +61,23 @@ public final class ExcelKitErrorResponse {
     }
 
     public static ResponseEntity<StreamingResponseBody> excel(
+            UploadResult<?> result, String filename, Duration cacheMaxAge) {
+        return excel(result.errors(), filename, cacheMaxAge);
+    }
+
+    public static ResponseEntity<StreamingResponseBody> excel(
             Collection<UploadError> errors, String filename) {
+        return excel(errors, filename, ExcelKitResponse.excel(filename));
+    }
+
+    public static ResponseEntity<StreamingResponseBody> excel(
+            Collection<UploadError> errors, String filename, Duration cacheMaxAge) {
+        return excel(errors, filename, ExcelKitResponse.excel(filename, cacheMaxAge));
+    }
+
+    private static ResponseEntity<StreamingResponseBody> excel(
+            Collection<UploadError> errors, String filename,
+            ResponseEntity.BodyBuilder response) {
         var handler = ExcelWriter.<ErrorReportRow>create()
                 .sheetName("Read Errors")
                 .autoFilter(true)
@@ -58,7 +91,7 @@ public final class ExcelKitErrorResponse {
                 .column("rawValues", ErrorReportRow::rawValues)
                 .write(reportRows(errors));
 
-        return ExcelKitResponse.excel(handler, filename);
+        return response.body(handler::writeTo);
     }
 
     public static Stream<ErrorReportRow> reportRows(Collection<UploadError> errors) {
