@@ -54,6 +54,27 @@ mavenPublishing {
     coordinates("io.github.dornol", "excel-kit-spring", project.version.toString())
 
     pom {
+        // Maven has no compileOnlyApi scope. Preserve the optional integration
+        // contract instead of forcing POI/Spring/Validation onto consumers.
+        withXml {
+            val optionalIntegrations = setOf(
+                "org.springframework:spring-webmvc", "org.apache.poi:poi-ooxml",
+                "jakarta.validation:jakarta.validation-api", "org.jspecify:jspecify"
+            )
+            val root = asElement()
+            val dependencies = root.getElementsByTagName("dependency")
+            for (i in 0 until dependencies.length) {
+                val dependency = dependencies.item(i) as org.w3c.dom.Element
+                if (dependency.parentNode.parentNode != root) continue
+                val group = dependency.getElementsByTagName("groupId").item(0).textContent
+                val artifact = dependency.getElementsByTagName("artifactId").item(0).textContent
+                if ("$group:$artifact" in optionalIntegrations) {
+                    dependency.appendChild(root.ownerDocument.createElement("optional").apply {
+                        textContent = "true"
+                    })
+                }
+            }
+        }
         name = "excel-kit-spring"
         description = "Spring MVC helpers for excel-kit"
         url = "https://github.com/dornol/excel-kit/"

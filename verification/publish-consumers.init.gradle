@@ -1,0 +1,16 @@
+// Unsigned publications are permitted only for these local verification tasks.
+def allowed = [':kit:publishMavenPublicationToConsumerTestRepository',
+               ':excel-kit-spring:publishMavenPublicationToConsumerTestRepository']
+if (!gradle.startParameter.taskNames.every { allowed.contains(it) }) {
+    throw new GradleException('This init script is restricted to the consumer test repository')
+}
+gradle.projectsEvaluated {
+    allprojects {
+        tasks.withType(Sign).configureEach { enabled = false }
+        plugins.withId('maven-publish') {
+            publishing.publications.withType(MavenPublication).configureEach {
+                artifacts.removeAll { it.extension.endsWith('.asc') }
+            }
+        }
+    }
+}

@@ -365,6 +365,9 @@ Follow links to individual topic files only when you need full details.
 ```bash
 ./gradlew build
 ./gradlew test
+./gradlew build -PtestJavaVersion=17  # installed test JDK: 17, 21, or 25
+./gradlew :kit:poiCompatibilityTest
+scripts/verify-consumers.sh         # isolated Gradle metadata / Maven POM consumers
 ```
 
 ## License
