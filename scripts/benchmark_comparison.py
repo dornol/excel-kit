@@ -235,6 +235,9 @@ def main():
         else:
             baseline = candidate
     elif args.github:
+        current_sha = os.environ.get('GITHUB_SHA')
+        if current_sha and any(row['revision'] != current_sha for row in current.values()):
+            raise ValueError('Current benchmark revision differs from the workflow revision; rerun the workload')
         try:
             baseline, url, notes = select_baseline(current, context, os.environ['GITHUB_REPOSITORY'], os.environ['GITHUB_RUN_ID'])
         except (RuntimeError, KeyError, ValueError, OSError) as error:

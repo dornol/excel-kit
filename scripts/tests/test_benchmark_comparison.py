@@ -133,6 +133,17 @@ class ComparisonTest(unittest.TestCase):
             self.assertTrue(result['baseline_available'])
             self.assertEqual(1, result['scenarios_with_increases'])
 
+    def test_cli_rejects_stale_current_results_before_api_lookup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'current.csv').write_text(CSV)
+            (root / 'context.json').write_text(json.dumps(CONTEXT))
+            process = subprocess.run([sys.executable, SPEC.origin, 'compare', '--current', str(root / 'current.csv'),
+                '--context', str(root / 'context.json'), '--output-dir', str(root / 'report'), '--github'],
+                env={**os.environ, 'GITHUB_SHA': 'new'}, capture_output=True, text=True)
+            self.assertNotEqual(0, process.returncode)
+            self.assertIn('Current benchmark revision differs', process.stderr)
+
 
 class BaselineSelectionTest(unittest.TestCase):
     def setUp(self):

@@ -53,7 +53,7 @@ jobs:
         run: python3 scripts/benchmark_comparison.py context --output kit/build/reports/benchmark/context.json
 
       - name: Run benchmarks
-        run: ./gradlew :kit:benchmark --no-daemon
+        run: ./gradlew :kit:benchmark --rerun-tasks --no-daemon
 
       - name: Compare with a compatible successful main run
         env:

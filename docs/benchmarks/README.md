@@ -53,9 +53,11 @@ are not a baseline for this instrumented suite.
 
 After a successful benchmark run, CI searches the latest 30 successful `push`
 runs of this repository's `Benchmark` workflow on `main`, newest first. It ignores
-this run and runs started at or after it, PR/fork results, failed runs and expired
+this run and runs created at or after it, PR/fork results, failed runs and expired
 or unavailable artifacts. The chosen artifact's CSV revision must match its
 workflow commit.
+CI forces a fresh benchmark execution and rejects current CSV results whose
+revision differs from the current workflow commit.
 
 A baseline must match all of the following:
 
