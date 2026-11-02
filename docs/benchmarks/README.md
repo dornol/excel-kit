@@ -78,11 +78,20 @@ baseline becoming nonzero is shown as `new usage`, rather than an infinite
 percentage. CSV/context, `comparison.md` and `comparison.json` are uploaded in
 `benchmark-results` for later analysis. Keep CSV and context from the same run.
 
-**The initial policy applies no calibrated regression threshold.** Any upward
-metric change produces one aggregate warning annotation; it is an observation,
-not a claim that a regression is confirmed. Repeated runs should establish the
-normal variability before percentage/absolute thresholds are chosen. This avoids
-silently inventing a performance budget. Warnings never fail the benchmark job.
+The checked-in `calibration.json` supplies advisory bands from five fresh JVM runs
+on the same runner and commit. A warning requires both a percentage increase and
+an absolute increase beyond the scenario's bands. Bands use 1.5 times the observed
+min/max span, with floors of 20%, 100 ms elapsed, 16 MiB heap and 1 MiB temporary
+files. A zero baseline uses the absolute band. These are pilot noise filters,
+not confidence intervals or performance budgets. Warnings never fail the job.
+
+Calibration requires the same workload, environment, runner image and CPU model.
+An incompatible profile preserves raw deltas but suppresses regression annotations.
+See [the measurement review](review-2026-11-02.md) for evidence and limitations.
+Manually dispatch this workflow with `repetitions=5` or `10` to collect fresh
+samples and an artifact `calibration.json`; review it before replacing the profile.
+Fewer than five samples cannot produce a calibration profile.
+
 Invalid current measurement data still fails validation; lookup errors, absent
 baselines and incompatible historical reports instead leave a current-results
 summary with selection details and preserve the new measurements.
@@ -98,7 +107,8 @@ Use the matching CSV and context from each run:
 python3 scripts/benchmark_comparison.py compare \
   --current current/resources.csv --context current/context.json \
   --baseline previous/resources.csv --baseline-context previous/context.json \
-  --output-dir build/benchmark-comparison
+  --output-dir build/benchmark-comparison \
+  --calibration docs/benchmarks/calibration.json
 python3 -m unittest discover -s scripts/tests -p 'test_benchmark_comparison.py'
 ```
 

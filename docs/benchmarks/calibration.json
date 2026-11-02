@@ -1,0 +1,477 @@
+{
+  "schema_version": 1,
+  "sample_count": 5,
+  "calibration_revision": "a501b6114c8fb0397816056680a09cbd83e9df76",
+  "context": {
+    "schema_version": 1,
+    "workload_sha256": "2c72afb53833caf3419deec5cab1cee6d261d17a72fc76c791caa75e7567c14e",
+    "runner": {
+      "RUNNER_OS": "Linux",
+      "RUNNER_ARCH": "X64",
+      "RUNNER_ENVIRONMENT": "github-hosted",
+      "ImageOS": "ubuntu26",
+      "ImageVersion": "20261026.180.1"
+    },
+    "cpu_model": "AMD EPYC 9V45 96-Core Processor"
+  },
+  "environment": {
+    "schema_version": "1",
+    "sample_interval_ms": 10,
+    "java_version": "21.0.13+9-LTS",
+    "os": "Linux",
+    "arch": "amd64",
+    "max_heap_bytes": 1073741824,
+    "processors": 4,
+    "gc_collectors": "G1 Young Generation;G1 Concurrent GC;G1 Old Generation"
+  },
+  "scenario_order": [
+    "excel_rollover_100k_per_sheet_x_10",
+    "excelRead_100k_rows_pathInput",
+    "excel_100k_rows_50_columns",
+    "excel_1m_rows_5_columns",
+    "excelRead_multiSheet_50kRowsEach_sharedPackage",
+    "csvRead_1m_rows_mapReader",
+    "excelRead_100k_rows_typedReader",
+    "excelRead_100k_rows_inputStreamWithCountRows",
+    "excel_100k_rows_encrypted_via_handler_writeTo_path",
+    "excel_100k_rows_5_columns",
+    "excelRead_100k_rows_mapReader",
+    "csv_1m_rows_5_columns",
+    "excelWorkbook_multiSheet_different_types",
+    "csvRead_1m_rows_typedReader",
+    "excel_100k_rows_5_columns_encrypted",
+    "excel_1m_rows_5_columns_encrypted",
+    "csv_100k_rows_5_columns"
+  ],
+  "row_counts": {
+    "excel_rollover_100k_per_sheet_x_10": 1000000,
+    "excelRead_100k_rows_pathInput": 100000,
+    "excel_100k_rows_50_columns": 100000,
+    "excel_1m_rows_5_columns": 1000000,
+    "excelRead_multiSheet_50kRowsEach_sharedPackage": 100000,
+    "csvRead_1m_rows_mapReader": 1000000,
+    "excelRead_100k_rows_typedReader": 100000,
+    "excelRead_100k_rows_inputStreamWithCountRows": 100000,
+    "excel_100k_rows_encrypted_via_handler_writeTo_path": 100000,
+    "excel_100k_rows_5_columns": 100000,
+    "excelRead_100k_rows_mapReader": 100000,
+    "csv_1m_rows_5_columns": 1000000,
+    "excelWorkbook_multiSheet_different_types": 100000,
+    "csvRead_1m_rows_typedReader": 1000000,
+    "excel_100k_rows_5_columns_encrypted": 100000,
+    "excel_1m_rows_5_columns_encrypted": 1000000,
+    "csv_100k_rows_5_columns": 100000
+  },
+  "policy": {
+    "headroom_factor": 1.5,
+    "minimum_percent": 20.0,
+    "minimum_absolute": {
+      "elapsed_nanos": 100000000,
+      "heap_peak_bytes": 16777216,
+      "temp_peak_bytes": 1048576
+    }
+  },
+  "thresholds": {
+    "excel_rollover_100k_per_sheet_x_10": {
+      "elapsed_nanos": {
+        "minimum": 4024796329,
+        "median": 4035898320,
+        "maximum": 5635448362,
+        "percent": 61,
+        "absolute": 2415978050
+      },
+      "heap_peak_bytes": {
+        "minimum": 127732192,
+        "median": 138018088,
+        "maximum": 145922216,
+        "percent": 22,
+        "absolute": 27285036
+      },
+      "temp_peak_bytes": {
+        "minimum": 205232151,
+        "median": 205232152,
+        "maximum": 205232152,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excelRead_100k_rows_pathInput": {
+      "elapsed_nanos": {
+        "minimum": 848972251,
+        "median": 1003246586,
+        "maximum": 1082635798,
+        "percent": 42,
+        "absolute": 350495321
+      },
+      "heap_peak_bytes": {
+        "minimum": 128793448,
+        "median": 137850224,
+        "maximum": 149586144,
+        "percent": 25,
+        "absolute": 31189044
+      },
+      "temp_peak_bytes": {
+        "minimum": 0,
+        "median": 0,
+        "maximum": 0,
+        "percent": null,
+        "absolute": 1048576
+      }
+    },
+    "excel_100k_rows_50_columns": {
+      "elapsed_nanos": {
+        "minimum": 5175506338,
+        "median": 5214354213,
+        "maximum": 5260409725,
+        "percent": 20.0,
+        "absolute": 127355081
+      },
+      "heap_peak_bytes": {
+        "minimum": 151072080,
+        "median": 171138560,
+        "maximum": 172547056,
+        "percent": 22,
+        "absolute": 32212464
+      },
+      "temp_peak_bytes": {
+        "minimum": 226390257,
+        "median": 226390257,
+        "maximum": 226390258,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excel_1m_rows_5_columns": {
+      "elapsed_nanos": {
+        "minimum": 6599067780,
+        "median": 6767571202,
+        "maximum": 7184000093,
+        "percent": 20.0,
+        "absolute": 877398470
+      },
+      "heap_peak_bytes": {
+        "minimum": 152609664,
+        "median": 172646432,
+        "maximum": 173056920,
+        "percent": 21,
+        "absolute": 30670884
+      },
+      "temp_peak_bytes": {
+        "minimum": 330892788,
+        "median": 330892789,
+        "maximum": 330892789,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excelRead_multiSheet_50kRowsEach_sharedPackage": {
+      "elapsed_nanos": {
+        "minimum": 418987827,
+        "median": 504889807,
+        "maximum": 521662465,
+        "percent": 37,
+        "absolute": 154011957
+      },
+      "heap_peak_bytes": {
+        "minimum": 150296016,
+        "median": 170584776,
+        "maximum": 171915808,
+        "percent": 22,
+        "absolute": 32429688
+      },
+      "temp_peak_bytes": {
+        "minimum": 0,
+        "median": 1105873,
+        "maximum": 1105873,
+        "percent": null,
+        "absolute": 1658810
+      }
+    },
+    "csvRead_1m_rows_mapReader": {
+      "elapsed_nanos": {
+        "minimum": 721664109,
+        "median": 749083480,
+        "maximum": 854633910,
+        "percent": 28,
+        "absolute": 199454702
+      },
+      "heap_peak_bytes": {
+        "minimum": 113676760,
+        "median": 132111072,
+        "maximum": 170269576,
+        "percent": 75,
+        "absolute": 84889224
+      },
+      "temp_peak_bytes": {
+        "minimum": 26666686,
+        "median": 26666686,
+        "maximum": 26666686,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excelRead_100k_rows_typedReader": {
+      "elapsed_nanos": {
+        "minimum": 509993441,
+        "median": 520857863,
+        "maximum": 522464407,
+        "percent": 20.0,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 91971472,
+        "median": 112731576,
+        "maximum": 170434088,
+        "percent": 128,
+        "absolute": 117693924
+      },
+      "temp_peak_bytes": {
+        "minimum": 2059977,
+        "median": 2059978,
+        "maximum": 2059978,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excelRead_100k_rows_inputStreamWithCountRows": {
+      "elapsed_nanos": {
+        "minimum": 624535271,
+        "median": 632565245,
+        "maximum": 695107600,
+        "percent": 20.0,
+        "absolute": 105858494
+      },
+      "heap_peak_bytes": {
+        "minimum": 90928048,
+        "median": 110652752,
+        "maximum": 167826912,
+        "percent": 127,
+        "absolute": 115348296
+      },
+      "temp_peak_bytes": {
+        "minimum": 2059977,
+        "median": 2059977,
+        "maximum": 2059978,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excel_100k_rows_encrypted_via_handler_writeTo_path": {
+      "elapsed_nanos": {
+        "minimum": 771008842,
+        "median": 831741726,
+        "maximum": 862635365,
+        "percent": 20.0,
+        "absolute": 137439785
+      },
+      "heap_peak_bytes": {
+        "minimum": 89501968,
+        "median": 97688872,
+        "maximum": 132387872,
+        "percent": 72,
+        "absolute": 64328856
+      },
+      "temp_peak_bytes": {
+        "minimum": 34854268,
+        "median": 34882336,
+        "maximum": 34968247,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excel_100k_rows_5_columns": {
+      "elapsed_nanos": {
+        "minimum": 652151200,
+        "median": 697594288,
+        "maximum": 699253425,
+        "percent": 20.0,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 100574592,
+        "median": 111785648,
+        "maximum": 140418880,
+        "percent": 60,
+        "absolute": 59766432
+      },
+      "temp_peak_bytes": {
+        "minimum": 34592781,
+        "median": 34592781,
+        "maximum": 34592781,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excelRead_100k_rows_mapReader": {
+      "elapsed_nanos": {
+        "minimum": 489320163,
+        "median": 504296072,
+        "maximum": 507205228,
+        "percent": 20.0,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 105294368,
+        "median": 115451160,
+        "maximum": 132288056,
+        "percent": 39,
+        "absolute": 40490532
+      },
+      "temp_peak_bytes": {
+        "minimum": 2059977,
+        "median": 2059978,
+        "maximum": 2059978,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "csv_1m_rows_5_columns": {
+      "elapsed_nanos": {
+        "minimum": 628140258,
+        "median": 633624998,
+        "maximum": 639871583,
+        "percent": 20.0,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 106278976,
+        "median": 116416440,
+        "maximum": 132306336,
+        "percent": 37,
+        "absolute": 39041040
+      },
+      "temp_peak_bytes": {
+        "minimum": 40555588,
+        "median": 40555588,
+        "maximum": 40555588,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excelWorkbook_multiSheet_different_types": {
+      "elapsed_nanos": {
+        "minimum": 245263850,
+        "median": 252053616,
+        "maximum": 275249241,
+        "percent": 20.0,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 105151856,
+        "median": 112220600,
+        "maximum": 125895408,
+        "percent": 30,
+        "absolute": 31115328
+      },
+      "temp_peak_bytes": {
+        "minimum": 15743171,
+        "median": 15743171,
+        "maximum": 15743172,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "csvRead_1m_rows_typedReader": {
+      "elapsed_nanos": {
+        "minimum": 519852019,
+        "median": 547226182,
+        "maximum": 569554500,
+        "percent": 20.0,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 108334048,
+        "median": 115413528,
+        "maximum": 132232000,
+        "percent": 34,
+        "absolute": 35846928
+      },
+      "temp_peak_bytes": {
+        "minimum": 26666686,
+        "median": 26666686,
+        "maximum": 26666686,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excel_100k_rows_5_columns_encrypted": {
+      "elapsed_nanos": {
+        "minimum": 741758619,
+        "median": 748390517,
+        "maximum": 781664359,
+        "percent": 20.0,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 106134192,
+        "median": 126811944,
+        "maximum": 136427776,
+        "percent": 43,
+        "absolute": 45440376
+      },
+      "temp_peak_bytes": {
+        "minimum": 37369277,
+        "median": 37395182,
+        "maximum": 37395184,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "excel_1m_rows_5_columns_encrypted": {
+      "elapsed_nanos": {
+        "minimum": 7446007101,
+        "median": 7523459602,
+        "maximum": 7698262415,
+        "percent": 20.0,
+        "absolute": 378382971
+      },
+      "heap_peak_bytes": {
+        "minimum": 146383112,
+        "median": 164040072,
+        "maximum": 197521944,
+        "percent": 53,
+        "absolute": 76708248
+      },
+      "temp_peak_bytes": {
+        "minimum": 358314357,
+        "median": 358314358,
+        "maximum": 358314358,
+        "percent": 20.0,
+        "absolute": 1048576
+      }
+    },
+    "csv_100k_rows_5_columns": {
+      "elapsed_nanos": {
+        "minimum": 56730170,
+        "median": 64309716,
+        "maximum": 77034183,
+        "percent": 54,
+        "absolute": 100000000
+      },
+      "heap_peak_bytes": {
+        "minimum": 145522784,
+        "median": 162197072,
+        "maximum": 184075800,
+        "percent": 40,
+        "absolute": 57829524
+      },
+      "temp_peak_bytes": {
+        "minimum": 3170816,
+        "median": 3535360,
+        "maximum": 3655588,
+        "percent": 23,
+        "absolute": 1048576
+      }
+    }
+  },
+  "evidence": {
+    "run_url": "https://github.com/dornol/excel-kit/actions/runs/41411541574",
+    "files": {
+      "sample-1.csv": "cb8cb2156d21b54fe1259eb9360e09c530df8ea46119a12a3f1f2daad9ece32f",
+      "sample-2.csv": "6b8f5c77683cd6fe90760d1387d1c199739da6913d3b69213a2666863c2ae0bf",
+      "sample-3.csv": "4b89c7e5cb6beff93cf4c554ce4e0aac8b7e0b8ac3d5bbe686a2a60982e9a787",
+      "sample-4.csv": "41b10d1378152762bb3127856a5aac77797055cdec940c8f5ab811ab4454909b",
+      "sample-5.csv": "627d518e93cd83abd977570f8dd2268238384c8427f90bf64c0f81bd210d23a4"
+    }
+  }
+}

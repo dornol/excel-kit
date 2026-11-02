@@ -20,6 +20,24 @@ public final class ExcelKitUpload {
     private ExcelKitUpload() {
     }
 
+    /**
+     * Compatibility alias retained for clients compiled against 0.23.0.
+     * @deprecated Use {@link #excel(MultipartFile, UploadReader)}.
+     */
+    @Deprecated(since = "0.24.0")
+    public static <T> UploadResult<T> validateExcel(MultipartFile file, UploadReader<T> reader) {
+        return excel(file, reader);
+    }
+
+    /**
+     * Compatibility alias retained for clients compiled against 0.23.0.
+     * @deprecated Use {@link #csv(MultipartFile, UploadReader)}.
+     */
+    @Deprecated(since = "0.24.0")
+    public static <T> UploadResult<T> validateCsv(MultipartFile file, UploadReader<T> reader) {
+        return csv(file, reader);
+    }
+
     public static <T> UploadResult<T> read(
             String type,
             MultipartFile file,

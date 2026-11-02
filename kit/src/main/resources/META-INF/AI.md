@@ -150,3 +150,12 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   on `ExcelWriter` / `ExcelWorkbook`. Overrides default header alignment/bold/border/wrap.
 - **`password(char[])`** — char-array overload on `ExcelWriter` / `ExcelWorkbook`. Array is copied
   internally and zeroed after encryption.
+
+## Spring response compatibility
+
+Spring responses accept an explicit `Duration` for cache max-age through
+`ExcelKitResponse.excel/csv` and `ExcelKitErrorResponse.excel/csv` overloads.
+For example, `ExcelKitResponse.excel("report", Duration.ofMinutes(1))`
+returns a builder whose `.body(handler::writeTo)` streams the download.
+The default is 10 seconds. Upload helpers use `ExcelKitUpload.excel/csv`;
+the deprecated `validateExcel/validateCsv` aliases remain callable for compatibility.

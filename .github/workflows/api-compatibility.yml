@@ -7,7 +7,7 @@ on:
     inputs:
       baseline:
         description: Published version to compare
-        default: 0.22.0
+        default: 0.23.0
         required: true
 
 permissions:
@@ -27,7 +27,7 @@ jobs:
       - run: ./gradlew :kit:jar :excel-kit-spring:jar --no-daemon
       - name: Compare public APIs
         env:
-          BASELINE: ${{ inputs.baseline || '0.22.0' }}
+          BASELINE: ${{ inputs.baseline || '0.23.0' }}
         run: |
           curl -fsSLo japicmp.jar https://repo1.maven.org/maven2/com/github/siom79/japicmp/japicmp/0.24.1/japicmp-0.24.1-jar-with-dependencies.jar
           mkdir -p api-compatibility

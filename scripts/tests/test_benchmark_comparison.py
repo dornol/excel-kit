@@ -212,5 +212,63 @@ class BaselineSelectionTest(unittest.TestCase):
         self.assertIn('unavailable', notes[0])
 
 
+class CalibrationTest(unittest.TestCase):
+    def setUp(self):
+        self.baseline = bench.load_csv(CSV)
+        self.samples = [copy.deepcopy(self.baseline) for _ in range(5)]
+
+    def test_observed_range_receives_headroom_and_absolute_floors(self):
+        for sample, elapsed in zip(self.samples, (1000000000, 1050000000, 1100000000, 950000000, 1000000000)):
+            sample['write']['elapsed_nanos'] = elapsed
+        profile = bench.calibrate(self.samples, CONTEXT)
+        limits = profile['thresholds']['write']['elapsed_nanos']
+        self.assertEqual(24, limits['percent'])
+        self.assertEqual(225000000, limits['absolute'])
+        self.assertEqual(1000000000, limits['median'])
+        self.assertEqual(16 * 1048576, profile['thresholds']['write']['heap_peak_bytes']['absolute'])
+
+    def test_both_percentage_and_absolute_bands_must_be_exceeded(self):
+        profile = bench.calibrate(self.samples, CONTEXT)
+        current = copy.deepcopy(self.baseline)
+        for elapsed, expected in ((1100000000, False), (1200000000, False), (1300000000, True)):
+            current['write']['elapsed_nanos'] = elapsed
+            metric = bench.changes(current, self.baseline, profile)[0]['metrics']['elapsed_nanos']
+            self.assertEqual(expected, metric['warning'])
+        current['write']['heap_peak_bytes'] = 2000
+        self.assertFalse(bench.changes(current, self.baseline, profile)[0]['metrics']['heap_peak_bytes']['warning'])
+
+    def test_zero_baseline_uses_an_absolute_new_usage_floor(self):
+        profile = bench.calibrate(self.samples, CONTEXT)
+        current = copy.deepcopy(self.baseline)
+        current['write']['temp_peak_bytes'] = 512 * 1024
+        self.assertFalse(bench.changes(current, self.baseline, profile)[0]['metrics']['temp_peak_bytes']['warning'])
+        current['write']['temp_peak_bytes'] = 2 * 1048576
+        self.assertTrue(bench.changes(current, self.baseline, profile)[0]['metrics']['temp_peak_bytes']['warning'])
+
+    def test_samples_must_be_same_revision_environment_and_workload(self):
+        self.assertRaises(ValueError, bench.calibrate, self.samples[:4], CONTEXT)
+        for field, value in (('revision', 'other'), ('java_version', '25'), ('rows', 2000)):
+            changed = copy.deepcopy(self.samples)
+            changed[-1]['write'][field] = value
+            self.assertRaises(ValueError, bench.calibrate, changed, CONTEXT)
+
+    def test_calibration_is_not_applied_to_another_runner(self):
+        profile = bench.calibrate(self.samples, CONTEXT)
+        self.assertIsNone(bench.calibration_mismatch(self.baseline, CONTEXT, profile))
+        self.assertIn('CPU', bench.calibration_mismatch(self.baseline, {**CONTEXT, 'cpu_model': 'other'}, profile))
+        current = copy.deepcopy(self.baseline)
+        current['write']['elapsed_nanos'] *= 2
+        text, comparisons, increases = bench.summarize(current, self.baseline, None, [], suppress_uncalibrated=True)
+        self.assertEqual(1, increases)
+        self.assertFalse(comparisons[0]['metrics']['elapsed_nanos']['warning'])
+        self.assertIn('No matching calibration', text)
+
+    def test_invalid_warning_limits_are_rejected(self):
+        for value in (-1, float('nan'), float('inf')):
+            profile = bench.calibrate(self.samples, CONTEXT)
+            profile['thresholds']['write']['elapsed_nanos']['absolute'] = value
+            self.assertIn('invalid thresholds', bench.calibration_mismatch(self.baseline, CONTEXT, profile))
+
+
 if __name__ == '__main__':
     unittest.main()

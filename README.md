@@ -28,17 +28,17 @@ integrations you use, using versions compatible with the rest of your applicatio
 
 **Gradle — Excel**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.23.0")
-implementation("io.github.dornol:excel-kit-spring:0.23.0") // optional Spring MVC helpers
+implementation("io.github.dornol:excel-kit:0.24.0")
+implementation("io.github.dornol:excel-kit-spring:0.24.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:6.0.0")      // Excel read/write
-implementation("org.slf4j:slf4j-api:2.0.18")          // logging facade
+implementation("org.slf4j:slf4j-api:2.0.20")          // logging facade
 ```
 
 **Gradle — CSV**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.23.0")
+implementation("io.github.dornol:excel-kit:0.24.0")
 implementation("com.opencsv:opencsv:5.12.0")
-implementation("org.slf4j:slf4j-api:2.0.18")
+implementation("org.slf4j:slf4j-api:2.0.20")
 ```
 
 **Optional Bean Validation**
@@ -51,12 +51,12 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.23.0</version>
+  <version>0.24.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit-spring</artifactId>
-  <version>${excel-kit.version}</version>
+  <version>0.24.0</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
@@ -71,7 +71,7 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>org.slf4j</groupId>
   <artifactId>slf4j-api</artifactId>
-  <version>2.0.18</version>
+  <version>2.0.20</version>
 </dependency>
 <dependency>
   <groupId>jakarta.validation</groupId>
@@ -309,7 +309,7 @@ an independent one-shot session for its input.
 
 ## Performance
 
-Measured on Apple M-series, JDK 21. Pure write throughput (excludes DB/network I/O).
+Historical measurements on Apple M-series, JDK 21, before resource sampling. Pure write throughput (excludes DB/network I/O).
 
 | Scenario | Rows | Time | Throughput |
 |----------|------|------|------------|
@@ -377,3 +377,5 @@ scripts/verify-consumers.sh         # isolated Gradle metadata / Maven POM consu
 ## License
 
 MIT License. See [LICENSE](./LICENSE) for details.
+
+Spring download and error response helpers also accept a custom cache `Duration`; see [Spring integration](docs/guide/spring.md).

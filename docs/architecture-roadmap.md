@@ -139,10 +139,8 @@ matrix의 모든 가능한 조합을 매번 실행할 필요는 없다. 최소 �
 OpenCSV 5.12.0)을 JDK 21에서 검증한다. 별도 CI 축에서는 현재 dependency 조합을 JDK 17,
 21, 25에서 검증한다.
 
-공개 API 비교는 0.22.0 baseline을 사용한다. Reader lifecycle/configuration 재설계로
-`AbstractReader`, `AbstractReadHandler`, `ReadOptions`, `CsvReader`, `ExcelReader`의
-기존 protected 상태와 상속 경계가 변경된 항목만 `.japicmp-allowlist`에 명시적으로 허용한다.
-그 외의 호환성 변경은 CI에서 실패한다.
+공개 API 비교는 0.23.0 baseline을 사용한다. 0.24.0 릴리스에는 legacy API 제외 항목을
+적용하지 않으며, binary compatibility 변경이 있으면 CI에서 실패한다.
 
 ### 누락된 의존성의 오류 경험
 
@@ -904,7 +902,7 @@ breaking change를 허용하더라도 사용자가 한 번에 이동할 수 있�
 관측 peak는 샘플 사이의 순간적인 증가를 놓칠 수 있는 하한값이며, 입력/출력 fixture는
 임시 파일 집계에서 제외한다. 상세 측정 범위는 [benchmark guide](benchmarks/README.md)를 따른다.
 호환되는 이전 main 실행을 기준선으로 삼아 변화율과 관측 증가 경고를 표시한다.
-변동 폭에 근거한 임계값과 성능 budget은 아직 정하지 않았으며, 관측 경고는 빌드를 실패시키지 않는다.
+동일 커밋·러너 5회 측정으로 환경별 경고 임계값을 보정했다. 성능 budget은 정하지 않았으며 경고는 빌드를 실패시키지 않는다. 근거와 제한은 `docs/benchmarks/review-2026-11-02.md`에 기록했다.
 
 구조 개편은 기능 테스트 통과만으로 완료로 판단하지 않는다.
 

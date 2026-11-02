@@ -13,6 +13,12 @@ on:
       - 'scripts/benchmark_comparison.py'
       - 'scripts/tests/test_benchmark_comparison.py'
   workflow_dispatch:
+    inputs:
+      repetitions:
+        description: Fresh JVM samples on the same runner for noise calibration
+        type: choice
+        default: '1'
+        options: ['1', '5', '10']
   pull_request:
     branches: [main]
     paths:
@@ -53,7 +59,23 @@ jobs:
         run: python3 scripts/benchmark_comparison.py context --output kit/build/reports/benchmark/context.json
 
       - name: Run benchmarks
-        run: ./gradlew :kit:benchmark --rerun-tasks --no-daemon
+        env:
+          REPETITIONS: ${{ inputs.repetitions || '1' }}
+        run: |
+          case "$REPETITIONS" in 1|5|10) ;; *) exit 1 ;; esac
+          mkdir -p kit/build/reports/benchmark/samples
+          for sample in $(seq 1 "$REPETITIONS"); do
+            ./gradlew :kit:benchmark --rerun-tasks --no-daemon
+            cp kit/build/reports/benchmark/resources.csv "kit/build/reports/benchmark/samples/sample-${sample}.csv"
+          done
+
+      - name: Calibrate observed variability
+        if: inputs.repetitions != '' && inputs.repetitions != '1'
+        run: >-
+          python3 scripts/benchmark_comparison.py calibrate
+          --samples kit/build/reports/benchmark/samples
+          --context kit/build/reports/benchmark/context.json
+          --output kit/build/reports/benchmark/calibration.json
 
       - name: Compare with a compatible successful main run
         env:
@@ -63,6 +85,7 @@ jobs:
           --current kit/build/reports/benchmark/resources.csv
           --context kit/build/reports/benchmark/context.json
           --output-dir kit/build/reports/benchmark --github
+          --calibration docs/benchmarks/calibration.json
 
       - name: Save benchmark output
         if: always()

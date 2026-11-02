@@ -180,3 +180,10 @@ by signature rather than trusting the filename or HTTP content type. Limit failu
 their structured `ReadLimitExceededException` details for mapping to HTTP 413 responses.
 `UploadCollectionLimits` independently bounds retained successful rows and errors while
 `UploadSummary` continues to report complete counts; truncation flags identify sampled results.
+
+Spring responses accept an explicit `Duration` for cache max-age through
+`ExcelKitResponse.excel/csv` and `ExcelKitErrorResponse.excel/csv` overloads.
+For example, `ExcelKitResponse.excel("report", Duration.ofMinutes(1))`
+returns a builder whose `.body(handler::writeTo)` streams the download.
+The default is 10 seconds. Upload helpers use `ExcelKitUpload.excel/csv`;
+the deprecated `validateExcel/validateCsv` aliases remain callable for compatibility.
