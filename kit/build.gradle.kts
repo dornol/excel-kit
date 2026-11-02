@@ -37,6 +37,38 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
+// Exercise the published artifact with each supported POI runtime, without
+// recompiling the library for that runtime's callback interface.
+val poiRuntimeTests = listOf("5.2.5", "5.5.1", "6.0.0").map { poiVersion ->
+    val suffix = poiVersion.replace(".", "_")
+    val runtime = configurations.create("poiRuntime$suffix") {
+        isCanBeConsumed = false
+        isCanBeResolved = true
+        extendsFrom(configurations.testRuntimeClasspath.get())
+        resolutionStrategy.eachDependency {
+            if (requested.group == "org.apache.poi") {
+                useVersion(poiVersion)
+            }
+        }
+    }
+    tasks.register<Test>("testPoi$suffix") {
+        group = "verification"
+        description = "Test the compiled library JAR with POI $poiVersion"
+        dependsOn(tasks.jar, tasks.testClasses)
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = files(sourceSets.test.get().output, tasks.jar.flatMap { it.archiveFile }, runtime)
+        useJUnitPlatform {
+            excludeTags("benchmark")
+        }
+    }
+}
+
+tasks.register("poiCompatibilityTest") {
+    group = "verification"
+    description = "Test the same library JAR with all supported POI runtimes"
+    dependsOn(poiRuntimeTests)
+}
+
 tasks.register<Test>("benchmark") {
     group = "verification"
     description = "Run performance benchmarks"

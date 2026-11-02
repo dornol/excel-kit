@@ -8,6 +8,7 @@ import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
 import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
+import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
@@ -172,6 +173,12 @@ final class ExcelMetadataReader {
 
         @Override
         public void cell(String cellReference, String formattedValue, XSSFComment comment) {
+            cell(cellReference, formattedValue, (Comment) comment);
+        }
+
+        // POI 6 callback; keep the XSSFComment overload for POI 5 runtimes.
+        // No @Override so this source also compiles against POI 5.
+        public void cell(String cellReference, String formattedValue, Comment comment) {
             if (!done) {
                 int columnIndex = ExcelReadSupport.getColumnIndex(cellReference);
                 while (currentRow.size() < columnIndex) currentRow.add("");
