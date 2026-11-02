@@ -9,6 +9,7 @@ import io.github.dornol.excelkit.core.RowError;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,7 +109,7 @@ public final class ExcelWorkbookReader {
         List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(path);
         List<SheetReadReport> reports = new ArrayList<>();
         boolean sharePackage = !plans.isEmpty() && plans.stream().allMatch(SheetPlan::canSharePackage);
-        try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile()) : null) {
+        try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile(), PackageAccess.READ) : null) {
             for (SheetPlan plan : plans) {
                 int index = plan.index != null ? plan.index : resolveSheetIndex(plan.name, sheets);
                 String name = sheets.stream().filter(sheet -> sheet.index() == index)

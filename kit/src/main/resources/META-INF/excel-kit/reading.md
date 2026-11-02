@@ -243,3 +243,11 @@ count, not necessarily the full file size; byte counts saturate at `Long.MAX_VAL
 Caller-provided streams and paths remain caller-owned. File size is captured before
 temporary-file cleanup so `ReadLimitExceededException` is preserved. Custom
 `ReadSecurityPolicy.maxCompressionRatio` values must be finite and positive.
+
+## External workbook behavior
+
+Streaming cell and header formatting uses each workbook's 1900/1904 date system.
+Formula results use saved caches without recalculation. Path-based data/metadata
+reads and shared-package reads use read-only OOXML packages and preserve original
+file bytes. Encrypted reads own a separate plaintext workspace and remove it after
+reading or security-preflight failure, preserving caller-owned encrypted files.
