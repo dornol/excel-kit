@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.core.InputStreamSource;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.util.XMLHelper;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
@@ -59,7 +60,7 @@ final class ExcelMetadataReader {
     }
 
     private static List<ExcelSheetInfo> readSheetNames(Path path) {
-        try (OPCPackage pkg = OPCPackage.open(path.toFile())) {
+        try (OPCPackage pkg = OPCPackage.open(path.toFile(), PackageAccess.READ)) {
             XSSFReader reader = new XSSFReader(pkg);
             XSSFReader.SheetIterator sheets = (XSSFReader.SheetIterator) reader.getSheetsData();
             List<ExcelSheetInfo> result = new ArrayList<>();
@@ -77,13 +78,14 @@ final class ExcelMetadataReader {
     }
 
     private static List<String> readHeaders(Path path, int sheetIndex, int headerRowIndex) {
-        try (OPCPackage pkg = OPCPackage.open(path.toFile())) {
+        try (OPCPackage pkg = OPCPackage.open(path.toFile(), PackageAccess.READ)) {
             XSSFReader reader = new XSSFReader(pkg);
             SharedStrings sharedStrings = reader.getSharedStringsTable();
             StylesTable styles = reader.getStylesTable();
             XMLReader parser = XMLHelper.newXMLReader();
             HeaderExtractor extractor = new HeaderExtractor(headerRowIndex);
-            parser.setContentHandler(new XSSFSheetXMLHandler(styles, sharedStrings, extractor, false));
+            parser.setContentHandler(new XSSFSheetXMLHandler(styles, sharedStrings, extractor,
+                    ExcelReadSupport.dataFormatter(reader), false));
 
             Iterator<InputStream> sheets = reader.getSheetsData();
             int currentIndex = 0;

@@ -417,3 +417,19 @@ CsvReader.<Person>mapping(row -> new Person(
 ```
 
 CSV-specific options: see [CSV](csv.md).
+
+## External workbook compatibility
+
+Workbook-specific 1900/1904 date systems are applied to formatted numeric cells and
+header extraction. Formula values come from saved caches; the reader does not
+recalculate formulas. Path-based row reads, metadata discovery and shared-package
+reads open packages read-only and preserve the caller's original file bytes.
+
+Encrypted inputs use an owned temporary plaintext workspace. It is removed after
+reading or rejection by security preflight, while caller-owned encrypted files
+remain unchanged.
+
+The offline compatibility corpus includes Excel/Mac Excel and LibreOffice files
+with shared strings/formulas, sparse and merged cells, 1904 dates, cached array
+formulas and encryption. See the fixture [provenance and coverage](../../kit/src/test/resources/external-workbooks/README.md)
+for exact versions, source commits, checksums and limits of this coverage.

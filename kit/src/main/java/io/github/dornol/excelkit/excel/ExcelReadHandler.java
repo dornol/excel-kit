@@ -19,6 +19,7 @@ import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -210,13 +211,15 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
         Path fileToRead = getTempFile();
         Path decryptedFile = null;
-        if (password != null) {
-            decryptedFile = decryptFile(getTempFile(), password);
-            fileToRead = decryptedFile;
-        }
-        ExcelSecurityScanner.scan(fileToRead, readOptions.securityPolicy());
-        try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile())) {
-            readPackage(pkg, consumer);
+        try {
+            if (password != null) {
+                decryptedFile = decryptFile(getTempFile(), password);
+                fileToRead = decryptedFile;
+            }
+            ExcelSecurityScanner.scan(fileToRead, readOptions.securityPolicy());
+            try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile(), PackageAccess.READ)) {
+                readPackage(pkg, consumer);
+            }
         } finally {
             if (decryptedFile != null) {
                 try {
@@ -243,7 +246,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             XMLReader parser = XMLHelper.newXMLReader();
             SheetHandler sheetHandler = new SheetHandler(consumer, totalRows);
-            XSSFSheetXMLHandler sheetParser = new XSSFSheetXMLHandler(styles, ss, sheetHandler, false);
+            XSSFSheetXMLHandler sheetParser = new XSSFSheetXMLHandler(styles, ss, sheetHandler,
+                    ExcelReadSupport.dataFormatter(reader), false);
             parser.setContentHandler(sheetParser);
 
             ExcelSheetNavigator.consume(reader, sheetIndex, sheet -> {
@@ -307,19 +311,30 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
 
     private Path decryptFile(Path encryptedFile, String pwd) throws Exception {
-        try (POIFSFileSystem fs = new POIFSFileSystem(encryptedFile.toFile())) {
+        Path decryptedFile = null;
+        try (POIFSFileSystem fs = new POIFSFileSystem(encryptedFile.toFile(), true)) {
             EncryptionInfo info = new EncryptionInfo(fs);
             Decryptor dec = Decryptor.getInstance(info);
             if (!dec.verifyPassword(pwd)) {
                 throw new ExcelReadException("Invalid password for encrypted Excel file");
             }
-            Path decryptedFile = TempResourceCreator.createTempFile(
+            if (getTempDir() == null) setTempDir(TempResourceCreator.createTempDirectory());
+            decryptedFile = TempResourceCreator.createTempFile(
                     getTempDir(), UUID.randomUUID().toString(), ".xlsx");
             try (InputStream decryptedStream = dec.getDataStream(fs);
                  OutputStream out = Files.newOutputStream(decryptedFile)) {
                 decryptedStream.transferTo(out);
             }
             return decryptedFile;
+        } catch (Exception failure) {
+            if (decryptedFile != null) {
+                try { Files.deleteIfExists(decryptedFile); }
+                catch (IOException cleanup) {
+                    decryptedFile.toFile().deleteOnExit();
+                    failure.addSuppressed(cleanup);
+                }
+            }
+            throw failure;
         }
     }
 

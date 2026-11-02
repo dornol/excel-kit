@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Frozen external Excel/Mac Excel/LibreOffice workbook fixtures with pinned upstream
+  sources, checksums, producer metadata and offline compatibility tests.
+
 - Advisory benchmark comparisons against compatible successful main runs, with
   percentage changes, aggregate increase warnings, and persisted comparison reports.
 
@@ -17,6 +20,12 @@ All notable changes to this project will be documented in this file.
 - Release tag/version validation and post-publication Maven Central consumer checks.
 
 ### Fixed
+
+- Streaming cell and header formatting now respects the workbook's 1904 date system.
+- Path-based reads and metadata discovery open OOXML packages read-only instead of
+  rewriting caller-owned workbook bytes on close.
+- Encrypted Path reads allocate an owned decryption workspace, clean plaintext on
+  preflight/parse failures, and preserve the encrypted source.
 
 - Streaming sheets now resolve their backing XSSF sheet through public workbook APIs,
   removing reflection on POI's private `_sh` field.
