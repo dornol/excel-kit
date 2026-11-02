@@ -11,7 +11,7 @@ package io.github.dornol.excelkit.core;
  * @param allowExternalLinks whether external workbook links are permitted
  * @param maxScannedEntryBytes maximum decompressed size of a scanned entry
  * @param maxTotalScannedBytes maximum total bytes inspected by the scanner
- * @param maxCompressionRatio maximum allowed uncompressed/compressed ratio
+ * @param maxCompressionRatio finite positive maximum allowed uncompressed/compressed ratio
  * @param maxZipEntries maximum number of ZIP entries in the workbook
  */
 public record ReadSecurityPolicy(boolean allowFormulas, boolean allowExternalLinks,
@@ -31,8 +31,9 @@ public record ReadSecurityPolicy(boolean allowFormulas, boolean allowExternalLin
     }
 
     public ReadSecurityPolicy {
-        if (maxScannedEntryBytes <= 0 || maxTotalScannedBytes <= 0 || maxCompressionRatio <= 0
+        if (maxScannedEntryBytes <= 0 || maxTotalScannedBytes <= 0 || !Double.isFinite(maxCompressionRatio)
+                || maxCompressionRatio <= 0
                 || maxZipEntries <= 0)
-            throw new IllegalArgumentException("security scan limits must be positive");
+            throw new IllegalArgumentException("security scan limits must be positive and the compression ratio must be finite");
     }
 }
