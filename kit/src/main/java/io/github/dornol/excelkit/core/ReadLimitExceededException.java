@@ -14,5 +14,10 @@ public final class ReadLimitExceededException extends ExcelKitException {
     }
     public Limit limit() { return limit; }
     public long configured() { return configured; }
+    /**
+     * Returns the observed value, not necessarily the full size of a rejected input.
+     * Stream byte limits report the first byte beyond the budget; byte counts
+     * saturate at {@link Long#MAX_VALUE} if the observed count exceeds that value.
+     */
     public long actual() { return actual; }
 }

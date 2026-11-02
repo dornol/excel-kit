@@ -177,10 +177,11 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     protected final void validateReadOptions() {
         if (readOptions.limits().maxInputBytes() >= 0) {
             try {
-                if (Files.size(Objects.requireNonNull(getTempFile())) > readOptions.limits().maxInputBytes()) {
+                long size = Files.size(Objects.requireNonNull(getTempFile()));
+                if (size > readOptions.limits().maxInputBytes()) {
                     close();
                     throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES,
-                            readOptions.limits().maxInputBytes(), Files.size(Objects.requireNonNull(getTempFile())));
+                            readOptions.limits().maxInputBytes(), size);
                 }
             } catch (java.io.IOException e) {
                 close();

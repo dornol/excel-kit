@@ -349,27 +349,54 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return configuration.snapshot();
     }
 
+    /** Caps reads/skips at the remaining budget plus one byte to detect overflow. */
     protected InputStream limitInput(InputStream input) {
         Objects.requireNonNull(input, "input cannot be null");
         long maximum = configuration.limits.maxInputBytes();
         if (maximum < 0) return input;
         return new FilterInputStream(input) {
             private long count;
+            private @Nullable ReadLimitExceededException exceeded;
+
+            private void checkExceeded() {
+                if (exceeded != null) throw exceeded;
+            }
+
             private void counted(long amount) {
-                if (amount > 0 && (count += amount) > maximum) {
-                    throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES,
-                            maximum, count);
+                if (amount <= 0) return;
+                if (amount > maximum - count) {
+                    // The observed count saturates if maxInputBytes itself is Long.MAX_VALUE.
+                    long observed = count > Long.MAX_VALUE - amount ? Long.MAX_VALUE : count + amount;
+                    exceeded = new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES,
+                            maximum, observed);
+                    throw exceeded;
                 }
+                count += amount;
             }
             @Override public int read() throws IOException {
-                int value = super.read();
+                checkExceeded();
+                int value = in.read();
                 if (value >= 0) counted(1);
                 return value;
             }
             @Override public int read(byte[] bytes, int offset, int length) throws IOException {
-                int read = super.read(bytes, offset, length);
+                Objects.checkFromIndexSize(offset, length, bytes.length);
+                if (length == 0) return 0;
+                checkExceeded();
+                long remaining = maximum - count;
+                int requested = remaining >= length ? length : (int) remaining + 1;
+                int read = in.read(bytes, offset, requested);
                 counted(read);
                 return read;
+            }
+            @Override public long skip(long length) throws IOException {
+                if (length <= 0) return 0;
+                checkExceeded();
+                long remaining = maximum - count;
+                long requested = remaining >= length ? length : remaining + 1;
+                long skipped = in.skip(requested);
+                counted(skipped);
+                return skipped;
             }
             @Override public void close() { }
         };

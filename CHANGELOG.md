@@ -24,6 +24,10 @@ All notable changes to this project will be documented in this file.
   omitting tab colors, tables, data bars, icon sets or chart data labels.
 - Structured tables preserve actual column headers after streaming rows are flushed,
   including rollover sheets and existing or generated template headers.
+- Bounded reader reads/skips now request only the remaining input-byte budget plus
+  one overflow-detection byte, stop consuming after failure, and avoid count overflow.
+- Post-copy byte-limit errors retain their observed size and type after temp-file cleanup.
+- Custom compression-ratio limits reject NaN and infinities.
 
 - CI test JVMs now follow the JDK matrix instead of always using the JDK 21 compiler toolchain.
 - Java compilation targets the Java 17 API surface with `--release 17`.

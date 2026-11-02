@@ -233,3 +233,13 @@ CsvReader.forMap().read(inputStream, result -> {
     Map<String, String> row = result.data();
 });
 ```
+
+## Input byte limits
+
+Bounded reader streams request at most the remaining `maxInputBytes` budget plus
+one byte to detect overflow, including skip operations. Exact-size and empty
+zero-limit streams are valid. A limit error's `actual()` value is an observed
+count, not necessarily the full file size; byte counts saturate at `Long.MAX_VALUE`.
+Caller-provided streams and paths remain caller-owned. File size is captured before
+temporary-file cleanup so `ReadLimitExceededException` is preserved. Custom
+`ReadSecurityPolicy.maxCompressionRatio` values must be finite and positive.
