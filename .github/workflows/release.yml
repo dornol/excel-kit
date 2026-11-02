@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_call:
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -27,8 +26,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build & Test
-        run: ./gradlew build test --no-daemon
+      - name: Verify release version
+        run: ./gradlew verifyReleaseVersion --no-daemon
+
+      - name: Verify consumers resolve released artifacts from Maven Central
+        run: scripts/verify-consumers.sh "${GITHUB_REF_NAME#v}" https://repo1.maven.org/maven2
 
       - name: Extract release notes from CHANGELOG.md
         id: notes

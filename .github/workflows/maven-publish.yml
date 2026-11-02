@@ -1,8 +1,15 @@
-name: maven-publish.yml
+name: Maven Central release
 on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: maven-central-release
+  cancel-in-progress: false
 
 jobs:
   build-and-publish:
@@ -18,6 +25,11 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: gradle
+
+      - name: Verify release version and consumers before accessing signing credentials
+        run: |
+          ./gradlew verifyReleaseVersion :kit:build :excel-kit-spring:build :kit:poiCompatibilityTest --no-daemon
+          scripts/verify-consumers.sh
 
       - name: Write GPG key to file
         run: |
@@ -36,16 +48,16 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build & Test
-        run: ./gradlew :kit:build :excel-kit-spring:build --no-daemon
-
       - name: Publish
         run: |
-          ./gradlew :kit:publishAndReleaseToMavenCentral --no-daemon
-          ./gradlew :excel-kit-spring:publishAndReleaseToMavenCentral --no-daemon
+          ./gradlew :kit:publishAndReleaseToMavenCentral :excel-kit-spring:publishAndReleaseToMavenCentral --no-daemon
 
       - name: Verify Maven Central visibility
-        timeout-minutes: 30
+        timeout-minutes: 65
         run: |
           scripts/verify-maven-central.sh "${GITHUB_REF_NAME#v}"
           scripts/verify-maven-central.sh "${GITHUB_REF_NAME#v}" --artifact-id excel-kit-spring
+
+  github-release:
+    needs: build-and-publish
+    uses: ./.github/workflows/release.yml

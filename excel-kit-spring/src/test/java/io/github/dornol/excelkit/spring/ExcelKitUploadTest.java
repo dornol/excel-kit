@@ -33,7 +33,7 @@ class ExcelKitUploadTest {
         assertEquals("CSV", result.type());
         assertEquals(1, result.successCount());
         assertEquals(1, result.errorCount());
-        assertEquals("Notebook", result.rows().getFirst().name);
+        assertEquals("Notebook", result.rows().get(0).name);
     }
 
     @Test
@@ -63,7 +63,7 @@ class ExcelKitUploadTest {
 
         assertEquals("CSV", result.type());
         assertEquals(1, result.successCount());
-        assertEquals("Notebook", result.rows().getFirst().name);
+        assertEquals("Notebook", result.rows().get(0).name);
     }
 
     @Test

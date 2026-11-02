@@ -42,7 +42,7 @@ class NewFeaturesV019Test {
                 .cellConversion(c -> c.locale(Locale.GERMANY))
                 .read(new ByteArrayInputStream(csv), result -> values.add(result.data()));
 
-        assertEquals(1234.5d, values.getFirst(), 0.0001);
+        assertEquals(1234.5d, values.get(0), 0.0001);
     }
 
     @Test

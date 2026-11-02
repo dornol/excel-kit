@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Independent Excel-only, CSV-only, Bean Validation, and Spring consumer smoke tests
+  against published artifacts using Gradle metadata and Maven POM resolution.
+- Release tag/version validation and post-publication Maven Central consumer checks.
+
+### Fixed
+
+- CI test JVMs now follow the JDK matrix instead of always using the JDK 21 compiler toolchain.
+- Java compilation targets the Java 17 API surface with `--release 17`.
+- Spring Maven POM integration dependencies are optional, matching the documented installation policy.
+- Both library modules are uploaded in one Central deployment; GitHub Release creation waits
+  for publication visibility and consumer verification.
+
 ## [0.23.0] - 2026-08-13
 
 ### Added

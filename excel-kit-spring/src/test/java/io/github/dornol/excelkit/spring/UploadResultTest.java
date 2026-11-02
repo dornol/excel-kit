@@ -23,13 +23,13 @@ class UploadResultTest {
         assertEquals("CSV", result.type());
         assertEquals(1, result.successCount());
         assertEquals(1, result.errorCount());
-        assertEquals("Notebook", result.rows().getFirst().name);
-        assertEquals(2, result.errors().getFirst().rowNum());
-        assertEquals(3, result.errors().getFirst().fileRowNum());
-        assertEquals("Price", result.errors().getFirst().cellErrors().getFirst().headerName());
-        assertEquals("not-a-number", result.errors().getFirst().cellErrors().getFirst().cellValue());
+        assertEquals("Notebook", result.rows().get(0).name);
+        assertEquals(2, result.errors().get(0).rowNum());
+        assertEquals(3, result.errors().get(0).fileRowNum());
+        assertEquals("Price", result.errors().get(0).cellErrors().get(0).headerName());
+        assertEquals("not-a-number", result.errors().get(0).cellErrors().get(0).cellValue());
         assertEquals(2, result.summary().totalRows());
-        assertEquals("not-a-number", result.errors().getFirst().rawValues().get(1));
+        assertEquals("not-a-number", result.errors().get(0).rawValues().get(1));
     }
 
     static class Product {

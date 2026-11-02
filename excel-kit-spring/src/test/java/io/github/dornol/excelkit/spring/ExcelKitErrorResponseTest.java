@@ -22,12 +22,12 @@ class ExcelKitErrorResponseTest {
         List<ErrorReportRow> rows = ExcelKitErrorResponse.reportRows(List.of(error)).toList();
 
         assertEquals(1, rows.size());
-        assertEquals(1, rows.getFirst().rowNum());
-        assertEquals(2, rows.getFirst().fileRowNum());
-        assertEquals(2, rows.getFirst().columnIndex());
-        assertEquals("Price", rows.getFirst().headerName());
-        assertEquals("bad", rows.getFirst().cellValue());
-        assertEquals("Notebook | bad", rows.getFirst().rawValues());
+        assertEquals(1, rows.get(0).rowNum());
+        assertEquals(2, rows.get(0).fileRowNum());
+        assertEquals(2, rows.get(0).columnIndex());
+        assertEquals("Price", rows.get(0).headerName());
+        assertEquals("bad", rows.get(0).cellValue());
+        assertEquals("Notebook | bad", rows.get(0).rawValues());
     }
 
     @Test
