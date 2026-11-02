@@ -321,6 +321,10 @@ Measured on Apple M-series, JDK 21. Pure write throughput (excludes DB/network I
 ./gradlew :kit:benchmark
 ```
 
+Sampled heap and temporary-disk peaks are saved to
+`kit/build/reports/benchmark/resources.csv`. See the
+[measurement guide](docs/benchmarks/README.md) for scope and limitations.
+
 ## Documentation
 
 For the full feature guide (all column options, styling, validation, Spring WebFlux manual integration,

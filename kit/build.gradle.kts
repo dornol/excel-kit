@@ -78,6 +78,24 @@ tasks.register<Test>("benchmark") {
         includeTags("benchmark")
     }
     maxHeapSize = "1g"
+    maxParallelForks = 1
+    systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+    val scratch = layout.buildDirectory.dir("tmp/benchmark-resources")
+    val resourceReport = layout.buildDirectory.file("reports/benchmark/resources.csv")
+    val sampleMillis = providers.gradleProperty("benchmarkSampleMillis").orElse("10")
+    inputs.property("sampleMillis", sampleMillis)
+    outputs.file(resourceReport)
+    systemProperty("java.io.tmpdir", scratch.get().asFile.absolutePath)
+    systemProperty("excelkit.benchmark.report", resourceReport.get().asFile.absolutePath)
+    systemProperty("excelkit.benchmark.sampleMillis", sampleMillis.get())
+    doFirst {
+        require(sampleMillis.get().toLong() > 0) { "benchmarkSampleMillis must be positive" }
+        val directory = scratch.get().asFile
+        check(!directory.exists() || directory.deleteRecursively()) { "Cannot reset benchmark temp directory" }
+        check(directory.mkdirs()) { "Cannot create benchmark temp directory" }
+        val report = resourceReport.get().asFile
+        check(!report.exists() || report.delete()) { "Cannot reset benchmark resource report" }
+    }
     testLogging {
         showStandardStreams = true
     }
