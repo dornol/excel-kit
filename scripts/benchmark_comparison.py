@@ -8,6 +8,8 @@ import io
 import json
 import os
 import re
+import math
+import statistics
 from pathlib import Path
 import subprocess
 import zipfile
@@ -19,6 +21,7 @@ NUMBERS = ('rows', 'elapsed_nanos', 'output_bytes', 'heap_baseline_bytes', 'heap
            'sample_interval_ms', 'max_heap_bytes', 'processors')
 METRICS = {'elapsed_nanos': 'Time', 'heap_peak_bytes': 'Heap peak', 'temp_peak_bytes': 'Temp peak'}
 WORKLOAD_FILES = ('BenchmarkTest.java', 'BenchmarkProbe.java', 'BenchmarkReport.java')
+MIN_ABSOLUTE = {'elapsed_nanos': 100_000_000, 'heap_peak_bytes': 16 * 1048576, 'temp_peak_bytes': 1048576}
 
 
 def record_context(root):
@@ -101,15 +104,66 @@ def mismatch(current, context, baseline, baseline_context):
     return None
 
 
-def changes(current, baseline):
+def calibrate(samples, context):
+    if len(samples) < 5:
+        raise ValueError('Calibration requires at least five fresh samples of the same revision and environment')
+    first = samples[0]
+    revision = next(iter(first.values()))['revision']
+    for sample in samples:
+        reason = mismatch(first, context, sample, context)
+        if reason or any(row['revision'] != revision for row in sample.values()):
+            raise ValueError('Calibration samples differ: ' + (reason or 'revision'))
+    thresholds = {}
+    for name in first:
+        thresholds[name] = {}
+        for key in METRICS:
+            values = [sample[name][key] for sample in samples]
+            low, high = min(values), max(values)
+            span_percent = (high - low) * 100 / low if low else None
+            thresholds[name][key] = {
+                'minimum': low, 'median': statistics.median(values), 'maximum': high,
+                'percent': max(20.0, math.ceil(span_percent * 1.5)) if span_percent is not None else None,
+                'absolute': max(MIN_ABSOLUTE[key], math.ceil((high - low) * 1.5))}
+    return {'schema_version': 1, 'sample_count': len(samples), 'calibration_revision': revision,
+            'context': context, 'environment': {key: next(iter(first.values()))[key] for key in ENV_FIELDS},
+            'scenario_order': list(first), 'row_counts': {name: row['rows'] for name, row in first.items()},
+            'policy': {'headroom_factor': 1.5, 'minimum_percent': 20.0, 'minimum_absolute': MIN_ABSOLUTE},
+            'thresholds': thresholds}
+
+
+def calibration_mismatch(current, context, profile):
+    if profile.get('schema_version') != 1 or profile.get('sample_count', 0) < 5:
+        return 'calibration has insufficient samples or an unsupported schema'
+    if profile.get('context') != context:
+        return 'calibration workload/runner/CPU differs'
+    if profile.get('environment') != {key: next(iter(current.values()))[key] for key in ENV_FIELDS}:
+        return 'calibration JVM/heap/GC/sampling environment differs'
+    if profile.get('scenario_order') != list(current) or profile.get('row_counts') != {name: row['rows'] for name, row in current.items()}:
+        return 'calibration scenarios or row counts differ'
+    for name in current:
+        for key in METRICS:
+            limits = profile.get('thresholds', {}).get(name, {}).get(key, {})
+            absolute, percent = limits.get('absolute'), limits.get('percent')
+            if (not isinstance(absolute, (int, float)) or not math.isfinite(absolute) or absolute < 0
+                    or (percent is not None and (not isinstance(percent, (int, float)) or not math.isfinite(percent) or percent < 0))):
+                return 'calibration contains invalid thresholds'
+    return None
+
+
+def changes(current, baseline, calibration=None, suppress_uncalibrated=False):
     results = []
     for name, row in current.items():
         metrics = {}
         for key in METRICS:
             old, new = baseline[name][key], row[key]
-            metrics[key] = {'before': old, 'after': new,
-                            'percent': (new - old) * 100 / old if old else None,
-                            'increased': new > old}
+            percent = (new - old) * 100 / old if old else None
+            warning = new > old and not suppress_uncalibrated
+            limits = calibration['thresholds'][name][key] if calibration else None
+            if limits:
+                warning = (new > old and new - old > limits['absolute']
+                           and (percent is None or limits['percent'] is None or percent > limits['percent']))
+            metrics[key] = {'before': old, 'after': new, 'percent': percent,
+                            'increased': new > old, 'warning': warning, 'warning_limits': limits}
         results.append({'scenario': name, 'metrics': metrics})
     return results
 
@@ -175,20 +229,22 @@ def metric_text(metric, key):
         return f'{number / 1_000_000_000:.3f}s' if key == 'elapsed_nanos' else f'{number / 1048576:.2f} MiB'
     percent = metric['percent']
     delta = f'{percent:+.2f}%' if percent is not None else ('new usage' if metric['after'] else 'unchanged')
-    return f'{value(metric["before"])} → {value(metric["after"])} ({delta})'
+    return f'{value(metric["before"])} → {value(metric["after"])} ({delta})' + (' ⚠' if metric.get('warning') else '')
 
 
-def summarize(current, baseline, baseline_url, notes):
+def summarize(current, baseline, baseline_url, notes, calibration=None, suppress_uncalibrated=False):
     environment = next(iter(current.values()))
     lines = ['## Benchmark observations', '',
              'Advisory only. Sampled peaks are lower bounds; shared-runner noise and GC can affect differences.', '',
              f'Environment: Java {escape(environment["java_version"])}; {escape(environment["os"])}/{escape(environment["arch"])}; '
              f'{environment["processors"]} processors; {environment["max_heap_bytes"] / 1048576:.0f} MiB heap limit; '
              f'{environment["sample_interval_ms"]} ms sampling.', '']
-    comparisons = changes(current, baseline) if baseline is not None else []
+    comparisons = changes(current, baseline, calibration, suppress_uncalibrated) if baseline is not None else []
     if baseline is not None:
         lines += [f'Baseline: [{escape(baseline_url)}]({escape(baseline_url)})' if baseline_url else 'Baseline: local report', '',
-                  'No calibrated regression threshold is applied. Upward changes are observations, not confirmed regressions.', '',
+                  (f'Pilot warning bands: {calibration["sample_count"]} same-revision samples, observed range × 1.5 with percentage/absolute floors. Both limits must be exceeded.'
+                   if calibration else 'No matching calibration: deltas are retained without increase warnings.' if suppress_uncalibrated
+                   else 'No calibrated regression threshold is applied. Upward changes are observations, not confirmed regressions.'), '',
                   '| Scenario | Time | Heap peak | Temp peak |', '| --- | --- | --- | --- |']
         for item in comparisons:
             values = [metric_text(item['metrics'][key], key) for key in METRICS]
@@ -199,7 +255,8 @@ def summarize(current, baseline, baseline_url, notes):
         for name, row in current.items():
             lines.append(f'| {escape(name)} | {row["elapsed_nanos"] / 1e9:.3f}s | {row["heap_peak_bytes"] / 1048576:.2f} MiB | {row["temp_peak_bytes"] / 1048576:.2f} MiB |')
     increases = sum(any(metric['increased'] for metric in row['metrics'].values()) for row in comparisons)
-    lines += ['', f'Scenarios with observed increases: {increases}' if baseline is not None else 'Comparison status: baseline unavailable', '']
+    warnings = sum(any(metric['warning'] for metric in row['metrics'].values()) for row in comparisons)
+    lines += ['', f'Scenarios with observed increases: {increases}; warning scenarios: {warnings}' if baseline is not None else 'Comparison status: baseline unavailable', '']
     if notes:
         lines += ['<details><summary>Baseline selection details</summary>', ''] + ['- ' + escape(note) for note in notes] + ['', '</details>', '']
     return '\n'.join(lines), comparisons, increases
@@ -210,6 +267,10 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
     context_parser = sub.add_parser('context')
     context_parser.add_argument('--output', type=Path, required=True)
+    calibration_parser = sub.add_parser('calibrate')
+    calibration_parser.add_argument('--samples', type=Path, required=True)
+    calibration_parser.add_argument('--context', type=Path, required=True)
+    calibration_parser.add_argument('--output', type=Path, required=True)
     compare = sub.add_parser('compare')
     compare.add_argument('--current', type=Path, required=True)
     compare.add_argument('--context', type=Path, required=True)
@@ -217,10 +278,21 @@ def main():
     compare.add_argument('--github', action='store_true')
     compare.add_argument('--baseline', type=Path)
     compare.add_argument('--baseline-context', type=Path)
+    compare.add_argument('--calibration', type=Path)
     args = parser.parse_args()
     if args.command == 'context':
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(record_context(Path(__file__).resolve().parent.parent), indent=2) + '\n')
+        return
+    if args.command == 'calibrate':
+        paths = sorted(args.samples.glob('sample-*.csv'))
+        profile = calibrate([load_csv(path.read_text()) for path in paths], load_context(args.context.read_text()))
+        profile['evidence'] = {'run_url': f'https://github.com/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{os.environ["GITHUB_RUN_ID"]}'
+                               if os.environ.get('GITHUB_RUN_ID') and os.environ.get('GITHUB_REPOSITORY') else None,
+                               'files': {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}}
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(profile, indent=2) + '\n')
+        print(f'Calibration saved: {len(paths)} samples, {len(profile["thresholds"])} scenarios')
         return
     current = load_csv(args.current.read_text())
     context = load_context(args.context.read_text())
@@ -243,16 +315,26 @@ def main():
         except (RuntimeError, KeyError, ValueError, OSError) as error:
             notes.append(f'Baseline lookup unavailable: {error}')
             print('::warning::Benchmark baseline lookup unavailable; see comparison summary.')
-    summary, comparisons, increases = summarize(current, baseline, url, notes)
+    calibration = None
+    if args.calibration:
+        profile = json.loads(args.calibration.read_text())
+        reason = calibration_mismatch(current, context, profile)
+        if reason:
+            notes.append(reason + '; increase annotations suppressed for this environment')
+        else:
+            calibration = profile
+    summary, comparisons, increases = summarize(current, baseline, url, notes, calibration, bool(args.calibration))
+    warning_count = sum(any(metric['warning'] for metric in row['metrics'].values()) for row in comparisons)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / 'comparison.md').write_text(summary)
     (args.output_dir / 'comparison.json').write_text(json.dumps({'baseline_url': url, 'baseline_available': baseline is not None,
-        'notes': notes, 'scenarios_with_increases': increases, 'comparisons': comparisons}, indent=2) + '\n')
+        'notes': notes, 'scenarios_with_increases': increases, 'warning_scenarios': warning_count,
+        'calibration_applied': calibration is not None, 'comparisons': comparisons}, indent=2) + '\n')
     if os.environ.get('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
             output.write(summary + '\n')
-    if increases:
-        print(f'::warning::Observed upward benchmark changes in {increases} scenarios; no calibrated threshold is applied. See the comparison summary.')
+    if warning_count:
+        print(f'::warning::Observed benchmark changes beyond the advisory warning policy in {warning_count} scenarios. See the comparison summary.')
     print(f'Benchmark comparison saved to {args.output_dir / "comparison.md"}')
 
 

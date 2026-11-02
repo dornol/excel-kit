@@ -4,29 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added
+## [0.24.0] - 2026-11-02
 
+### Added
 - Frozen external Excel/Mac Excel/LibreOffice workbook fixtures with pinned upstream
   sources, checksums, producer metadata and offline compatibility tests.
-
 - Advisory benchmark comparisons against compatible successful main runs, with
   percentage changes, aggregate increase warnings, and persisted comparison reports.
-
 - Sampled heap and temporary-file resource peaks for all benchmark scenarios, with
   an isolated scratch directory and machine-readable CSV reports uploaded by CI.
-
 - Independent Excel-only, CSV-only, Bean Validation, and Spring consumer smoke tests
   against published artifacts using Gradle metadata and Maven POM resolution.
 - Release tag/version validation and post-publication Maven Central consumer checks.
 
-### Fixed
+### Changed
+- The default tested POI version is 6.0.0; the same compiled library is also tested
+  against POI 5.2.5 and 5.5.1 without forcing a runtime version on applications.
+- Updated SLF4J to 2.0.20, Hibernate Validator to 9.1.5.Final, the example Spring Boot
+  version to 4.1.2, and the Gradle wrapper to 9.8.2.
+- Public API compatibility is checked against 0.23.0 without legacy API exclusions.
 
+### Fixed
 - Streaming cell and header formatting now respects the workbook's 1904 date system.
 - Path-based reads and metadata discovery open OOXML packages read-only instead of
   rewriting caller-owned workbook bytes on close.
 - Encrypted Path reads allocate an owned decryption workspace, clean plaintext on
   preflight/parse failures, and preserve the encrypted source.
-
 - Streaming sheets now resolve their backing XSSF sheet through public workbook APIs,
   removing reflection on POI's private `_sh` field.
 - Configured sheet feature failures propagate as write errors instead of silently
@@ -37,7 +40,6 @@ All notable changes to this project will be documented in this file.
   one overflow-detection byte, stop consuming after failure, and avoid count overflow.
 - Post-copy byte-limit errors retain their observed size and type after temp-file cleanup.
 - Custom compression-ratio limits reject NaN and infinities.
-
 - CI test JVMs now follow the JDK matrix instead of always using the JDK 21 compiler toolchain.
 - Java compilation targets the Java 17 API surface with `--release 17`.
 - Spring Maven POM integration dependencies are optional, matching the documented installation policy.
@@ -47,7 +49,6 @@ All notable changes to this project will be documented in this file.
 ## [0.23.0] - 2026-08-13
 
 ### Added
-
 - Fluent `validator(Validator)` configuration for Excel and CSV readers.
 - Explicit `ReadResult.errorType()` classification for mapping and validation failures.
 - Shared Excel/CSV reader contract tests covering limits, cancellation, early stop, and resource ownership.
@@ -57,7 +58,6 @@ All notable changes to this project will be documented in this file.
 - ZIP entry count protection through `ReadSecurityPolicy.maxZipEntries()`.
 
 ### Changed
-
 - `ReadResult.messages()` is now always an immutable, non-null list.
 - Setter conversion failures are reported as `RowError.Type.MAPPING`, while required-field
   and Bean Validation failures remain `RowError.Type.VALIDATION`.
@@ -106,7 +106,6 @@ All notable changes to this project will be documented in this file.
 ## [0.22.0] - 2026-08-06
 
 ### Added
-
 - Automatic Excel column type inference for non-null values in `ExcelWriter` and
   `ExcelSheetWriter`, including numeric, date/time, hyperlink, image, and rich-text values.
 - Automatic default number/date formats for inferred numeric and date/time columns.
@@ -114,7 +113,6 @@ All notable changes to this project will be documented in this file.
   overrides, custom formats, and both column writer APIs.
 
 ### Changed
-
 - Columns without an explicit `.type(...)` now infer their writer type from the first non-null
   value. Explicit types remain authoritative.
 - Columns whose values are all `null` retain the `STRING` fallback behavior.
@@ -122,7 +120,6 @@ All notable changes to this project will be documented in this file.
 ## [0.21.0] - 2026-07-11
 
 ### Added
-
 - Symmetric `Path` and `InputStreamSource` overloads for `read`, `readStrict`, and `readWhile`.
 - `Path` and `InputStreamSource` overloads for Excel sheet metadata discovery.
 - `ReadSummary`, bounded `ReadReport`, detailed `ReadProgress`, and cooperative cancellation APIs.
@@ -143,7 +140,6 @@ All notable changes to this project will be documented in this file.
 - CSV automatic charset/delimiter detection and deterministic malformed-input fuzz coverage.
 
 ### Changed
-
 - Excel metadata methods no longer close caller-provided `InputStream` instances.
 - Reader executions now snapshot column and selected-header collections.
 - Reader `Path` inputs are read directly without copying the source file to a temporary file.
@@ -158,7 +154,6 @@ All notable changes to this project will be documented in this file.
 ## [0.20.0] - 2026-07-11
 
 ### Added
-
 - Direct `read(input, ...)`, `readWhile(...)`, `Path`, and `InputStreamSource` APIs for Excel and CSV readers.
 - Reader `maxErrors(...)` guards with structured `ReadAbortReason` details.
 - Excel/CSV header normalization via `headerNormalizer(UnaryOperator<String>)`.
@@ -167,20 +162,17 @@ All notable changes to this project will be documented in this file.
 - CI compatibility coverage for minimum-tested and current POI/OpenCSV versions.
 
 ### Changed
-
 - Caller-provided input streams and writer streams are now caller-owned and are not closed by excel-kit.
 - Reader executions use immutable common option snapshots.
 - Excel stream reading no longer uses a producer thread and blocking queue.
 
 ### Removed
-
 - `readAsStream()` in favor of callback-based `read(...)` and `readWhile(...)`.
 - Handler-based `build(input)` in favor of direct Reader execution methods.
 
 ## [0.19.0] - 2026-07-01
 
 ### Added
-
 - Reader-scoped `CellConversionConfig` via `cellConversion(...)` on Excel and
   CSV readers for locale/date parsing without mutating global `CellData` state.
 - `ExcelWriteErrorPolicy` with `writeErrorPolicy(FAIL_FAST)` for aborting Excel
@@ -202,14 +194,12 @@ All notable changes to this project will be documented in this file.
 - Guided Excel template response helper with required-column guidance.
 
 ### Changed
-
 - `CellData` number cleanup now respects the configured locale's grouping and
   decimal separators.
 
 ## [0.18.4] - 2026-06-30
 
 ### Added
-
 - Release checklist guide for version/tag/publish verification workflow.
 - `excel-kit-spring` module with Spring MVC download response helpers and
   `MultipartFile` upload stream adapter.
@@ -220,7 +210,6 @@ All notable changes to this project will be documented in this file.
   extension checks.
 
 ### Changed
-
 - Example app now uses the new `excel-kit-spring` module for download responses.
 - Example read showcase now uses Spring module upload/result/error-report helpers.
 - Example schema template downloads now include sample rows.
@@ -233,7 +222,6 @@ All notable changes to this project will be documented in this file.
   download limit, and offers a `fromUrl(url, maxBytes)` overload.
 
 ### Tests
-
 - Added direct coverage for example download content-disposition headers.
 - Added Spring module tests for upload results, error reports, and template responses.
 - Added security-focused tests for download filename sanitization and bounded
@@ -242,14 +230,12 @@ All notable changes to this project will be documented in this file.
 ## [0.18.3] - 2026-06-29
 
 ### Added
-
 - Manual Maven Central visibility verification workflow backed by a reusable
   `scripts/verify-maven-central.sh` script.
 - README installation examples now show the runtime dependencies that
   applications should declare because library integrations remain `compileOnly`.
 
 ### Changed
-
 - Maven publish workflow now reuses the same Maven Central visibility script as
   manual verification.
 - Example app static CSS/JavaScript is split out of `index.html`.
@@ -265,14 +251,12 @@ All notable changes to this project will be documented in this file.
   snippets, and data type docs use concrete `ExcelDataType` examples.
 
 ### Tests
-
 - Example smoke tests now verify served static assets and inspect the generated
   XLSX read-error report contents.
 
 ## [0.18.2] - 2026-06-24
 
 ### Added
-
 - Example app upload results now render inline with success rows, structured
   cell errors, showcase filtering, and client-side error CSV download.
 - Example app now provides server-generated read error reports as CSV and Excel
@@ -287,7 +271,6 @@ All notable changes to this project will be documented in this file.
 ## [0.18.1] - 2026-06-24
 
 ### Changed
-
 - Maven Central publishing now uses the automatic release path so tag publishes
   do not remain as user-managed Central Portal deployments.
 - Generated Javadocs now suppress missing-doc comments while keeping other
@@ -296,14 +279,12 @@ All notable changes to this project will be documented in this file.
   response.
 
 ### Added
-
 - Smoke coverage for CSV upload conversion errors in the example app.
 - `CellError` handling examples in the reading guide and bundled docs.
 
 ## [0.18.0] - 2026-06-24
 
 ### Added
-
 - Header aliases for Excel and CSV readers via `column(List<String>, ...)`.
 - Strict reader header validation via `strictHeaders()` / `requireHeaders()`.
 - Duplicate header handling via `DuplicateHeaderPolicy` (`FIRST`, `LAST`, `FAIL`).
@@ -315,39 +296,33 @@ All notable changes to this project will be documented in this file.
 - Example app MockMvc upload smoke tests for schema-based Excel and CSV reads.
 
 ### Changed
-
 - Map-mode readers now apply the configured duplicate header policy consistently
   when building output maps.
 
 ## [0.17.1] - 2026-06-24
 
 ### Added
-
 - Example app smoke test coverage now starts the Spring context without Docker
   and verifies a real MyBatis mapper query against an H2 database.
 
 ### Changed
-
 - CSV and Excel read handlers are now explicitly one-shot. Calling `read()`,
   `readStrict()`, or `readAsStream()` consumes the handler; a second read attempt
   now fails with a clear `ExcelKitException` instead of a lower-level temp-file
   error.
 
 ### Fixed
-
 - CSV `readAsStream()` cleanup coverage now verifies temporary resources are
   removed after failed row mapping results are consumed.
 
 ## [0.17.0] - 2026-06-22
 
 ### Added
-
 - `ExcelWriter.create(opts -> opts.rowAccessWindowSize(...))` and
   `ExcelWorkbook.create(opts -> opts.rowAccessWindowSize(...))` for configuring
   SXSSF's row access window at workbook construction time.
 
 ### Fixed
-
 - `ExcelReadHandler.readAsStream()` now releases temporary reader resources when
   the stream is fully consumed, even if callers do not explicitly close the stream.
 - `ExcelReader.getSheetHeaders(...)` now throws `ExcelReadException` when the
@@ -359,7 +334,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.15] - 2026-04-19
 
 ### Added
-
 - **`countRows()`** on `ExcelReader` — opt-in pre-scan that counts data rows before
   parsing, making percentage-based progress reporting possible (e.g., via SSE).
   The total is available via `Cursor.getTotalRows()` in the `ProgressCallback`.
@@ -391,7 +365,6 @@ All notable changes to this project will be documented in this file.
   `countRows()`), or `-1` if unknown.
 
 ### Changed
-
 - **`ExcelImage`** refactored from `record` to `class` to support `size()` chaining
   and `fromUrl()` factory. The constructor signature and `data()`/`imageType()` accessors
   are unchanged — existing code compiles without modification.
@@ -399,7 +372,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.14] - 2026-04-19
 
 ### Added
-
 - **`documentProperty(key, value)`** — set Excel document metadata (title, author,
   subject, keywords, description, category) on `ExcelWriter` and `ExcelWorkbook`.
   Standard keys map to core properties; other keys become custom properties.
@@ -413,7 +385,6 @@ All notable changes to this project will be documented in this file.
   preventing password from lingering in heap as an immutable String.
 
 ### Changed
-
 - **Internal: `ExcelColumn` constructor** simplified from 22 positional parameters to
   `(name, function, style, setter, ColumnStyleConfig)`. Adding new column fields now
   requires changes in only 2 places instead of 5+.
@@ -427,7 +398,6 @@ All notable changes to this project will be documented in this file.
 - **Internal: `ExcelHandler`** stores password as `char[]` internally (zeroed after use).
 
 ### Documentation
-
 - **Guide restructured** — `docs/guide.md` (2219 lines) split into `docs/guide/` directory
   with 13 topic files. `index.md` contains inline code examples covering 80% of use cases;
   topic files provide full details.
@@ -438,7 +408,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.13] - 2026-04-15
 
 ### Added
-
 - **Multi-row header support** — `ExcelReader.headerRows(int)` lets the reader
   combine N header rows into the effective column names, using the bottom-most
   non-blank value per column. This round-trips files written with multi-level
@@ -457,7 +426,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.12] - 2026-04-15
 
 ### Added
-
 - **Split success/error read callbacks** — `read(Consumer<T> onSuccess,
   Consumer<RowError> onError)` delivers successfully parsed rows to one
   callback and failed rows (validation or mapping) to another. The library
@@ -476,7 +444,6 @@ All notable changes to this project will be documented in this file.
   original cause when available.
 
 ### Changed
-
 - `ReadResult<T>` record gains a nullable `cause` field so mapping-stage
   exceptions are preserved alongside the usual messages. The 3-arg
   constructor is retained for backward compatibility.
@@ -484,7 +451,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.11] - 2026-04-15
 
 ### Added
-
 - **Group header comments** — `writer.groupComment(String text, String... path)`
   and `groupComment(ExcelCellComment, String... path)` attach a note to a
   merged group header cell, identified by its path (outermost first). No-op
@@ -508,7 +474,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.10] - 2026-04-15
 
 ### Fixed
-
 - Vertically merged group header cells rendered with bottom-aligned text
   because the column name value existed in both the top-left and the
   original column header row cell of the merge region. Non-top cells in
@@ -518,7 +483,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.9] - 2026-04-15
 
 ### Added
-
 - **Multi-level group headers** — `group(String... levels)` accepts N levels,
   ordered outermost (top) to innermost (just above the column header). Previously
   only one level was supported.
@@ -532,7 +496,6 @@ All notable changes to this project will be documented in this file.
   of the merged region.
 
 ### Changed (Breaking)
-
 - `ColumnStyleConfig.group(String)` signature changed to `group(String... levels)`.
   Source-compatible — existing `.group("X")` calls still work unchanged. The
   internal field `groupName` (String) became `groupNames` (String[]); if you
@@ -542,7 +505,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.8] - 2026-04-14
 
 ### Added
-
 - `ColumnStyleConfig.headerComment(ExcelCellComment)` — overload for full
   customization of header comment (author, width, height) via the
   `ExcelCellComment` record.
@@ -567,7 +529,6 @@ All notable changes to this project will be documented in this file.
   ```
 
 ### Changed (Breaking)
-
 - **`ExcelCellComment` record canonical constructor signature changed** from
   `(String text, String author)` to `(String text, String author, int width, int height)`.
   The old convenience constructor `new ExcelCellComment(text)` / `(text, author)`
@@ -579,7 +540,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.7] - 2026-04-14
 
 ### Added
-
 - `ColumnStyleConfig.headerComment(String)` — attach a static comment (note) to
   a column's header cell. Useful for documenting expected input format or units
   (e.g., `"YYYY-MM-DD format"`, `"In KRW"`) as an Excel cell comment visible on
@@ -596,7 +556,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.6] - 2026-04-13
 
 ### Added
-
 - `ExcelHandler.writeTo(Path, String)` and `ExcelHandler.writeTo(Path, char[])` —
   convenience overloads that encrypt and write directly to a file path, mirroring
   the existing `writeTo(OutputStream, String/char[])` overloads. Useful for CLI/batch
@@ -606,7 +565,6 @@ All notable changes to this project will be documented in this file.
   columns from the left. Previously required `freezePane(N, 0)`.
 
 ### Changed (Breaking)
-
 - **`ExcelWriter.freezePane(int rows)` renamed to `freezeRows(int)`.** Single-arg
   `freezePane(N)` was ambiguous — a caller reading `.freezePane(3)` couldn't tell
   whether it froze rows or columns without checking the Javadoc. The new names
@@ -617,7 +575,6 @@ All notable changes to this project will be documented in this file.
   Same rename applies to `ExcelSheetWriter`.
 
   Migration: `.freezePane(1)` → `.freezeRows(1)`.
-
 - **`new CsvWriter<T>()` replaced by `CsvWriter.<T>create()`.** The public no-arg
   constructor is now package-private, matching the `ExcelWriter.create()` /
   `ExcelWorkbook.create()` pattern. Users switching between Excel and CSV writers
@@ -626,7 +583,6 @@ All notable changes to this project will be documented in this file.
   Migration: `new CsvWriter<Row>()` → `CsvWriter.<Row>create()`.
 
 ### Changed
-
 - Strengthened Javadoc on `ExcelReadHandler` and `CsvReadHandler` with an explicit
   "Resource management" section, clarifying when temp files are released and why
   `readAsStream()` must be used with try-with-resources.
@@ -634,7 +590,6 @@ All notable changes to this project will be documented in this file.
 ## [0.16.5] - 2026-04-13
 
 ### Changed (Breaking)
-
 - **Unified `FileHandler` output API under `writeTo(...)`.** Every way a handler
   emits its payload is now a `writeTo` overload:
   - `FileHandler.write(OutputStream)` → `writeTo(OutputStream)`
@@ -678,7 +633,6 @@ already set at the writer level.
 ## [0.16.4] - 2026-04-13
 
 ### Changed (Breaking)
-
 - **`ExcelWriter.builder()` / `ExcelWorkbook.builder()` removed** — use
   `ExcelWriter.create()` / `ExcelWriter.create(opts -> ...)` and
   `ExcelWorkbook.create()` / `ExcelWorkbook.create(opts -> ...)` instead.
@@ -725,14 +679,12 @@ ExcelWriter.<User>create()
 ```
 
 ### Added
-
 - **`ExcelWriter.headerColor(ExcelColor)` / `ExcelWorkbook.headerColor(ExcelColor)`**
   fluent setters (rebuild header style, preserving already-configured font
   settings).
 - **`ExcelWriter.maxRows(int)`** fluent setter.
 
 ### Tests
-
 - Strengthened header-color tests to verify exact RGB values instead of merely
   asserting "some fill color is present" (which passed even for the default
   white header).
@@ -743,7 +695,6 @@ ExcelWriter.<User>create()
 ## [0.16.3] - 2026-04-12
 
 ### Fixed
-
 - **readAsStream() producer thread deadlock** — when consumer closed the stream early
   (e.g., `limit()`, `takeWhile()`), the producer thread could block forever on
   `queue.put()`. Replaced with `offer(timeout)` + interrupt check loop so the producer
@@ -755,7 +706,6 @@ ExcelWriter.<User>create()
 ## [0.16.2] - 2026-04-12
 
 ### Fixed
-
 - **Decrypted temp file not cleaned up** — when reading password-protected Excel files,
   the decrypted temp file was not deleted after reading, leaving sensitive data on disk.
   Now explicitly deleted in a finally block.
@@ -770,7 +720,6 @@ ExcelWriter.<User>create()
 ## [0.16.1] - 2026-04-12
 
 ### Fixed
-
 - **CSV injection whitespace bypass** — values like `" =cmd|'/c calc"` (leading spaces
   before formula characters) were not caught by the injection defense. Now detects formula
   characters after leading spaces.
@@ -790,12 +739,10 @@ ExcelWriter.<User>create()
   now throw `IllegalArgumentException` at creation time instead of failing later during write.
 
 ### Changed
-
 - **ExcelSheetWriter.write() single-call guard** — calling `write()` twice on the same
   sheet now throws `ExcelWriteException` instead of silently corrupting data.
 
 ### Improved
-
 - **docs/guide.md** — all `new ExcelReader<>(T::new, null)` / `new CsvReader<>(T::new, null)`
   patterns updated to modern `ExcelReader.setter(T::new)` / `CsvReader.setter(T::new)` API.
 - **Progress callback warning** — documentation now warns that callbacks run on the
@@ -806,7 +753,6 @@ ExcelWriter.<User>create()
 ## [0.16.0] - 2026-04-12
 
 ### Added
-
 - **`nullValue(Object)`** on `ColumnStyleConfig` — sets a default value to write when a
   column function returns null (e.g., `c -> c.nullValue("N/A")`). Works with `defaultStyle()`
   for writer-level fallback, overridable per column.
@@ -817,7 +763,6 @@ ExcelWriter.<User>create()
 - **`ReadColumn.required()`** — returns a new `ReadColumn` with `isRequired=true`.
 
 ### Changed (Breaking)
-
 - **`FileHandler.write()` no longer throws `IOException`** — I/O errors are wrapped as
   unchecked exceptions (`ExcelWriteException`, `CsvWriteException`). `toFile()` wraps as
   `ExcelKitException`. Callers no longer need try-catch for checked exceptions.
@@ -828,7 +773,6 @@ ExcelWriter.<User>create()
   `CsvReadHandler` already had proper lazy overrides.
 
 ### Fixed
-
 - **ExcelWriter workbook leak on stream exception** — if the data stream threw during
   `write()`, the `SXSSFWorkbook` was never closed, leaking temp files. Now wrapped in
   try-catch with `closeWorkbookQuietly()`.
@@ -842,7 +786,6 @@ ExcelWriter.<User>create()
   `CsvWriteException` (unchecked), clarifying the `FileHandler` contract.
 
 ### Improved
-
 - **CellData regex pre-compiled** — currency symbol pattern (`[$,₩€%원]`) compiled once
   as `static final Pattern` instead of per-call `replaceAll()`.
 - **Exception catch simplified** — `catch (A) throw; catch (B) throw;` patterns replaced
@@ -858,7 +801,6 @@ ExcelWriter.<User>create()
 ## [0.15.0] - 2026-04-12
 
 ### Added
-
 - **`FileHandler.toFile(Path)`** — convenience default method that writes directly to a
   file path without manually opening an OutputStream. Works for both Excel and CSV:
   `writer.write(stream).toFile(Path.of("output.xlsx"))`.
@@ -868,13 +810,11 @@ ExcelWriter.<User>create()
   symmetric with `ExcelWriter.constColumnIf()`.
 
 ### Fixed
-
 - **BookJpaRepository JPQL path** — example app's JPQL query referenced a wrong package
   (`book.domain.BookDto` instead of `book.application.port.out.BookDto`). Pre-existing bug
   unrelated to library code.
 
 ### Changed
-
 - **Release checklist strengthened** — CLAUDE.md now requires `./gradlew :example:bootRun`
   to verify Spring context initialization (catches JPQL/HQL errors that `compileJava` misses),
   plus `./gradlew :kit:javadoc` for zero-warning verification.
@@ -884,7 +824,6 @@ ExcelWriter.<User>create()
 v0.14.0 is a comprehensive API cleanup and internal refactoring release.
 
 ### Changed (Breaking)
-
 - **Package renamed: `shared` → `core`** — `io.github.dornol.excelkit.shared` is now
   `io.github.dornol.excelkit.core`. All imports must be updated. The package holds the
   library's central abstractions (FileHandler, CellData, ReadColumn, RowData, etc.) —
@@ -904,7 +843,6 @@ v0.14.0 is a comprehensive API cleanup and internal refactoring release.
   throws `ExcelWriteException` instead of silently creating a new handler.
 
 ### Added
-
 - **`ExcelReader.setter()` / `CsvReader.setter()` static factories** — all three read
   modes now have symmetric entry points: `setter()`, `mapping()`, `forMap()`.
 - **`ExcelReader(Supplier)` / `CsvReader(Supplier)` no-validator constructors** —
@@ -921,7 +859,6 @@ v0.14.0 is a comprehensive API cleanup and internal refactoring release.
   common call patterns.
 
 ### Internal improvements
-
 - **Javadoc warnings: 100 → 0** — all public APIs now have complete javadoc.
 - **`ExcelWriteSupport` shared methods** — `writeAfterDataAndSummary()` and
   `applyPostProcessing()` extracted, eliminating duplication between ExcelWriter and
@@ -993,7 +930,6 @@ ExcelKitConfig.configureLargeFileSupport();
 ## [0.13.0] - 2026-04-12
 
 ### Changed (Breaking)
-
 - **`ExcelSheetWriter.ColumnConfig` and `TemplateListWriter.ColumnConfig` inner classes deleted** —
   replaced by a single top-level `ColumnConfig<T>` class that extends `ColumnStyleConfig<T, ColumnConfig<T>>`.
   Both inner classes were empty wrappers (zero methods) inheriting all 47 styling methods from
@@ -1021,7 +957,6 @@ classes are absorbed into `ExcelReader.forMap()` / `CsvReader.forMap()` static
 factories, matching the Writer side.
 
 ### Changed (Breaking)
-
 - **`ExcelMapReader` class removed** — use `ExcelReader.forMap()`. The returned
   reader is an `ExcelReader<Map<String, String>>` with the full fluent API
   (`sheetIndex`, `headerRowIndex`, `onProgress`, `readAsStream`). Gains
@@ -1035,7 +970,6 @@ factories, matching the Writer side.
   auto-discovers columns; the setter API doesn't apply.
 
 ### Behavioral notes
-
 - **`readAsStream` on a non-existent sheet** now throws `ExcelReadException`
   via `ExcelReadHandler`'s missing-sheet check. The deleted `ExcelMapReader`
   silently returned an empty stream, which hid caller bugs.
@@ -1099,7 +1033,6 @@ Reader-side half of the "unified column API" work that started in v0.10.0.
 No new features.
 
 ### Changed (Breaking)
-
 - **`ExcelWriter` constructors removed** — all 5 public constructors
   (`ExcelWriter()`, `ExcelWriter(maxRows)`, `ExcelWriter(color)`,
   `ExcelWriter(color, maxRows)`, `ExcelWriter(color, maxRows, windowSize)`)
@@ -1165,7 +1098,6 @@ CsvWriter.forMap("Name", "Age").dialect(CsvDialect.EXCEL).write(stream).write(ou
 ```
 
 ### Deferred to v0.12.0
-
 - Map Reader absorption — `ExcelMapReader` and `CsvMapReader` remain as
   standalone classes. Their header-auto-detect logic is woven into the
   SAX-style row callbacks, so folding them into `ExcelReader.forMap()` /
