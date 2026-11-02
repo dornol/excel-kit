@@ -22,6 +22,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.util.XMLHelper;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
@@ -436,6 +437,12 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
          */
         @Override
         public void cell(String cellReference, String formattedValue, XSSFComment comment) {
+            cell(cellReference, formattedValue, (Comment) comment);
+        }
+
+        // POI 6 callback; keep the XSSFComment overload for POI 5 runtimes.
+        // No @Override so this source also compiles against POI 5.
+        public void cell(String cellReference, String formattedValue, Comment comment) {
             int colIndex = getColumnIndex(cellReference);
             while (currentRow.size() < colIndex) {
                 currentRow.add(cellData(currentRow.size(), null));

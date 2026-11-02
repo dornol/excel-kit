@@ -30,7 +30,7 @@ integrations you use, using versions compatible with the rest of your applicatio
 ```kotlin
 implementation("io.github.dornol:excel-kit:0.23.0")
 implementation("io.github.dornol:excel-kit-spring:0.23.0") // optional Spring MVC helpers
-implementation("org.apache.poi:poi-ooxml:5.5.1")      // Excel read/write
+implementation("org.apache.poi:poi-ooxml:6.0.0")      // Excel read/write
 implementation("org.slf4j:slf4j-api:2.0.18")          // logging facade
 ```
 
@@ -61,7 +61,7 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>org.apache.poi</groupId>
   <artifactId>poi-ooxml</artifactId>
-  <version>5.5.1</version>
+  <version>6.0.0</version>
 </dependency>
 <dependency>
   <groupId>com.opencsv</groupId>
@@ -93,9 +93,11 @@ Compatibility tested in CI:
 
 | Dependency | Minimum tested | Current tested |
 |------------|----------------|----------------|
-| Apache POI | 5.2.5 | 5.5.1 |
+| Apache POI | 5.2.5 | 6.0.0 |
 | OpenCSV | 5.9 | 5.12.0 |
 | JDK | 17 | 17, 21, 25 |
+
+The same compiled library JAR is also tested with POI 5.2.5, 5.5.1, and 6.0.0.
 
 “Minimum tested” is the oldest version exercised by the compatibility suite; versions
 outside this matrix may work but are not part of the tested compatibility contract.
