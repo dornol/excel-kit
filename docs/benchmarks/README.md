@@ -49,6 +49,58 @@ CI machine noise affect these numbers. Compare repeated runs before attributing
 changes to the library. Existing README timings predate resource sampling and
 are not a baseline for this instrumented suite.
 
-This establishes structured resource measurements. Automated regression thresholds
-and warnings are a subsequent step; a successful run does not assert a performance
-budget or prove the absence of temporary-file leaks on every path.
+## Advisory comparisons in GitHub Actions
+
+After a successful benchmark run, CI searches the latest 30 successful `push`
+runs of this repository's `Benchmark` workflow on `main`, newest first. It ignores
+this run and runs started at or after it, PR/fork results, failed runs and expired
+or unavailable artifacts. The chosen artifact's CSV revision must match its
+workflow commit.
+
+A baseline must match all of the following:
+
+- CSV schema, exact JVM version, OS/architecture, processor count, heap limit,
+  GC collector names and nominal sampling interval.
+- Runner image metadata and CPU model (when available).
+- A SHA-256 fingerprint of the benchmark scenarios, sampler and CSV writer.
+- Scenario set, execution order and row counts.
+
+Missing context, environment changes or workload changes therefore start a new
+baseline series. No comparison is preferable to treating a different workload as
+a performance change. The first run after this feature is introduced may have no
+compatible baseline; older artifacts do not include `context.json`.
+
+The Actions job summary shows previous/current time, observed heap peak and
+observed temporary-file peak with percentage changes for every scenario. A zero
+baseline becoming nonzero is shown as `new usage`, rather than an infinite
+percentage. CSV/context, `comparison.md` and `comparison.json` are uploaded in
+`benchmark-results` for later analysis. Keep CSV and context from the same run.
+
+**The initial policy applies no calibrated regression threshold.** Any upward
+metric change produces one aggregate warning annotation; it is an observation,
+not a claim that a regression is confirmed. Repeated runs should establish the
+normal variability before percentage/absolute thresholds are chosen. This avoids
+silently inventing a performance budget. Warnings never fail the benchmark job.
+Invalid current measurement data still fails validation; lookup errors, absent
+baselines and incompatible historical reports instead leave a current-results
+summary with selection details and preserve the new measurements.
+
+The job has read-only repository/Actions permissions. Baseline lookup uses the
+existing `gh` CLI and does not post PR comments or modify historical artifacts.
+
+## Comparing downloaded artifacts locally
+
+Use the matching CSV and context from each run:
+
+```bash
+python3 scripts/benchmark_comparison.py compare \
+  --current current/resources.csv --context current/context.json \
+  --baseline previous/resources.csv --baseline-context previous/context.json \
+  --output-dir build/benchmark-comparison
+python3 -m unittest discover -s scripts/tests -p 'test_benchmark_comparison.py'
+```
+
+For a local benchmark, generate context before the workload with
+`python3 scripts/benchmark_comparison.py context --output kit/build/reports/benchmark/context.json`.
+A successful run does not assert a performance budget or prove the absence of
+temporary-file leaks on every path.

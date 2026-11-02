@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Advisory benchmark comparisons against compatible successful main runs, with
+  percentage changes, aggregate increase warnings, and persisted comparison reports.
+
 - Sampled heap and temporary-file resource peaks for all benchmark scenarios, with
   an isolated scratch directory and machine-readable CSV reports uploaded by CI.
 
