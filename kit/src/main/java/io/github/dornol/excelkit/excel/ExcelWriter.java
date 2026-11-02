@@ -692,7 +692,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             if (options.sheetConfig().chartConfig != null) {
                 ExcelWriteSupport.applyChart(sheet(), options.sheetConfig().chartConfig, headerRowIndex(), cursor().getRowOfSheet() - 1);
             }
-            applyTables(options.columns().size());
+            applyTables();
 
             return new ExcelHandler(this.wb, this.password);
         } catch (ExcelWriteException e) {
@@ -814,18 +814,19 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
     }
 
-    private void applyTables(int columnCount) {
+    private void applyTables() {
         if (tableOptions == null) return;
         int sheets = wb.getNumberOfSheets();
         if (sheets > 1 && !tableOptions.perRolloverSheet()) {
             throw new ExcelWriteException("Structured table spans multiple rollover sheets; enable perRolloverSheet");
         }
+        List<String> headers = executionOptions().columns().stream().map(ExcelColumn::getName).toList();
         for (int i = 0; i < sheets; i++) {
             SXSSFSheet target = wb.getSheetAt(i);
             int headerRowIndex = execution().headerRow(target);
             if (target.getLastRowNum() <= headerRowIndex) continue;
             String name = sheets == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
-            StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columnCount,
+            StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), headers,
                     tableOptions.style(), tableOptions.showRowStripes());
         }
     }

@@ -309,3 +309,14 @@ schema.excelWriter().write(data).writeTo(out);
 // Read
 schema.excelReader(Product::new, null).read(in, consumer);
 ```
+
+## Sheet feature failures and structured-table headers
+
+Backing sheet resolution uses public POI workbook APIs and throws
+`ExcelWriteException` for removed or unregistered sheets instead of silently omitting
+configured features. Data-bar, icon-set and chart data-label failures also propagate
+as `ExcelWriteException`. These errors are independent of the cell
+extraction/conversion `writeErrorPolicy`.
+
+Structured-table column names are preserved after streaming header rows are flushed.
+Template lists using existing headers retain the template's header names.

@@ -282,7 +282,7 @@ public class ExcelChartConfig {
         if (valueSeries.isEmpty()) return;
 
         // Access underlying XSSFSheet for chart support
-        XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheetOrThrow(sheet);
+        XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
 
         int row1 = anchorRow1 >= 0 ? anchorRow1 : dataEndRow + 2;
         int row2 = anchorRow2 >= 0 ? anchorRow2 : row1 + 15;
@@ -458,7 +458,6 @@ public class ExcelChartConfig {
      * <p>
      * This uses the low-level CT (XML bean) API because POI's XDDF layer does not
      * expose a convenient method for toggling data labels on all series.
-     * This is a best-effort feature.
      */
     private void applyDataLabels(XSSFChart chart) {
         if (!showDataLabels) {
@@ -516,7 +515,7 @@ public class ExcelChartConfig {
                 dLbls.addNewShowSerName().setVal(false);
             }
         } catch (RuntimeException e) {
-            // Best-effort: if CT API is unavailable or fails, skip data labels silently
+            throw new ExcelWriteException("Failed to apply chart data labels", e);
         }
     }
 

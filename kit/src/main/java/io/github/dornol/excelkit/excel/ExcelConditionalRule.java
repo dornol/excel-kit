@@ -9,8 +9,6 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.jspecify.annotations.Nullable;
 
@@ -45,8 +43,6 @@ import java.util.List;
 public class ExcelConditionalRule {
     /** Creates a new conditional rule builder. */
     public ExcelConditionalRule() {}
-
-    private static final Logger log = LoggerFactory.getLogger(ExcelConditionalRule.class);
 
     /**
      * Supported icon set types for conditional formatting.
@@ -256,7 +252,8 @@ public class ExcelConditionalRule {
     void apply(SXSSFSheet sheet, int headerRowIndex, int columnCount, int lastDataRow) {
         if (rules.isEmpty() && dataBarColor == null && iconSetType == null) return;
 
-        SheetConditionalFormatting scf = sheet.getSheetConditionalFormatting();
+        XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
+        SheetConditionalFormatting scf = xssfSheet.getSheetConditionalFormatting();
         int dataStartRow = (startRow >= 0) ? startRow : headerRowIndex + 1;
         int endRow = Math.max(dataStartRow, lastDataRow);
 
@@ -277,18 +274,17 @@ public class ExcelConditionalRule {
             }
 
             if (dataBarColor != null) {
-                applyDataBar(sheet, ranges);
+                applyDataBar(xssfSheet, ranges);
             }
 
             if (iconSetType != null) {
-                applyIconSet(sheet, ranges);
+                applyIconSet(xssfSheet, ranges);
             }
         }
     }
 
-    private void applyDataBar(SXSSFSheet sheet, CellRangeAddress[] ranges) {
+    private void applyDataBar(XSSFSheet xssfSheet, CellRangeAddress[] ranges) {
         try {
-            XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheetOrThrow(sheet);
             CTWorksheet ctSheet = xssfSheet.getCTWorksheet();
             CTConditionalFormatting cf = ctSheet.addNewConditionalFormatting();
             cf.setSqref(List.of(ranges[0].formatAsString()));
@@ -323,13 +319,12 @@ public class ExcelConditionalRule {
                 dataBar.setMaxLength(100L);
             }
         } catch (RuntimeException e) {
-            log.warn("Failed to apply data bar conditional formatting", e);
+            throw new ExcelWriteException("Failed to apply data bar conditional formatting", e);
         }
     }
 
-    private void applyIconSet(SXSSFSheet sheet, CellRangeAddress[] ranges) {
+    private void applyIconSet(XSSFSheet xssfSheet, CellRangeAddress[] ranges) {
         try {
-            XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheetOrThrow(sheet);
             CTWorksheet ctSheet = xssfSheet.getCTWorksheet();
             CTConditionalFormatting cf = ctSheet.addNewConditionalFormatting();
             cf.setSqref(List.of(ranges[0].formatAsString()));
@@ -352,7 +347,7 @@ public class ExcelConditionalRule {
                 }
             }
         } catch (RuntimeException e) {
-            log.warn("Failed to apply icon set conditional formatting", e);
+            throw new ExcelWriteException("Failed to apply icon set conditional formatting", e);
         }
     }
 
