@@ -21,6 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ExcelKitUploadTest {
 
     @Test
+    @SuppressWarnings("deprecation")
+    void legacyUploadAliasesRemainCallableWithTheSameResults() {
+        var file = new MockMultipartFile("file", "names.csv", "text/csv", "Name\nAlice\n".getBytes(StandardCharsets.UTF_8));
+        UploadReader<String> reader = (input, consumer) -> CsvReader.<String>mapping(row -> row.get("Name").asString()).read(input, consumer);
+        var csv = ExcelKitUpload.validateCsv(file, reader);
+        var excel = ExcelKitUpload.validateExcel(file, reader);
+        assertEquals("CSV", csv.type());
+        assertEquals("Excel", excel.type());
+        assertEquals(java.util.List.of("Alice"), csv.rows());
+        assertEquals(csv.rows(), excel.rows());
+    }
+
+    @Test
     void csv_opensMultipartFileAndCollectsUploadResult() {
         MockMultipartFile file = new MockMultipartFile("file", "products.csv", "text/csv",
                 "Name,Price\nNotebook,1200\nPen,bad\n".getBytes(StandardCharsets.UTF_8));

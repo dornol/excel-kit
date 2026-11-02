@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 ## [0.24.0] - 2026-11-02
 
 ### Added
+- Same-runner benchmark repetitions and environment-specific advisory noise bands.
+- Custom cache-duration overloads for Spring download and error responses.
 - Frozen external Excel/Mac Excel/LibreOffice workbook fixtures with pinned upstream
   sources, checksums, producer metadata and offline compatibility tests.
 - Advisory benchmark comparisons against compatible successful main runs, with
@@ -25,6 +27,8 @@ All notable changes to this project will be documented in this file.
 - Public API compatibility is checked against 0.23.0 without legacy API exclusions.
 
 ### Fixed
+- Retained the published `ExcelKitUpload.validateExcel` and `validateCsv` aliases,
+  deprecated in favor of `excel` and `csv`, preserving 0.23.0 binary compatibility.
 - Streaming cell and header formatting now respects the workbook's 1904 date system.
 - Path-based reads and metadata discovery open OOXML packages read-only instead of
   rewriting caller-owned workbook bytes on close.

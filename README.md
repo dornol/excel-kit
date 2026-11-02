@@ -377,3 +377,5 @@ scripts/verify-consumers.sh         # isolated Gradle metadata / Maven POM consu
 ## License
 
 MIT License. See [LICENSE](./LICENSE) for details.
+
+Spring download and error response helpers also accept a custom cache `Duration`; see [Spring integration](docs/guide/spring.md).
