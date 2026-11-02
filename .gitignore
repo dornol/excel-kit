@@ -58,3 +58,6 @@ gradle-app.setting
 
 # Local agent/runtime state
 .bkit/
+
+# Python verification helpers
+__pycache__/

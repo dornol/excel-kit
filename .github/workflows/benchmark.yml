@@ -10,6 +10,8 @@ on:
       - 'build.gradle.kts'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/benchmark.yml'
+      - 'scripts/benchmark_comparison.py'
+      - 'scripts/tests/test_benchmark_comparison.py'
   workflow_dispatch:
   pull_request:
     branches: [main]
@@ -20,9 +22,12 @@ on:
       - 'build.gradle.kts'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/benchmark.yml'
+      - 'scripts/benchmark_comparison.py'
+      - 'scripts/tests/test_benchmark_comparison.py'
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   benchmark:
@@ -41,8 +46,23 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Test benchmark comparison logic
+        run: python3 -m unittest discover -s scripts/tests -p 'test_benchmark_comparison.py'
+
+      - name: Record benchmark context
+        run: python3 scripts/benchmark_comparison.py context --output kit/build/reports/benchmark/context.json
+
       - name: Run benchmarks
-        run: ./gradlew :kit:benchmark --no-daemon
+        run: ./gradlew :kit:benchmark --rerun-tasks --no-daemon
+
+      - name: Compare with a compatible successful main run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 scripts/benchmark_comparison.py compare
+          --current kit/build/reports/benchmark/resources.csv
+          --context kit/build/reports/benchmark/context.json
+          --output-dir kit/build/reports/benchmark --github
 
       - name: Save benchmark output
         if: always()
@@ -51,4 +71,4 @@ jobs:
           name: benchmark-results
           path: |
             kit/build/reports/tests/benchmark/
-            kit/build/reports/benchmark/resources.csv
+            kit/build/reports/benchmark/
