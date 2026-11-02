@@ -11,6 +11,9 @@ import io.github.dornol.excelkit.excel.ExcelWriter;
 import io.github.dornol.excelkit.excel.ExcelWorkbookReader;
 import io.github.dornol.excelkit.excel.WorkbookReadReport;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -39,6 +42,19 @@ class BenchmarkTest {
     @TempDir
     Path tempDir;
 
+    private BenchmarkProbe probe;
+    private String scenario;
+
+    @BeforeEach
+    void identifyScenario(TestInfo info) {
+        scenario = info.getTestMethod().orElseThrow().getName();
+    }
+
+    @AfterEach
+    void stopSampler() throws IOException {
+        if (probe != null) probe.close();
+    }
+
     // ============================================================
     // Excel Writing
     // ============================================================
@@ -49,8 +65,8 @@ class BenchmarkTest {
         int cols = 5;
         Path file = tempDir.resolve("bench_100k_5col.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         ExcelHandler handler = ExcelWriter.<int[]>create()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
@@ -64,11 +80,11 @@ class BenchmarkTest {
             handler.writeTo(os);
         }
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("Excel 100K rows × 5 cols", rows, elapsed, fileSize, peakMem);
+        printResult("Excel 100K rows × 5 cols", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -77,8 +93,8 @@ class BenchmarkTest {
         int rows = 1_000_000;
         Path file = tempDir.resolve("bench_1m_5col.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         ExcelHandler handler = ExcelWriter.<int[]>create()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
@@ -92,11 +108,11 @@ class BenchmarkTest {
             handler.writeTo(os);
         }
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("Excel 1M rows × 5 cols", rows, elapsed, fileSize, peakMem);
+        printResult("Excel 1M rows × 5 cols", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -106,8 +122,8 @@ class BenchmarkTest {
         int cols = 50;
         Path file = tempDir.resolve("bench_100k_50col.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         ExcelWriter<int[]> writer = ExcelWriter.<int[]>create();
         for (int i = 0; i < cols; i++) {
@@ -120,11 +136,11 @@ class BenchmarkTest {
             handler.writeTo(os);
         }
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("Excel 100K rows × 50 cols", rows, elapsed, fileSize, peakMem);
+        printResult("Excel 100K rows × 50 cols", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -134,8 +150,8 @@ class BenchmarkTest {
         int rowsPerSheet = 100_000;
         Path file = tempDir.resolve("bench_rollover_10sheets.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         ExcelHandler handler = ExcelWriter.<int[]>create().maxRows(rowsPerSheet)
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
@@ -147,11 +163,11 @@ class BenchmarkTest {
             handler.writeTo(os);
         }
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("Excel rollover 100K×10 sheets", totalRows, elapsed, fileSize, peakMem);
+        printResult("Excel rollover 100K×10 sheets", totalRows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -160,8 +176,8 @@ class BenchmarkTest {
         int rowsPerSheet = 50_000;
         Path file = tempDir.resolve("bench_workbook_multi.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
             wb.<int[]>sheet("Numbers")
@@ -180,11 +196,11 @@ class BenchmarkTest {
             }
         }
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("ExcelWorkbook 2 sheets × 50K rows", rowsPerSheet * 2, elapsed, fileSize, peakMem);
+        printResult("ExcelWorkbook 2 sheets × 50K rows", rowsPerSheet * 2, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -202,8 +218,8 @@ class BenchmarkTest {
         int rows = 100_000;
         Path file = tempDir.resolve("bench_100k_5col_encrypted.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         ExcelWriter.<int[]>create()
                 .password("benchPw")
@@ -215,11 +231,11 @@ class BenchmarkTest {
                 .write(generateRows(rows, 5))
                 .writeTo(file);
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("Excel 100K × 5 cols ENCRYPTED", rows, elapsed, fileSize, peakMem);
+        printResult("Excel 100K × 5 cols ENCRYPTED", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
         // Sanity-check the file is actually encrypted (OLE2 magic bytes).
         byte[] head = Files.readAllBytes(file);
@@ -237,8 +253,8 @@ class BenchmarkTest {
         int rows = 1_000_000;
         Path file = tempDir.resolve("bench_1m_5col_encrypted.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         ExcelWriter.<int[]>create()
                 .password("benchPw")
@@ -250,11 +266,11 @@ class BenchmarkTest {
                 .write(generateRows(rows, 5))
                 .writeTo(file);
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("Excel 1M × 5 cols ENCRYPTED", rows, elapsed, fileSize, peakMem);
+        printResult("Excel 1M × 5 cols ENCRYPTED", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -266,8 +282,8 @@ class BenchmarkTest {
         int rows = 100_000;
         Path file = tempDir.resolve("bench_100k_writeto_path.xlsx");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         ExcelHandler handler = ExcelWriter.<int[]>create()
                 .column("ID", r -> r[0], c -> c.type(ExcelDataType.INTEGER))
@@ -279,11 +295,11 @@ class BenchmarkTest {
 
         handler.writeTo(file, "benchPw");
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("Excel 100K × 5 cols writeTo(Path,pw)", rows, elapsed, fileSize, peakMem);
+        printResult("Excel 100K × 5 cols writeTo(Path,pw)", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -296,8 +312,8 @@ class BenchmarkTest {
         int rows = 100_000;
         Path file = tempDir.resolve("bench_100k_5col.csv");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         var handler = CsvWriter.<int[]>create()
                 .column("ID", r -> r[0])
@@ -311,11 +327,11 @@ class BenchmarkTest {
             handler.writeTo(os);
         }
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("CSV 100K rows × 5 cols", rows, elapsed, fileSize, peakMem);
+        printResult("CSV 100K rows × 5 cols", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -324,8 +340,8 @@ class BenchmarkTest {
         int rows = 1_000_000;
         Path file = tempDir.resolve("bench_1m_5col.csv");
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         var handler = CsvWriter.<int[]>create()
                 .column("ID", r -> r[0])
@@ -339,11 +355,11 @@ class BenchmarkTest {
             handler.writeTo(os);
         }
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
         long fileSize = Files.size(file);
 
-        printResult("CSV 1M rows × 5 cols", rows, elapsed, fileSize, peakMem);
+        printResult("CSV 1M rows × 5 cols", rows, elapsed, fileSize, resources);
         assertTrue(Files.exists(file));
     }
 
@@ -366,17 +382,17 @@ class BenchmarkTest {
                     .writeTo(os);
         }
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         AtomicLong count = new AtomicLong();
         ExcelReader.forMap()
                 .read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
 
-        printResult("Excel Read 100K rows (MapReader)", rows, elapsed, Files.size(file), peakMem);
+        printResult("Excel Read 100K rows (MapReader)", rows, elapsed, Files.size(file), resources);
         assertEquals(rows, count.get());
     }
 
@@ -394,8 +410,8 @@ class BenchmarkTest {
                     .writeTo(os);
         }
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         AtomicLong count = new AtomicLong();
         ExcelReader.<String[]>mapping(row -> new String[]{
@@ -404,10 +420,10 @@ class BenchmarkTest {
                 row.get("Score").asString()
         }).read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
 
-        printResult("Excel Read 100K rows (typed)", rows, elapsed, Files.size(file), peakMem);
+        printResult("Excel Read 100K rows (typed)", rows, elapsed, Files.size(file), resources);
         assertEquals(rows, count.get());
     }
 
@@ -417,13 +433,13 @@ class BenchmarkTest {
         Path file = tempDir.resolve("read_path_100k.xlsx");
         writeExcelRows(file, rows);
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
         AtomicLong count = new AtomicLong();
         ExcelReader.forMap().read(file, result -> count.incrementAndGet());
 
         printResult("Excel Read 100K rows (Path)", rows,
-                System.currentTimeMillis() - startTime, Files.size(file), usedMemoryMB() - startMem);
+                System.nanoTime() - startTime, Files.size(file), probe.stop());
         assertEquals(rows, count.get());
     }
 
@@ -433,15 +449,15 @@ class BenchmarkTest {
         Path file = tempDir.resolve("read_count_rows_100k.xlsx");
         writeExcelRows(file, rows);
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
         AtomicLong count = new AtomicLong();
         try (FileInputStream input = new FileInputStream(file.toFile())) {
             ExcelReader.forMap().countRows().read(input, result -> count.incrementAndGet());
         }
 
         printResult("Excel Read 100K rows (InputStream + countRows)", rows,
-                System.currentTimeMillis() - startTime, Files.size(file), usedMemoryMB() - startMem);
+                System.nanoTime() - startTime, Files.size(file), probe.stop());
         assertEquals(rows, count.get());
     }
 
@@ -460,8 +476,8 @@ class BenchmarkTest {
             workbook.finish().writeTo(file);
         }
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
         AtomicLong count = new AtomicLong();
         WorkbookReadReport report = ExcelWorkbookReader.create()
                 .sheet("Numbers", ExcelReader.forMap(), result -> count.incrementAndGet())
@@ -469,7 +485,7 @@ class BenchmarkTest {
                 .read(file);
 
         printResult("ExcelWorkbookReader 2 sheets × 50K rows", rowsPerSheet * 2,
-                System.currentTimeMillis() - startTime, Files.size(file), usedMemoryMB() - startMem);
+                System.nanoTime() - startTime, Files.size(file), probe.stop());
         assertTrue(report.successful());
         assertEquals(rowsPerSheet * 2L, count.get());
     }
@@ -492,17 +508,17 @@ class BenchmarkTest {
                     .writeTo(os);
         }
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         AtomicLong count = new AtomicLong();
         CsvReader.forMap()
                 .read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
 
-        printResult("CSV Read 1M rows (MapReader)", rows, elapsed, Files.size(file), peakMem);
+        printResult("CSV Read 1M rows (MapReader)", rows, elapsed, Files.size(file), resources);
         assertEquals(rows, count.get());
     }
 
@@ -520,8 +536,8 @@ class BenchmarkTest {
                     .writeTo(os);
         }
 
-        long startMem = usedMemoryMB();
-        long startTime = System.currentTimeMillis();
+        probe = BenchmarkProbe.start(tempDir);
+        long startTime = System.nanoTime();
 
         AtomicLong count = new AtomicLong();
         CsvReader.<String[]>mapping(row -> new String[]{
@@ -530,10 +546,10 @@ class BenchmarkTest {
                 row.get("Score").asString()
         }).read(new FileInputStream(file.toFile()), r -> count.incrementAndGet());
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        long peakMem = usedMemoryMB() - startMem;
+        long elapsed = System.nanoTime() - startTime;
+        var resources = probe.stop();
 
-        printResult("CSV Read 1M rows (typed)", rows, elapsed, Files.size(file), peakMem);
+        printResult("CSV Read 1M rows (typed)", rows, elapsed, Files.size(file), resources);
         assertEquals(rows, count.get());
     }
 
@@ -566,17 +582,13 @@ class BenchmarkTest {
         }
     }
 
-    private long usedMemoryMB() {
-        Runtime rt = Runtime.getRuntime();
-        rt.gc();
-        return (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
-    }
-
-    private void printResult(String label, int rows, long elapsedMs, long fileBytes, long memDeltaMB) {
-        double seconds = elapsedMs / 1000.0;
-        double fileMB = fileBytes / (1024.0 * 1024.0);
-        double rowsPerSec = rows / seconds;
-        System.out.printf("[BENCH] %-40s | %,10d rows | %6.2fs | %7.2f MB | ~%,d rows/s | mem delta ~%d MB%n",
-                label, rows, seconds, fileMB, (long) rowsPerSec, memDeltaMB);
+    private void printResult(String label, int rows, long elapsedNanos, long fileBytes,
+                             BenchmarkProbe.Snapshot resources) throws IOException {
+        double seconds = elapsedNanos / 1_000_000_000.0;
+        System.out.printf(java.util.Locale.ROOT,
+                "[BENCH] %s | %,d rows | %.3fs | %.2f MiB output | %,.0f rows/s | sampled heap peak %.2f MiB | temp peak %.2f MiB | temp remaining %d bytes%n",
+                label, rows, seconds, fileBytes / 1048576.0, rows / seconds, resources.heapPeakBytes() / 1048576.0,
+                resources.tempPeakBytes() / 1048576.0, resources.tempRemainingBytes());
+        BenchmarkReport.append(scenario, rows, elapsedNanos, fileBytes, resources);
     }
 }

@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Sampled heap and temporary-file resource peaks for all benchmark scenarios, with
+  an isolated scratch directory and machine-readable CSV reports uploaded by CI.
+
 - Independent Excel-only, CSV-only, Bean Validation, and Spring consumer smoke tests
   against published artifacts using Gradle metadata and Maven POM resolution.
 - Release tag/version validation and post-publication Maven Central consumer checks.
