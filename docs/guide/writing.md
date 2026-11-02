@@ -70,6 +70,12 @@ ExcelWriter.<Product>create()
     .write(products);
 ```
 
+This policy controls cell extraction and conversion. Configured sheet features
+are not silently omitted when backing-sheet resolution fails. Resolution uses
+public POI workbook APIs and throws `ExcelWriteException` for removed or unregistered
+sheets, preserving underlying causes. Data-bar, icon-set and chart data-label
+failures also throw `ExcelWriteException` rather than being logged or ignored.
+
 ## Column DSL
 
 ```java
@@ -289,3 +295,7 @@ stripes, and whether rollover sheets receive uniquely suffixed tables.
 Structured tables are also available on `ExcelWorkbook.sheet(...)` and template list writers.
 Table names are checked workbook-wide without regard to case, and template tables validate
 that the expected header row contains every configured column.
+
+Structured-table column names are retained even when streaming has flushed the
+header row out of memory. For template lists using existing headers, table column
+names come from the template cells rather than the mapping labels.

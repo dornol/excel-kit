@@ -411,10 +411,8 @@ class ExcelWriteSupport {
     static void applyTabColor(SXSSFSheet sheet, int @Nullable [] tabColor) {
         if (tabColor == null) return;
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
-        if (xssfSheet != null) {
-            xssfSheet.setTabColor(new XSSFColor(new byte[]{
-                    (byte) tabColor[0], (byte) tabColor[1], (byte) tabColor[2]}));
-        }
+        xssfSheet.setTabColor(new XSSFColor(new byte[]{
+                (byte) tabColor[0], (byte) tabColor[1], (byte) tabColor[2]}));
     }
 
     static void applyNamedRanges(SXSSFSheet sheet, @Nullable Map<String, Integer> namedRanges,

@@ -270,7 +270,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 SXSSFSheet target = allSheets.get(i);
                 if (target.getLastRowNum() <= headerRowIndex) continue;
                 String name = allSheets.size() == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
-                StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columns.size(),
+                StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columns.stream().map(ExcelColumn::getName).toList(),
                         tableOptions.style(), tableOptions.showRowStripes());
             }
         }

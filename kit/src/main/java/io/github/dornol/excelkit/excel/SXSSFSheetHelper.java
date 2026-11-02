@@ -2,59 +2,30 @@ package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/**
- * Package-private utility that consolidates reflective access to the
- * underlying {@link XSSFSheet} from an {@link SXSSFSheet}.
- * <p>
- * SXSSFSheet does not expose its backing XSSFSheet via public API, so
- * reflection on the {@code _sh} field is required for features such as
- * chart creation and tab color.
- *
- * @author dhkim
- * @since 0.7.0
- */
-class SXSSFSheetHelper {
-    private static final Logger log = LoggerFactory.getLogger(SXSSFSheetHelper.class);
-
-    private SXSSFSheetHelper() {
-    }
+/** Resolves the backing sheet through public workbook APIs, including after rename/reorder. */
+final class SXSSFSheetHelper {
+    private SXSSFSheetHelper() { }
 
     /**
-     * Returns the underlying {@link XSSFSheet} from the given {@link SXSSFSheet},
-     * or {@code null} if reflective access fails.
+     * Resolves the registered streaming sheet by identity, not by its mutable name.
+     * Removed or otherwise unregistered sheets must not resolve to a replacement
+     * sheet that happens to have the same name.
      *
-     * @param sheet the SXSSFSheet to unwrap
-     * @return the underlying XSSFSheet, or {@code null}
+     * @throws ExcelWriteException if the sheet cannot be resolved
      */
-    static @Nullable XSSFSheet getXSSFSheet(SXSSFSheet sheet) {
+    static XSSFSheet getXSSFSheet(SXSSFSheet sheet) {
         try {
-            var field = SXSSFSheet.class.getDeclaredField("_sh");
-            field.setAccessible(true);
-            return (XSSFSheet) field.get(sheet);
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            log.warn("Failed to access underlying XSSFSheet via reflection. "
-                    + "Features requiring XSSFSheet (charts, tab colors) will be unavailable.", e);
-            return null;
+            var workbook = sheet.getWorkbook();
+            int index = workbook.getSheetIndex(sheet);
+            if (index < 0) {
+                throw new ExcelWriteException("Cannot resolve backing XSSFSheet: sheet is not registered in its streaming workbook");
+            }
+            return workbook.getXSSFWorkbook().getSheetAt(index);
+        } catch (ExcelWriteException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new ExcelWriteException("Cannot resolve backing XSSFSheet through public workbook APIs", e);
         }
-    }
-
-    /**
-     * Returns the underlying {@link XSSFSheet} from the given {@link SXSSFSheet},
-     * or throws an {@link ExcelWriteException} if reflective access fails.
-     *
-     * @param sheet the SXSSFSheet to unwrap
-     * @return the underlying XSSFSheet
-     * @throws ExcelWriteException if the underlying sheet cannot be accessed
-     */
-    static XSSFSheet getXSSFSheetOrThrow(SXSSFSheet sheet) {
-        XSSFSheet result = getXSSFSheet(sheet);
-        if (result == null) {
-            throw new ExcelWriteException("Failed to access underlying XSSFSheet");
-        }
-        return result;
     }
 }

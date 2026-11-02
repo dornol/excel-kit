@@ -18,6 +18,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Streaming sheets now resolve their backing XSSF sheet through public workbook APIs,
+  removing reflection on POI's private `_sh` field.
+- Configured sheet feature failures propagate as write errors instead of silently
+  omitting tab colors, tables, data bars, icon sets or chart data labels.
+- Structured tables preserve actual column headers after streaming rows are flushed,
+  including rollover sheets and existing or generated template headers.
+
 - CI test JVMs now follow the JDK matrix instead of always using the JDK 21 compiler toolchain.
 - Java compilation targets the Java 17 API surface with `--release 17`.
 - Spring Maven POM integration dependencies are optional, matching the documented installation policy.

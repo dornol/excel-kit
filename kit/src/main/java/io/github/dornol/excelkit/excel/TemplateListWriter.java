@@ -278,9 +278,10 @@ public class TemplateListWriter<T> {
         Cursor cursor = new Cursor(startRow);
         int headerRowIndex = startRow;
 
+        List<String> tableHeaders = tableOptions == null ? List.of() : columns.stream().map(ExcelColumn::getName).toList();
         if (tableOptions != null && !writeHeaders) {
             if (startRow == 0) throw new ExcelWriteException("Template table requires a header row before startRow");
-            StructuredTableWriter.validateExistingHeaders(sheet, startRow - 1, columns.size());
+            tableHeaders = StructuredTableWriter.validateExistingHeaders(sheet, startRow - 1, columns.size());
         }
 
         if (writeHeaders) {
@@ -306,7 +307,7 @@ public class TemplateListWriter<T> {
             int lastDataRow = cursor.getRowOfSheet() - 1;
             if (lastDataRow > tableHeaderRow) {
                 StructuredTableWriter.apply(sheet, tableOptions.name(), tableHeaderRow, lastDataRow,
-                        columns.size(), tableOptions.style(), tableOptions.showRowStripes());
+                        tableHeaders, tableOptions.style(), tableOptions.showRowStripes());
             }
         }
 
