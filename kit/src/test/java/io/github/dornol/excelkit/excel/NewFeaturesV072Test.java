@@ -836,8 +836,8 @@ class NewFeaturesV072Test {
                 var summaryRow = sheet.getRow(1);
                 assertNotNull(summaryRow, "Summary row should exist even with no data");
                 assertEquals("Total", summaryRow.getCell(0).getStringCellValue());
-                // The formula will reference an empty range (B2:B1), which is valid in Excel
-                assertNotNull(summaryRow.getCell(1).getCellFormula());
+                // No data rows: no formula is written, since B2:B1 would include the header row
+                assertNull(summaryRow.getCell(1));
             }
         }
     }

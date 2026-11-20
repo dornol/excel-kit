@@ -76,6 +76,10 @@ Custom label column: `.label("Total", "Grand Total")`
 
 Works with sheet rollover — formulas generated per-sheet.
 
+A summary or label column name that is not among the sheet's columns fails with
+`ExcelWriteException` instead of being skipped. When a sheet has no data rows, the label row is
+written without formulas.
+
 ## Named Ranges
 
 ```java

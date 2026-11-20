@@ -11,6 +11,9 @@
 
 Applied to all data rows across all sheets (including rollover).
 
+Excel limits the comma-joined option text to 255 characters; `dropdown(...)` throws
+`IllegalArgumentException` beyond that. Use `listFromRange(range)` for longer lists.
+
 ## Advanced Data Validation
 
 ```java

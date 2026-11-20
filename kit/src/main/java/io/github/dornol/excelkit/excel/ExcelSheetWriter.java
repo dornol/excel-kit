@@ -239,8 +239,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             while (it.hasNext()) {
                 T rowData = it.next();
                 cursor.plusTotal();
-                if (maxRows != Integer.MAX_VALUE && cursor.getCurrentTotal() >= maxRows
-                        && cursor.getCurrentTotal() % maxRows == 1) {
+                if (maxRows != Integer.MAX_VALUE && cursor.getCurrentTotal() > maxRows
+                        && (cursor.getCurrentTotal() - 1) % maxRows == 0) {
                     ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
                     activeSheet = createRolloverSheet(allSheets.size());
                     allSheets.add(activeSheet);

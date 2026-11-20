@@ -155,7 +155,9 @@ public class ExcelSummary {
                 int labelIdx = 0;
                 if (labelColumnName != null) {
                     int idx = columnNames.indexOf(labelColumnName);
-                    if (idx >= 0) labelIdx = idx;
+                    if (idx < 0) throw new ExcelWriteException("Summary label column not found: '"
+                            + labelColumnName + "'. Columns: " + columnNames);
+                    labelIdx = idx;
                 }
                 String text = entries.size() > 1
                         ? op.name().substring(0, 1) + op.name().substring(1).toLowerCase()
@@ -165,7 +167,10 @@ public class ExcelSummary {
                 // Formulas
                 for (String colName : cols) {
                     int colIdx = columnNames.indexOf(colName);
-                    if (colIdx < 0) continue;
+                    if (colIdx < 0) throw new ExcelWriteException("Summary column not found: '"
+                            + colName + "'. Columns: " + columnNames);
+                    // Without data rows the range would be reversed (A2:A1) and include the header.
+                    if (dataEndRow < dataStartRow) continue;
                     String colLetter = SheetContext.columnLetter(colIdx);
                     String formula = op.name() + "(" + colLetter + dataStartRow + ":" + colLetter + dataEndRow + ")";
                     SXSSFCell cell = summaryRow.createCell(colIdx);

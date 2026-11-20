@@ -67,6 +67,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable ExcelBorderStyle borderRight;
 
     // ── Validation & interaction ──
+    private static final int MAX_DROPDOWN_LENGTH = 255;
     String @Nullable [] dropdownOptions;
     @Nullable ExcelValidation validation;
     @Nullable Function<T, @Nullable String> commentFunction;
@@ -212,8 +213,14 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      *
      * @param options The list of allowed values for the dropdown
      * @return this instance for chaining
+     * @throws IllegalArgumentException if the comma-joined options exceed Excel's 255-character limit
      */
     public SELF dropdown(String... options) {
+        int length = String.join(",", options).length();
+        if (length > MAX_DROPDOWN_LENGTH) {
+            throw new IllegalArgumentException("Dropdown options total " + length
+                    + " characters (comma-joined); Excel allows at most " + MAX_DROPDOWN_LENGTH);
+        }
         this.dropdownOptions = options;
         return self();
     }

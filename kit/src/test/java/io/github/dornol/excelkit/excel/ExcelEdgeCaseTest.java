@@ -510,22 +510,15 @@ class ExcelEdgeCaseTest {
         }
 
         @Test
-        void summary_labelInNonExistentColumn_shouldFallbackToFirstColumn() throws IOException {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<Item>create()
+        void summary_labelInNonExistentColumn_shouldFail() {
+            var writer = ExcelWriter.<Item>create()
                     .column("Name", Item::name)
                     .column("Value", i -> i.value, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s
                             .label("NonExistent", "Total:")
-                            .sum("Value"))
-                    .write(Stream.of(new Item("A", 10)))
-                    .writeTo(out);
-
-            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
-                var summaryRow = wb.getSheetAt(0).getRow(2);
-                // NonExistent column → falls back to idx=0
-                assertEquals("Total:", summaryRow.getCell(0).getStringCellValue());
-            }
+                            .sum("Value"));
+            assertThrows(ExcelWriteException.class,
+                    () -> writer.write(Stream.of(new Item("A", 10))).writeTo(new ByteArrayOutputStream()));
         }
 
         @Test
@@ -728,6 +721,76 @@ class ExcelEdgeCaseTest {
             ).readStrict(new ByteArrayInputStream(out.toByteArray()), results::add);
 
             assertEquals(1, results.size());
+        }
+    }
+
+    @Nested
+    class SheetOptionValidation {
+
+        private static XSSFWorkbook read(ByteArrayOutputStream out) throws IOException {
+            return new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()));
+        }
+
+        @Test
+        void maxRowsOfOneStartsANewSheetForEveryRow() throws IOException {
+            var out = new ByteArrayOutputStream();
+            try (var workbook = ExcelWorkbook.create()) {
+                workbook.<Integer>sheet("S").column("V", v -> v).maxRows(1).write(List.of(1, 2, 3));
+                workbook.finish().writeTo(out);
+            }
+            try (var xssf = read(out)) {
+                assertEquals(3, xssf.getNumberOfSheets());
+                for (int i = 0; i < 3; i++) {
+                    assertEquals(1, xssf.getSheetAt(i).getLastRowNum());
+                    assertEquals(i + 1, xssf.getSheetAt(i).getRow(1).getCell(0).getNumericCellValue());
+                }
+            }
+        }
+
+        @Test
+        void maxRowsRolloverKeepsWorkingForLargerLimits() throws IOException {
+            var out = new ByteArrayOutputStream();
+            try (var workbook = ExcelWorkbook.create()) {
+                workbook.<Integer>sheet("S").column("V", v -> v).maxRows(2).write(List.of(1, 2, 3, 4, 5));
+                workbook.finish().writeTo(out);
+            }
+            try (var xssf = read(out)) {
+                assertEquals(3, xssf.getNumberOfSheets());
+                assertEquals(2, xssf.getSheetAt(0).getLastRowNum());
+                assertEquals(1, xssf.getSheetAt(2).getLastRowNum());
+            }
+        }
+
+        @Test
+        void summaryRejectsUnknownColumnsInsteadOfSkippingThem() {
+            var writer = ExcelWriter.<Integer>create().column("V", v -> v).summary(s -> s.sum("Typo"));
+            assertThrows(ExcelWriteException.class,
+                    () -> writer.write(List.of(1, 2)).writeTo(new ByteArrayOutputStream()));
+
+            var label = ExcelWriter.<Integer>create().column("V", v -> v)
+                    .summary(s -> s.label("Nope", "Total").sum("V"));
+            assertThrows(ExcelWriteException.class,
+                    () -> label.write(List.of(1, 2)).writeTo(new ByteArrayOutputStream()));
+        }
+
+        @Test
+        void summaryWithoutDataRowsDoesNotWriteAReversedRange() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Integer>create().column("V", v -> v)
+                    .summary(s -> s.sum("V")).write(List.<Integer>of()).writeTo(out);
+            try (var xssf = read(out)) {
+                var cell = xssf.getSheetAt(0).getRow(1).getCell(0);
+                assertEquals("Sum", cell.getStringCellValue());
+            }
+        }
+
+        @Test
+        void dropdownOptionsBeyondExcelsLimitFailWithAClearMessage() {
+            String[] options = java.util.stream.IntStream.range(0, 100).mapToObj(i -> "option" + i)
+                    .toArray(String[]::new);
+            var failure = assertThrows(IllegalArgumentException.class,
+                    () -> ExcelWriter.<Integer>create().column("V", v -> v, c -> c.dropdown(options)));
+            assertTrue(failure.getMessage().contains("255"));
         }
     }
 }
