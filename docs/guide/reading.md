@@ -377,6 +377,11 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 | `asString(default)` | `String` |
 | `isEmpty()` | `boolean` |
 
+For XLSX numeric cells, `asNumber()`, `asInt()`, `asLong()`, `asDouble()`, `asFloat()`, and
+`asBigDecimal()` convert the stored number, not the displayed text: a `2.5` cell formatted as `0`
+converts to `2.5`, and a `25%` cell converts to `0.25`. `formattedValue()` and `asString()` keep
+the displayed text. CSV cells and XLSX text cells convert from their text.
+
 `asInt()` and `asLong()` reject fractional, non-finite, and out-of-range values.
 Date and date-time conversion with pattern strings rejects invalid calendar dates.
 `asNumber()`, `asDouble()`, and `asFloat()` reject non-finite values and nonzero

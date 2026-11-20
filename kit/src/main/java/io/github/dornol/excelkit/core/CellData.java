@@ -184,6 +184,16 @@ public final class CellData {
         return rawNumericValue == null ? formattedValue : rawNumericValue;
     }
 
+    /** Text used by numeric conversions: the stored XLSX number when present, otherwise the displayed text. */
+    private String numericText() {
+        return rawNumericValue == null || rawNumericValue.isBlank() ? formattedValue : rawNumericValue.trim();
+    }
+
+    /** Stored XLSX numbers use locale-independent notation; displayed text follows the configured locale. */
+    private Locale numericLocale(Locale locale) {
+        return rawNumericValue == null || rawNumericValue.isBlank() ? locale : Locale.ROOT;
+    }
+
     /**
      * Returns the number stored in an XLSX cell without applying its display format.
      * For formulas this is the cached numeric result. Dates and times return their Excel
@@ -218,12 +228,13 @@ public final class CellData {
      * @throws IllegalArgumentException if parsing fails
      */
     public @Nullable Number asNumber(Locale locale) {
-        if (formattedValue.isBlank()) {
+        String text = numericText();
+        if (text.isBlank()) {
             return null;
         }
 
         try {
-            return CellConversionSupport.number(formattedValue, locale);
+            return CellConversionSupport.number(text, numericLocale(locale));
         } catch (ParseException | NumberFormatException e) {
             log.warn("Failed to parse number (col {}): '{}'", columnIndex, formattedValue);
             throw new IllegalArgumentException("Failed to parse number: " + formattedValue, e);
@@ -250,9 +261,9 @@ public final class CellData {
      */
     public @Nullable Long asLong() {
         try {
-            return CellConversionSupport.longNumber(formattedValue, effectiveLocale());
+            return CellConversionSupport.longNumber(numericText(), numericLocale(effectiveLocale()));
         } catch (ParseException | NumberFormatException | ArithmeticException e) {
-            throw new IllegalArgumentException("Failed to convert to long: " + formattedValue, e);
+            throw new IllegalArgumentException("Failed to convert to long: " + numericText(), e);
         }
     }
 
@@ -509,9 +520,9 @@ public final class CellData {
 
     private @Nullable Double asFloatingPoint(boolean singlePrecision) {
         try {
-            return CellConversionSupport.floatingNumber(formattedValue, effectiveLocale(), singlePrecision);
+            return CellConversionSupport.floatingNumber(numericText(), numericLocale(effectiveLocale()), singlePrecision);
         } catch (ParseException | NumberFormatException e) {
-            throw new IllegalArgumentException("Failed to convert to floating point: " + formattedValue, e);
+            throw new IllegalArgumentException("Failed to convert to floating point: " + numericText(), e);
         }
     }
 
@@ -521,22 +532,23 @@ public final class CellData {
      * Unlike {@link #asNumber()}, this method parses the cleaned string directly
      * as a {@link BigDecimal}, avoiding intermediate {@link Double} conversion
      * that can lose precision for large or high-precision values.
-     * Use {@link #rawNumber()} to read the stored XLSX number before display formatting.
+     * For XLSX numeric cells the stored number is parsed rather than the display text.
      * Returns {@code null} if the value is empty or blank.
      *
      * @return the BigDecimal value, or {@code null} if blank
      * @throws IllegalArgumentException if the value cannot be parsed as a number
      */
     public @Nullable BigDecimal asBigDecimal() {
-        if (formattedValue.isBlank()) {
+        String text = numericText();
+        if (text.isBlank()) {
             return null;
         }
         try {
-            String cleaned = CellConversionSupport.decimalText(formattedValue, effectiveLocale());
+            String cleaned = CellConversionSupport.decimalText(text, numericLocale(effectiveLocale()));
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
-            log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, formattedValue);
-            throw new IllegalArgumentException("Failed to parse BigDecimal: " + formattedValue);
+            log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, text);
+            throw new IllegalArgumentException("Failed to parse BigDecimal: " + text);
         }
     }
 

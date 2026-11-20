@@ -77,8 +77,9 @@ class ExcelReaderBranchTest {
             assertEquals("123456789012345", row.get("Second").rawNumber().toPlainString());
             assertEquals("1.23457E+12", row.get("First").formattedValue());
             assertEquals("1.23457E+14", ExcelReader.forMap().readAll(file).get(0).get("Second"));
-            assertEquals(1_234_570_000_000L, row.get("First").asLong());
-            assertEquals("1234570000000", row.get("First").asBigDecimal().toPlainString());
+            assertEquals(1_234_567_890_123L, row.get("First").asLong());
+            assertEquals("1234567890123", row.get("First").asBigDecimal().toPlainString());
+            assertEquals(0.25, row.get("Percent").asDouble());
             assertNull(row.get("Gap").rawNumber());
             assertNull(row.get("Text").rawNumber());
             assertEquals("25%", row.get("Percent").formattedValue());
@@ -89,7 +90,7 @@ class ExcelReaderBranchTest {
             RowData german = ExcelReader.mapping(data -> data)
                     .cellConversion(config -> config.locale(Locale.GERMANY)).readAll(file).get(0);
             assertEquals("1,23457E+12", german.get("First").formattedValue());
-            assertEquals(new BigDecimal("1.23457E+12"), german.get("First").asBigDecimal());
+            assertEquals(new BigDecimal("1234567890123"), german.get("First").asBigDecimal());
         } finally {
             LocaleUtil.setUserLocale(previousLocale);
         }

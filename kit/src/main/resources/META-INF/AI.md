@@ -84,7 +84,8 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - `strictHeaders()` / `requireHeaders()` — fail fast when configured headers are absent
 - `DuplicateHeaderPolicy` — choose first, last, or fail for duplicate headers
 - `CellError` and `RowError.cellErrors()` — structured cell-level read errors
-- `asBigDecimal()` parses the formatted cell text directly as a decimal
+- Numeric `as*()` conversions (`asInt/asLong/asDouble/asFloat/asNumber/asBigDecimal`) use the stored XLSX number, not the display format (`0.25` in a `0%` cell stays `0.25`); CSV/text cells use their text
+- `asBigDecimal()` parses the decimal directly, avoiding Double conversion
 - `rawNumber()` reads the stored XLSX number before display formatting
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time

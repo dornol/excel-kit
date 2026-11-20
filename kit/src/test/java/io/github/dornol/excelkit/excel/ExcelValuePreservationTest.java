@@ -288,4 +288,22 @@ class ExcelValuePreservationTest {
         assertEquals(0, new BigDecimal("0.1").compareTo(rows.get(0).get("F").rawNumber()));
         assertEquals(0, new BigDecimal("3.14159").compareTo(rows.get(1).get("F").rawNumber()));
     }
+
+    @Test
+    void numericConversionsUseTheStoredValueInsteadOfTheDisplayFormat() {
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<Double>create()
+                .column("Int", v -> v, c -> c.format("0"))
+                .column("Two", v -> v, c -> c.format("0.00"))
+                .column("Pct", v -> v, c -> c.format("0%"))
+                .write(List.of(2.5, 0.1234)).writeTo(output);
+
+        var rows = ExcelReader.mapping(row -> row).readAll(new ByteArrayInputStream(output.toByteArray()));
+        assertEquals("3", rows.get(0).get("Int").formattedValue());
+        assertEquals(2.5, rows.get(0).get("Int").asDouble());
+        assertThrows(IllegalArgumentException.class, () -> rows.get(0).get("Int").asInt());
+        assertEquals(0, new BigDecimal("0.1234").compareTo(rows.get(1).get("Two").asBigDecimal()));
+        assertEquals(0.1234, rows.get(1).get("Two").asNumber().doubleValue());
+        assertEquals(0.1234, rows.get(1).get("Pct").asDouble());
+    }
 }

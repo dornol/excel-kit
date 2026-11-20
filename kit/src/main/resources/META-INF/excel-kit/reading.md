@@ -71,7 +71,7 @@ Can be mixed: name-based + index-based in same reader.
 | `asLong()` | Long | Parse as long |
 | `asDouble()` | Double | Parse as double |
 | `asFloat()` | Float | Parse as float |
-| `asBigDecimal()` | BigDecimal | Parse the formatted cell text as BigDecimal |
+| `asBigDecimal()` | BigDecimal | Parse the stored XLSX number (or the cell text for CSV/text cells) as BigDecimal |
 | `rawNumber()` | BigDecimal | Read the stored XLSX number, including cached numeric formula results |
 | `asBoolean()` | Boolean | Parse as boolean |
 | `asLocalDate()` | LocalDate | Parse as date |
