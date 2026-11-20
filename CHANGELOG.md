@@ -36,6 +36,14 @@ All notable changes to this project will be documented in this file.
 - Updated hibernate-validator and the Gradle wrapper to 9.9.1.
 
 ### Fixed
+- `ReadSecurityPolicy` formula detection can no longer be bypassed with a namespace prefix, an
+  upper-case part path, or a worksheet stored outside `xl/worksheets/`; the preflight scan is
+  also about 35 times faster on large workbooks.
+- Upload content checks accept valid UTF-8 CSV files whose 4096-byte inspection prefix ends
+  inside a multi-byte character.
+- `defaultStyle(...)` now applies every column property (widths, header colors, cell colors,
+  hidden, dropdown, validation, comments) unless a column overrides it.
+- `UploadError` reports setter conversion failures as `MAPPING` instead of `VALIDATION`.
 - `TIME` columns no longer silently truncate sub-millisecond values.
 - `Float` values are stored by their decimal value (`0.1f` is `0.1`, not `0.10000000149011612`).
 - Named ranges work for sheet names containing an apostrophe.
