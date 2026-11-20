@@ -230,6 +230,46 @@ class ExcelAutomaticTypeInferenceTest {
         assertEquals(expected, cell.getCellType(), "unexpected cell type for " + cell);
     }
 
+    @Test
+    void zonedAndLegacyDateTypesBecomeExcelDatesWhileInstantStaysText() throws IOException {
+        var zone = java.time.ZoneId.systemDefault();
+        var local = LocalDateTime.of(2025, 3, 4, 10, 30, 15);
+        var epochMillis = local.atZone(zone).toInstant().toEpochMilli();
+        var rows = java.util.Map.<String, Object>of(
+                "zoned", local.atZone(java.time.ZoneId.of("Asia/Seoul")),
+                "offset", local.atOffset(java.time.ZoneOffset.ofHours(-5)),
+                "utilDate", new java.util.Date(epochMillis),
+                "timestamp", new java.sql.Timestamp(epochMillis),
+                "sqlDate", java.sql.Date.valueOf(local.toLocalDate()),
+                "sqlTime", java.sql.Time.valueOf(local.toLocalTime()),
+                "instant", java.time.Instant.parse("2025-03-04T01:30:15Z"));
+        var writer = ExcelWriter.<Map<String, Object>>create()
+                .column("zoned", r -> r.get("zoned")).column("offset", r -> r.get("offset"))
+                .column("utilDate", r -> r.get("utilDate")).column("timestamp", r -> r.get("timestamp"))
+                .column("sqlDate", r -> r.get("sqlDate")).column("sqlTime", r -> r.get("sqlTime"))
+                .column("instant", r -> r.get("instant"));
+        try (XSSFWorkbook workbook = read(writer.write(List.of(rows)))) {
+            var row = workbook.getSheetAt(0).getRow(1);
+            // Zoned values keep their own wall-clock time; legacy dates use the JVM default zone.
+            assertEquals(local, row.getCell(0).getLocalDateTimeCellValue());
+            assertEquals(local, row.getCell(1).getLocalDateTimeCellValue());
+            assertEquals(local, row.getCell(2).getLocalDateTimeCellValue());
+            assertEquals(local, row.getCell(3).getLocalDateTimeCellValue());
+            assertEquals(local.toLocalDate().atStartOfDay(), row.getCell(4).getLocalDateTimeCellValue());
+            assertEquals(local.toLocalTime().toSecondOfDay() / 86_400.0, row.getCell(5).getNumericCellValue(), 1e-9);
+            // An Instant has no zone of its own, so it is not guessed.
+            assertEquals(CellType.STRING, row.getCell(6).getCellType());
+        }
+
+        // The same types work in explicitly typed columns and template cells.
+        var typed = ExcelWriter.<Object>create()
+                .column("dt", v -> v, c -> c.type(ExcelDataType.DATETIME))
+                .write(List.of(local.atZone(java.time.ZoneId.of("UTC"))));
+        try (XSSFWorkbook workbook = read(typed)) {
+            assertEquals(local, workbook.getSheetAt(0).getRow(1).getCell(0).getLocalDateTimeCellValue());
+        }
+    }
+
     private static XSSFWorkbook read(ExcelHandler handler) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         handler.writeTo(output);

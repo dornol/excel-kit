@@ -298,6 +298,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
         if (value != null && cell.getCellType() == CellType.FORMULA) {
             cell.removeFormula();
         }
+        if (value != null) value = ExcelDataType.normalizeTemporal(value);
         if (value == null) {
             cell.setBlank();
         } else if (value instanceof String s) {

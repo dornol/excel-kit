@@ -68,7 +68,8 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 ## Key API Notes (v0.16.0+)
 
 - `FileHandler.writeTo()` throws unchecked exceptions only — no `throws IOException`
-- `nullValue(Object)` on column config — default value for null cells (e.g., `c -> c.nullValue("N/A")`)
+- `nullValue(Object)` on column config — default value for null cells (e.g., `c -> c.nullValue("N/A")`); always written, as text when it does not fit the column type
+- Date types written as Excel dates: `Local*`, `ZonedDateTime`/`OffsetDateTime` (own wall-clock), `java.util.Date`/`java.sql.*` (JVM default zone); `Instant` stays text (convert it first)
 - Freeze panes:
   - `freezeRows(int)` — freeze N rows below the header
   - `freezeCols(int)` — freeze N columns from the left

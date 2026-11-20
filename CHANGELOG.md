@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 - `CellData.asZonedDateTimeStrict(...)` rejects local times in a gap or overlap.
 - CSV delimiter detection ignores quoted fields and honors `headerRowIndex(...)`; explicit
   charset, delimiter, and dialect settings take precedence.
+- `ZonedDateTime`, `OffsetDateTime`, `java.util.Date`, `java.sql.Timestamp`, `java.sql.Date` and
+  `java.sql.Time` are written as Excel dates by inference, typed `DATETIME`/`DATE`/`TIME` columns,
+  and template cells. `ZonedDateTime` and `OffsetDateTime` keep their own wall-clock time; the
+  others use the JVM default time zone. `Instant` is still written as text because its zone is
+  ambiguous.
 - XLSX text cells preserve literal `_xHHHH_` text and control characters, and ISO
   date, date-time, and time cells are read across POI versions.
 - `AtomicFileWriter` writes a file through a temporary sibling and replaces the target only on

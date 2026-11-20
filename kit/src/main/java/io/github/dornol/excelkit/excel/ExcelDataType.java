@@ -73,19 +73,21 @@ public enum ExcelDataType {
     /**
      * LocalDateTime formatted as "yyyy-MM-dd HH:mm:ss".
      */
-    DATETIME((cell, value) -> setDateTime(cell,
-            value instanceof LocalDate date ? date.atStartOfDay() : (LocalDateTime) value),
-            ExcelDataFormat.DATETIME.getFormat()),
+    DATETIME((cell, value) -> {
+        Object temporal = normalizeTemporal(value);
+        setDateTime(cell, temporal instanceof LocalDate date ? date.atStartOfDay() : (LocalDateTime) temporal);
+    }, ExcelDataFormat.DATETIME.getFormat()),
 
     /**
      * LocalDate formatted as "yyyy-MM-dd".
      */
-    DATE((cell, value) -> setDateTime(cell, ((LocalDate) value).atStartOfDay()), ExcelDataFormat.DATE.getFormat()),
+    DATE((cell, value) -> setDateTime(cell, ((LocalDate) normalizeTemporal(value)).atStartOfDay()),
+            ExcelDataFormat.DATE.getFormat()),
 
     /**
      * LocalTime formatted as "HH:mm:ss".
      */
-    TIME((cell, value) -> setTime(cell, (LocalTime) value), ExcelDataFormat.TIME.getFormat()),
+    TIME((cell, value) -> setTime(cell, (LocalTime) normalizeTemporal(value)), ExcelDataFormat.TIME.getFormat()),
 
     /**
      * BigDecimal converted to double (2 decimal places).
@@ -251,8 +253,38 @@ public enum ExcelDataType {
         cell.setCellValue(numeric);
     }
 
+    /**
+     * Maps the supported legacy and zoned date types onto the local types the setters use.
+     * {@code ZonedDateTime} and {@code OffsetDateTime} keep their own wall-clock time; {@code java.util.Date}
+     * and its {@code java.sql} subclasses use the JVM default time zone. {@code Instant} is not mapped
+     * because its zone cannot be derived from the value. The {@code java.sql} types are matched by name so
+     * a runtime without the {@code java.sql} module keeps working.
+     */
+    static Object normalizeTemporal(Object value) {
+        if (value instanceof java.time.ZonedDateTime zoned) return zoned.toLocalDateTime();
+        if (value instanceof java.time.OffsetDateTime offset) return offset.toLocalDateTime();
+        if (value instanceof java.util.Date date) {
+            var zone = java.time.ZoneId.systemDefault();
+            // java.sql.Date and java.sql.Time do not support toInstant(), so use the epoch milliseconds.
+            var zoned = java.time.Instant.ofEpochMilli(date.getTime()).atZone(zone);
+            if (isSqlType(date, "java.sql.Date")) return zoned.toLocalDate();
+            if (isSqlType(date, "java.sql.Time")) return zoned.toLocalTime().withNano(0);
+            // Keep the sub-millisecond precision of java.sql.Timestamp.
+            return date.toInstant().atZone(zone).toLocalDateTime();
+        }
+        return value;
+    }
+
+    private static boolean isSqlType(Object value, String className) {
+        for (Class<?> type = value.getClass(); type != null; type = type.getSuperclass()) {
+            if (type.getName().equals(className)) return true;
+        }
+        return false;
+    }
+
     static @Nullable ExcelDataType infer(@Nullable Object value) {
         if (value == null) return null;
+        value = normalizeTemporal(value);
         if (value instanceof String) return STRING;
         if (value instanceof Boolean) return BOOLEAN_TO_YN;
         if (value instanceof Byte || value instanceof Short || value instanceof Integer) return INTEGER;
@@ -293,6 +325,7 @@ public enum ExcelDataType {
     }
 
     @Nullable String getDefaultFormat(Object value) {
+        value = normalizeTemporal(value);
         if (this == DATETIME && value instanceof LocalDateTime dateTime && dateTime.getNano() != 0) {
             return DATETIME_WITH_MILLIS;
         }

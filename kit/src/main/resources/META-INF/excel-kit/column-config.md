@@ -8,6 +8,11 @@ When `.type(...)` is omitted, the type is inferred from the first non-null value
 column. Explicit `.type(...)` settings always win. If every value is `null`, the column
 falls back to `STRING`.
 
+Inferred and typed date columns accept `LocalDate`, `LocalDateTime`, `LocalTime`, `ZonedDateTime` and
+`OffsetDateTime` (own wall-clock time), and `java.util.Date`, `java.sql.Timestamp`, `java.sql.Date`,
+`java.sql.Time` (JVM default zone). `Instant` is not guessed and is written as text; convert it to a
+local type. `nullValue(...)` is always written, as text when it does not fit the column type.
+
 You can set a type explicitly via `.type(...)`, for example `ExcelDataType.INTEGER` or
 `ExcelDataType.DATE`:
 

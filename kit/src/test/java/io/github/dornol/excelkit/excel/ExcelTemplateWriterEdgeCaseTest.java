@@ -226,6 +226,19 @@ class ExcelTemplateWriterEdgeCaseTest {
     }
 
     @Test
+    void cell_withZonedAndLegacyDates_shouldWriteExcelDates() throws IOException {
+        LocalDateTime local = LocalDateTime.of(2025, 1, 15, 10, 30);
+        byte[] zoned = writeTemplateCell("B4", local.atZone(java.time.ZoneId.of("Asia/Seoul")));
+        byte[] legacy = writeTemplateCell("B4", java.util.Date.from(local.atZone(java.time.ZoneId.systemDefault()).toInstant()));
+
+        for (byte[] result : new byte[][]{zoned, legacy}) {
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+                assertEquals(local, wb.getSheetAt(0).getRow(3).getCell(1).getLocalDateTimeCellValue());
+            }
+        }
+    }
+
+    @Test
     void cell_withSubMillisecondTime_shouldPreserveTimeAsText() throws IOException {
         byte[] result = writeTemplateCell("B4", LocalTime.of(10, 0, 0, 123_456_789));
 
