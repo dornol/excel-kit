@@ -441,6 +441,8 @@ CSV-specific options: see [CSV](csv.md).
 Workbook-specific 1900/1904 date systems are applied to formatted numeric cells and
 header extraction. ISO date, date-time, and time cells are supported across POI versions.
 When XLSX omits a cell reference, the reader uses the next column in that row.
+XLSX date and time serials are rendered as local calendar values independently of
+the JVM or POI time zone.
 In the 1900 date system, a calendar-formatted serial 60 is reported as
 `1900-02-29` with its time fraction when present. Java calendar conversions reject
 that date, and `rawNumber()` returns the original serial.

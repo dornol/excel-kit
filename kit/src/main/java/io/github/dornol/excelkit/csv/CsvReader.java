@@ -47,7 +47,7 @@ import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
  */
 public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char delimiter = ',';
-    private Charset charset = StandardCharsets.UTF_8;
+    private @Nullable Charset configuredCharset;
     private char quoteChar = '"';
     private char escapeChar = ICSVParser.NULL_CHARACTER;
     private boolean strictQuotes = false;
@@ -211,7 +211,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      */
     public CsvReader<T> dialect(CsvDialect dialect) {
         this.delimiter = dialect.getDelimiter();
-        this.charset = dialect.getCharset();
+        this.configuredCharset = dialect.getCharset();
         return this;
     }
 
@@ -230,12 +230,13 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     /**
      * Sets the character encoding for reading the CSV file.
      * Defaults to {@link StandardCharsets#UTF_8}.
+     * An explicitly supplied charset also applies to detected reads.
      *
      * @param charset The charset to use
      * @return This CsvReader instance for chaining
      */
     public CsvReader<T> charset(Charset charset) {
-        this.charset = charset;
+        this.configuredCharset = Objects.requireNonNull(charset, "charset cannot be null");
         return this;
     }
 
@@ -325,10 +326,27 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private CsvReadSessionConfig<T> sessionConfig() {
+        return sessionConfig(delimiter, configuredCharset == null ? StandardCharsets.UTF_8 : configuredCharset);
+    }
+
+    private CsvReadSessionConfig<T> sessionConfig(char sessionDelimiter, Charset sessionCharset) {
         return new CsvReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
-                instanceSupplier, rowMapper, configuredValidator(), configuredHeaderRowIndex(), delimiter, charset,
+                instanceSupplier, rowMapper, configuredValidator(), configuredHeaderRowIndex(),
+                sessionDelimiter, sessionCharset,
                 configuredSelectedMapColumns(), quoteChar,
                 escapeChar, strictQuotes, ignoreLeadingWhiteSpace, snapshotReadOptions());
+    }
+
+    private CsvReadHandler<T> createDetectedHandler(InputStream input) {
+        BufferedInputStream buffered = input instanceof BufferedInputStream existing
+                ? existing : new BufferedInputStream(input);
+        var detection = TabularFileDetector.detectDetailed(buffered, detectionSampleBytes,
+                configuredCharset, quoteChar, escapeChar);
+        if (detection.type() != TabularFileType.CSV || detection.charset() == null) {
+            throw new CsvReadException("Expected CSV content but detected " + detection.type());
+        }
+        char detectedDelimiter = detection.delimiter() == null ? delimiter : detection.delimiter();
+        return new CsvReadHandler<>(limitInput(buffered), sessionConfig(detectedDelimiter, detection.charset()));
     }
 
     /** Reads an input stream without closing it. */
@@ -358,24 +376,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     /** Detects text charset and delimiter from a sample before reading without closing the caller stream. */
     public void readDetected(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
-        requireInputStream(inputStream);
         requireCallback(consumer, "consumer");
-        BufferedInputStream buffered = inputStream instanceof BufferedInputStream existing
-                ? existing : new BufferedInputStream(inputStream);
-        var detection = TabularFileDetector.detectDetailed(buffered, detectionSampleBytes);
-        if (detection.type() != TabularFileType.CSV) {
-            throw new CsvReadException("Expected CSV content but detected " + detection.type());
-        }
-        Charset configuredCharset = charset;
-        char configuredDelimiter = delimiter;
-        try {
-            if (detection.charset() != null) this.charset = detection.charset();
-            if (detection.delimiter() != null) this.delimiter = detection.delimiter();
-            read(buffered, consumer);
-        } finally {
-            charset = configuredCharset;
-            delimiter = configuredDelimiter;
-        }
+        executeInputStream(inputStream, this::createDetectedHandler, handler -> handler.read(consumer));
     }
 
     public void readDetected(Path path, Consumer<ReadResult<T>> consumer) {
@@ -396,24 +398,9 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     public ReadSummary readDetectedWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
-        requireInputStream(inputStream);
         requireCallback(consumer, "consumer");
-        BufferedInputStream buffered = inputStream instanceof BufferedInputStream existing
-                ? existing : new BufferedInputStream(inputStream);
-        var detection = TabularFileDetector.detectDetailed(buffered, detectionSampleBytes);
-        if (detection.type() != TabularFileType.CSV) {
-            throw new CsvReadException("Expected CSV content but detected " + detection.type());
-        }
-        Charset configuredCharset = charset;
-        char configuredDelimiter = delimiter;
-        try {
-            if (detection.charset() != null) this.charset = detection.charset();
-            if (detection.delimiter() != null) this.delimiter = detection.delimiter();
-            return readWithSummary(buffered, consumer);
-        } finally {
-            charset = configuredCharset;
-            delimiter = configuredDelimiter;
-        }
+        return executeWithInputStream(inputStream, this::createDetectedHandler,
+                handler -> summarize(handler, consumer));
     }
 
     public ReadSummary readDetectedWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {

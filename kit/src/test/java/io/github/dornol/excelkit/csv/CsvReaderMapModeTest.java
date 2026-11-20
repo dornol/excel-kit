@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,40 @@ import static org.junit.jupiter.api.Assertions.*;
  * support, and the mixed-mode runtime guards.
  */
 class CsvReaderMapModeTest {
+
+    @Test
+    void detectedReaderIgnoresDelimitersAndNewlinesInsideQuotedHeaders() {
+        String csv = "\uFEFF\"A;B;\"\"C\"\"\r\nD\",Value\r\nAlice,42\r\n";
+        var values = new ArrayList<Map<String, String>>();
+        CsvReader.forMap().readDetected(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)),
+                row -> values.add(row.data()));
+
+        assertEquals(List.of(Map.of("A;B;\"C\"\r\nD", "Alice", "Value", "42")), values);
+    }
+
+    @Test
+    void detectedReaderSupportsConfiguredQuoteAndEscapeCharacters() {
+        String csv = "'A\\';B;C',Value\r\nAlice,42\r\n";
+        var values = new ArrayList<Map<String, String>>();
+        CsvReader.forMap().quoteChar('\'').escapeChar('\\')
+                .readDetected(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)),
+                        row -> values.add(row.data()));
+
+        assertEquals(List.of(Map.of("A';B;C", "Alice", "Value", "42")), values);
+    }
+
+    @Test
+    void detectedReaderUsesExplicitCharsetEvenWithoutABom() {
+        for (Charset charset : List.of(Charset.forName("EUC-KR"), StandardCharsets.UTF_16LE)) {
+            byte[] input = "이름;수량\n한글;3\n".getBytes(charset);
+            var values = new ArrayList<Map<String, String>>();
+            var summary = CsvReader.forMap().charset(charset)
+                    .readDetectedWithSummary(new ByteArrayInputStream(input), row -> values.add(row.data()));
+
+            assertEquals(1, summary.successRows());
+            assertEquals(List.of(Map.of("이름", "한글", "수량", "3")), values);
+        }
+    }
 
     @Nested
     @DisplayName("Factory")

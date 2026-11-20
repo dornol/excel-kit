@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowData;
+import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +18,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -24,6 +26,32 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExcelValuePreservationTest {
+
+    @Test
+    void formatsExcelCalendarValuesIndependentlyOfThePoiTimeZone() throws IOException {
+        var date = LocalDateTime.of(2025, 3, 9, 2, 30);
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<LocalDateTime>create().column("Local", value -> value)
+                .write(List.of(date)).writeTo(output);
+        byte[] file = output.toByteArray();
+
+        TimeZone previous = LocaleUtil.getUserTimeZone();
+        try {
+            for (String zone : List.of("UTC", "America/New_York", "Asia/Seoul")) {
+                var timeZone = TimeZone.getTimeZone(zone);
+                LocaleUtil.setUserTimeZone(timeZone);
+                ExcelReader.mapping(row -> row.get("Local")).read(new ByteArrayInputStream(file), row -> {
+                    assertEquals(date, row.data().asLocalDateTime());
+                    assertEquals(timeZone, LocaleUtil.getUserTimeZone());
+                });
+                assertEquals(List.of("2025-03-09 02:30:00"),
+                        ExcelReader.getSheetHeaders(new ByteArrayInputStream(file), 0, 1));
+                assertEquals(timeZone, LocaleUtil.getUserTimeZone());
+            }
+        } finally {
+            LocaleUtil.setUserTimeZone(previous);
+        }
+    }
 
     @Test
     void infersMissingCellReferencesFromRowOrderAndExplicitGaps() throws IOException {

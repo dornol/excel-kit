@@ -1,13 +1,18 @@
 package io.github.dornol.excelkit.core;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /** Signature-based file type detection that does not depend on filename extensions. */
 public final class TabularFileDetector {
     public static final int DEFAULT_SAMPLE_BYTES = 8192;
+    private static final String DELIMITER_CANDIDATES = ",\t;|";
     private TabularFileDetector() {}
 
     public static TabularFileType detect(Path path) {
@@ -50,6 +55,16 @@ public final class TabularFileDetector {
 
     /** Detects from a mark-capable stream using at most {@code sampleBytes}. */
     public static TabularDetectionResult detectDetailed(InputStream input, int sampleBytes) {
+        return detectDetailed(input, sampleBytes, null, '"', '\0');
+    }
+
+    /**
+     * Detects file type and CSV delimiter from a bounded sample using the supplied quoting rules.
+     * A supplied charset takes precedence over the text encoding inferred from the sample.
+     */
+    public static TabularDetectionResult detectDetailed(InputStream input, int sampleBytes,
+                                                         @Nullable Charset configuredCharset,
+                                                         char quoteChar, char escapeChar) {
         java.util.Objects.requireNonNull(input, "input cannot be null");
         if (sampleBytes < 64) throw new IllegalArgumentException("sampleBytes must be at least 64");
         if (!input.markSupported()) throw new IllegalArgumentException("input must support mark/reset");
@@ -61,9 +76,10 @@ public final class TabularFileDetector {
                     TabularFileType.XLSX, DetectionConfidence.HIGH, null, null);
             if (starts(bytes, 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1)) return new TabularDetectionResult(
                     TabularFileType.XLS, DetectionConfidence.HIGH, null, null);
-            java.nio.charset.Charset charset = charset(bytes);
-            if (looksTextual(bytes, charset)) {
-                Character delimiter = delimiter(bytes, charset);
+            Charset charset = configuredCharset == null ? charset(bytes) : configuredCharset;
+            String text = new String(bytes, charset);
+            if (looksTextual(text)) {
+                Character delimiter = delimiter(text, quoteChar, escapeChar);
                 return new TabularDetectionResult(TabularFileType.CSV,
                         delimiter == null ? DetectionConfidence.LOW : DetectionConfidence.MEDIUM,
                         charset, delimiter);
@@ -74,22 +90,46 @@ public final class TabularFileDetector {
         }
     }
 
-    private static java.nio.charset.Charset charset(byte[] bytes) {
-        if (starts(bytes, 0xff, 0xfe)) return java.nio.charset.StandardCharsets.UTF_16LE;
-        if (starts(bytes, 0xfe, 0xff)) return java.nio.charset.StandardCharsets.UTF_16BE;
-        return java.nio.charset.StandardCharsets.UTF_8;
+    private static Charset charset(byte[] bytes) {
+        if (starts(bytes, 0xff, 0xfe)) return StandardCharsets.UTF_16LE;
+        if (starts(bytes, 0xfe, 0xff)) return StandardCharsets.UTF_16BE;
+        return StandardCharsets.UTF_8;
     }
 
-    private static Character delimiter(byte[] bytes, java.nio.charset.Charset charset) {
-        String text = new String(bytes, charset);
-        String first = text.lines().findFirst().orElse("");
-        char best = 0; int count = 0;
-        for (char candidate : new char[]{',', '\t', ';', '|'}) {
-            int found = 0;
-            for (int i = 0; i < first.length(); i++) if (first.charAt(i) == candidate) found++;
-            if (found > count) { count = found; best = candidate; }
+    private static @Nullable Character delimiter(String text, char quoteChar, char escapeChar) {
+        int[] counts = new int[DELIMITER_CANDIDATES.length()];
+        boolean quoted = false;
+        boolean atFieldStart = true;
+        int start = text.startsWith("\uFEFF") ? 1 : 0;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            char next = i + 1 < text.length() ? text.charAt(i + 1) : '\0';
+            if (escapeChar != '\0' && c == escapeChar && (quoted || !atFieldStart)
+                    && (next == quoteChar || next == escapeChar || DELIMITER_CANDIDATES.indexOf(next) >= 0)) {
+                i++;
+            } else if (quoteChar != '\0' && c == quoteChar && (quoted || atFieldStart)) {
+                if (quoted && next == quoteChar) {
+                    i++;
+                } else {
+                    quoted = !quoted;
+                    atFieldStart = false;
+                }
+            } else if (!quoted) {
+                if (c == '\r' || c == '\n') break;
+                int candidate = DELIMITER_CANDIDATES.indexOf(c);
+                if (candidate >= 0) {
+                    counts[candidate]++;
+                    atFieldStart = true;
+                } else if (c != ' ') {
+                    atFieldStart = false;
+                }
+            }
         }
-        return count == 0 ? null : best;
+        int best = -1;
+        for (int i = 0; i < counts.length; i++) {
+            if (counts[i] > 0 && (best < 0 || counts[i] > counts[best])) best = i;
+        }
+        return best < 0 ? null : DELIMITER_CANDIDATES.charAt(best);
     }
 
     private static boolean starts(byte[] bytes, int... signature) {
@@ -98,19 +138,13 @@ public final class TabularFileDetector {
         return true;
     }
 
-    private static boolean looksTextual(byte[] bytes, java.nio.charset.Charset charset) {
-        if (bytes.length == 0) return false;
-        if (charset.equals(java.nio.charset.StandardCharsets.UTF_16LE)
-                || charset.equals(java.nio.charset.StandardCharsets.UTF_16BE)) {
-            String text = new String(bytes, charset);
-            return text.chars().noneMatch(ch -> ch == 0 || (ch < 0x09) || (ch > 0x0d && ch < 0x20));
-        }
+    private static boolean looksTextual(String text) {
         int controls = 0;
-        for (byte value : bytes) {
-            int b = value & 0xff;
-            if (b == 0) return false;
-            if (b < 0x09 || (b > 0x0d && b < 0x20)) controls++;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == 0) return false;
+            if (c < 0x09 || (c > 0x0d && c < 0x20)) controls++;
         }
-        return controls * 20 < bytes.length;
+        return controls * 20L < text.length();
     }
 }

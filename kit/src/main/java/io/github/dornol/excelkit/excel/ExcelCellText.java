@@ -1,9 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.streaming.SXSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.jspecify.annotations.Nullable;
 
@@ -21,9 +19,6 @@ final class ExcelCellText {
         String encoded = encode(text);
         if (encoded == text) {
             cell.setCellValue(text);
-        } else if (cell instanceof XSSFCell xssf && cell.getCellType() == CellType.FORMULA) {
-            cell.setCellValue(text);
-            xssf.getCTCell().setV(encoded);
         } else if (cell instanceof SXSSFCell) {
             var stored = new StreamingText(text, encoded);
             stored.setString(encoded);

@@ -20,6 +20,7 @@ import org.jspecify.annotations.Nullable;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
@@ -60,7 +61,7 @@ class ExcelReadSupport {
             parser.parse(new InputSource(workbook));
         }
         boolean use1904Dates = date1904[0];
-        return new DataFormatter(locale) {
+        return withUtc(() -> new DataFormatter(locale) {
             @Override
             public String formatRawCellContents(double value, int formatIndex, String formatString) {
                 if (!use1904Dates && value >= 60 && value < 61 && formatString != null
@@ -70,9 +71,22 @@ class ExcelReadSupport {
                     long timeMillis = Math.min(86_399_999, Math.round((value - 60) * 86_400_000));
                     return date + "T" + LocalTime.ofNanoOfDay(timeMillis * 1_000_000).format(DateTimeFormatter.ISO_LOCAL_TIME);
                 }
+                if (DateUtil.isADateFormat(formatIndex, formatString)) {
+                    return withUtc(() -> super.formatRawCellContents(value, formatIndex, formatString, use1904Dates));
+                }
                 return super.formatRawCellContents(value, formatIndex, formatString, use1904Dates);
             }
-        };
+        });
+    }
+
+    private static <T> T withUtc(Supplier<T> formatting) {
+        var previous = LocaleUtil.getUserTimeZone();
+        LocaleUtil.setUserTimeZone(LocaleUtil.TIMEZONE_UTC);
+        try {
+            return formatting.get();
+        } finally {
+            LocaleUtil.setUserTimeZone(previous);
+        }
     }
 
     private static boolean hasCalendarFields(String format) {

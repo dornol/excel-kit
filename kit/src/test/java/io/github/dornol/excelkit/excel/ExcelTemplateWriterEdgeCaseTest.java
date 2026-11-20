@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +22,35 @@ import static org.junit.jupiter.api.Assertions.*;
  * - Writing to template rows vs new rows
  */
 class ExcelTemplateWriterEdgeCaseTest {
+
+    @Test
+    void cellValueReplacesTheFormulaAndSurvivesRecalculation() throws IOException {
+        var source = new ByteArrayOutputStream();
+        try (var workbook = new XSSFWorkbook()) {
+            var row = workbook.createSheet().createRow(0);
+            var formula = row.createCell(0);
+            var style = workbook.createCellStyle();
+            style.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+            formula.setCellStyle(style);
+            formula.setCellFormula("1+1");
+            row.createCell(1).setCellFormula("A1*2");
+            workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+            workbook.write(source);
+        }
+        var result = new ByteArrayOutputStream();
+        try (var template = new ExcelTemplateWriter(new ByteArrayInputStream(source.toByteArray()))) {
+            template.cell("A1", 999).finish().writeTo(result);
+        }
+        try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(result.toByteArray()))) {
+            var row = workbook.getSheetAt(0).getRow(0);
+            workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+            var replaced = row.getCell(0);
+            assertEquals(CellType.NUMERIC, replaced.getCellType());
+            assertEquals(999, replaced.getNumericCellValue());
+            assertEquals("0.00", replaced.getCellStyle().getDataFormatString());
+            assertEquals(1998, row.getCell(1).getNumericCellValue());
+        }
+    }
 
     private byte[] createTemplate() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();

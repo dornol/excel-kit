@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.util.CellReference;
@@ -132,6 +133,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
      * <p>
      * The value type is auto-detected: String, Number, Boolean, LocalDate, LocalDateTime,
      * LocalTime, or null (blank cell).
+     * Writing a value to a formula cell replaces its formula and keeps the cell style.
      *
      * @param cellRef Excel-notation cell reference (e.g., "B3", "AA10")
      * @param value   the value to write
@@ -293,6 +295,9 @@ public class ExcelTemplateWriter implements AutoCloseable {
     }
 
     static void setCellValue(Cell cell, @Nullable Object value) {
+        if (value != null && cell.getCellType() == CellType.FORMULA) {
+            cell.removeFormula();
+        }
         if (value == null) {
             cell.setBlank();
         } else if (value instanceof String s) {
