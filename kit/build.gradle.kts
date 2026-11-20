@@ -164,3 +164,9 @@ mavenPublishing {
         }
     }
 }
+
+tasks.jar {
+    manifest {
+        attributes("Automatic-Module-Name" to "io.github.dornol.excelkit")
+    }
+}

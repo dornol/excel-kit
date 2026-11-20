@@ -72,7 +72,7 @@ excel-kit
 └── Excel/CSV/core API, integration libraries는 compileOnly
 
 excel-kit-spring
-└── Spring MVC/WebFlux adapter
+└── Spring MVC adapter (WebFlux는 수요 확인 전까지 미지원)
 ```
 
 다음 원칙을 유지한다.

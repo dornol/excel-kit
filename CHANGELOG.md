@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `kit` and `excel-kit-spring` jars declare `Automatic-Module-Name` (`io.github.dornol.excelkit`,
+  `io.github.dornol.excelkit.spring`) so module-path users get stable module names.
+
 ## [0.25.0] - 2026-11-20
 
 ### Added
