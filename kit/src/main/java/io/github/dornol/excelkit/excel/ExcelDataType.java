@@ -31,7 +31,7 @@ public enum ExcelDataType {
     /**
      * Generic string type. Calls {@code String.valueOf(value)}.
      */
-    STRING((cell, value) -> cell.setCellValue(String.valueOf(value)), null),
+    STRING((cell, value) -> ExcelCellText.write(cell, String.valueOf(value)), null),
 
     /**
      * Boolean values are converted to "Y" or "N".
@@ -127,7 +127,7 @@ public enum ExcelDataType {
             url = String.valueOf(value);
             label = url;
         }
-        cell.setCellValue(label);
+        ExcelCellText.write(cell, label);
         CreationHelper createHelper = cell.getSheet().getWorkbook().getCreationHelper();
         Hyperlink hyperlink = createHelper.createHyperlink(HyperlinkType.URL);
         hyperlink.setAddress(url);
@@ -165,9 +165,9 @@ public enum ExcelDataType {
     RICH_TEXT((cell, value) -> {
         if (value instanceof ExcelRichText rt) {
             SXSSFWorkbook wb = (SXSSFWorkbook) cell.getSheet().getWorkbook();
-            cell.setCellValue(rt.toRichTextString(wb, ExcelRichText.getFontCache(wb)));
+            ExcelCellText.writeStreaming(cell, rt.toRichTextString(wb, ExcelRichText.getFontCache(wb)));
         } else {
-            cell.setCellValue(String.valueOf(value));
+            ExcelCellText.write(cell, String.valueOf(value));
         }
     }, null)
     ;

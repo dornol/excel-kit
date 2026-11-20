@@ -96,12 +96,17 @@ public class ExcelRichText {
      * @param fontCache a cache map to reuse fonts with identical styling
      * @return the rich text string ready to be set on a cell
      */
-    RichTextString toRichTextString(SXSSFWorkbook wb, Map<String, Font> fontCache) {
+    XSSFRichTextString toRichTextString(SXSSFWorkbook wb, Map<String, Font> fontCache) {
         StringBuilder fullText = new StringBuilder();
         for (Segment seg : segments) {
             fullText.append(seg.text);
         }
-        XSSFRichTextString rts = new XSSFRichTextString(fullText.toString());
+        String logical = fullText.toString();
+        String encoded = ExcelCellText.encode(logical);
+        if (encoded != logical) {
+            return encodedRichText(wb, fontCache, logical, encoded);
+        }
+        XSSFRichTextString rts = new XSSFRichTextString(logical);
 
         int pos = 0;
         for (Segment seg : segments) {
@@ -113,6 +118,24 @@ public class ExcelRichText {
             pos = end;
         }
         return rts;
+    }
+
+    private XSSFRichTextString encodedRichText(SXSSFWorkbook wb, Map<String, Font> fontCache,
+                                              String logical, String encoded) {
+        var text = new ExcelCellText.StreamingText(logical, encoded);
+        int position = 0;
+        int storedPosition = 0;
+        for (Segment segment : segments) {
+            if (segment.text.isEmpty()) continue;
+            int storedStart = storedPosition;
+            int end = position + segment.text.length();
+            while (position < end) {
+                storedPosition += ExcelCellText.needsEscape(logical, position++) ? 7 : 1;
+            }
+            XSSFFont font = segment.style == null ? null : (XSSFFont) segment.style.resolveFont(wb, fontCache);
+            text.append(encoded.substring(storedStart, storedPosition), font);
+        }
+        return text;
     }
 
     /**

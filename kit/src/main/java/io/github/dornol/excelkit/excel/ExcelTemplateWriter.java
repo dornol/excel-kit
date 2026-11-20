@@ -296,12 +296,12 @@ public class ExcelTemplateWriter implements AutoCloseable {
         if (value == null) {
             cell.setBlank();
         } else if (value instanceof String s) {
-            cell.setCellValue(s);
+            ExcelCellText.write(cell, s);
         } else if (value instanceof Number n) {
             try {
                 ExcelDataType.setNumber(cell, n);
             } catch (ArithmeticException e) {
-                cell.setCellValue(n.toString());
+                ExcelCellText.write(cell, n.toString());
             }
         } else if (value instanceof Boolean b) {
             cell.setCellValue(b);
@@ -312,7 +312,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
         } else if (value instanceof LocalTime lt) {
             ExcelDataType.setTime(cell, lt);
         } else {
-            cell.setCellValue(String.valueOf(value));
+            ExcelCellText.write(cell, String.valueOf(value));
         }
     }
 
@@ -320,7 +320,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
         try {
             ExcelDataType.setDateTime(cell, value);
         } catch (IllegalArgumentException e) {
-            cell.setCellValue(text);
+            ExcelCellText.write(cell, text);
         }
     }
 }

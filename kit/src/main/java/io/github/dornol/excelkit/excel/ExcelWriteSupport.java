@@ -132,7 +132,7 @@ class ExcelWriteSupport {
         for (int j = 0; j < columns.size(); j++) {
             ExcelColumn<T> col = columns.get(j);
             SXSSFCell cell = headRow.createCell(j);
-            cell.setCellValue(col.getName());
+            ExcelCellText.write(cell, col.getName());
             cell.setCellStyle(resolveHeaderStyle(col, headerStyle, wb, headerStyleCache));
             applyHeaderComment(cell, col, sheet.getWorkbook());
         }
@@ -208,12 +208,12 @@ class ExcelWriteSupport {
                 SXSSFCell cell = rows[r].createCell(c);
                 cell.setCellStyle(colHeaderStyle);
                 if (grid[r][c] != null) {
-                    cell.setCellValue(grid[r][c]);
+                    ExcelCellText.write(cell, grid[r][c]);
                 }
             }
             SXSSFCell colCell = rows[maxDepth].createCell(c);
             colCell.setCellStyle(colHeaderStyle);
-            colCell.setCellValue(col.getName());
+            ExcelCellText.write(colCell, col.getName());
         }
     }
 
@@ -268,7 +268,7 @@ class ExcelWriteSupport {
             SXSSFCell topCell;
             if (firstNullRow < maxDepth) {
                 topCell = rows[firstNullRow].getCell(c);
-                topCell.setCellValue(columns.get(c).getName());
+                ExcelCellText.write(topCell, columns.get(c).getName());
                 for (int r = firstNullRow + 1; r <= maxDepth; r++) {
                     rows[r].getCell(c).setBlank();
                 }

@@ -1,0 +1,140 @@
+package io.github.dornol.excelkit.excel;
+
+import io.github.dornol.excelkit.core.CellData;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ExcelValuePreservationTest {
+
+    @Test
+    void escapesLiteralSequencesAndControlsWithInlineAndSharedStrings() throws IOException {
+        List<Object> values = List.of("_x0041_", "_x0041_x0042_", "_x0041\0", "a\0b\fb\u0001", "a\r\nb",
+                "한글😀", "x".repeat(32760) + "_x0041_", new ExcelRichText().bold("_x").italic("0041_\f"));
+        for (boolean shared : List.of(false, true)) {
+            var output = new ByteArrayOutputStream();
+            ExcelWriter.<Object>create(options -> options.useSharedStrings(shared))
+                    .column("_x005F_", value -> value).write(values).writeTo(output);
+            byte[] workbook = output.toByteArray();
+            var rows = ExcelReader.forMap().readAll(new ByteArrayInputStream(workbook));
+            assertEquals(values.stream().map(Object::toString).toList(),
+                    rows.stream().map(row -> row.get("_x005F_")).toList());
+            if (shared) {
+                try (var poi = new XSSFWorkbook(new ByteArrayInputStream(workbook))) {
+                    var rich = poi.getSheetAt(0).getRow(values.size()).getCell(0).getRichStringCellValue();
+                    assertEquals(2, rich.numFormattingRuns());
+                }
+            }
+        }
+    }
+
+    @Test
+    void isoTypedValuesReadAsDatesDateTimesAndTimes() throws IOException {
+        byte[] file = workbookWithSheetXml("""
+                <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                  <sheetData>
+                    <row r="1">
+                      <c r="A1" t="inlineStr"><is><t>Date</t></is></c>
+                      <c r="B1" t="inlineStr"><is><t>DateTime</t></is></c>
+                      <c r="C1" t="inlineStr"><is><t>Time</t></is></c>
+                    </row>
+                    <row r="2">
+                      <c r="A2" s="1" t="d"><v>2025-04-28</v></c>
+                      <c r="B2" s="1" t="d"><v>2025-04-28T10:15:21.123</v></c>
+                      <c r="C2" s="1" t="d"><v>12:34:56</v></c>
+                    </row>
+                  </sheetData>
+                </worksheet>
+                """);
+        var row = ExcelReader.mapping(value -> value).readAll(new ByteArrayInputStream(file)).get(0);
+        assertEquals(LocalDate.of(2025, 4, 28), row.get("Date").asLocalDate());
+        assertEquals(LocalDateTime.of(2025, 4, 28, 10, 15, 21, 123_000_000), row.get("DateTime").asLocalDateTime());
+        assertEquals(LocalTime.of(12, 34, 56), row.get("Time").asLocalTime());
+        assertNull(row.get("Date").rawNumber());
+        assertEquals(List.of("2025-04-28", "2025-04-28T10:15:21.123", "12:34:56"),
+                ExcelReader.getSheetHeaders(new ByteArrayInputStream(file), 0, 1));
+    }
+
+    @Test
+    void distinguishesExcelLeapDayFromMarchAndRetainsTimeOnlyFormats() throws IOException {
+        var output = new ByteArrayOutputStream();
+        try (var workbook = new XSSFWorkbook()) {
+            var sheet = workbook.createSheet();
+            var header = sheet.createRow(0);
+            var row = sheet.createRow(1);
+            var formats = workbook.createDataFormat();
+            var headings = List.of("Leap", "March", "Time", "DateTime", "Number", "Elapsed");
+            var patterns = List.of("yyyy-mm-dd", "yyyy-mm-dd", "hh:mm:ss", "yyyy-mm-dd hh:mm:ss", "0", "[h]:mm");
+            var values = List.of(60.0, 61.0, 60.5, 60.5, 60.0, 60.5);
+            for (int column = 0; column < headings.size(); column++) {
+                header.createCell(column).setCellValue(headings.get(column));
+                var cell = row.createCell(column);
+                var style = workbook.createCellStyle();
+                style.setDataFormat(formats.getFormat(patterns.get(column)));
+                cell.setCellStyle(style);
+                cell.setCellValue(values.get(column));
+            }
+            workbook.write(output);
+        }
+        var row = ExcelReader.mapping(value -> value)
+                .readAll(new ByteArrayInputStream(output.toByteArray())).get(0);
+        assertEquals("1900-02-29", row.get("Leap").formattedValue());
+        assertThrows(DateTimeParseException.class, () -> row.get("Leap").asLocalDate());
+        assertEquals(LocalDate.of(1900, 3, 1), row.get("March").asLocalDate());
+        assertEquals(LocalTime.NOON, row.get("Time").asLocalTime());
+        assertEquals("1900-02-29T12:00:00", row.get("DateTime").formattedValue());
+        assertEquals(60L, row.get("Number").asLong());
+        assertEquals("1452:00", row.get("Elapsed").formattedValue());
+        assertEquals(60L, row.get("Leap").rawNumber().longValueExact());
+    }
+
+    @Test
+    void cellEqualityIncludesTheNumericValueAndIgnoresEquivalentNumericSpellings() {
+        var first = new CellData(0, "1.23457E+12", null, "1234567890123");
+        var equivalent = new CellData(0, "1.23457E+12", null, "1.234567890123E+12");
+        var different = new CellData(0, "1.23457E+12", null, "1234567890124");
+        assertEquals(first, equivalent);
+        assertEquals(first.hashCode(), equivalent.hashCode());
+        assertNotEquals(first, different);
+        assertEquals(2, new HashSet<>(List.of(first, equivalent, different)).size());
+    }
+
+    private static byte[] workbookWithSheetXml(String xml) throws IOException {
+        var original = new ByteArrayOutputStream();
+        try (var workbook = new XSSFWorkbook()) {
+            workbook.createSheet();
+            var date = workbook.createCellStyle();
+            date.setDataFormat(workbook.createDataFormat().getFormat("yyyy-mm-dd"));
+            workbook.write(original);
+        }
+        var patched = new ByteArrayOutputStream();
+        try (var input = new ZipInputStream(new ByteArrayInputStream(original.toByteArray()));
+             var output = new ZipOutputStream(patched)) {
+            for (ZipEntry entry; (entry = input.getNextEntry()) != null;) {
+                output.putNextEntry(new ZipEntry(entry.getName()));
+                if ("xl/worksheets/sheet1.xml".equals(entry.getName())) {
+                    output.write(xml.getBytes(StandardCharsets.UTF_8));
+                } else {
+                    input.transferTo(output);
+                }
+                output.closeEntry();
+            }
+        }
+        return patched.toByteArray();
+    }
+}

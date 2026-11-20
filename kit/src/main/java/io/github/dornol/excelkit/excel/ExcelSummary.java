@@ -160,7 +160,7 @@ public class ExcelSummary {
                 String text = entries.size() > 1
                         ? op.name().substring(0, 1) + op.name().substring(1).toLowerCase()
                         : (labelText != null ? labelText : op.name().substring(0, 1) + op.name().substring(1).toLowerCase());
-                summaryRow.createCell(labelIdx).setCellValue(text);
+                ExcelCellText.write(summaryRow.createCell(labelIdx), text);
 
                 // Formulas
                 for (String colName : cols) {

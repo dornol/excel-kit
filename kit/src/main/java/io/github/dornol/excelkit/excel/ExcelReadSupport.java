@@ -1,14 +1,25 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.util.XMLHelper;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
+import org.apache.poi.xssf.model.SharedStrings;
+import org.apache.poi.xssf.model.Styles;
+import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.xml.sax.InputSource;
 import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
+import org.jspecify.annotations.Nullable;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * Package-private utility methods shared by {@link ExcelReadHandler} and {@link ExcelReader}
@@ -20,6 +31,9 @@ class ExcelReadSupport {
 
     /** Excel maximum column count (XFD = 16,384). */
     static final int EXCEL_MAX_COLUMNS = 16_384;
+    private static final Pattern FORMAT_LITERAL = Pattern.compile("\"[^\"]*\"|\\\\.|_.|\\*.");
+    private static final Pattern ELAPSED_TIME = Pattern.compile("\\[(?:h+|m+|s+)\\]");
+    private static final Pattern FORMAT_MODIFIER = Pattern.compile("\\[[^\\]]*\\]");
 
     private ExcelReadSupport() {
     }
@@ -48,9 +62,79 @@ class ExcelReadSupport {
         return new DataFormatter(locale) {
             @Override
             public String formatRawCellContents(double value, int formatIndex, String formatString) {
+                if (!use1904Dates && value >= 60 && value < 61 && formatString != null
+                        && DateUtil.isADateFormat(formatIndex, formatString) && hasCalendarFields(formatString)) {
+                    String date = "1900-02-29";
+                    if (value == 60) return date;
+                    long timeMillis = Math.min(86_399_999, Math.round((value - 60) * 86_400_000));
+                    return date + "T" + LocalTime.ofNanoOfDay(timeMillis * 1_000_000).format(DateTimeFormatter.ISO_LOCAL_TIME);
+                }
                 return super.formatRawCellContents(value, formatIndex, formatString, use1904Dates);
             }
         };
+    }
+
+    private static boolean hasCalendarFields(String format) {
+        String fields = FORMAT_LITERAL.matcher(format.toLowerCase(Locale.ROOT)).replaceAll("");
+        boolean elapsed = ELAPSED_TIME.matcher(fields).find();
+        fields = FORMAT_MODIFIER.matcher(fields).replaceAll("");
+        return fields.indexOf('y') >= 0 || fields.indexOf('d') >= 0 || fields.contains("mmm")
+                || (fields.indexOf('m') >= 0 && fields.indexOf('h') < 0 && fields.indexOf('s') < 0 && !elapsed);
+    }
+
+    /** Keeps worksheet value handling consistent on POI versions that predate ISO date support. */
+    static class SheetXmlHandler extends XSSFSheetXMLHandler {
+        static final String SPREADSHEET_NAMESPACE = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+
+        private final StringBuilder cachedText = new StringBuilder();
+        private boolean stringCell;
+        private boolean readingCachedText;
+
+        SheetXmlHandler(@Nullable Styles styles, SharedStrings strings, SheetContentsHandler handler,
+                        DataFormatter formatter) {
+            super(styles, strings, handler, formatter, false);
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes attributes)
+                throws SAXException {
+            if (SPREADSHEET_NAMESPACE.equals(uri)) {
+                if ("c".equals(localName)) {
+                    String type = attributes.getValue("t");
+                    stringCell = "str".equals(type);
+                    if ("d".equals(type)) {
+                        var normalized = new AttributesImpl(attributes);
+                        normalized.setValue(normalized.getIndex("t"), "str");
+                        attributes = normalized;
+                    }
+                } else if (stringCell && "v".equals(localName)) {
+                    readingCachedText = true;
+                    cachedText.setLength(0);
+                }
+            }
+            super.startElement(uri, localName, qName, attributes);
+        }
+
+        @Override
+        public void characters(char[] chars, int start, int length) throws SAXException {
+            if (readingCachedText) {
+                cachedText.append(chars, start, length);
+            } else {
+                super.characters(chars, start, length);
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (readingCachedText && "v".equals(localName) && SPREADSHEET_NAMESPACE.equals(uri)) {
+                readingCachedText = false;
+                String text = cachedText.toString();
+                if (text.contains("_x")) text = new XSSFRichTextString(text).getString();
+                char[] chars = text.toCharArray();
+                super.characters(chars, 0, chars.length);
+            }
+            super.endElement(uri, localName, qName);
+        }
     }
 
     /**

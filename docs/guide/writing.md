@@ -58,6 +58,9 @@ Template cell writes preserve such dates as text.
 Built-in formula columns and summary rows ask Excel to recalculate on open.
 Their results read as blank until an application calculates and saves them.
 
+XLSX cell text preserves literal escape-like text such as `_x0041_` and control
+characters by encoding them as SpreadsheetML text escapes.
+
 You can still set types explicitly, for example `ExcelDataType.INTEGER` or `ExcelDataType.DATE`:
 
 | Type | Java Type | Default Format |

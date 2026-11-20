@@ -183,7 +183,7 @@ public class ExcelColumn<T> {
                 throw new ExcelWriteException("Failed to write cell value for column '" + name + "'", e);
             }
             log.warn("Writing value as text after a cell write failure for column '{}' (value={})", name, columnData, e);
-            cell.setCellValue(String.valueOf(columnData));
+            ExcelCellText.write(cell, String.valueOf(columnData));
             return style;
         }
     }

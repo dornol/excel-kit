@@ -624,12 +624,23 @@ public final class CellData {
             return false;
         }
         return columnIndex == cellData.columnIndex
-                && Objects.equals(formattedValue, cellData.formattedValue);
+                && Objects.equals(formattedValue, cellData.formattedValue)
+                && Objects.equals(comparableRawValue(), cellData.comparableRawValue());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(columnIndex, formattedValue);
+        return Objects.hash(columnIndex, formattedValue, comparableRawValue());
+    }
+
+    private @Nullable Object comparableRawValue() {
+        if (rawNumericValue == null) return null;
+        try {
+            return new BigDecimal(rawNumericValue.trim()).stripTrailingZeros();
+        } catch (NumberFormatException | ArithmeticException e) {
+            // Equality remains defined even for a malformed numeric cell.
+            return rawNumericValue;
+        }
     }
 
     @Override

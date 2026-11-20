@@ -223,6 +223,16 @@ class ExcelTemplateWriterEdgeCaseTest {
     }
 
     @Test
+    void templateTextPreservesLiteralEscapesAndControlCharacters() throws IOException {
+        String value = "_x0041_\0\f";
+        byte[] result = writeTemplateCell("B4", value);
+
+        try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertEquals(value, workbook.getSheetAt(0).getRow(3).getCell(1).getStringCellValue());
+        }
+    }
+
+    @Test
     void cell_withNull_shouldSetBlankCell() throws IOException {
         byte[] result = writeTemplateCell("B4", null);
 

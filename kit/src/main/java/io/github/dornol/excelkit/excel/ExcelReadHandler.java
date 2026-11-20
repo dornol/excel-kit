@@ -265,10 +265,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     /**
      * Captures the stored number before POI emits a formatted cell from the closing value element.
      */
-    private class NumericSheetXmlHandler extends XSSFSheetXMLHandler {
-        private static final String SPREADSHEET_NAMESPACE =
-                "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-
+    private class NumericSheetXmlHandler extends ExcelReadSupport.SheetXmlHandler {
         private final SheetHandler sheetHandler;
         private final StringBuilder numericValue = new StringBuilder();
         private boolean numericCell;
@@ -279,7 +276,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
         NumericSheetXmlHandler(@Nullable StylesTable styles, SharedStrings strings,
                                SheetHandler sheetHandler, DataFormatter formatter) {
-            super(styles, strings, sheetHandler, formatter, false);
+            super(styles, strings, sheetHandler, formatter);
             this.sheetHandler = sheetHandler;
         }
 

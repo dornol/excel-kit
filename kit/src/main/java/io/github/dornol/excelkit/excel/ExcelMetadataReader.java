@@ -84,8 +84,8 @@ final class ExcelMetadataReader {
             StylesTable styles = reader.getStylesTable();
             XMLReader parser = XMLHelper.newXMLReader();
             HeaderExtractor extractor = new HeaderExtractor(headerRowIndex);
-            parser.setContentHandler(new XSSFSheetXMLHandler(styles, sharedStrings, extractor,
-                    ExcelReadSupport.dataFormatter(reader), false));
+            parser.setContentHandler(new ExcelReadSupport.SheetXmlHandler(styles, sharedStrings, extractor,
+                    ExcelReadSupport.dataFormatter(reader)));
 
             Iterator<InputStream> sheets = reader.getSheetsData();
             int currentIndex = 0;
