@@ -222,6 +222,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         ExcelWriteSupport.validateUniqueColumnNames(columns);
 
         List<SXSSFSheet> allSheets = new ArrayList<>();
+        List<Integer> dataEndRows = new ArrayList<>();
         allSheets.add(this.sheet);
 
         int currentRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
@@ -241,6 +242,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 cursor.plusTotal();
                 if (maxRows != Integer.MAX_VALUE && cursor.getCurrentTotal() > maxRows
                         && (cursor.getCurrentTotal() - 1) % maxRows == 0) {
+                    dataEndRows.add(cursor.getRowOfSheet() - 1);
                     ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
                     activeSheet = createRolloverSheet(allSheets.size());
                     allSheets.add(activeSheet);
@@ -257,11 +259,12 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             }
         }
 
+        dataEndRows.add(cursor.getRowOfSheet() - 1);
         int nextFreeRow = ExcelWriteSupport.writeAfterDataAndSummary(
                 activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
-        for (SXSSFSheet s : allSheets) {
-            ExcelSheetPostProcessor.apply(s, columns, headerRowIndex, cfg);
+        for (int i = 0; i < allSheets.size(); i++) {
+            ExcelSheetPostProcessor.apply(allSheets.get(i), columns, headerRowIndex, dataEndRows.get(i), cfg);
         }
         if (tableOptions != null) {
             if (allSheets.size() > 1 && !tableOptions.perRolloverSheet()) {

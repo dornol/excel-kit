@@ -12,15 +12,19 @@ final class ExcelSheetPostProcessor {
     private ExcelSheetPostProcessor() {
     }
 
+    /**
+     * @param dataEndRow the last data row of this sheet; conditional formatting stops there so that
+     *                   summary and {@code afterData} rows are not formatted (or scaled) as data
+     */
     static <T> void apply(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
-                          int headerRowIndex, SheetConfig<T> config) {
+                          int headerRowIndex, int dataEndRow, SheetConfig<T> config) {
         applyColumnWidths(sheet, columns);
         applyDataValidations(sheet, columns, headerRowIndex);
         applyColumnOutline(sheet, columns);
         applyColumnHidden(sheet, columns);
         if (config.sheetPassword != null) sheet.protectSheet(config.sheetPassword);
         if (config.conditionalRules != null) for (ExcelConditionalRule rule : config.conditionalRules)
-            rule.apply(sheet, headerRowIndex, columns.size(), sheet.getLastRowNum());
+            rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow);
         if (config.printSetup != null) config.printSetup.apply(sheet, headerRowIndex);
         ExcelWriteSupport.applyTabColor(sheet, config.tabColor);
         ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex);

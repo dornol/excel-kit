@@ -679,6 +679,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
                 consumer.accept(rowData, cursor());
             });
 
+            execution().dataEndRow(cursor().getRowOfSheet() - 1);
             int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
                     options.columns(), headerRowIndex(), options.sheetConfig());
             if (this.afterAllWriter != null) {
@@ -739,6 +740,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         ExcelWriteOptions<T> options = executionOptions();
         cursor().plusTotal();
         if (isOverMaxRows()) {
+            execution().dataEndRow(cursor().getRowOfSheet() - 1);
             ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(), options.columns(), headerRowIndex(), options.sheetConfig());
             turnOverSheet();
             int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
@@ -810,7 +812,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             SXSSFSheet target = wb.getSheetAt(i);
             ExcelWriteOptions<T> options = executionOptions();
             ExcelSheetPostProcessor.apply(target, options.columns(), execution().headerRow(target),
-                    options.sheetConfig());
+                    execution().dataEndRow(target), options.sheetConfig());
         }
     }
 

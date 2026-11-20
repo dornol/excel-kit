@@ -889,5 +889,53 @@ class ExcelEdgeCaseTest {
                 assertNull(xssf.getSheetAt(0).getDrawingPatriarch(), "no chart without data");
             }
         }
+
+        private static java.util.List<String> conditionalRanges(org.apache.poi.xssf.usermodel.XSSFSheet sheet) {
+            return sheet.getCTWorksheet().getConditionalFormattingList().stream()
+                    .map(cf -> String.valueOf(cf.getSqref())).distinct().toList();
+        }
+
+        @Test
+        void conditionalFormattingStopsAtTheLastDataRowAndSkipsSummaryRows() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Integer>create()
+                    .column("Name", v -> "n" + v).column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s.sum("Value"))
+                    .conditionalFormatting(cf -> cf.columns(1).greaterThan("1", ExcelColor.YELLOW)
+                            .dataBar(ExcelColor.BLUE))
+                    .write(List.of(1, 2, 3)).writeTo(out);
+            try (var xssf = read(out)) {
+                // Data is B2:B4; the SUM sits in row 5 and must not be highlighted or scale the data bars.
+                assertEquals(List.of("B2:B4"), conditionalRanges(xssf.getSheetAt(0)));
+            }
+
+            var workbookOut = new ByteArrayOutputStream();
+            try (var workbook = ExcelWorkbook.create()) {
+                workbook.<Integer>sheet("S")
+                        .column("Name", v -> "n" + v).column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER))
+                        .summary(s -> s.sum("Value"))
+                        .conditionalFormatting(cf -> cf.columns(1).greaterThan("1", ExcelColor.YELLOW))
+                        .maxRows(2)
+                        .write(List.of(1, 2, 3, 4, 5));
+                workbook.finish().writeTo(workbookOut);
+            }
+            try (var xssf = read(workbookOut)) {
+                assertEquals(3, xssf.getNumberOfSheets());
+                assertEquals(List.of("B2:B3"), conditionalRanges(xssf.getSheetAt(0)));
+                assertEquals(List.of("B2:B3"), conditionalRanges(xssf.getSheetAt(1)));
+                assertEquals(List.of("B2"), conditionalRanges(xssf.getSheetAt(2)), "last sheet has one data row");
+            }
+
+            var rollover = new ByteArrayOutputStream();
+            ExcelWriter.<Integer>create().maxRows(2)
+                    .column("Name", v -> "n" + v).column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s.sum("Value"))
+                    .conditionalFormatting(cf -> cf.columns(1).greaterThan("1", ExcelColor.YELLOW))
+                    .write(List.of(1, 2, 3)).writeTo(rollover);
+            try (var xssf = read(rollover)) {
+                assertEquals(List.of("B2:B3"), conditionalRanges(xssf.getSheetAt(0)));
+                assertEquals(List.of("B2"), conditionalRanges(xssf.getSheetAt(1)));
+            }
+        }
     }
 }

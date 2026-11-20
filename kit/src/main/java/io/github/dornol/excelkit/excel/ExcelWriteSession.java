@@ -10,6 +10,7 @@ import java.util.Map;
 final class ExcelWriteSession<T> {
     private final ExcelWriteOptions<T> options;
     private final Map<SXSSFSheet, Integer> headerRows = new LinkedHashMap<>();
+    private final Map<SXSSFSheet, Integer> dataEndRows = new LinkedHashMap<>();
     private SXSSFSheet sheet;
     private Cursor cursor;
 
@@ -25,5 +26,7 @@ final class ExcelWriteSession<T> {
     void headerRow(int row) { headerRows.put(sheet, row); }
     int headerRow() { return headerRows.get(sheet); }
     int headerRow(SXSSFSheet target) { return headerRows.get(target); }
+    void dataEndRow(int row) { dataEndRows.put(sheet, row); }
+    int dataEndRow(SXSSFSheet target) { return dataEndRows.getOrDefault(target, target.getLastRowNum()); }
     Map<SXSSFSheet, Integer> headerRows() { return Map.copyOf(headerRows); }
 }
