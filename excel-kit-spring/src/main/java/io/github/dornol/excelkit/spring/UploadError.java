@@ -39,7 +39,9 @@ public record UploadError(
     }
 
     static UploadError from(long rowNum, ReadResult<?> result) {
-        RowError.Type type = result.cause() != null ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
+        // Setter-mode mapping failures have no cause, so the result's own error type is authoritative.
+        RowError.Type type = result.errorType() != null ? result.errorType()
+                : result.cause() != null ? RowError.Type.MAPPING : RowError.Type.VALIDATION;
         return new UploadError(
                 rowNum,
                 result.fileRowNum(),

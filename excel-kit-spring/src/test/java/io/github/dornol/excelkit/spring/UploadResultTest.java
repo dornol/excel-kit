@@ -32,6 +32,19 @@ class UploadResultTest {
         assertEquals("not-a-number", result.errors().get(0).rawValues().get(1));
     }
 
+    @Test
+    void read_classifiesSetterConversionFailuresAsMappingErrors() {
+        String csv = "Name,Price\nPen,not-a-number\n";
+        var reader = CsvReader.setter(Product::new)
+                .column("Name", (p, cell) -> p.name = cell.asString())
+                .column("Price", (p, cell) -> p.price = cell.asInt());
+
+        UploadResult<Product> result = UploadResult.read("CSV", consumer ->
+                reader.read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), consumer));
+
+        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, result.errors().get(0).type());
+    }
+
     static class Product {
         String name;
         Integer price;
