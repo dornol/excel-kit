@@ -186,7 +186,7 @@ public class SheetContext {
     public SheetContext namedRange(String name, int col, int firstRow, int lastRow) {
         String sheetName = sheet.getSheetName();
         String colLetter = columnLetter(col);
-        String ref = "'" + sheetName + "'!$" + colLetter + "$" + (firstRow + 1)
+        String ref = "'" + sheetName.replace("'", "''") + "'!$" + colLetter + "$" + (firstRow + 1)
                 + ":$" + colLetter + "$" + (lastRow + 1);
         return namedRange(name, ref);
     }

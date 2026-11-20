@@ -425,7 +425,7 @@ class ExcelWriteSupport {
         for (var entry : namedRanges.entrySet()) {
             String col = SheetContext.columnLetter(entry.getValue());
             int dataStart = headerRowIndex + 2; // 1-based, after header
-            String ref = "'%s'!$%s$%d:$%s$%d".formatted(sheetName, col, dataStart, col, lastRow + 1);
+            String ref = "'%s'!$%s$%d:$%s$%d".formatted(sheetName.replace("'", "''"), col, dataStart, col, lastRow + 1);
             var name = wb.createName();
             name.setNameName(entry.getKey());
             name.setRefersToFormula(ref);

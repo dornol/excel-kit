@@ -890,6 +890,27 @@ class NewFeaturesV072Test {
         }
 
         @Test
+        void namedRange_withApostropheInSheetName_escapesQuote() throws Exception {
+            var handler = ExcelWriter.<String>create()
+                    .sheetName("Bob's data")
+                    .column("Items", s -> s)
+                    .namedRange("Fluent", 0)
+                    .afterData(ctx -> {
+                        ctx.namedRange("ViaContext", 0, 1, 3);
+                        return ctx.getCurrentRow();
+                    })
+                    .write(Stream.of("X", "Y", "Z"));
+
+            var baos = new ByteArrayOutputStream();
+            handler.writeTo(baos);
+
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
+                assertEquals("'Bob''s data'!$A$2:$A$4", wb.getName("Fluent").getRefersToFormula());
+                assertEquals("'Bob''s data'!$A$2:$A$4", wb.getName("ViaContext").getRefersToFormula());
+            }
+        }
+
+        @Test
         void multipleNamedRanges_allCreated() throws Exception {
             var handler = ExcelWriter.<String>create()
                     .sheetName("Ref")
