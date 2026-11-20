@@ -30,6 +30,10 @@ CsvHandler ch = CsvWriter.<Row>create()
 ch.writeTo(Path.of("rows.csv"));
 ```
 
+`writeTo(Path)` (including the password overloads) writes through a temporary sibling file and
+replaces the target only when the write succeeded, via `AtomicFileWriter`. If the write fails, or the
+handler was already consumed, an existing target file is left untouched and no partial file remains.
+
 CSV writes report a `CsvWriteException` when a value cannot be encoded in the
 selected charset. With formula-injection defense enabled, numeric objects keep
 their signs and formula-like text is prefixed with a single quote.

@@ -28,15 +28,15 @@ integrations you use, using versions compatible with the rest of your applicatio
 
 **Gradle — Excel**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.24.0")
-implementation("io.github.dornol:excel-kit-spring:0.24.0") // optional Spring MVC helpers
+implementation("io.github.dornol:excel-kit:0.25.0")
+implementation("io.github.dornol:excel-kit-spring:0.25.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:6.0.0")      // Excel read/write
 implementation("org.slf4j:slf4j-api:2.0.20")          // logging facade
 ```
 
 **Gradle — CSV**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.24.0")
+implementation("io.github.dornol:excel-kit:0.25.0")
 implementation("com.opencsv:opencsv:5.12.0")
 implementation("org.slf4j:slf4j-api:2.0.20")
 ```
@@ -51,12 +51,12 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.24.0</version>
+  <version>0.25.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit-spring</artifactId>
-  <version>0.24.0</version>
+  <version>0.25.0</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
@@ -289,7 +289,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |
 | Null handling | `nullValue()` default for null cells, `defaultStyle()` for writer-level defaults |
 | Metadata | Document properties (title, author, subject, keywords), named ranges (fluent API) |
-| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, fail-fast write errors |
+| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, fail-fast write errors, atomic file writes (`AtomicFileWriter`: `writeTo(Path)` keeps the existing file on failure) |
 
 **Reading (Excel & CSV)**
 

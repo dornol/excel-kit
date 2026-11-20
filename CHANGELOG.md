@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-20
+
 ### Added
 - `ExcelReader.forMapRaw()` / `forMapRaw(String...)` return stored XLSX numbers as plain
   strings instead of displayed text.

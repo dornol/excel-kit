@@ -18,9 +18,7 @@ ExcelHandler handler = ExcelWriter.<Person>create()
             .type(ExcelDataType.INTEGER)
         .write(data);
 
-try (var os = Files.newOutputStream(Path.of("people.xlsx"))) {
-    handler.writeTo(os);
-}
+handler.writeTo(Path.of("people.xlsx"));
 ```
 
 ## Excel Writing (Multi-Sheet)
@@ -98,7 +96,7 @@ new CsvReader<>(Product::new, null)
 ## Output Consumption
 
 - `write(out)` — stream directly to OutputStream
-- `writeTo(path)` — write to file
+- `writeTo(path)` — write to file; atomic via `AtomicFileWriter` (a failed write keeps the existing file)
 - `password("pw")` on writer — automatic encryption
 - `writeTo(out, "pw")` — late-binding encryption
 
