@@ -24,6 +24,7 @@ import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.util.XMLHelper;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
@@ -31,7 +32,9 @@ import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.jspecify.annotations.Nullable;
+import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -246,14 +249,73 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             XMLReader parser = XMLHelper.newXMLReader();
             SheetHandler sheetHandler = new SheetHandler(consumer, totalRows);
-            XSSFSheetXMLHandler sheetParser = new XSSFSheetXMLHandler(styles, ss, sheetHandler,
-                    ExcelReadSupport.dataFormatter(reader), false);
+            XSSFSheetXMLHandler sheetParser = new NumericSheetXmlHandler(styles, ss, sheetHandler,
+                    ExcelReadSupport.dataFormatter(reader));
             parser.setContentHandler(sheetParser);
 
             ExcelSheetNavigator.consume(reader, sheetIndex, sheet -> {
                 try { parser.parse(new InputSource(sheet)); }
                 catch (StopReadingException ignored) { /* configured row stop */ }
             });
+    }
+
+    /**
+     * Captures the stored number before POI emits a formatted cell from the closing value element.
+     */
+    private class NumericSheetXmlHandler extends XSSFSheetXMLHandler {
+        private static final String SPREADSHEET_NAMESPACE =
+                "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+
+        private final SheetHandler sheetHandler;
+        private final StringBuilder numericValue = new StringBuilder();
+        private boolean numericCell;
+        private boolean readingNumericValue;
+
+        NumericSheetXmlHandler(@Nullable StylesTable styles, SharedStrings strings,
+                               SheetHandler sheetHandler, DataFormatter formatter) {
+            super(styles, strings, sheetHandler, formatter, false);
+            this.sheetHandler = sheetHandler;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes attributes)
+                throws SAXException {
+            if (SPREADSHEET_NAMESPACE.equals(uri)) {
+                if ("c".equals(localName)) {
+                    String type = attributes.getValue("t");
+                    numericCell = type == null || "n".equals(type);
+                } else if (numericCell && "v".equals(localName)) {
+                    readingNumericValue = true;
+                    numericValue.setLength(0);
+                }
+            }
+            super.startElement(uri, localName, qName, attributes);
+        }
+
+        @Override
+        public void characters(char[] chars, int start, int length) throws SAXException {
+            if (readingNumericValue) numericValue.append(chars, start, length);
+            super.characters(chars, start, length);
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (SPREADSHEET_NAMESPACE.equals(uri)) {
+                if (readingNumericValue && "v".equals(localName)) {
+                    readingNumericValue = false;
+                    String value = numericValue.toString();
+                    sheetHandler.rawNumericValue = value.isBlank() ? null : value;
+                    try {
+                        super.endElement(uri, localName, qName);
+                    } finally {
+                        sheetHandler.rawNumericValue = null;
+                    }
+                    return;
+                }
+                if ("c".equals(localName)) numericCell = false;
+            }
+            super.endElement(uri, localName, qName);
+        }
     }
 
     /**
@@ -343,6 +405,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
      */
     private class SheetHandler extends DefaultHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
         private @Nullable T currentInstance;
+        private @Nullable String rawNumericValue;
         private final List<CellData> currentRow = new ArrayList<>();
         private final List<String> headerNames = new ArrayList<>();
         /** Accumulates bottom-most non-blank header value per column across multi-row headers. */
@@ -462,7 +525,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             while (currentRow.size() < colIndex) {
                 currentRow.add(cellData(currentRow.size(), null));
             }
-            currentRow.add(cellData(colIndex, formattedValue));
+            currentRow.add(cellData(colIndex, formattedValue, rawNumericValue));
         }
 
         /**

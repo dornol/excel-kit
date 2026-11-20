@@ -5,6 +5,7 @@ import org.jspecify.annotations.Nullable;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,17 +13,36 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Stateless conversion engine used by the CellData facade. */
 final class CellConversionSupport {
     private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$₩€%원]");
+    private static final Pattern EXPONENT_MARKER = Pattern.compile("[Ee](?:\\+(?=\\p{Nd})|(?!\\+))");
 
     private CellConversionSupport() {
     }
 
     static @Nullable Number number(String value, Locale locale) throws ParseException {
-        return value.isBlank() ? null : NumberFormat.getNumberInstance(locale).parse(cleanNumber(value, locale, false));
+        if (value.isBlank()) return null;
+
+        String cleaned = cleanNumber(value, locale, false);
+        NumberFormat format = NumberFormat.getNumberInstance(locale);
+        ParsePosition position = new ParsePosition(0);
+        Number parsed = format.parse(cleaned, position);
+        if (parsed != null && position.getIndex() == cleaned.length()) return parsed;
+
+        // NumberFormat expects the localized exponent separator and omits a positive exponent's plus sign.
+        String exponentSeparator = DecimalFormatSymbols.getInstance(locale).getExponentSeparator();
+        String scientific = EXPONENT_MARKER.matcher(cleaned.replace(exponentSeparator, "E"))
+                .replaceAll(Matcher.quoteReplacement(exponentSeparator));
+        if (!scientific.equals(cleaned)) {
+            position.setIndex(0);
+            parsed = format.parse(scientific, position);
+            if (parsed != null && position.getIndex() == scientific.length()) return parsed;
+        }
+        throw new ParseException("Invalid number: " + value, position.getIndex());
     }
 
     static String decimalText(String value, Locale locale) {

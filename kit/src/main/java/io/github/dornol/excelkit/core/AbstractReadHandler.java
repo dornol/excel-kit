@@ -71,6 +71,11 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     }
 
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {
+        return cellData(columnIndex, formattedValue, null);
+    }
+
+    protected CellData cellData(int columnIndex, @Nullable String formattedValue,
+                                @Nullable String rawNumericValue) {
         if (readOptions.limits().maxColumns() >= 0
                 && columnIndex >= readOptions.limits().maxColumns()) {
             throw new ReadLimitExceededException(ReadLimitExceededException.Limit.COLUMNS,
@@ -81,7 +86,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
             throw new ReadLimitExceededException(ReadLimitExceededException.Limit.CELL_CHARACTERS,
                     readOptions.limits().maxCellCharacters(), formattedValue.length());
         }
-        return new CellData(columnIndex, formattedValue, readOptions.cellConversionConfig());
+        return new CellData(columnIndex, formattedValue, readOptions.cellConversionConfig(), rawNumericValue);
     }
 
     protected final void validateColumnCount(int columnCount) {

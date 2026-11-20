@@ -66,12 +66,13 @@ Can be mixed: name-based + index-based in same reader.
 
 | Method | Return | Description |
 |--------|--------|-------------|
-| `asString()` | String | Raw string value |
+| `asString()` | String | Formatted cell text |
 | `asInt()` | Integer | Parse as integer (null if empty) |
 | `asLong()` | Long | Parse as long |
 | `asDouble()` | Double | Parse as double |
 | `asFloat()` | Float | Parse as float |
-| `asBigDecimal()` | BigDecimal | Parse as BigDecimal |
+| `asBigDecimal()` | BigDecimal | Parse the formatted cell text as BigDecimal |
+| `rawNumber()` | BigDecimal | Read the stored XLSX number, including cached numeric formula results |
 | `asBoolean()` | Boolean | Parse as boolean |
 | `asLocalDate()` | LocalDate | Parse as date |
 | `asLocalDateTime()` | LocalDateTime | Parse as datetime |
@@ -80,7 +81,12 @@ Can be mixed: name-based + index-based in same reader.
 | `asInt(defaultValue)` | int | With default for null/empty |
 | `asString(defaultValue)` | String | With default for null/empty |
 | `isEmpty()` | boolean | Check if cell is empty |
-| `value()` | String | Raw value (nullable) |
+| `value()` | String | Formatted cell text (nullable) |
+
+`rawNumber()` preserves the digits stored in the XLSX file even when the General
+format rounds large numbers for display. It returns the underlying fraction for
+percentages and the serial number for dates. For text, blank cells, and CSV input,
+it returns `null`.
 
 ## RowData Methods (Mapping Mode)
 

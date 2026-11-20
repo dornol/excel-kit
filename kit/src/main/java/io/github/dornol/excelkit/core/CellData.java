@@ -39,6 +39,7 @@ public final class CellData {
     private final int columnIndex;
     private final String formattedValue;
     private final @Nullable CellConversionConfig conversionConfig;
+    private final @Nullable String rawNumericValue;
 
     /**
      * Returns the default locale used by no-arg number parsing methods.
@@ -145,6 +146,19 @@ public final class CellData {
      */
     public CellData(int columnIndex, @Nullable String formattedValue,
                     @Nullable CellConversionConfig conversionConfig) {
+        this(columnIndex, formattedValue, conversionConfig, null);
+    }
+
+    /**
+     * Creates cell data with the original numeric text from an XLSX cell, when available.
+     *
+     * @param columnIndex      the column index of the cell (0-based)
+     * @param formattedValue   the formatted string value
+     * @param conversionConfig conversion settings, or {@code null} to use global defaults
+     * @param rawNumericValue  the stored numeric value in locale-independent notation, or {@code null}
+     */
+    public CellData(int columnIndex, @Nullable String formattedValue,
+                    @Nullable CellConversionConfig conversionConfig, @Nullable String rawNumericValue) {
         if (formattedValue == null) {
             formattedValue = "";
         }
@@ -154,6 +168,7 @@ public final class CellData {
         this.columnIndex = columnIndex;
         this.formattedValue = formattedValue;
         this.conversionConfig = conversionConfig;
+        this.rawNumericValue = rawNumericValue;
     }
 
     public int columnIndex() {
@@ -162,6 +177,18 @@ public final class CellData {
 
     public String formattedValue() {
         return formattedValue;
+    }
+
+    /**
+     * Returns the number stored in an XLSX cell without applying its display format.
+     * For formulas this is the cached numeric result. Dates and times return their Excel
+     * serial values, and percentages return the stored fraction.
+     *
+     * @return the stored number, or {@code null} when no XLSX numeric value is available
+     * @throws NumberFormatException if the stored numeric text is invalid
+     */
+    public @Nullable BigDecimal rawNumber() {
+        return rawNumericValue == null ? null : new BigDecimal(rawNumericValue.trim());
     }
 
     private Locale effectiveLocale() {
@@ -436,11 +463,12 @@ public final class CellData {
     }
 
     /**
-     * Converts the value to {@link BigDecimal} with full precision.
+     * Parses the formatted value as a {@link BigDecimal}.
      * <p>
      * Unlike {@link #asNumber()}, this method parses the cleaned string directly
      * as a {@link BigDecimal}, avoiding intermediate {@link Double} conversion
      * that can lose precision for large or high-precision values.
+     * Use {@link #rawNumber()} to read the stored XLSX number before display formatting.
      * Returns {@code null} if the value is empty or blank.
      *
      * @return the BigDecimal value, or {@code null} if blank

@@ -2,9 +2,11 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.csv.CsvReader;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,10 +17,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,6 +38,58 @@ class ExcelReaderBranchTest {
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void numericCellsExposeStoredValuesAlongsideFormattedText() throws IOException {
+        Path file = tempDir.resolve("numeric-precision.xlsx");
+        try (var workbook = new XSSFWorkbook(); var out = Files.newOutputStream(file)) {
+            Sheet sheet = workbook.createSheet();
+            Row headers = sheet.createRow(0);
+            for (String name : List.of("First", "Second", "Gap", "Text", "Percent", "Date", "Formula")) {
+                headers.createCell(headers.getPhysicalNumberOfCells()).setCellValue(name);
+            }
+            Row row = sheet.createRow(1);
+            row.createCell(0).setCellValue(1_234_567_890_123L);
+            row.createCell(1).setCellValue(123_456_789_012_345L);
+            row.createCell(3).setCellValue("123456789012345");
+            var percent = row.createCell(4);
+            var percentStyle = workbook.createCellStyle();
+            percentStyle.setDataFormat(workbook.createDataFormat().getFormat("0%"));
+            percent.setCellStyle(percentStyle);
+            percent.setCellValue(0.25);
+            var date = row.createCell(5);
+            var dateStyle = workbook.createCellStyle();
+            dateStyle.setDataFormat(workbook.createDataFormat().getFormat("yyyy-mm-dd"));
+            date.setCellStyle(dateStyle);
+            date.setCellValue(45_658);
+            var formula = row.createCell(6);
+            formula.setCellFormula("A2+1");
+            workbook.getCreationHelper().createFormulaEvaluator().evaluateFormulaCell(formula);
+            workbook.write(out);
+        }
+
+        Locale previousLocale = LocaleUtil.getUserLocale();
+        LocaleUtil.setUserLocale(Locale.US);
+        try {
+            RowData row = ExcelReader.mapping(data -> data)
+                    .cellConversion(config -> config.locale(Locale.US)).readAll(file).get(0);
+            assertEquals("1234567890123", row.get("First").rawNumber().toPlainString());
+            assertEquals("123456789012345", row.get("Second").rawNumber().toPlainString());
+            assertEquals("1.23457E+12", row.get("First").formattedValue());
+            assertEquals("1.23457E+14", ExcelReader.forMap().readAll(file).get(0).get("Second"));
+            assertEquals(1_234_570_000_000L, row.get("First").asLong());
+            assertEquals("1234570000000", row.get("First").asBigDecimal().toPlainString());
+            assertNull(row.get("Gap").rawNumber());
+            assertNull(row.get("Text").rawNumber());
+            assertEquals("25%", row.get("Percent").formattedValue());
+            assertEquals(new BigDecimal("0.25"), row.get("Percent").rawNumber());
+            assertEquals("2025-01-01", row.get("Date").formattedValue());
+            assertEquals("45658", row.get("Date").rawNumber().stripTrailingZeros().toPlainString());
+            assertEquals("1234567890124", row.get("Formula").rawNumber().toPlainString());
+        } finally {
+            LocaleUtil.setUserLocale(previousLocale);
+        }
+    }
 
     record Item(String name, int value) {}
 

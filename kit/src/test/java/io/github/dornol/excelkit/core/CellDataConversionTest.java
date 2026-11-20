@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -197,6 +198,25 @@ class CellDataConversionTest {
         @Test
         void asLong_worksWithFormattedNumbers() {
             assertEquals(1234567L, cell("1,234,567").asLong(0L));
+        }
+
+        @Test
+        void numericConversionsAcceptScientificNotationWithLocaleSpecificDecimals() {
+            var us = CellConversionConfig.builder().locale(Locale.US).build();
+            var german = CellConversionConfig.builder().locale(Locale.GERMANY).build();
+
+            assertEquals(1_234_570_000_000L, new CellData(0, "1.23457E+12", us).asLong());
+            assertEquals(1_234_570_000_000L, new CellData(0, "1,23457e+12", german).asLong());
+            assertEquals(0.0125, new CellData(0, "1.25E-2", us).asDouble());
+        }
+
+        @Test
+        void numericConversionsRejectPartiallyParsedValues() {
+            var us = CellConversionConfig.builder().locale(Locale.US).build();
+
+            assertThrows(IllegalArgumentException.class, () -> new CellData(0, "123abc", us).asLong());
+            assertThrows(IllegalArgumentException.class, () -> new CellData(0, "1.25E+", us).asDouble());
+            assertThrows(IllegalArgumentException.class, () -> new CellData(0, "1.25E+-2", us).asLong());
         }
 
         @Test
