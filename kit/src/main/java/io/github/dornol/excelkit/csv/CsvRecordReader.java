@@ -40,7 +40,11 @@ final class CsvRecordReader implements Closeable {
                 endings.add(new EmbeddedEnding(parser.getPendingText().length() - 1, line.ending()));
             }
             line = readLine();
-            if (line == null) throw new IOException("Unterminated quoted CSV field");
+            if (line == null) {
+                throw new IOException("Unterminated quoted CSV field in the record starting at line " + recordStartLine
+                        + ". A quote inside a value must be written as \"\" within a quoted field "
+                        + "(for example \"12\"\" pipe\"); a bare quote such as 12\" pipe opens a quoted field.");
+            }
             cells = parser.parseLineMulti(line.text());
             if (cells.length > 0) {
                 if (!endings.isEmpty()) {

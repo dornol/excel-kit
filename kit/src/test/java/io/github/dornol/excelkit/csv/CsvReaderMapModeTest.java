@@ -368,4 +368,15 @@ class CsvReaderMapModeTest {
             assertEquals("30", results.get(0).get("Age"));
         }
     }
+
+    @org.junit.jupiter.api.Test
+    void unterminatedQuoteReportsTheRecordLineAndHowToEscapeIt() {
+        String csv = "a,b\n1,2\n12\" pipe,3\nx,4\n";
+        var failure = assertThrows(CsvReadException.class, () -> CsvReader.forMap()
+                .readAll(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8))));
+        Throwable cause = failure;
+        while (cause.getCause() != null) cause = cause.getCause();
+        assertTrue(cause.getMessage().contains("line 3"), cause.getMessage());
+        assertTrue(cause.getMessage().contains("\"\""), cause.getMessage());
+    }
 }

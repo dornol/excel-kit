@@ -121,6 +121,11 @@ CsvReader.setter(Row::new)
     .read(inputStream, result -> { ... });
 ```
 
+A quote inside a value must be escaped as `""` within a quoted field (`"12"" pipe"`). A bare quote in
+the middle of an unquoted value (`12" pipe`) opens a quoted field, so the read fails with a
+`CsvReadException` whose cause names the line where the unterminated record starts. The reader does
+not guess, so rows are never merged silently; fix the source file or quote the value.
+
 Index-based column mapping is also supported:
 ```java
 CsvReader.setter(User::new)
