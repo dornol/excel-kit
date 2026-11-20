@@ -74,6 +74,7 @@ public class CsvWriter<T> {
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private boolean csvInjectionDefense = true;
+    private boolean failOnColumnError = true;
     private CsvQuoting quoting = CsvQuoting.MINIMAL;
 
     /**
@@ -304,6 +305,18 @@ public class CsvWriter<T> {
     }
 
     /**
+     * Controls whether extraction errors abort writing. Defaults to {@code true}.
+     * When disabled, failed fields are written as empty fields.
+     *
+     * @param enabled whether to abort writing when a column extractor throws
+     * @return this writer
+     */
+    public CsvWriter<T> failOnColumnError(boolean enabled) {
+        this.failOnColumnError = enabled;
+        return this;
+    }
+
+    /**
      * Writes the given stream of rows to a temporary CSV file.
      * <p>
      * The returned {@link CsvHandler} can be used to write the file to an {@link OutputStream}.
@@ -324,6 +337,7 @@ public class CsvWriter<T> {
             writeTempFile(stream, os, options);
         } catch (IOException | RuntimeException e) {
             cleanup(tempDir);
+            if (e instanceof CsvWriteException writeException) throw writeException;
             throw new CsvWriteException("Failed to write CSV", e);
         }
 
@@ -390,7 +404,7 @@ public class CsvWriter<T> {
                 cursor.plusTotal();
                 cursor.plusRow();
                 String line = options.columns().stream()
-                        .map(col -> col.applyFunction(row, cursor))
+                        .map(col -> col.applyFunction(row, cursor, options.failOnColumnError()))
                         .map(value -> escapeCsv(value, options))
                         .collect(Collectors.joining(joining));
                 writer.println(line);
@@ -424,6 +438,7 @@ public class CsvWriter<T> {
             return options.quoting() == CsvQuoting.ALL ? "\"\"" : "";
         }
         String value = input.toString();
+        if (value.indexOf('\0') >= 0) throw new CsvWriteException("CSV fields cannot contain a NUL character");
         // CSV Injection defense: prefix formula-triggering characters with a single quote.
         // Also checks after leading spaces — Excel strips spaces before evaluating formulas.
         if (options.csvInjectionDefense() && !value.isEmpty()) {
@@ -458,7 +473,7 @@ public class CsvWriter<T> {
 
     private CsvWriteOptions<T> snapshotOptions() {
         return new CsvWriteOptions<>(List.copyOf(columns), delimiter, charset, bom, afterDataWriter,
-                progressCallback, progressInterval, csvInjectionDefense, quoting);
+                progressCallback, progressInterval, csvInjectionDefense, failOnColumnError, quoting);
     }
 
     private record CsvWriteOptions<T>(
@@ -470,6 +485,7 @@ public class CsvWriter<T> {
             @Nullable ProgressCallback progressCallback,
             int progressInterval,
             boolean csvInjectionDefense,
+            boolean failOnColumnError,
             CsvQuoting quoting
     ) {}
 

@@ -374,8 +374,8 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 
 `asInt()` and `asLong()` reject fractional, non-finite, and out-of-range values.
 Date and date-time conversion with pattern strings rejects invalid calendar dates.
-`asDouble()` and `asFloat()` reject non-finite values and nonzero values that would
-round to zero. Numeric conversion accepts currency and percent markers at the
+`asNumber()`, `asDouble()`, and `asFloat()` reject non-finite values and nonzero
+values that would round to zero. Numeric conversion accepts currency and percent markers at the
 edges of a value. Custom time patterns validate the parsed time strictly.
 
 **Custom conversion:**
@@ -414,8 +414,8 @@ CsvReader.<Order>mapping(row -> new Order(
 
 By default, CSV reading treats backslashes as literal text and preserves line
 endings inside quoted fields. Use `.escapeChar('\\')` to read legacy files
-that use backslash escapes. Malformed input for the configured charset raises a
-`CsvReadException`.
+that use backslash escapes. Malformed input for the configured charset and NUL
+characters raise a `CsvReadException`.
 
 ```java
 CsvReader.setter(Product::new)
@@ -434,8 +434,8 @@ CSV-specific options: see [CSV](csv.md).
 ## External workbook compatibility
 
 Workbook-specific 1900/1904 date systems are applied to formatted numeric cells and
-header extraction. Formula values come from saved caches; the reader does not
-recalculate formulas. Path-based row reads, metadata discovery and shared-package
+header extraction. Formula values come from saved caches. A formula cell without
+a cached result reads as blank. Path-based row reads, metadata discovery and shared-package
 reads open packages read-only and preserve the caller's original file bytes.
 
 Encrypted inputs use an owned temporary plaintext workspace. It is removed after

@@ -273,6 +273,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private final StringBuilder numericValue = new StringBuilder();
         private boolean numericCell;
         private boolean readingNumericValue;
+        private @Nullable String cellReference;
+        private boolean formula;
+        private boolean hasCachedValue;
 
         NumericSheetXmlHandler(@Nullable StylesTable styles, SharedStrings strings,
                                SheetHandler sheetHandler, DataFormatter formatter) {
@@ -287,9 +290,17 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 if ("c".equals(localName)) {
                     String type = attributes.getValue("t");
                     numericCell = type == null || "n".equals(type);
-                } else if (numericCell && "v".equals(localName)) {
-                    readingNumericValue = true;
-                    numericValue.setLength(0);
+                    cellReference = attributes.getValue("r");
+                    formula = false;
+                    hasCachedValue = false;
+                } else if ("f".equals(localName)) {
+                    formula = true;
+                } else if ("v".equals(localName)) {
+                    hasCachedValue = true;
+                    if (numericCell) {
+                        readingNumericValue = true;
+                        numericValue.setLength(0);
+                    }
                 }
             }
             super.startElement(uri, localName, qName, attributes);
@@ -315,7 +326,12 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                     }
                     return;
                 }
-                if ("c".equals(localName)) numericCell = false;
+                if ("c".equals(localName)) {
+                    numericCell = false;
+                    if (formula && !hasCachedValue && cellReference != null) {
+                        sheetHandler.addCell(cellReference, "");
+                    }
+                }
             }
             super.endElement(uri, localName, qName);
         }
@@ -524,6 +540,10 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         // POI 6 callback; keep the XSSFComment overload for POI 5 runtimes.
         // No @Override so this source also compiles against POI 5.
         public void cell(String cellReference, String formattedValue, Comment comment) {
+            addCell(cellReference, formattedValue);
+        }
+
+        private void addCell(String cellReference, String formattedValue) {
             int colIndex = getColumnIndex(cellReference);
             while (currentRow.size() < colIndex) {
                 currentRow.add(cellData(currentRow.size(), null));

@@ -59,7 +59,7 @@ class CsvColumnTest {
         CsvColumn<String> column = new CsvColumn<>(name, function);
 
         // Act
-        Object result = column.applyFunction(testData, cursor);
+        Object result = column.applyFunction(testData, cursor, true);
 
         // Assert
         assertEquals("Test Data-processed", result, "applyFunction should return the result of applying the function");
@@ -77,7 +77,7 @@ class CsvColumnTest {
         CsvColumn<String> column = new CsvColumn<>(name, function);
 
         // Act
-        Object result = column.applyFunction(testData, cursor);
+        Object result = column.applyFunction(testData, cursor, false);
 
         // Assert
         assertNull(result, "applyFunction should return null when function throws an exception");

@@ -169,7 +169,7 @@ public class ExcelSummary {
                     String colLetter = SheetContext.columnLetter(colIdx);
                     String formula = op.name() + "(" + colLetter + dataStartRow + ":" + colLetter + dataEndRow + ")";
                     SXSSFCell cell = summaryRow.createCell(colIdx);
-                    cell.setCellFormula(formula);
+                    ExcelDataType.setUncalculatedFormula(cell, formula);
                 }
 
                 row++;

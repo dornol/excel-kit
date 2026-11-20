@@ -33,6 +33,9 @@ ch.writeTo(Path.of("rows.csv"));
 CSV writes report a `CsvWriteException` when a value cannot be encoded in the
 selected charset. With formula-injection defense enabled, numeric objects keep
 their signs and formula-like text is prefixed with a single quote.
+NUL characters and exceptions from value extractors raise a
+`CsvWriteException`. Use `.failOnColumnError(false)` to write an empty field
+when an extractor fails. Null and empty string values both write as empty CSV fields.
 
 ## Data Types
 
@@ -40,11 +43,20 @@ Types are inferred from the first non-null value when `.type(...)` is omitted. U
 `.type(...)` when a column needs an explicit or semantic type; explicit types always win.
 Columns whose values are all `null` fall back to `STRING`.
 
-An inferred integer column can also store later fractional values as numbers.
+When an inferred column encounters a value of a different type, the writer
+preserves that value's type where possible. An inferred integer column can store
+later fractional values as numbers.
 When a value exceeds Excel's numeric precision or the range or precision of
 an explicitly selected integer type, the default `LENIENT` policy writes it as text.
 Use `FAIL_FAST` to reject those values. Template cell writes also use text
 when a value exceeds Excel's numeric precision.
+
+`LocalTime` values are stored as a fraction of a day. Dates outside the workbook's
+date system are preserved as text with `LENIENT` and rejected with `FAIL_FAST`.
+Template cell writes preserve such dates as text.
+
+Built-in formula columns and summary rows ask Excel to recalculate on open.
+Their results read as blank until an application calculates and saves them.
 
 You can still set types explicitly, for example `ExcelDataType.INTEGER` or `ExcelDataType.DATE`:
 

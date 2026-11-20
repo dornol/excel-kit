@@ -45,12 +45,17 @@ public class CsvColumn<T> {
      *
      * @param rowData The current row object
      * @param cursor  The cursor tracking current row index
-     * @return The column's value for this row, or null if evaluation fails
+     * @param failOnColumnError whether to throw when value extraction fails
+     * @return The column's value for this row, or null when tolerated extraction fails
      */
-    @Nullable Object applyFunction(T rowData, Cursor cursor) {
+    @Nullable Object applyFunction(T rowData, Cursor cursor, boolean failOnColumnError) {
         try {
             return function.apply(rowData, cursor);
         } catch (RuntimeException e) {
+            if (failOnColumnError) {
+                throw new CsvWriteException("Failed to extract CSV column '" + name
+                        + "' at row " + cursor.getRowOfSheet(), e);
+            }
             log.error("Failed to apply function for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
             return null;
         }

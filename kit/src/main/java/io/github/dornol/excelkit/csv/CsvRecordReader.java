@@ -64,7 +64,10 @@ final class CsvRecordReader implements Closeable {
         StringBuilder fragments = null;
         while (peek() >= 0) {
             int start = position;
-            while (position < end && buffer[position] != '\n' && buffer[position] != '\r') position++;
+            while (position < end && buffer[position] != '\n' && buffer[position] != '\r') {
+                if (buffer[position] == '\0') throw new IOException("CSV input contains a NUL character");
+                position++;
+            }
             int length = position - start;
             if (position < end) {
                 String text = fragments == null ? new String(buffer, start, length)

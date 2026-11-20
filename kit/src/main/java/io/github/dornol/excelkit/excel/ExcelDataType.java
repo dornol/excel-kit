@@ -5,6 +5,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import org.jspecify.annotations.Nullable;
 
@@ -35,7 +36,7 @@ public enum ExcelDataType {
     /**
      * Boolean values are converted to "Y" or "N".
      */
-    BOOLEAN_TO_YN((cell, value) -> cell.setCellValue(Boolean.TRUE.equals(value) ? "Y" : "N"), null),
+    BOOLEAN_TO_YN((cell, value) -> cell.setCellValue((Boolean) value ? "Y" : "N"), null),
 
     /**
      * Long integer value.
@@ -72,22 +73,22 @@ public enum ExcelDataType {
     /**
      * LocalDateTime formatted as "yyyy-MM-dd HH:mm:ss".
      */
-    DATETIME((cell, value) -> cell.setCellValue((LocalDateTime) value), ExcelDataFormat.DATETIME.getFormat()),
+    DATETIME((cell, value) -> setDateTime(cell, (LocalDateTime) value), ExcelDataFormat.DATETIME.getFormat()),
 
     /**
      * LocalDate formatted as "yyyy-MM-dd".
      */
-    DATE((cell, value) -> cell.setCellValue((LocalDate) value), ExcelDataFormat.DATE.getFormat()),
+    DATE((cell, value) -> setDateTime(cell, ((LocalDate) value).atStartOfDay()), ExcelDataFormat.DATE.getFormat()),
 
     /**
      * LocalTime formatted as "HH:mm:ss".
      */
-    TIME((cell, value) -> cell.setCellValue(((LocalTime) value).atDate(LocalDate.EPOCH)), ExcelDataFormat.TIME.getFormat()),
+    TIME((cell, value) -> setTime(cell, (LocalTime) value), ExcelDataFormat.TIME.getFormat()),
 
     /**
      * BigDecimal converted to double (2 decimal places).
      */
-    BIG_DECIMAL_TO_DOUBLE((cell, value) -> setNumber(cell, (BigDecimal) value), ExcelDataFormat.NUMBER_2.getFormat()),
+    BIG_DECIMAL_TO_DOUBLE((cell, value) -> setNumber(cell, (Number) value), ExcelDataFormat.NUMBER_2.getFormat()),
 
     /**
      * BigDecimal converted to long (no decimal).
@@ -108,7 +109,7 @@ public enum ExcelDataType {
      * Reuters). Blocking pipe characters would break these use cases. Input validation
      * is the caller's responsibility.
      */
-    FORMULA((cell, value) -> cell.setCellFormula(String.valueOf(value)), null),
+    FORMULA((cell, value) -> setUncalculatedFormula(cell, String.valueOf(value)), null),
 
     /**
      * Hyperlink type. Creates a clickable URL link in the cell.
@@ -173,6 +174,38 @@ public enum ExcelDataType {
 
     private static final int EXCEL_SIGNIFICANT_DIGITS = 15;
     private static final long FIRST_SIXTEEN_DIGIT_INTEGER = 1_000_000_000_000_000L;
+    private static final LocalDate START_1900 = LocalDate.of(1900, 1, 1);
+    private static final LocalDate START_1904 = LocalDate.of(1904, 1, 1);
+    private static final LocalDate LAST_EXCEL_DATE = LocalDate.of(9999, 12, 31);
+    private static final long NANOS_PER_DAY = 86_400_000_000_000L;
+
+    static void setDateTime(Cell cell, LocalDateTime value) {
+        var workbook = cell.getSheet().getWorkbook();
+        boolean date1904 = workbook instanceof SXSSFWorkbook streaming ? streaming.getXSSFWorkbook().isDate1904()
+                : workbook instanceof XSSFWorkbook xssf && xssf.isDate1904();
+        LocalDate date = value.toLocalDate();
+        if (date.isBefore(date1904 ? START_1904 : START_1900) || date.isAfter(LAST_EXCEL_DATE)) {
+            throw new IllegalArgumentException("Date is outside the Excel date system: " + value);
+        }
+        cell.setCellValue(value);
+    }
+
+    static void setTime(Cell cell, LocalTime value) {
+        double fraction = (double) value.toNanoOfDay() / NANOS_PER_DAY;
+        cell.setCellValue(fraction);
+    }
+
+    static void setUncalculatedFormula(Cell cell, String formula) {
+        cell.setCellFormula(formula);
+        // SXSSF leaves the cached value out of the sheet XML for an empty string result.
+        cell.setCellValue("");
+        var workbook = cell.getSheet().getWorkbook();
+        if (!workbook.getForceFormulaRecalculation()) workbook.setForceFormulaRecalculation(true);
+    }
+
+    boolean isInferredNumber() {
+        return this == INTEGER || this == LONG || this == FLOAT || this == DOUBLE || this == BIG_DECIMAL_TO_DOUBLE;
+    }
 
     private static BigDecimal decimal(Number value) {
         if (value instanceof BigDecimal decimal) return decimal;

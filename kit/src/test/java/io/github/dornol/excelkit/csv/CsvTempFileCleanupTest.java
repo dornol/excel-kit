@@ -53,9 +53,8 @@ class CsvTempFileCleanupTest {
 
     @Test
     void write_columnFunctionError_shouldFallbackToNullAndCleanUp() {
-        // CsvColumn.applyFunction catches RuntimeException and returns null
         CsvWriter<TestItem> writer = CsvWriter.create();
-        writer.column("Name", item -> {
+        writer.failOnColumnError(false).column("Name", item -> {
                     throw new RuntimeException("Intentional error");
                 })
                 .column("Price", item -> item.price);

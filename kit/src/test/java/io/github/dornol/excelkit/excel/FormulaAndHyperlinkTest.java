@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,6 +19,34 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for Formula and Hyperlink data types.
  */
 class FormulaAndHyperlinkTest {
+
+    @Test
+    void newFormulasReadAsBlankUntilCalculated() throws IOException {
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<String>create().column("Formula", value -> value, c -> c.type(ExcelDataType.FORMULA))
+                .write(Stream.of("1+1", "1-1")).writeTo(output);
+        byte[] file = output.toByteArray();
+
+        var formula = ExcelReader.mapping(row -> row.get("Formula"))
+                .readAll(new ByteArrayInputStream(file)).get(0);
+        assertEquals("", formula.formattedValue());
+        assertNull(formula.rawNumber());
+
+        var calculated = new ByteArrayOutputStream();
+        try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(file))) {
+            assertTrue(workbook.getForceFormulaRecalculation());
+            var sheet = workbook.getSheetAt(0);
+            var evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+            evaluator.evaluateFormulaCell(sheet.getRow(1).getCell(0));
+            evaluator.evaluateFormulaCell(sheet.getRow(2).getCell(0));
+            workbook.write(calculated);
+        }
+
+        var results = ExcelReader.mapping(row -> row.get("Formula"))
+                .readAll(new ByteArrayInputStream(calculated.toByteArray()));
+        assertEquals(0, new BigDecimal("2").compareTo(results.get(0).rawNumber()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(results.get(1).rawNumber()));
+    }
 
     @Test
     void formula_shouldWriteFormulaCells() throws IOException {

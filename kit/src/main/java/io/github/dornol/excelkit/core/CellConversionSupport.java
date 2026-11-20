@@ -33,7 +33,9 @@ final class CellConversionSupport {
     }
 
     static @Nullable Number number(String value, Locale locale) throws ParseException {
-        return number(value, locale, false);
+        Number parsed = number(value, locale, false);
+        if (parsed instanceof Double floating) validateFloatingPoint(floating, value, locale);
+        return parsed;
     }
 
     static @Nullable Long longNumber(String value, Locale locale) throws ParseException {
@@ -48,13 +50,17 @@ final class CellConversionSupport {
         Number parsed = number(value, locale, false);
         if (parsed == null) return null;
         double converted = singlePrecision ? parsed.floatValue() : parsed.doubleValue();
+        validateFloatingPoint(converted, value, locale);
+        return converted;
+    }
+
+    private static void validateFloatingPoint(double converted, String value, Locale locale) throws ParseException {
         if (!Double.isFinite(converted)) {
             throw new NumberFormatException("Non-finite floating-point value: " + value);
         }
         if (converted == 0.0 && number(value, locale, true) instanceof BigDecimal exact && exact.signum() != 0) {
             throw new NumberFormatException("Floating-point value underflow: " + value);
         }
-        return converted;
     }
 
     private static @Nullable Number number(String value, Locale locale, boolean exact) throws ParseException {

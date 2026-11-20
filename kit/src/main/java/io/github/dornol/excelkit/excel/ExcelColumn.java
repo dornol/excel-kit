@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -36,7 +38,7 @@ public class ExcelColumn<T> {
     private final String name;
     private final RowFunction<T, @Nullable Object> function;
     private CellStyle style;
-    private @Nullable CellStyle mixedNumberStyle;
+    private @Nullable Map<String, CellStyle> mixedStyles;
     private ExcelColumnSetter columnSetter;
     private @Nullable ExcelDataType dataType;
     private final boolean explicitDataType;
@@ -187,6 +189,14 @@ public class ExcelColumn<T> {
     }
 
     private CellStyle writeValue(SXSSFCell cell, Object value) {
+        if (!explicitDataType && dataType != null) {
+            ExcelDataType actualType = ExcelDataType.infer(value);
+            if (actualType != null && actualType != dataType
+                    && !(dataType.isInferredNumber() && actualType.isInferredNumber())) {
+                actualType.getSetter().set(cell, value);
+                return mixedStyle(cell, actualType.getDefaultFormat());
+            }
+        }
         try {
             columnSetter.set(cell, value);
             return style;
@@ -195,14 +205,21 @@ public class ExcelColumn<T> {
                     || !(value instanceof Number number)) throw e;
 
             ExcelDataType.setNumber(cell, number);
-            if (explicitDataFormat) return style;
-            if (mixedNumberStyle == null) {
-                mixedNumberStyle = cell.getSheet().getWorkbook().createCellStyle();
-                mixedNumberStyle.cloneStyleFrom(style);
-                mixedNumberStyle.setDataFormat((short) 0); // General
-            }
-            return mixedNumberStyle;
+            return mixedStyle(cell, null);
         }
+    }
+
+    private CellStyle mixedStyle(SXSSFCell cell, @Nullable String defaultFormat) {
+        if (explicitDataFormat) return style;
+        if (mixedStyles == null) mixedStyles = new HashMap<>();
+        String format = defaultFormat == null ? "General" : defaultFormat;
+        return mixedStyles.computeIfAbsent(format, key -> {
+            var workbook = cell.getSheet().getWorkbook();
+            CellStyle mixed = workbook.createCellStyle();
+            mixed.cloneStyleFrom(style);
+            mixed.setDataFormat(workbook.createDataFormat().getFormat(key));
+            return mixed;
+        });
     }
 
     /**

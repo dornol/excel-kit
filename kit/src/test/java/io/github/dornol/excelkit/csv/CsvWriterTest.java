@@ -19,6 +19,28 @@ import static org.junit.jupiter.api.Assertions.*;
 class CsvWriterTest {
 
     @Test
+    void failsByDefaultWhenAColumnExtractorThrows() {
+        var writer = CsvWriter.<String>create().column("Value", value -> {
+            throw new IllegalStateException("Extraction failed");
+        });
+
+        var failure = assertThrows(CsvWriteException.class, () -> writer.write(List.of("row")));
+        assertTrue(failure.getMessage().contains("'Value' at row 2"));
+        assertInstanceOf(IllegalStateException.class, failure.getCause());
+    }
+
+    @Test
+    void rejectsNulWithoutSilentlyChangingFieldsOrRows() {
+        String value = "a\u0000\"\r\nb";
+        var writer = CsvWriter.<String>create().column("Value", text -> text);
+        assertThrows(CsvWriteException.class, () -> writer.write(List.of(value)));
+
+        byte[] input = "Value\r\n\"a\u0000\"\"\r\nb\"\r\n".getBytes(StandardCharsets.UTF_8);
+        assertThrows(CsvReadException.class,
+                () -> CsvReader.forMap().readAll(new ByteArrayInputStream(input)));
+    }
+
+    @Test
     void roundTripPreservesBackslashesAndEachEmbeddedLineEnding() {
         var values = List.of(
                 Map.<String, Object>of("First", "C:\\new\\test", "Second", "a\\b,\"c\""),

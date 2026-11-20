@@ -186,14 +186,39 @@ class ExcelTemplateWriterEdgeCaseTest {
     }
 
     @Test
-    void cell_withLocalTime_shouldWriteAsEpochDate() throws IOException {
+    void cell_withLocalTime_shouldWriteAsFractionOfADay() throws IOException {
         byte[] result = writeTemplateCell("B4", LocalTime.of(14, 30));
 
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
             var cell = wb.getSheetAt(0).getRow(3).getCell(1);
-            // LocalTime is written as LocalTime.atDate(LocalDate.EPOCH)
-            LocalDateTime expected = LocalTime.of(14, 30).atDate(LocalDate.EPOCH);
-            assertEquals(expected, cell.getLocalDateTimeCellValue());
+            assertEquals(14.5 / 24.0, cell.getNumericCellValue());
+        }
+    }
+
+    @Test
+    void cell_withHistoricalDate_shouldPreserveDateAsText() throws IOException {
+        byte[] result = writeTemplateCell("B4", LocalDate.of(1850, 1, 1));
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertEquals("1850-01-01", wb.getSheetAt(0).getRow(3).getCell(1).getStringCellValue());
+        }
+    }
+
+    @Test
+    void cell_dateRangeRespectsTheWorkbookDateSystem() throws IOException {
+        try (var workbook = new XSSFWorkbook()) {
+            var workbookXml = workbook.getCTWorkbook();
+            var properties = workbookXml.getWorkbookPr();
+            if (properties == null) properties = workbookXml.addNewWorkbookPr();
+            properties.setDate1904(true);
+            var row = workbook.createSheet().createRow(0);
+            var beforeEpoch = row.createCell(0);
+            var epoch = row.createCell(1);
+
+            ExcelTemplateWriter.setCellValue(beforeEpoch, LocalDate.of(1903, 12, 31));
+            ExcelTemplateWriter.setCellValue(epoch, LocalDate.of(1904, 1, 1));
+            assertEquals("1903-12-31", beforeEpoch.getStringCellValue());
+            assertEquals(0.0, epoch.getNumericCellValue());
         }
     }
 

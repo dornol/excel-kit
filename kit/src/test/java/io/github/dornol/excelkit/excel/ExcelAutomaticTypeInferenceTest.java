@@ -25,6 +25,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ExcelAutomaticTypeInferenceTest {
 
     @Test
+    void mixedInferredValuesRetainTheirMeaningAndNumericType() throws IOException {
+        var rows = List.<Map<String, Object>>of(
+                Map.of("Numeric", new BigDecimal("1.25"), "Mixed", true),
+                Map.of("Numeric", 2L, "Mixed", "yes"));
+        try (var workbook = read(ExcelWriter.forMap("Numeric", "Mixed").write(rows))) {
+            var sheet = workbook.getSheetAt(0);
+            assertEquals("Y", sheet.getRow(1).getCell(1).getStringCellValue());
+            assertEquals("yes", sheet.getRow(2).getCell(1).getStringCellValue());
+            assertEquals(2.0, sheet.getRow(2).getCell(0).getNumericCellValue());
+        }
+    }
+
+    @Test
+    void historicalDatesRemainDistinctAndTimesAreDayFractions() throws IOException {
+        var values = List.of(LocalDate.of(1850, 1, 1), LocalDate.of(1899, 1, 1), LocalDate.of(1900, 1, 1));
+        var writer = ExcelWriter.<LocalDate>create().column("Date", value -> value)
+                .column("Time", value -> LocalTime.NOON);
+        try (var workbook = read(writer.write(values))) {
+            var sheet = workbook.getSheetAt(0);
+            assertEquals("1850-01-01", sheet.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("1899-01-01", sheet.getRow(2).getCell(0).getStringCellValue());
+            assertEquals(1.0, sheet.getRow(3).getCell(0).getNumericCellValue());
+            assertEquals(0.5, sheet.getRow(1).getCell(1).getNumericCellValue());
+        }
+    }
+
+    @Test
     void preservesNumbersThatCannotBeWrittenExactlyWithTheInferredType() throws IOException {
         var rows = List.<Map<String, Object>>of(
                 Map.of("Long", 9_007_199_254_740_993L, "Decimal", new BigDecimal("0.123456789012345678901"), "Mixed", 1),

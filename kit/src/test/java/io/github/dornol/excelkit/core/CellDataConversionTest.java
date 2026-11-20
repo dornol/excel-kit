@@ -43,6 +43,7 @@ class CellDataConversionTest {
         var us = CellConversionConfig.builder().locale(Locale.US).build();
         for (String value : List.of("NaN", "∞", "1E309", "1E-400")) {
             assertThrows(IllegalArgumentException.class, () -> new CellData(0, value, us).asDouble(), value);
+            assertThrows(IllegalArgumentException.class, () -> new CellData(0, value, us).asNumber(), value);
         }
         for (String value : List.of("NaN", "3.5E38", "1E-50")) {
             assertThrows(IllegalArgumentException.class, () -> new CellData(0, value, us).asFloat(), value);
