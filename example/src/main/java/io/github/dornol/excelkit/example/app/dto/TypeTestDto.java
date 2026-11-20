@@ -23,6 +23,9 @@ public record TypeTestDto(
         BigDecimal aDoubleBigDecimal
 ) {
 
+    /** Excel stores at most 15 significant digits exactly, so LONG columns use values within ±10^15. */
+    public static final long EXCEL_SAFE_LONG = 1_000_000_000_000_000L;
+
     public static TypeTestDto rand() {
         SecureRandom random = new SecureRandom();
         long minEpochSecond = LocalDateTime.of(2000, 1, 1, 0, 0).toEpochSecond(ZoneOffset.UTC);
@@ -32,7 +35,7 @@ public record TypeTestDto(
         LocalDateTime randomDateTime = LocalDateTime.ofEpochSecond(randomEpoch, 0, ZoneOffset.UTC);
         return new TypeTestDto(
                 UUID.randomUUID().toString(),
-                random.nextLong(),
+                random.nextLong(-EXCEL_SAFE_LONG + 1, EXCEL_SAFE_LONG),
                 random.nextInt(),
                 randomDateTime,
                 randomDateTime.toLocalDate(),
@@ -40,7 +43,7 @@ public record TypeTestDto(
                 random.nextDouble() * 50000,
                 random.nextFloat() * 50000,
                 random.nextBoolean(),
-                BigDecimal.valueOf(random.nextLong()),
+                BigDecimal.valueOf(random.nextLong(-EXCEL_SAFE_LONG + 1, EXCEL_SAFE_LONG)),
                 BigDecimal.valueOf(random.nextDouble() * 100000).setScale(2, RoundingMode.HALF_UP));
     }
 

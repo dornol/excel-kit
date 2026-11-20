@@ -28,7 +28,7 @@ public class TypeTestExcelMapper {
                 .column("bigdecimal_long", TypeTestDto::aLongBigDecimal, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_LONG))
                 .column("bigdecimal_double", TypeTestDto::aDoubleBigDecimal, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_DOUBLE))
                 .column("currency", TypeTestDto::aDoubleBigDecimal, cfg -> cfg.type(ExcelDataType.BIG_DECIMAL_TO_DOUBLE).format(ExcelDataFormat.CURRENCY_USD.getFormat()))
-                .constColumn("const", random.nextLong(), cfg -> cfg.type(ExcelDataType.LONG))
+                .constColumn("const", random.nextLong(-TypeTestDto.EXCEL_SAFE_LONG + 1, TypeTestDto.EXCEL_SAFE_LONG), cfg -> cfg.type(ExcelDataType.LONG))
                 .constColumn("const_string", UUID.randomUUID().toString())
                 .write(stream);
     }

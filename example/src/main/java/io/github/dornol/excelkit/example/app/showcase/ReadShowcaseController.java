@@ -158,6 +158,28 @@ public class ReadShowcaseController {
     }
 
     // ========================================================================
+    // 18-b. Raw Map Reader - stored numbers instead of displayed text
+    // ========================================================================
+    @PostMapping("/map-reader-raw")
+    @ResponseBody
+    public String readMapRaw(MultipartFile file) throws IOException {
+        byte[] data = file.getBytes();
+        List<Map<String, String>> displayed = new ArrayList<>();
+        List<Map<String, String>> stored = new ArrayList<>();
+        ExcelReader.forMap().read(new ByteArrayInputStream(data), r -> displayed.add(r.data()));
+        ExcelReader.forMapRaw().read(new ByteArrayInputStream(data), r -> stored.add(r.data()));
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Raw Map Read Result ===\n");
+        sb.append("forMap() returns displayed text; forMapRaw() returns stored numbers\n");
+        sb.append("(a 0.25 in a 0% cell is \"25%\" vs \"0.25\"; date cells become serial numbers)\n\n");
+        for (int i = 0; i < displayed.size(); i++) {
+            sb.append("Row %d\n  forMap():    %s\n  forMapRaw(): %s\n".formatted(i + 1, displayed.get(i), stored.get(i)));
+        }
+        return sb.toString();
+    }
+
+    // ========================================================================
     // 19. Sheet Info - discover sheet names
     // ========================================================================
     @PostMapping("/sheet-info")

@@ -106,6 +106,14 @@
 </div>
 
 <div class="section">
+    <p><strong>Raw Map Reader</strong> - Compare displayed text (<code>forMap()</code>) with stored numbers (<code>forMapRaw()</code>)</p>
+    <form action="/showcase/map-reader-raw" method="POST" enctype="multipart/form-data" target="_blank">
+        <input type="file" name="file" accept=".xlsx" required>
+        <button type="submit" class="upload">Upload Excel (Raw Map Reader)</button>
+    </form>
+</div>
+
+<div class="section">
     <p><strong>CSV Map Reader</strong> - Read CSV into Map&lt;String, String&gt; without typed POJOs</p>
     <form action="/showcase/csv-map-reader" method="POST" enctype="multipart/form-data" target="_blank">
         <input type="file" name="file" accept=".csv,.tsv,.txt" required>
