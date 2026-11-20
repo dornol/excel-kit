@@ -342,4 +342,48 @@ class ExcelValuePreservationTest {
         var row = io.github.dornol.excelkit.csv.CsvReader.forMap().readAll(new ByteArrayInputStream(blanks)).get(0);
         assertEquals("2", row.get("a"));
     }
+
+    public static class Person {
+        public String name;
+        public String city = "INIT";
+    }
+
+    @Test
+    void setterColumnsReceiveAnEmptyCellForMissingTrailingCellsInXlsxAndCsv() throws IOException {
+        byte[] xlsx;
+        try (var workbook = new XSSFWorkbook(); var out = new ByteArrayOutputStream()) {
+            var sheet = workbook.createSheet();
+            var header = sheet.createRow(0);
+            header.createCell(0).setCellValue("Name");
+            header.createCell(1).setCellValue("City");
+            sheet.createRow(1).createCell(0).setCellValue("absent");
+            var blank = sheet.createRow(2);
+            blank.createCell(0).setCellValue("blank");
+            blank.createCell(1).setCellValue("");
+            workbook.write(out);
+            xlsx = out.toByteArray();
+        }
+        var excel = new ArrayList<Person>();
+        ExcelReader.<Person>setter(Person::new)
+                .column("Name", (p, c) -> p.name = c.asString())
+                .column("City", (p, c) -> p.city = c.asString("N/A"))
+                .read(new ByteArrayInputStream(xlsx), r -> excel.add(r.data()));
+        assertEquals(List.of("N/A", "N/A"), excel.stream().map(p -> p.city).toList());
+
+        var csv = new ArrayList<Person>();
+        io.github.dornol.excelkit.csv.CsvReader.<Person>setter(Person::new)
+                .column("Name", (p, c) -> p.name = c.asString())
+                .column("City", (p, c) -> p.city = c.asString("N/A"))
+                .read(new ByteArrayInputStream("Name,City\nabsent\nblank,\n".getBytes(StandardCharsets.UTF_8)),
+                        r -> csv.add(r.data()));
+        assertEquals(List.of("N/A", "N/A"), csv.stream().map(p -> p.city).toList());
+
+        var required = new ArrayList<ReadResult<Person>>();
+        ExcelReader.<Person>setter(Person::new)
+                .column("Name", (p, c) -> p.name = c.asString())
+                .column("City", (p, c) -> p.city = c.asString()).required()
+                .read(new ByteArrayInputStream(xlsx), required::add);
+        assertFalse(required.get(0).success());
+        assertTrue(required.get(0).messages().get(0).contains("Required column 'City' is empty"));
+    }
 }

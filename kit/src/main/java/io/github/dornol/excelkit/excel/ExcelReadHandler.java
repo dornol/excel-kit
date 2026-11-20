@@ -616,21 +616,14 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             for (int i = 0; i < columns.size(); i++) {
                 int actualIndex = resolvedIndices[i];
-                if (actualIndex >= currentRow.size()) {
-                    if (columns.get(i).isRequired()) {
-                        String header = (actualIndex < headerNames.size()) ? headerNames.get(actualIndex) : "column#" + actualIndex;
-                        String message = "Required column '" + header + "' is empty";
-                        getOrCreateMessages().add(message);
-                        getOrCreateCellErrors().add(new CellError(actualIndex, header, null, message));
-                        success = false;
-                    }
-                    continue;
-                }
-
-                if (!mapColumn(columns.get(i), currentInstance, currentRow.get(actualIndex),
+                // A cell missing from the row is handed to the setter as an empty cell, like a blank one
+                // and like CSV, so defaults such as asString("N/A") apply consistently.
+                CellData cell = actualIndex < currentRow.size()
+                        ? currentRow.get(actualIndex) : cellData(actualIndex, null);
+                if (!mapColumn(columns.get(i), currentInstance, cell,
                         actualIndex, headerNames, getOrCreateMessages(), getOrCreateCellErrors())) {
                     success = false;
-                    if (!(columns.get(i).isRequired() && currentRow.get(actualIndex).isEmpty())) {
+                    if (!(columns.get(i).isRequired() && cell.isEmpty())) {
                         mappingFailure = true;
                     }
                 }
