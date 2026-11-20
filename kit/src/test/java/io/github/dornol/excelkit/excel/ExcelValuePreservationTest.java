@@ -324,6 +324,8 @@ class ExcelValuePreservationTest {
         var stored = ExcelReader.forMapRaw().readAll(new ByteArrayInputStream(bytes)).get(0);
         assertEquals("2.5", stored.get("Int"));
         assertEquals("2.5", stored.get("Pct"));
+        assertEquals("100", ExcelReader.forMapRaw().readAll(new ByteArrayInputStream(whole(100.0))).get(0).get("N"),
+                "a whole number stored as 100.0 is returned without trailing zeros");
         assertEquals("123456789012345", stored.get("Id"));
         assertEquals("x", stored.get("Text"));
 
@@ -385,5 +387,11 @@ class ExcelValuePreservationTest {
                 .read(new ByteArrayInputStream(xlsx), required::add);
         assertFalse(required.get(0).success());
         assertTrue(required.get(0).messages().get(0).contains("Required column 'City' is empty"));
+    }
+
+    private static byte[] whole(double value) {
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<Double>create().column("N", v -> v, c -> c.format("0")).write(List.of(value)).writeTo(output);
+        return output.toByteArray();
     }
 }

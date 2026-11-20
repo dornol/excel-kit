@@ -181,7 +181,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     /**
      * Like {@link #forMap()}, but numeric cells are returned as their stored number in plain
-     * notation (for example {@code 2.5} in a {@code 0}-formatted cell, {@code 0.25} in a
+     * notation without trailing zeros (for example {@code 2.5} in a {@code 0}-formatted cell, {@code 0.25} in a
      * {@code 0%} cell, or {@code 123456789012345} in a General cell) instead of the displayed text.
      * Date cells become Excel serial numbers. Other cells return their text.
      *
@@ -218,7 +218,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
                 if (row.headerIndexOf(header) != i) continue;
                 CellData cell = row.get(i);
                 var stored = raw ? cell.rawNumber() : null;
-                map.put(header, stored != null ? stored.toPlainString() : cell.formattedValue());
+                map.put(header, stored != null ? stored.stripTrailingZeros().toPlainString() : cell.formattedValue());
             }
             return map;
         };
