@@ -1,2 +1,2 @@
-# Public API compatibility baseline: 0.24.0.
-# No exclusions are allowed for the 0.25.0 release.
+# Public API compatibility baseline: 0.25.0.
+# Add exclusions here only for intentional removals, with a comment explaining each.
