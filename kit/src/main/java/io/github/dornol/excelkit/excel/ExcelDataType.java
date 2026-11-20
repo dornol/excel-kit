@@ -197,6 +197,9 @@ public enum ExcelDataType {
     }
 
     static void setTime(Cell cell, LocalTime value) {
+        if (value.getNano() % NANOS_PER_MILLISECOND != 0) {
+            throw new IllegalArgumentException("Time exceeds Excel's millisecond precision: " + value);
+        }
         double fraction = (double) value.toNanoOfDay() / NANOS_PER_DAY;
         cell.setCellValue(fraction);
     }
@@ -232,7 +235,9 @@ public enum ExcelDataType {
     }
 
     static void setNumber(Cell cell, Number value) {
-        double numeric = value.doubleValue();
+        // A float widened to double exposes binary noise (0.1f -> 0.10000000149011612); use its decimal form.
+        double numeric = value instanceof Float f && Float.isFinite(f)
+                ? Double.parseDouble(Float.toString(f)) : value.doubleValue();
         if (!Double.isFinite(numeric)) throw new ArithmeticException("Non-finite Excel number: " + value);
         if (!(value instanceof Double || value instanceof Float)) {
             BigDecimal original = decimal(value);

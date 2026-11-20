@@ -265,4 +265,27 @@ class ExcelValuePreservationTest {
         }
         return patched.toByteArray();
     }
+
+    @Test
+    void timeWithSubMillisecondPrecisionIsKeptAsTextInsteadOfTruncated() {
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<LocalTime>create().column("Time", value -> value)
+                .write(List.of(LocalTime.of(10, 0, 0, 123_456_789))).writeTo(output);
+        var rows = ExcelReader.mapping(row -> row).readAll(new ByteArrayInputStream(output.toByteArray()));
+        assertEquals("10:00:00.123456789", rows.get(0).get("Time").formattedValue());
+
+        var strict = ExcelWriter.<LocalTime>create(opts -> { }).column("Time", value -> value);
+        assertDoesNotThrow(() -> strict.write(List.of(LocalTime.NOON)));
+    }
+
+    @Test
+    void floatColumnsStoreTheFloatsDecimalValue() {
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<Float>create().column("F", value -> value, c -> c.type(ExcelDataType.FLOAT))
+                .write(List.of(0.1f, 3.14159f)).writeTo(output);
+
+        var rows = ExcelReader.mapping(row -> row).readAll(new ByteArrayInputStream(output.toByteArray()));
+        assertEquals(0, new BigDecimal("0.1").compareTo(rows.get(0).get("F").rawNumber()));
+        assertEquals(0, new BigDecimal("3.14159").compareTo(rows.get(1).get("F").rawNumber()));
+    }
 }

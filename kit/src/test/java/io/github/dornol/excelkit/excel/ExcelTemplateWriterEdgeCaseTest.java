@@ -226,6 +226,24 @@ class ExcelTemplateWriterEdgeCaseTest {
     }
 
     @Test
+    void cell_withSubMillisecondTime_shouldPreserveTimeAsText() throws IOException {
+        byte[] result = writeTemplateCell("B4", LocalTime.of(10, 0, 0, 123_456_789));
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertEquals("10:00:00.123456789", wb.getSheetAt(0).getRow(3).getCell(1).getStringCellValue());
+        }
+    }
+
+    @Test
+    void cell_withFloat_shouldStoreItsDecimalValue() throws IOException {
+        byte[] result = writeTemplateCell("B4", 0.1f);
+
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(result))) {
+            assertEquals(0.1, wb.getSheetAt(0).getRow(3).getCell(1).getNumericCellValue());
+        }
+    }
+
+    @Test
     void cell_withHistoricalDate_shouldPreserveDateAsText() throws IOException {
         byte[] result = writeTemplateCell("B4", LocalDate.of(1850, 1, 1));
 

@@ -315,7 +315,11 @@ public class ExcelTemplateWriter implements AutoCloseable {
         } else if (value instanceof LocalDate ld) {
             setDateValue(cell, ld.atStartOfDay(), ld.toString());
         } else if (value instanceof LocalTime lt) {
-            ExcelDataType.setTime(cell, lt);
+            try {
+                ExcelDataType.setTime(cell, lt);
+            } catch (IllegalArgumentException e) {
+                ExcelCellText.write(cell, lt.toString());
+            }
         } else {
             ExcelCellText.write(cell, String.valueOf(value));
         }
