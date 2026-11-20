@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.common.usermodel.HyperlinkType;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -39,32 +40,34 @@ public enum ExcelDataType {
     /**
      * Long integer value.
      */
-    LONG((cell, value) -> cell.setCellValue(((Number) value).longValue()), ExcelDataFormat.NUMBER.getFormat()),
+    LONG((cell, value) -> setLong(cell, value instanceof Long number ? number : decimal((Number) value).longValueExact()),
+            ExcelDataFormat.NUMBER.getFormat()),
 
     /**
      * Integer value.
      */
-    INTEGER((cell, value) -> cell.setCellValue(((Number) value).intValue()), ExcelDataFormat.NUMBER.getFormat()),
+    INTEGER((cell, value) -> cell.setCellValue(value instanceof Integer number
+            ? number : decimal((Number) value).intValueExact()), ExcelDataFormat.NUMBER.getFormat()),
 
     /**
      * Double value with 2 decimal places.
      */
-    DOUBLE((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.NUMBER_2.getFormat()),
+    DOUBLE((cell, value) -> setNumber(cell, (Number) value), ExcelDataFormat.NUMBER_2.getFormat()),
 
     /**
      * Float value with 2 decimal places.
      */
-    FLOAT((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.NUMBER_2.getFormat()),
+    FLOAT((cell, value) -> setNumber(cell, (Number) value), ExcelDataFormat.NUMBER_2.getFormat()),
 
     /**
      * Double value interpreted as a percentage (e.g. 0.25 → 25%).
      */
-    DOUBLE_PERCENT((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.PERCENT.getFormat()),
+    DOUBLE_PERCENT((cell, value) -> setNumber(cell, (Number) value), ExcelDataFormat.PERCENT.getFormat()),
 
     /**
      * Float value interpreted as a percentage.
      */
-    FLOAT_PERCENT((cell, value) -> cell.setCellValue(((Number) value).doubleValue()), ExcelDataFormat.PERCENT.getFormat()),
+    FLOAT_PERCENT((cell, value) -> setNumber(cell, (Number) value), ExcelDataFormat.PERCENT.getFormat()),
 
     /**
      * LocalDateTime formatted as "yyyy-MM-dd HH:mm:ss".
@@ -84,12 +87,12 @@ public enum ExcelDataType {
     /**
      * BigDecimal converted to double (2 decimal places).
      */
-    BIG_DECIMAL_TO_DOUBLE((cell, value) -> cell.setCellValue(((BigDecimal) value).doubleValue()), ExcelDataFormat.NUMBER_2.getFormat()),
+    BIG_DECIMAL_TO_DOUBLE((cell, value) -> setNumber(cell, (BigDecimal) value), ExcelDataFormat.NUMBER_2.getFormat()),
 
     /**
      * BigDecimal converted to long (no decimal).
      */
-    BIG_DECIMAL_TO_LONG((cell, value) -> cell.setCellValue(((BigDecimal) value).longValue()), LONG.defaultFormat),
+    BIG_DECIMAL_TO_LONG((cell, value) -> setLong(cell, ((BigDecimal) value).longValueExact()), LONG.defaultFormat),
 
     /**
      * Formula type. The value is treated as an Excel formula string (without leading '=').
@@ -167,6 +170,40 @@ public enum ExcelDataType {
         }
     }, null)
     ;
+
+    private static final int EXCEL_SIGNIFICANT_DIGITS = 15;
+    private static final long FIRST_SIXTEEN_DIGIT_INTEGER = 1_000_000_000_000_000L;
+
+    private static BigDecimal decimal(Number value) {
+        if (value instanceof BigDecimal decimal) return decimal;
+        try {
+            return new BigDecimal(value.toString());
+        } catch (NumberFormatException e) {
+            // A custom Number may expose only its numeric conversion methods.
+            return BigDecimal.valueOf(value.doubleValue());
+        }
+    }
+
+    private static void setLong(Cell cell, long value) {
+        if (value > -FIRST_SIXTEEN_DIGIT_INTEGER && value < FIRST_SIXTEEN_DIGIT_INTEGER) {
+            cell.setCellValue(value);
+        } else {
+            setNumber(cell, value);
+        }
+    }
+
+    static void setNumber(Cell cell, Number value) {
+        double numeric = value.doubleValue();
+        if (!Double.isFinite(numeric)) throw new ArithmeticException("Non-finite Excel number: " + value);
+        if (!(value instanceof Double || value instanceof Float)) {
+            BigDecimal original = decimal(value);
+            if (original.stripTrailingZeros().precision() > EXCEL_SIGNIFICANT_DIGITS
+                    || BigDecimal.valueOf(numeric).compareTo(original) != 0) {
+                throw new ArithmeticException("Value cannot be stored exactly as an Excel number: " + value);
+            }
+        }
+        cell.setCellValue(numeric);
+    }
 
     static @Nullable ExcelDataType infer(@Nullable Object value) {
         if (value == null) return null;

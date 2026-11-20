@@ -36,6 +36,7 @@ public class ExcelColumn<T> {
     private final String name;
     private final RowFunction<T, @Nullable Object> function;
     private CellStyle style;
+    private @Nullable CellStyle mixedNumberStyle;
     private ExcelColumnSetter columnSetter;
     private @Nullable ExcelDataType dataType;
     private final boolean explicitDataType;
@@ -150,13 +151,13 @@ public class ExcelColumn<T> {
         setColumnData(cell, columnData, ExcelWriteErrorPolicy.LENIENT);
     }
 
-    void setColumnData(SXSSFCell cell, @Nullable Object columnData, ExcelWriteErrorPolicy policy) {
+    CellStyle setColumnData(SXSSFCell cell, @Nullable Object columnData, ExcelWriteErrorPolicy policy) {
         if (columnData == null) {
             if (nullValue != null) {
                 columnData = nullValue;
             } else {
                 cell.setCellValue("");
-                return;
+                return style;
             }
         }
         if (!explicitDataType && dataType == null) {
@@ -174,13 +175,33 @@ public class ExcelColumn<T> {
             }
         }
         try {
-            this.columnSetter.set(cell, columnData);
+            return writeValue(cell, columnData);
         } catch (RuntimeException e) {
             if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
                 throw new ExcelWriteException("Failed to write cell value for column '" + name + "'", e);
             }
-            log.warn("Failed to set cell value for column '{}': expected type mismatch (value={})", name, columnData, e);
+            log.warn("Writing value as text after a cell write failure for column '{}' (value={})", name, columnData, e);
             cell.setCellValue(String.valueOf(columnData));
+            return style;
+        }
+    }
+
+    private CellStyle writeValue(SXSSFCell cell, Object value) {
+        try {
+            columnSetter.set(cell, value);
+            return style;
+        } catch (ArithmeticException e) {
+            if (explicitDataType || (dataType != ExcelDataType.INTEGER && dataType != ExcelDataType.LONG)
+                    || !(value instanceof Number number)) throw e;
+
+            ExcelDataType.setNumber(cell, number);
+            if (explicitDataFormat) return style;
+            if (mixedNumberStyle == null) {
+                mixedNumberStyle = cell.getSheet().getWorkbook().createCellStyle();
+                mixedNumberStyle.cloneStyleFrom(style);
+                mixedNumberStyle.setDataFormat((short) 0); // General
+            }
+            return mixedNumberStyle;
         }
     }
 

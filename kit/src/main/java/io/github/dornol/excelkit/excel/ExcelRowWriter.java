@@ -27,15 +27,15 @@ final class ExcelRowWriter {
             SXSSFCell cell = target.createCell(i);
             ExcelColumn<T> column = columns.get(i);
             @Nullable Object value = column.applyFunction(row, cursor, config.writeErrorPolicy);
-            column.setColumnData(cell, value, config.writeErrorPolicy);
+            CellStyle baseStyle = column.setColumnData(cell, value, config.writeErrorPolicy);
 
             ExcelColor color = effectiveColor(column, value, row, rowStyle, rowColor);
             if (rowStyle != null && rowStyle.hasAnyStyle())
-                cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(column.getStyle(), color, rowStyle,
+                cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(baseStyle, color, rowStyle,
                         styleCache, workbook));
             else if (color != null)
-                cell.setCellStyle(ExcelWriteSupport.resolveColorStyle(column.getStyle(), color, styleCache, workbook));
-            else cell.setCellStyle(column.getStyle());
+                cell.setCellStyle(ExcelWriteSupport.resolveColorStyle(baseStyle, color, styleCache, workbook));
+            else cell.setCellStyle(baseStyle);
 
             if (config.autoWidthSampleRows > 0 && cursor.getRowOfSheet() < config.autoWidthSampleRows)
                 column.fitColumnWidthByValue(value);

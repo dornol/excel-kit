@@ -36,6 +36,12 @@ Types are inferred from the first non-null value when `.type(...)` is omitted. U
 `.type(...)` when a column needs an explicit or semantic type; explicit types always win.
 Columns whose values are all `null` fall back to `STRING`.
 
+An inferred integer column can also store later fractional values as numbers.
+When a value exceeds Excel's numeric precision or the range or precision of
+an explicitly selected integer type, the default `LENIENT` policy writes it as text.
+Use `FAIL_FAST` to reject those values. Template cell writes also use text
+when a value exceeds Excel's numeric precision.
+
 You can still set types explicitly, for example `ExcelDataType.INTEGER` or `ExcelDataType.DATE`:
 
 | Type | Java Type | Default Format |

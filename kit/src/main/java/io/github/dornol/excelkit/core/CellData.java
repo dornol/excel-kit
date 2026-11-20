@@ -219,9 +219,9 @@ public final class CellData {
 
         try {
             return CellConversionSupport.number(formattedValue, locale);
-        } catch (ParseException e) {
+        } catch (ParseException | NumberFormatException e) {
             log.warn("Failed to parse number (col {}): '{}'", columnIndex, formattedValue);
-            throw new IllegalArgumentException("Failed to parse number: " + formattedValue);
+            throw new IllegalArgumentException("Failed to parse number: " + formattedValue, e);
         }
     }
 
@@ -239,12 +239,16 @@ public final class CellData {
     /**
      * Converts the value to {@link Long}.
      * Returns {@code null} if the value is empty or blank.
+     * Fractions, non-finite values, and values outside the long range are rejected.
      *
      * @return the long value, or {@code null} if blank
      */
     public @Nullable Long asLong() {
-        Number number = asNumber();
-        return number != null ? number.longValue() : null;
+        try {
+            return CellConversionSupport.longNumber(formattedValue, effectiveLocale());
+        } catch (ParseException | NumberFormatException | ArithmeticException e) {
+            throw new IllegalArgumentException("Failed to convert to long: " + formattedValue, e);
+        }
     }
 
     /** Returns the parsed long value as an empty optional for blank cells. */
@@ -349,7 +353,7 @@ public final class CellData {
         if (formattedValue.isBlank()) {
             return null;
         }
-        return LocalDateTime.parse(formattedValue, DateTimeFormatter.ofPattern(format));
+        return LocalDateTime.parse(formattedValue, CellConversionSupport.strictDatePattern(format));
     }
 
     /**
@@ -382,7 +386,7 @@ public final class CellData {
         if (formattedValue.isBlank()) {
             return null;
         }
-        return LocalDate.parse(formattedValue, DateTimeFormatter.ofPattern(format));
+        return LocalDate.parse(formattedValue, CellConversionSupport.strictDatePattern(format));
     }
 
     /**

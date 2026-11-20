@@ -86,6 +86,10 @@ class ExcelReaderBranchTest {
             assertEquals("2025-01-01", row.get("Date").formattedValue());
             assertEquals("45658", row.get("Date").rawNumber().stripTrailingZeros().toPlainString());
             assertEquals("1234567890124", row.get("Formula").rawNumber().toPlainString());
+            RowData german = ExcelReader.mapping(data -> data)
+                    .cellConversion(config -> config.locale(Locale.GERMANY)).readAll(file).get(0);
+            assertEquals("1,23457E+12", german.get("First").formattedValue());
+            assertEquals(new BigDecimal("1.23457E+12"), german.get("First").asBigDecimal());
         } finally {
             LocaleUtil.setUserLocale(previousLocale);
         }

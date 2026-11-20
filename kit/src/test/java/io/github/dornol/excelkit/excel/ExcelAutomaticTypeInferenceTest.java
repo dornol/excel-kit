@@ -18,10 +18,44 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Tests value-based type inference for column writers. */
 class ExcelAutomaticTypeInferenceTest {
+
+    @Test
+    void preservesNumbersThatCannotBeWrittenExactlyWithTheInferredType() throws IOException {
+        var rows = List.<Map<String, Object>>of(
+                Map.of("Long", 9_007_199_254_740_993L, "Decimal", new BigDecimal("0.123456789012345678901"), "Mixed", 1),
+                Map.of("Mixed", new BigDecimal("2.75")));
+        var writer = ExcelWriter.forMap("Long", "Decimal", "Mixed");
+        try (XSSFWorkbook workbook = read(writer.write(rows))) {
+            var sheet = workbook.getSheetAt(0);
+            assertEquals("9007199254740993", sheet.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("0.123456789012345678901", sheet.getRow(1).getCell(1).getStringCellValue());
+            assertEquals(1.0, sheet.getRow(1).getCell(2).getNumericCellValue());
+            assertEquals(2.75, sheet.getRow(2).getCell(2).getNumericCellValue());
+        }
+    }
+
+    @Test
+    void failFastRejectsLossyIntegerConversion() {
+        var writer = ExcelWriter.<Number>create()
+                .column("Value", value -> value, column -> column.type(ExcelDataType.INTEGER))
+                .writeErrorPolicy(ExcelWriteErrorPolicy.FAIL_FAST);
+
+        assertThrows(ExcelWriteException.class, () -> writer.write(List.of(1, 2.75)));
+    }
+
+    @Test
+    void templateCellsPreserveLargeIntegersAsText() throws IOException {
+        try (var workbook = new XSSFWorkbook()) {
+            var cell = workbook.createSheet().createRow(0).createCell(0);
+            ExcelTemplateWriter.setCellValue(cell, 9_007_199_254_740_993L);
+            assertEquals("9007199254740993", cell.getStringCellValue());
+        }
+    }
 
     @Test
     void excelWriter_shouldInferCommonValueTypes() throws IOException {
@@ -129,7 +163,7 @@ class ExcelAutomaticTypeInferenceTest {
     }
 
     @Test
-    void inferredType_shouldBeStableAfterFirstNonNullValue() throws IOException {
+    void inferredIntegerColumnPreservesLaterFractionAsNumeric() throws IOException {
         ExcelWriter<Object> writer = ExcelWriter.<Object>create()
                 .column("Value", value -> value);
 
@@ -139,7 +173,9 @@ class ExcelAutomaticTypeInferenceTest {
             assertCellType(sheet.getRow(1).getCell(0), CellType.NUMERIC);
             assertCellType(sheet.getRow(2).getCell(0), CellType.NUMERIC);
             assertCellType(sheet.getRow(3).getCell(0), CellType.NUMERIC);
-            assertEquals(3d, sheet.getRow(3).getCell(0).getNumericCellValue());
+            assertEquals(3.5d, sheet.getRow(3).getCell(0).getNumericCellValue());
+            assertEquals("#,##0", sheet.getRow(1).getCell(0).getCellStyle().getDataFormatString());
+            assertEquals("General", sheet.getRow(3).getCell(0).getCellStyle().getDataFormatString());
         }
     }
 

@@ -360,6 +360,7 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 | `asDouble()` / `asDouble(default)` | `Double` / `double` |
 | `asFloat()` | `Float` |
 | `asBigDecimal()` | `BigDecimal` |
+| `rawNumber()` | `BigDecimal` (stored XLSX number, null if unavailable) |
 | `asBoolean()` | `boolean` (`true`/`1`/`y`/`yes`) |
 | `asBooleanOrNull()` | `Boolean` |
 | `asLocalDate()` | `LocalDate` |
@@ -370,6 +371,9 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 | `as(Function, default)` | `R` |
 | `asString(default)` | `String` |
 | `isEmpty()` | `boolean` |
+
+`asInt()` and `asLong()` reject fractional, non-finite, and out-of-range values.
+Date and date-time conversion with pattern strings rejects invalid calendar dates.
 
 **Custom conversion:**
 ```java
@@ -387,10 +391,11 @@ CellData.resetDateFormats();
 
 **Number parsing locale:**
 ```java
-CellData.setDefaultLocale(Locale.US);  // default: Locale.KOREA
+CellData.setDefaultLocale(Locale.US);
 ```
 
-Prefer reader-scoped conversion settings in server applications:
+Excel readers use the same locale for cell display formatting and numeric
+conversion. Prefer reader-scoped conversion settings in server applications:
 
 ```java
 CsvReader.<Order>mapping(row -> new Order(

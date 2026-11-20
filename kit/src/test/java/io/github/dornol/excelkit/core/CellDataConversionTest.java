@@ -9,6 +9,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -21,6 +24,36 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for CellData custom conversion and default value methods.
  */
 class CellDataConversionTest {
+
+    @Test
+    void longConversionRejectsFractionsNonFiniteValuesAndOverflow() {
+        var us = CellConversionConfig.builder().locale(Locale.US).build();
+        assertEquals(Long.MAX_VALUE, new CellData(0, "9,223,372,036,854,775,807", us).asLong());
+        assertEquals(Long.MIN_VALUE, new CellData(0, "-9223372036854775808.0", us).asLong());
+        for (String value : List.of("9223372036854775808", "-9223372036854775809", "NaN", "∞", "1.5")) {
+            assertThrows(IllegalArgumentException.class, () -> new CellData(0, value, us).asLong(), value);
+        }
+    }
+
+    @Test
+    void numericConversionValidatesGroupingBeforeRemovingSeparators() {
+        var us = CellConversionConfig.builder().locale(Locale.US).build();
+        var french = CellConversionConfig.builder().locale(Locale.FRANCE).build();
+        for (String value : List.of("1,2", "1,234.5,67", "1,,234", "1234,567")) {
+            var cell = new CellData(0, value, us);
+            assertThrows(IllegalArgumentException.class, cell::asNumber, value);
+            assertThrows(IllegalArgumentException.class, cell::asBigDecimal, value);
+        }
+        assertEquals(new BigDecimal("1234.56"), new CellData(0, "1\u202F234,56", french).asBigDecimal());
+    }
+
+    @Test
+    void dateConversionRejectsInvalidCalendarDates() {
+        assertEquals(LocalDate.of(2024, 2, 29), cell("02/29/24").asLocalDate());
+        assertThrows(DateTimeParseException.class, () -> cell("2025-02-30").asLocalDate());
+        assertThrows(DateTimeParseException.class, () -> cell("2025-02-30 12:00").asLocalDateTime());
+        assertThrows(DateTimeParseException.class, () -> cell("30.02.2025").asLocalDate("dd.MM.yyyy"));
+    }
 
     private CellData cell(String value) {
         return new CellData(0, value);

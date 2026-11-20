@@ -81,12 +81,12 @@ public final class CellConversionConfig {
         }
 
         public Builder addDateFormat(String pattern) {
-            dateFormats.add(0, DateTimeFormatter.ofPattern(pattern));
+            dateFormats.add(0, CellConversionSupport.strictDatePattern(pattern));
             return this;
         }
 
         public Builder addDateTimeFormat(String pattern) {
-            dateTimeFormats.add(0, DateTimeFormatter.ofPattern(pattern));
+            dateTimeFormats.add(0, CellConversionSupport.strictDatePattern(pattern));
             return this;
         }
 

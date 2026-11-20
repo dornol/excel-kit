@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
@@ -249,8 +250,10 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             XMLReader parser = XMLHelper.newXMLReader();
             SheetHandler sheetHandler = new SheetHandler(consumer, totalRows);
+            CellConversionConfig conversionConfig = readOptions.cellConversionConfig();
+            Locale locale = conversionConfig != null ? conversionConfig.locale() : CellData.getDefaultLocale();
             XSSFSheetXMLHandler sheetParser = new NumericSheetXmlHandler(styles, ss, sheetHandler,
-                    ExcelReadSupport.dataFormatter(reader));
+                    ExcelReadSupport.dataFormatter(reader, locale));
             parser.setContentHandler(sheetParser);
 
             ExcelSheetNavigator.consume(reader, sheetIndex, sheet -> {
