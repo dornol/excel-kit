@@ -293,7 +293,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         if (cfg.sheetNameFunction != null) {
             name = cfg.sheetNameFunction.apply(rolloverIndex);
         } else {
-            name = baseName + " (" + (rolloverIndex + 1) + ")";
+            name = ExcelWriteSupport.rolloverSheetName(baseName, rolloverIndex);
         }
         if (usedSheetNames != null && !usedSheetNames.add(name)) {
             throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");

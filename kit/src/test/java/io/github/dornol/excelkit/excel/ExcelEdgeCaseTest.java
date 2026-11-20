@@ -816,5 +816,36 @@ class ExcelEdgeCaseTest {
                 assertFalse(sheet.isColumnHidden(0));
             }
         }
+
+        @Test
+        void rolloverSheetNamesStayUniqueAndKeepTheirSuffixWithinExcelsLimit() throws IOException {
+            for (int length : new int[]{20, 28, 30, 31}) {
+                var out = new ByteArrayOutputStream();
+                String base = "A".repeat(length);
+                ExcelWriter.<Integer>create().sheetName(base).maxRows(2).column("v", v -> v)
+                        .write(List.of(1, 2, 3, 4, 5)).writeTo(out);
+                var workbookOut = new ByteArrayOutputStream();
+                try (var workbook = ExcelWorkbook.create()) {
+                    workbook.<Integer>sheet(base).column("v", v -> v).maxRows(2).write(List.of(1, 2, 3, 4, 5));
+                    workbook.finish().writeTo(workbookOut);
+                }
+                try (var viaWorkbook = read(workbookOut)) {
+                    assertEquals(3, viaWorkbook.getNumberOfSheets(), "workbook length=" + length);
+                    assertTrue(viaWorkbook.getSheetName(1).endsWith(" (2)"), viaWorkbook.getSheetName(1));
+                    assertTrue(viaWorkbook.getSheetName(2).endsWith(" (3)"), viaWorkbook.getSheetName(2));
+                }
+                try (var xssf = read(out)) {
+                    assertEquals(3, xssf.getNumberOfSheets(), "length=" + length);
+                    assertEquals(base, xssf.getSheetName(0));
+                    java.util.Set<String> names = new java.util.HashSet<>();
+                    for (int i = 0; i < 3; i++) {
+                        String name = xssf.getSheetName(i);
+                        assertTrue(name.length() <= 31, name);
+                        assertTrue(names.add(name.toLowerCase()), "duplicate " + name);
+                        if (i > 0) assertTrue(name.endsWith(" (" + (i + 1) + ")"), name);
+                    }
+                }
+            }
+        }
     }
 }

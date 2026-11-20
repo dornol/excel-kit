@@ -410,6 +410,24 @@ class ExcelWriteSupport {
         }
     }
 
+    private static final int MAX_SHEET_NAME_LENGTH = 31;
+
+    /**
+     * Name of the {@code index}-th sheet (0-based) of a rolled-over write: the first keeps the base
+     * name, later ones get a " (n)" suffix. Excel limits sheet names to 31 characters, so the base is
+     * shortened to keep the suffix and the names unique.
+     */
+    static String rolloverSheetName(String baseName, int index) {
+        if (index == 0) return baseName;
+        String suffix = " (" + (index + 1) + ")";
+        int baseLength = Math.min(baseName.length(), Math.max(0, MAX_SHEET_NAME_LENGTH - suffix.length()));
+        if (baseLength > 0 && baseLength < baseName.length()
+                && Character.isHighSurrogate(baseName.charAt(baseLength - 1))) {
+            baseLength--; // do not split a surrogate pair
+        }
+        return baseName.substring(0, baseLength) + suffix;
+    }
+
     static void checkProgress(Cursor cursor, int interval, @Nullable ProgressCallback callback) {
         if (callback != null && interval > 0 && cursor.getCurrentTotal() % interval == 0) {
             callback.onProgress(cursor.getCurrentTotal(), cursor);

@@ -339,7 +339,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> sheetName(String name) {
-        this.cfg.sheetNameFunction = index -> index == 0 ? name : name + " (" + (index + 1) + ")";
+        this.cfg.sheetNameFunction = index -> ExcelWriteSupport.rolloverSheetName(name, index);
         return this;
     }
 
