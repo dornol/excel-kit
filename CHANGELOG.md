@@ -38,6 +38,9 @@ All notable changes to this project will be documented in this file.
 - Updated hibernate-validator and the Gradle wrapper to 9.9.1.
 
 ### Fixed
+- `ExcelWorkbookReader` reports a missing named sheet as a per-sheet failure that follows the
+  failure policy, like a missing index, instead of aborting the whole read; `SheetReadReport`
+  uses index `-1` for a sheet that was not found.
 - Charts are placed below summary and `afterData` rows instead of covering them, and are
   skipped when a sheet has no data rows instead of failing the write with an invalid range.
 - Group headers no longer merge equal inner labels across different parent groups.
