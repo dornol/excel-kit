@@ -192,6 +192,9 @@ writer.defaultStyle(d -> d.nullValue("-"))
     .write(data);
 ```
 
+The `nullValue` is always written, whatever the error policy: on a typed numeric or date column a
+text placeholder such as `"-"` is written as text instead of failing the export.
+
 ## Auto Width
 
 Column widths are auto-calculated from the first N data rows:

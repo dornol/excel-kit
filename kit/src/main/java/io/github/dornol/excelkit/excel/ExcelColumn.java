@@ -176,9 +176,11 @@ public class ExcelColumn<T> {
      * @return the style to apply to the cell
      */
     CellStyle setColumnData(SXSSFCell cell, @Nullable Object columnData, ExcelWriteErrorPolicy policy) {
+        boolean placeholder = false;
         if (columnData == null) {
             if (nullValue != null) {
                 columnData = nullValue;
+                placeholder = true;
             } else {
                 cell.setCellValue("");
                 return style;
@@ -201,6 +203,12 @@ public class ExcelColumn<T> {
         try {
             return writeValue(cell, columnData);
         } catch (RuntimeException e) {
+            if (placeholder) {
+                // An explicit nullValue (for example "-" in a numeric column) is always written, as text
+                // when it does not fit the column type, whatever the error policy.
+                ExcelCellText.write(cell, String.valueOf(columnData));
+                return style;
+            }
             if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
                 throw new ExcelWriteException("Failed to write cell value for column '" + name + "'", e);
             }

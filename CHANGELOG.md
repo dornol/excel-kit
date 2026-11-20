@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 - **Breaking:** the default `ExcelWriteErrorPolicy` is now `FAIL_FAST`. A failing value
   extractor or a value that cannot be stored as the column's type throws
   `ExcelWriteException`; use `writeErrorPolicy(LENIENT)` for blank cells and text fallback.
+  An explicit `nullValue(...)` is always written, as text when it does not fit the column type.
 - **Breaking:** the default `DuplicateHeaderPolicy` is now `FAIL` (blank headers are ignored).
   Use `FIRST` or `LAST` to keep the previous resolution.
 - **Breaking:** for XLSX numeric cells, `asNumber/asInt/asLong/asDouble/asFloat/asBigDecimal`

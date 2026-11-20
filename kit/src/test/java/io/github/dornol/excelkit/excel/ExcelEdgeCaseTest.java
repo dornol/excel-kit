@@ -937,5 +937,28 @@ class ExcelEdgeCaseTest {
                 assertEquals(List.of("B2"), conditionalRanges(xssf.getSheetAt(1)));
             }
         }
+
+        @Test
+        void nullValuePlaceholderIsWrittenEvenWhenItDoesNotFitTheColumnType() throws IOException {
+            record Item(String name, Integer price) { }
+            var out = new ByteArrayOutputStream();
+            // The default FAIL_FAST policy must not reject a placeholder the caller asked for.
+            ExcelWriter.<Item>create()
+                    .column("name", Item::name)
+                    .column("text", Item::price, c -> c.type(ExcelDataType.INTEGER).nullValue("-"))
+                    .column("number", Item::price, c -> c.type(ExcelDataType.INTEGER).nullValue(0))
+                    .write(List.of(new Item("a", 5), new Item("b", null))).writeTo(out);
+            try (var xssf = read(out)) {
+                var sheet = xssf.getSheetAt(0);
+                assertEquals(5.0, sheet.getRow(1).getCell(1).getNumericCellValue());
+                assertEquals("-", sheet.getRow(2).getCell(1).getStringCellValue());
+                assertEquals(0.0, sheet.getRow(2).getCell(2).getNumericCellValue());
+            }
+
+            // A real value that does not fit the type is still rejected.
+            var writer = ExcelWriter.<Object>create()
+                    .column("v", v -> v, c -> c.type(ExcelDataType.INTEGER).nullValue("-"));
+            assertThrows(ExcelWriteException.class, () -> writer.write(List.of("not a number")));
+        }
     }
 }
