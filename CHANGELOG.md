@@ -38,6 +38,9 @@ All notable changes to this project will be documented in this file.
 - Updated hibernate-validator and the Gradle wrapper to 9.9.1.
 
 ### Fixed
+- Group headers no longer merge equal inner labels across different parent groups.
+- Rolled-over sheet names keep their ` (n)` suffix within Excel's 31-character limit, so long
+  base names no longer produce truncated or duplicate names.
 - `writeTo(Path)` no longer destroys an existing file when the write fails or the handler was
   already consumed, and no longer leaves a partial file behind.
 - `ReadSecurityPolicy` formula detection can no longer be bypassed with a namespace prefix, an
