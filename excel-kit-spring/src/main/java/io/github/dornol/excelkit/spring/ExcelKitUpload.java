@@ -90,6 +90,10 @@ public final class ExcelKitUpload {
                 schema.excelReader(supplier, validator).limits(limits).read(input, consumer));
     }
 
+    /**
+     * Reads an XLSX upload with a schema. The content signature is checked first, so a file
+     * whose content is not XLSX is rejected with {@link ExcelKitUploadException} regardless of its name.
+     */
     public static <T> UploadResult<T> excel(
             MultipartFile file,
             ExcelKitSchema<T> schema,
@@ -102,7 +106,8 @@ public final class ExcelKitUpload {
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
             Validator validator) {
-        return excel(file, (inputStream, consumer) -> schema.excelReader(supplier, validator).read(inputStream, consumer));
+        return readDetected("Excel", TabularFileType.XLSX, file, (input, consumer) ->
+                schema.excelReader(supplier, validator).read(input, consumer));
     }
 
     public static <T> UploadResult<T> csv(
@@ -117,6 +122,10 @@ public final class ExcelKitUpload {
                 schema.csvReader(supplier, validator).limits(limits).read(input, consumer));
     }
 
+    /**
+     * Reads a CSV upload with a schema. The content signature is checked first, so a file
+     * whose content is not CSV is rejected with {@link ExcelKitUploadException} regardless of its name.
+     */
     public static <T> UploadResult<T> csv(
             MultipartFile file,
             ExcelKitSchema<T> schema,
@@ -129,6 +138,7 @@ public final class ExcelKitUpload {
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
             Validator validator) {
-        return csv(file, (inputStream, consumer) -> schema.csvReader(supplier, validator).read(inputStream, consumer));
+        return readDetected("CSV", TabularFileType.CSV, file, (input, consumer) ->
+                schema.csvReader(supplier, validator).read(input, consumer));
     }
 }

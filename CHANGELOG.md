@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- `ExcelKitUpload.excel/csv(file, schema, supplier[, validator])` now check the content signature
+  like the `ReadLimits` overloads, so a file whose content does not match throws
+  `ExcelKitUploadException` instead of a reader-specific failure.
+
 ### Added
 - `kit` and `excel-kit-spring` jars declare `Automatic-Module-Name` (`io.github.dornol.excelkit`,
   `io.github.dornol.excelkit.spring`) so module-path users get stable module names.

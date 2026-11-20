@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    id("jacoco")
     alias(libs.plugins.vanniktech.publish)
     id("signing")
     alias(libs.plugins.spring.dependency.management)
@@ -34,11 +35,42 @@ dependencies {
     testImplementation(libs.jakarta.validation.api)
     testImplementation("org.springframework:spring-webmvc")
     testImplementation("org.springframework:spring-test")
+    testImplementation("jakarta.servlet:jakarta.servlet-api")
+    testImplementation("org.hamcrest:hamcrest")
+    testImplementation("com.jayway.jsonpath:json-path")
+    testImplementation("com.fasterxml.jackson.core:jackson-databind")
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        csv.required = true
+        xml.required = true
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.75".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 tasks.withType<Javadoc>().configureEach {
