@@ -210,7 +210,9 @@ public class ExcelColumn<T> {
                 return style;
             }
             if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
-                throw new ExcelWriteException("Failed to write cell value for column '" + name + "'", e);
+                throw new ExcelWriteException("Failed to write cell value for column '" + name + "' (value "
+                        + (columnData == null ? "null" : "of type " + columnData.getClass().getSimpleName())
+                        + (dataType == null ? "" : ", column type " + dataType) + "): " + e.getMessage(), e);
             }
             log.warn("Writing value as text after a cell write failure for column '{}' (value={})", name, columnData, e);
             ExcelCellText.write(cell, String.valueOf(columnData));

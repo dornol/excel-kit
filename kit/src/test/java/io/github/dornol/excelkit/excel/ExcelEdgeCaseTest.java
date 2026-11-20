@@ -960,5 +960,28 @@ class ExcelEdgeCaseTest {
                     .column("v", v -> v, c -> c.type(ExcelDataType.INTEGER).nullValue("-"));
             assertThrows(ExcelWriteException.class, () -> writer.write(List.of("not a number")));
         }
+
+        @Test
+        void typedColumnsAcceptLosslessConversionsAndExplainRejectedValues() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Object>create()
+                    .column("long", v -> 42L, c -> c.type(ExcelDataType.BIG_DECIMAL_TO_LONG))
+                    .column("int", v -> 7, c -> c.type(ExcelDataType.BIG_DECIMAL_TO_LONG))
+                    .column("date", v -> java.time.LocalDate.of(2025, 3, 4), c -> c.type(ExcelDataType.DATETIME))
+                    .write(List.of("row")).writeTo(out);
+            try (var xssf = read(out)) {
+                var row = xssf.getSheetAt(0).getRow(1);
+                assertEquals(42.0, row.getCell(0).getNumericCellValue());
+                assertEquals(7.0, row.getCell(1).getNumericCellValue());
+                assertEquals(java.time.LocalDateTime.of(2025, 3, 4, 0, 0), row.getCell(2).getLocalDateTimeCellValue());
+            }
+
+            // Lossy conversions stay rejected, and the message names the value and column types.
+            var writer = ExcelWriter.<Object>create()
+                    .column("when", v -> java.time.LocalDateTime.of(2025, 3, 4, 10, 30), c -> c.type(ExcelDataType.DATE));
+            var failure = assertThrows(ExcelWriteException.class, () -> writer.write(List.of("row")));
+            assertTrue(failure.getMessage().contains("LocalDateTime") && failure.getMessage().contains("DATE"),
+                    failure.getMessage());
+        }
     }
 }

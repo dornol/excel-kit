@@ -73,7 +73,9 @@ public enum ExcelDataType {
     /**
      * LocalDateTime formatted as "yyyy-MM-dd HH:mm:ss".
      */
-    DATETIME((cell, value) -> setDateTime(cell, (LocalDateTime) value), ExcelDataFormat.DATETIME.getFormat()),
+    DATETIME((cell, value) -> setDateTime(cell,
+            value instanceof LocalDate date ? date.atStartOfDay() : (LocalDateTime) value),
+            ExcelDataFormat.DATETIME.getFormat()),
 
     /**
      * LocalDate formatted as "yyyy-MM-dd".
@@ -93,7 +95,7 @@ public enum ExcelDataType {
     /**
      * BigDecimal converted to long (no decimal).
      */
-    BIG_DECIMAL_TO_LONG((cell, value) -> setLong(cell, ((BigDecimal) value).longValueExact()), LONG.defaultFormat),
+    BIG_DECIMAL_TO_LONG((cell, value) -> setLong(cell, decimal((Number) value).longValueExact()), LONG.defaultFormat),
 
     /**
      * Formula type. The value is treated as an Excel formula string (without leading '=').

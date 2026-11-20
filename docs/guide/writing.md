@@ -43,6 +43,13 @@ Types are inferred from the first non-null value when `.type(...)` is omitted. U
 `.type(...)` when a column needs an explicit or semantic type; explicit types always win.
 Columns whose values are all `null` fall back to `STRING`.
 
+Inference recognizes `String`, `Boolean`, the integer and floating-point `Number` types,
+`BigDecimal`, `LocalDate`, `LocalDateTime` and `LocalTime`. Any other type, including
+`java.util.Date`, `Instant`, `ZonedDateTime`, `OffsetDateTime` and `YearMonth`, is written as its
+`toString()` text. Convert such values to `LocalDateTime` (or `LocalDate`) in the column function
+to get an Excel date, for example `c -> c.getCreatedAt().atZone(zone).toLocalDateTime()`.
+An explicit `DATETIME` column also accepts a `LocalDate` and writes it as midnight.
+
 When an inferred column encounters a value of a different type, the writer
 preserves that value's type where possible. An inferred integer column can store
 later fractional values as numbers.

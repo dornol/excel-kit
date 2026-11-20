@@ -27,6 +27,8 @@ All notable changes to this project will be documented in this file.
 - **Breaking:** for XLSX numeric cells, `asNumber/asInt/asLong/asDouble/asFloat/asBigDecimal`
   convert the stored number instead of the displayed text (`2.5` in a `0` cell stays `2.5`,
   `0.25` in a `0%` cell stays `0.25`). Date-formatted cells convert to their serial number.
+- `BIG_DECIMAL_TO_LONG` accepts any `Number`, `DATETIME` accepts a `LocalDate` (as midnight), and
+  a rejected typed value now reports its value type and column type in the error message.
 - `forMap()` on CSV and Excel returns `""` for missing trailing columns instead of omitting
   the key.
 - Summary rows throw `ExcelWriteException` for an unknown summary or label column, and write
