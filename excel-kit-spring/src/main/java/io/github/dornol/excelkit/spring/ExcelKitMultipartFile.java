@@ -4,7 +4,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.CharacterCodingException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
  * Small adapter for opening upload streams from Spring {@link MultipartFile}s.
  */
 public final class ExcelKitMultipartFile {
+    private static final int CONTENT_PREFIX_BYTES = 4096;
     private static final Set<String> EXCEL_AND_CSV_EXTENSIONS = Set.of("xlsx", "xlsm", "csv");
 
     private ExcelKitMultipartFile() {
@@ -91,7 +95,7 @@ public final class ExcelKitMultipartFile {
     public static MultipartFile requireExcelOrCsvContent(MultipartFile file) {
         requireExcelOrCsv(file);
         String extension = extensionOf(file.getOriginalFilename());
-        byte[] prefix = readPrefix(file, 4096);
+        byte[] prefix = readPrefix(file, CONTENT_PREFIX_BYTES);
         if (extension.equals("xlsx") || extension.equals("xlsm")) {
             if (prefix.length < 4 || prefix[0] != 'P' || prefix[1] != 'K') {
                 throw new ExcelKitUploadException("Upload file content is not a valid XLSX/XLSM package");
@@ -99,7 +103,8 @@ public final class ExcelKitMultipartFile {
             return file;
         }
         if (extension.equals("csv")) {
-            requireTextCsv(prefix);
+            // A prefix shorter than the limit is the whole file; otherwise it may end inside a character.
+            requireTextCsv(prefix, prefix.length < CONTENT_PREFIX_BYTES);
             return file;
         }
         throw new ExcelKitUploadException("Unsupported upload file extension: " + extension);
@@ -113,7 +118,7 @@ public final class ExcelKitMultipartFile {
         }
     }
 
-    private static void requireTextCsv(byte[] prefix) {
+    private static void requireTextCsv(byte[] prefix, boolean wholeFile) {
         if (prefix.length == 0) {
             throw new ExcelKitUploadException("Upload file is empty");
         }
@@ -122,10 +127,13 @@ public final class ExcelKitMultipartFile {
                 throw new ExcelKitUploadException("Upload file content is not text CSV");
             }
         }
-        try {
-            StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(prefix));
-        } catch (CharacterCodingException e) {
-            throw new ExcelKitUploadException("Upload file content is not UTF-8 CSV", e);
+        var decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        // With endOfInput=false an incomplete trailing sequence is left undecoded instead of reported.
+        CoderResult result = decoder.decode(ByteBuffer.wrap(prefix), CharBuffer.allocate(prefix.length), wholeFile);
+        if (result.isError()) {
+            throw new ExcelKitUploadException("Upload file content is not UTF-8 CSV");
         }
     }
 

@@ -105,4 +105,32 @@ class ExcelKitMultipartFileTest {
 
         assertThrows(ExcelKitUploadException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(file));
     }
+
+    @Test
+    void requireExcelOrCsvContent_acceptsMultibyteCsvWhenThePrefixEndsInsideACharacter() {
+        // The 4096-byte inspection prefix lands inside a 3-byte Korean character for some paddings.
+        for (int pad = 0; pad < 3; pad++) {
+            String csv = "a".repeat(pad) + "이름,값\n" + "가나다,1\n".repeat(2000);
+            MockMultipartFile file = new MockMultipartFile(
+                    "file", "data.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+
+            assertSame(file, ExcelKitMultipartFile.requireExcelOrCsvContent(file), "pad=" + pad);
+        }
+    }
+
+    @Test
+    void requireExcelOrCsvContent_rejectsInvalidUtf8EvenInsideALargeFile() {
+        byte[] head = ("Name\n" + "x".repeat(100) + "\n").getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = new byte[head.length + 3];
+        System.arraycopy(head, 0, bytes, 0, head.length);
+        bytes[head.length] = (byte) 0xC3;      // malformed: lead byte followed by an ASCII byte
+        bytes[head.length + 1] = 'x';
+        bytes[head.length + 2] = '\n';
+
+        assertThrows(ExcelKitUploadException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(
+                new MockMultipartFile("file", "bad.csv", "text/csv", bytes)));
+        // A whole file that ends with an incomplete character is still invalid.
+        assertThrows(ExcelKitUploadException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(
+                new MockMultipartFile("file", "cut.csv", "text/csv", new byte[]{'a', ',', (byte) 0xEC, (byte) 0x9D})));
+    }
 }
