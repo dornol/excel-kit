@@ -111,7 +111,15 @@ public final class ExcelWorkbookReader {
         boolean sharePackage = !plans.isEmpty() && plans.stream().allMatch(SheetPlan::canSharePackage);
         try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile(), PackageAccess.READ) : null) {
             for (SheetPlan plan : plans) {
-                int index = plan.index != null ? plan.index : resolveSheetIndex(plan.name, sheets);
+                Integer resolved = plan.index != null ? plan.index : findSheetIndex(plan.name, sheets);
+                if (resolved == null) {
+                    // A missing named sheet is a per-sheet failure, like a missing index.
+                    reports.add(failure(String.valueOf(plan.name), -1,
+                            new ExcelKitException("Sheet '" + plan.name + "' is not present")));
+                    if (failurePolicy == SheetFailurePolicy.STOP) break;
+                    continue;
+                }
+                int index = resolved;
                 String name = sheets.stream().filter(sheet -> sheet.index() == index)
                         .map(ExcelSheetInfo::name).findFirst().orElse("#" + index);
                 if (index >= sheets.size()) {
@@ -136,9 +144,9 @@ public final class ExcelWorkbookReader {
         return new WorkbookReadReport(reports);
     }
 
-    private int resolveSheetIndex(@Nullable String name, List<ExcelSheetInfo> sheets) {
+    private @Nullable Integer findSheetIndex(@Nullable String name, List<ExcelSheetInfo> sheets) {
         return sheets.stream().filter(sheet -> sheet.name().equals(name)).map(ExcelSheetInfo::index)
-                .findFirst().orElseThrow(() -> new ExcelKitException("Sheet '" + name + "' is not present"));
+                .findFirst().orElse(null);
     }
 
     private SheetReadReport failure(String name, int index, RuntimeException failure) {

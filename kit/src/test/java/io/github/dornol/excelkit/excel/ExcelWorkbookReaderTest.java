@@ -46,6 +46,33 @@ class ExcelWorkbookReaderTest {
     }
 
     @Test
+    void aMissingNamedSheetIsAPerSheetFailureLikeAMissingIndex() {
+        var orders = new java.util.ArrayList<String>();
+
+        WorkbookReadReport report = ExcelWorkbookReader.create()
+                .sheet("Missing", ExcelReader.forMap(), result -> {})
+                .sheet("Orders", ExcelReader.mapping(row -> row.get("Order").asString()),
+                        result -> { if (result.success()) orders.add(result.data()); })
+                .read(new ByteArrayInputStream(workbook()));
+
+        assertFalse(report.successful());
+        assertEquals(2, report.sheets().size());
+        assertTrue(report.sheet("Missing").failure().getMessage().contains("'Missing' is not present"));
+        assertEquals(List.of("1001"), orders, "later sheets are still read under the default policy");
+
+        var stopped = new java.util.ArrayList<String>();
+        WorkbookReadReport stop = ExcelWorkbookReader.create()
+                .failurePolicy(SheetFailurePolicy.STOP)
+                .sheet("Missing", ExcelReader.forMap(), result -> {})
+                .sheet("Orders", ExcelReader.mapping(row -> row.get("Order").asString()),
+                        result -> stopped.add(result.data()))
+                .read(new ByteArrayInputStream(workbook()));
+
+        assertEquals(1, stop.sheets().size());
+        assertTrue(stopped.isEmpty());
+    }
+
+    @Test
     void stopPolicyDoesNotProcessLaterSheets() {
         WorkbookReadReport report = ExcelWorkbookReader.create()
                 .failurePolicy(SheetFailurePolicy.STOP)
