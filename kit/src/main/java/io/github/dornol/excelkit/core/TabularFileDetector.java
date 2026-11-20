@@ -65,8 +65,16 @@ public final class TabularFileDetector {
     public static TabularDetectionResult detectDetailed(InputStream input, int sampleBytes,
                                                          @Nullable Charset configuredCharset,
                                                          char quoteChar, char escapeChar) {
+        return detectDetailed(input, sampleBytes, configuredCharset, quoteChar, escapeChar, 0);
+    }
+
+    /** Detects the delimiter from the specified zero-based logical CSV header record. */
+    public static TabularDetectionResult detectDetailed(InputStream input, int sampleBytes,
+                                                         @Nullable Charset configuredCharset,
+                                                         char quoteChar, char escapeChar, int headerRowIndex) {
         java.util.Objects.requireNonNull(input, "input cannot be null");
         if (sampleBytes < 64) throw new IllegalArgumentException("sampleBytes must be at least 64");
+        if (headerRowIndex < 0) throw new IllegalArgumentException("headerRowIndex cannot be negative");
         if (!input.markSupported()) throw new IllegalArgumentException("input must support mark/reset");
         try {
             input.mark(sampleBytes);
@@ -79,7 +87,7 @@ public final class TabularFileDetector {
             Charset charset = configuredCharset == null ? charset(bytes) : configuredCharset;
             String text = new String(bytes, charset);
             if (looksTextual(text)) {
-                Character delimiter = delimiter(text, quoteChar, escapeChar);
+                Character delimiter = delimiter(text, quoteChar, escapeChar, headerRowIndex);
                 return new TabularDetectionResult(TabularFileType.CSV,
                         delimiter == null ? DetectionConfidence.LOW : DetectionConfidence.MEDIUM,
                         charset, delimiter);
@@ -96,11 +104,13 @@ public final class TabularFileDetector {
         return StandardCharsets.UTF_8;
     }
 
-    private static @Nullable Character delimiter(String text, char quoteChar, char escapeChar) {
+    private static @Nullable Character delimiter(String text, char quoteChar, char escapeChar, int headerRowIndex) {
         int[] counts = new int[DELIMITER_CANDIDATES.length()];
         boolean quoted = false;
         boolean atFieldStart = true;
         int start = text.startsWith("\uFEFF") ? 1 : 0;
+        int recordIndex = 0;
+        int recordStart = start;
         for (int i = start; i < text.length(); i++) {
             char c = text.charAt(i);
             char next = i + 1 < text.length() ? text.charAt(i + 1) : '\0';
@@ -115,15 +125,26 @@ public final class TabularFileDetector {
                     atFieldStart = false;
                 }
             } else if (!quoted) {
-                if (c == '\r' || c == '\n') break;
+                if (c == '\r' || c == '\n') {
+                    if (recordIndex == headerRowIndex) break;
+                    if (c == '\r' && next == '\n') i++;
+                    recordIndex++;
+                    recordStart = i + 1;
+                    atFieldStart = true;
+                    continue;
+                }
                 int candidate = DELIMITER_CANDIDATES.indexOf(c);
                 if (candidate >= 0) {
-                    counts[candidate]++;
+                    if (recordIndex == headerRowIndex) counts[candidate]++;
                     atFieldStart = true;
                 } else if (c != ' ') {
                     atFieldStart = false;
                 }
             }
+        }
+        if (headerRowIndex > 0 && (recordIndex != headerRowIndex || recordStart == text.length())) {
+            throw new ExcelKitException("CSV header is outside the detection sample; increase detectionSampleBytes "
+                    + "or configure the delimiter");
         }
         int best = -1;
         for (int i = 0; i < counts.length; i++) {

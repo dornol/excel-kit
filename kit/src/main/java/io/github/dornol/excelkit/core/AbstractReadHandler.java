@@ -98,7 +98,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     }
 
     protected List<String> rawValues(List<CellData> cells) {
-        return cells.stream().map(CellData::formattedValue).toList();
+        return cells.stream().map(CellData::sourceValue).toList();
     }
 
     protected static final int PROCESS_ROW = 0;

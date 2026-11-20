@@ -146,6 +146,8 @@ reader.read(
 - `fileRowNum()` — 1-based physical row number in the original file
 
 For a CSV record spanning several lines, `fileRowNum()` identifies its first line.
+On read results and errors, `rawValues()` returns the stored XLSX numeric text,
+including date and time serials and cached numeric formula values.
 - `type()` — `VALIDATION` or `MAPPING`
 - `messages()` — human-readable messages (list)
 - `cause()` — nullable throwable (for `MAPPING` errors)

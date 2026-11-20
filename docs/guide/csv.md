@@ -67,8 +67,10 @@ CsvReader.setter(Product::new)
 ```
 
 CSV content can be detected from a sample before parsing. Delimiter detection
-ignores characters inside quoted fields. The sample size defaults to 8192 bytes,
-and a charset supplied with `.charset(...)` or `.dialect(...)` takes precedence:
+ignores characters inside quoted fields and uses the logical record selected by
+`.headerRowIndex(...)`. The sample size defaults to 8192 bytes. Explicit charset
+and delimiter settings, including those set through `.dialect(...)`, take
+precedence over detection:
 
 ```java
 CsvReader.<Row>mapping(this::map)
@@ -78,6 +80,9 @@ CsvReader.<Row>mapping(this::map)
 
 Detected settings apply only to that read operation; the reusable reader keeps its configured
 charset and delimiter for subsequent reads.
+
+If the sample ends before the selected header, increase the sample size or
+specify the delimiter explicitly.
 
 `readDetected(InputStreamSource, ...)` and `readDetectedWithSummary(...)` close streams opened by
 the source. Caller-owned `InputStream` instances remain open.

@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -194,12 +195,12 @@ public class ExcelColumn<T> {
             if (actualType != null && actualType != dataType
                     && !(dataType.isInferredNumber() && actualType.isInferredNumber())) {
                 actualType.getSetter().set(cell, value);
-                return mixedStyle(cell, actualType.getDefaultFormat());
+                return styleForValue(cell, actualType, value);
             }
         }
         try {
             columnSetter.set(cell, value);
-            return style;
+            return dataType == null ? style : styleForValue(cell, dataType, value);
         } catch (ArithmeticException e) {
             if (explicitDataType || (dataType != ExcelDataType.INTEGER && dataType != ExcelDataType.LONG)
                     || !(value instanceof Number number)) throw e;
@@ -207,6 +208,13 @@ public class ExcelColumn<T> {
             ExcelDataType.setNumber(cell, number);
             return mixedStyle(cell, null);
         }
+    }
+
+    private CellStyle styleForValue(SXSSFCell cell, ExcelDataType type, Object value) {
+        if (explicitDataFormat) return style;
+        String format = type.getDefaultFormat(value);
+        if (type == dataType && Objects.equals(format, type.getDefaultFormat())) return style;
+        return mixedStyle(cell, format);
     }
 
     private CellStyle mixedStyle(SXSSFCell cell, @Nullable String defaultFormat) {

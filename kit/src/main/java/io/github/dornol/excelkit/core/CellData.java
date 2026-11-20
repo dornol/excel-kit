@@ -180,6 +180,10 @@ public final class CellData {
         return formattedValue;
     }
 
+    String sourceValue() {
+        return rawNumericValue == null ? formattedValue : rawNumericValue;
+    }
+
     /**
      * Returns the number stored in an XLSX cell without applying its display format.
      * For formulas this is the cached numeric result. Dates and times return their Excel

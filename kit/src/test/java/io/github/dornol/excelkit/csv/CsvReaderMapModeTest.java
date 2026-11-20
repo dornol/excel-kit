@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.ReadResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,6 +24,40 @@ import static org.junit.jupiter.api.Assertions.*;
  * support, and the mixed-mode runtime guards.
  */
 class CsvReaderMapModeTest {
+
+    @Test
+    void detectedReaderHonorsTheExplicitDelimiter() {
+        byte[] csv = "City, State, Region;Value\r\nSeoul;42\r\n".getBytes(StandardCharsets.UTF_8);
+        var values = new ArrayList<Map<String, String>>();
+        CsvReader.forMap().delimiter(';').readDetected(new ByteArrayInputStream(csv),
+                row -> values.add(row.data()));
+
+        assertEquals(List.of(Map.of("City, State, Region", "Seoul", "Value", "42")), values);
+    }
+
+    @Test
+    void detectsDelimiterFromTheConfiguredLogicalHeaderRecord() {
+        byte[] csv = "\"export\r\npart\",meta,notes\r\nName;Count\r\nAlice;42\r\n"
+                .getBytes(StandardCharsets.UTF_8);
+        var values = new ArrayList<Map<String, String>>();
+        CsvReader.forMap().headerRowIndex(1).readDetectedWithSummary(new ByteArrayInputStream(csv),
+                row -> values.add(row.data()));
+
+        assertEquals(List.of(Map.of("Name", "Alice", "Count", "42")), values);
+    }
+
+    @Test
+    void detectionReportsAnUnsampledHeaderAndAllowsExplicitDelimiter() {
+        byte[] csv = ("metadata".repeat(12) + "\nName;Count\nAlice;42\n").getBytes(StandardCharsets.UTF_8);
+        var reader = CsvReader.forMap().headerRowIndex(1).detectionSampleBytes(64);
+        var error = assertThrows(ExcelKitException.class, () -> reader.readDetected(
+                new ByteArrayInputStream(csv), result -> fail("Expected detection to reject the missing header")));
+        assertTrue(error.getMessage().contains("header is outside the detection sample"));
+
+        var values = new ArrayList<Map<String, String>>();
+        reader.delimiter(';').readDetected(new ByteArrayInputStream(csv), row -> values.add(row.data()));
+        assertEquals(List.of(Map.of("Name", "Alice", "Count", "42")), values);
+    }
 
     @Test
     void detectedReaderIgnoresDelimitersAndNewlinesInsideQuotedHeaders() {

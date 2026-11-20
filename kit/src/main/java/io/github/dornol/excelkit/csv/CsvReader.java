@@ -46,7 +46,7 @@ import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
  * @since 2025-07-19
  */
 public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
-    private char delimiter = ',';
+    private @Nullable Character configuredDelimiter;
     private @Nullable Charset configuredCharset;
     private char quoteChar = '"';
     private char escapeChar = ICSVParser.NULL_CHARACTER;
@@ -210,7 +210,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      * @since 0.9.2
      */
     public CsvReader<T> dialect(CsvDialect dialect) {
-        this.delimiter = dialect.getDelimiter();
+        this.configuredDelimiter = dialect.getDelimiter();
         this.configuredCharset = dialect.getCharset();
         return this;
     }
@@ -218,12 +218,13 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     /**
      * Sets the delimiter character used to separate fields.
      * Defaults to comma ({@code ','}).
+     * An explicitly supplied delimiter takes precedence in detected reads.
      *
      * @param delimiter The delimiter character
      * @return This CsvReader instance for chaining
      */
     public CsvReader<T> delimiter(char delimiter) {
-        this.delimiter = delimiter;
+        this.configuredDelimiter = delimiter;
         return this;
     }
 
@@ -326,6 +327,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private CsvReadSessionConfig<T> sessionConfig() {
+        char delimiter = configuredDelimiter == null ? ',' : configuredDelimiter;
         return sessionConfig(delimiter, configuredCharset == null ? StandardCharsets.UTF_8 : configuredCharset);
     }
 
@@ -340,13 +342,15 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private CsvReadHandler<T> createDetectedHandler(InputStream input) {
         BufferedInputStream buffered = input instanceof BufferedInputStream existing
                 ? existing : new BufferedInputStream(input);
+        int detectionHeader = configuredDelimiter == null ? configuredHeaderRowIndex() : 0;
         var detection = TabularFileDetector.detectDetailed(buffered, detectionSampleBytes,
-                configuredCharset, quoteChar, escapeChar);
+                configuredCharset, quoteChar, escapeChar, detectionHeader);
         if (detection.type() != TabularFileType.CSV || detection.charset() == null) {
             throw new CsvReadException("Expected CSV content but detected " + detection.type());
         }
-        char detectedDelimiter = detection.delimiter() == null ? delimiter : detection.delimiter();
-        return new CsvReadHandler<>(limitInput(buffered), sessionConfig(detectedDelimiter, detection.charset()));
+        Character delimiter = configuredDelimiter == null ? detection.delimiter() : configuredDelimiter;
+        return new CsvReadHandler<>(limitInput(buffered), sessionConfig(
+                delimiter == null ? ',' : delimiter, detection.charset()));
     }
 
     /** Reads an input stream without closing it. */

@@ -179,6 +179,8 @@ public enum ExcelDataType {
     private static final LocalDate LAST_EXCEL_DATE = LocalDate.of(9999, 12, 31);
     private static final long NANOS_PER_DAY = 86_400_000_000_000L;
     private static final int NANOS_PER_MILLISECOND = 1_000_000;
+    private static final String DATETIME_WITH_MILLIS = ExcelDataFormat.DATETIME.getFormat() + ".000";
+    private static final String TIME_WITH_MILLIS = ExcelDataFormat.TIME.getFormat() + ".000";
 
     static void setDateTime(Cell cell, LocalDateTime value) {
         var workbook = cell.getSheet().getWorkbook();
@@ -280,6 +282,16 @@ public enum ExcelDataType {
      * Returns the default Excel format string for this type, or null if none.
      */
     @Nullable String getDefaultFormat() {
+        return defaultFormat;
+    }
+
+    @Nullable String getDefaultFormat(Object value) {
+        if (this == DATETIME && value instanceof LocalDateTime dateTime && dateTime.getNano() != 0) {
+            return DATETIME_WITH_MILLIS;
+        }
+        if (this == TIME && value instanceof LocalTime time && time.getNano() != 0) {
+            return TIME_WITH_MILLIS;
+        }
         return defaultFormat;
     }
 }

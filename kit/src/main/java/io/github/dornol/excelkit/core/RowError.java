@@ -18,7 +18,7 @@ import java.util.List;
  * @param cause     the underlying exception when one is available; setter mapping
  *                  failures may have a {@code null} cause
  * @param cellErrors structured cell-level errors, if available
- * @param rawValues raw source row values, if available
+ * @param rawValues source row values, including the stored text of numeric XLSX cells
  *
  * @author dhkim
  * @since 0.16.12

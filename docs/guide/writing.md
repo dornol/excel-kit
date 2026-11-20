@@ -55,6 +55,8 @@ when a value exceeds Excel's numeric precision.
 date system and date-times with sub-millisecond precision are preserved as ISO text
 with `LENIENT` and rejected with `FAIL_FAST`. Template cell writes preserve such
 values as ISO text.
+Default date-time and time styles show fractional seconds to milliseconds when
+present. An explicit column format controls the cell's display precision.
 
 Built-in formula columns and summary rows ask Excel to recalculate on open.
 Their results read as blank until an application calculates and saves them.

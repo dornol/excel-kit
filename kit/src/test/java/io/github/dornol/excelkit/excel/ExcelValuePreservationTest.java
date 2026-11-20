@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +27,45 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExcelValuePreservationTest {
+
+    @Test
+    void millisecondDateTimeAndTimeRoundTripWithoutRoundingToTheNextSecond() {
+        var ordinary = LocalDateTime.of(2025, 4, 28, 15, 20, 30);
+        var fractional = ordinary.withNano(987_000_000);
+        var lateTime = LocalTime.of(23, 59, 59, 999_000_000);
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<LocalDateTime>create().column("Default", value -> value)
+                .column("Custom", value -> value, c -> c.format("yyyy-mm-dd hh:mm:ss.000"))
+                .column("Time", value -> value.getNano() == 0 ? LocalTime.NOON : lateTime)
+                .write(List.of(ordinary, fractional)).writeTo(output);
+
+        var rows = ExcelReader.mapping(row -> row).readAll(new ByteArrayInputStream(output.toByteArray()));
+        assertEquals("2025-04-28 15:20:30", rows.get(0).get("Default").formattedValue());
+        assertEquals(fractional, rows.get(1).get("Default").asLocalDateTime());
+        assertEquals(fractional, rows.get(1).get("Custom").asLocalDateTime());
+        assertEquals("23:59:59.999", rows.get(1).get("Time").formattedValue());
+        assertEquals(lateTime, rows.get(1).get("Time").asLocalTime());
+    }
+
+    @Test
+    void readResultsAndErrorsIncludeStoredNumericTokensInsteadOfDisplayValues() {
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<Long>create().column("Id", value -> value, c -> c.format("General"))
+                .write(List.of(1234567890123L, 1234567890124L)).writeTo(output);
+        byte[] workbook = output.toByteArray();
+        var rows = new ArrayList<ReadResult<CellData>>();
+        ExcelReader.mapping(row -> row.get("Id")).read(new ByteArrayInputStream(workbook), rows::add);
+
+        assertEquals("1.23457E+12", rows.get(0).data().formattedValue());
+        assertEquals("1.23457E+12", rows.get(1).data().formattedValue());
+        assertEquals(1234567890123L, new BigDecimal(rows.get(0).rawValues().get(0)).longValueExact());
+        assertEquals(1234567890124L, new BigDecimal(rows.get(1).rawValues().get(0)).longValueExact());
+
+        var report = ExcelReader.mapping(row -> row.get("Id").asInt())
+                .readReport(new ByteArrayInputStream(workbook), 2);
+        assertEquals(rows.get(0).rawValues(), report.errors().get(0).rawValues());
+        assertEquals(rows.get(1).rawValues(), report.errors().get(1).rawValues());
+    }
 
     @Test
     void formatsExcelCalendarValuesIndependentlyOfThePoiTimeZone() throws IOException {

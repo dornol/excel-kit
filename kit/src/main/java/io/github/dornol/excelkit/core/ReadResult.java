@@ -17,7 +17,7 @@ import java.util.List;
  *                 failures may have a {@code null} cause
  * @param fileRowNum 1-based physical row number in the source file, or {@code -1} if unknown
  * @param cellErrors structured cell-level errors, if available
- * @param rawValues raw source row values, if available
+ * @param rawValues source row values, including the stored text of numeric XLSX cells
  *
  * @author dhkim
  * @since 2025-07-19
