@@ -274,17 +274,21 @@ public class ExcelChartConfig {
      * Creates the chart on the given sheet.
      * Package-private, called by the writer after data is written.
      *
-     * @param sheet      the current SXSSFSheet
-     * @param dataEndRow the last data row index (0-based)
-     * @param headerRow  the header row index (0-based)
+     * @param sheet        the current SXSSFSheet
+     * @param dataEndRow   the last data row index (0-based)
+     * @param headerRow    the header row index (0-based)
+     * @param nextFreeRow  the first row after the data, summary rows and {@code afterData} content
      */
-    void apply(SXSSFSheet sheet, int headerRow, int dataEndRow) {
+    void apply(SXSSFSheet sheet, int headerRow, int dataEndRow, int nextFreeRow) {
         if (valueSeries.isEmpty()) return;
+        // Without data rows there is nothing to plot, and the range would be reversed.
+        if (dataEndRow <= headerRow) return;
 
         // Access underlying XSSFSheet for chart support
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
 
-        int row1 = anchorRow1 >= 0 ? anchorRow1 : dataEndRow + 2;
+        // Below the data and any summary/afterData rows, leaving one blank row.
+        int row1 = anchorRow1 >= 0 ? anchorRow1 : Math.max(dataEndRow + 1, nextFreeRow) + 1;
         int row2 = anchorRow2 >= 0 ? anchorRow2 : row1 + 15;
 
         XSSFDrawing drawing = xssfSheet.createDrawingPatriarch();

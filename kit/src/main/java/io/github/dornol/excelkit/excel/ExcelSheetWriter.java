@@ -257,7 +257,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             }
         }
 
-        ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+        int nextFreeRow = ExcelWriteSupport.writeAfterDataAndSummary(
+                activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
         for (SXSSFSheet s : allSheets) {
             ExcelSheetPostProcessor.apply(s, columns, headerRowIndex, cfg);
@@ -278,7 +279,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         // Apply chart on last sheet
         if (cfg.chartConfig != null) {
             SXSSFSheet lastSheet = allSheets.get(allSheets.size() - 1);
-            ExcelWriteSupport.applyChart(lastSheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1);
+            ExcelWriteSupport.applyChart(lastSheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1, nextFreeRow);
         }
     }
 

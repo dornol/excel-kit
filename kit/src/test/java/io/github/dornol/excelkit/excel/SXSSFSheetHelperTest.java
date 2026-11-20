@@ -72,7 +72,7 @@ class SXSSFSheetHelperTest {
                 () -> assertThrows(ExcelWriteException.class, () -> ExcelWriteSupport.applyTabColor(sheet, new int[]{1, 2, 3})),
                 () -> assertThrows(ExcelWriteException.class, () -> StructuredTableWriter.apply(sheet, "DataTable", 0, 2, java.util.List.of("Name", "Value"), "TableStyleMedium2", true)),
                 () -> assertThrows(ExcelWriteException.class, () -> StructuredTableWriter.validateExistingHeaders(sheet, 0, 2)),
-                () -> assertThrows(ExcelWriteException.class, () -> new ExcelChartConfig().categoryColumn(0).valueColumn(1, "Value").apply(sheet, 0, 2)),
+                () -> assertThrows(ExcelWriteException.class, () -> new ExcelChartConfig().categoryColumn(0).valueColumn(1, "Value").apply(sheet, 0, 2, 3)),
                 () -> assertThrows(ExcelWriteException.class, () -> new ExcelConditionalRule().columns(1).dataBar(ExcelColor.BLUE).apply(sheet, 0, 2, 2)),
                 () -> assertThrows(ExcelWriteException.class, () -> new ExcelConditionalRule().columns(1).iconSet(ExcelConditionalRule.IconSetType.ARROWS_3).apply(sheet, 0, 2, 2))
             );

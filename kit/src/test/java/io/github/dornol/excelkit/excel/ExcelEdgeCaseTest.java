@@ -847,5 +847,47 @@ class ExcelEdgeCaseTest {
                 }
             }
         }
+
+        @Test
+        void chartIsPlacedBelowSummaryRowsAndSkippedWithoutData() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Integer>create()
+                    .column("Name", v -> "n" + v).column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s.sum("Value").average("Value").max("Value"))
+                    .chart(c -> c.title("T").categoryColumn(0).valueColumn(1, "Value"))
+                    .write(List.of(1, 2, 3)).writeTo(out);
+            try (var xssf = read(out)) {
+                var sheet = xssf.getSheetAt(0);
+                assertEquals(6, sheet.getLastRowNum(), "3 data rows + 3 summary rows below the header");
+                var anchor = sheet.getDrawingPatriarch().getCTDrawing().getTwoCellAnchorArray(0);
+                assertTrue(anchor.getFrom().getRow() > sheet.getLastRowNum(),
+                        "chart starts below the summary, but at row " + anchor.getFrom().getRow());
+            }
+
+            var viaWorkbook = new ByteArrayOutputStream();
+            try (var workbook = ExcelWorkbook.create()) {
+                workbook.<Integer>sheet("S")
+                        .column("Name", v -> "n" + v).column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER))
+                        .summary(s -> s.sum("Value").average("Value"))
+                        .chart(c -> c.categoryColumn(0).valueColumn(1, "Value"))
+                        .write(List.of(1, 2, 3));
+                workbook.finish().writeTo(viaWorkbook);
+            }
+            try (var xssf = read(viaWorkbook)) {
+                var sheet = xssf.getSheetAt(0);
+                var anchor = sheet.getDrawingPatriarch().getCTDrawing().getTwoCellAnchorArray(0);
+                assertTrue(anchor.getFrom().getRow() > sheet.getLastRowNum());
+            }
+
+            var empty = new ByteArrayOutputStream();
+            ExcelWriter.<Integer>create()
+                    .column("Name", v -> "n" + v).column("Value", v -> v, c -> c.type(ExcelDataType.INTEGER))
+                    .chart(c -> c.title("T").categoryColumn(0).valueColumn(1, "Value"))
+                    .write(List.<Integer>of()).writeTo(empty);
+            try (var xssf = read(empty)) {
+                assertEquals(0, xssf.getSheetAt(0).getLastRowNum(), "only the header row");
+                assertNull(xssf.getSheetAt(0).getDrawingPatriarch(), "no chart without data");
+            }
+        }
     }
 }
