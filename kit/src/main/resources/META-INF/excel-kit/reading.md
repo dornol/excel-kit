@@ -91,6 +91,9 @@ format rounds large numbers for display. It returns the underlying fraction for
 percentages and the serial number for dates. For text, blank cells, and CSV input,
 it returns `null`.
 
+On read results and errors, `rawValues()` returns the source row's values, using the stored
+XLSX number for numeric cells.
+
 ## RowData Methods (Mapping Mode)
 
 | Method | Description |

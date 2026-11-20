@@ -30,16 +30,13 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
      - group/formula/protection/chart/validation → `advanced.md`
      - CSV 전용 → `csv.md`
      - 기본 예제 → `quick-start.md`
-   - **검증**: 이번 버전 CHANGELOG Added 항목의 API 이름(예: `headerRows`, `rowNumberColumn`)이
-     아래 grep 에서 모든 문서군에 최소 1회 이상 hit 해야 함
+   - **검증**: 이번 버전 CHANGELOG `### Added` 항목의 API 이름이 모든 문서군(README, `docs/guide/`,
+     `AI.md`, `META-INF/excel-kit/*.md`)에 최소 1회 이상 등장해야 함. 태그 푸시 시 release 워크플로가
+     자동 실행하며, 푸시 전에 로컬에서 먼저 확인할 것:
      ```sh
-     for api in <이번-버전-신규-API-이름들>; do
-       echo "=== $api ==="
-       grep -rl "$api" README.md docs/guide/ \
-         kit/src/main/resources/META-INF/AI.md \
-         kit/src/main/resources/META-INF/excel-kit/*.md || echo "MISSING: $api"
-     done
+     scripts/verify-release-docs.sh            # build.gradle.kts 의 version 기준
      ```
+     API 가 아닌 이름(JDK 타입, enum 상수 등)이 오탐으로 잡히면 `scripts/release-docs-ignore.txt` 에 추가
 7. `example/` 최신화 (showcase할 기능이 있으면):
    - `WriteShowcaseController` — 새 기능 엔드포인트 추가
    - `index.html` — 해당 다운로드 버튼 추가

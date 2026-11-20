@@ -298,9 +298,9 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Column matching | By name, aliases, by index, positional with skip |
 | Read modes | Setter (mutable), Mapping (records), Map (schema-less; `forMapRaw()` returns stored Excel numbers) |
 | Cell values | Numeric conversions use the stored XLSX number (`rawNumber()`), strict zoned date-times (`asZonedDateTimeStrict`) |
-| Headers | Strict header validation, duplicate header policies (fail by default), single or multi-row headers (`headerRows(int)`, Excel) |
+| Headers | Strict header validation, duplicate header policies (fail by default), header row position (`headerRowIndex(int)`), single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
-| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values |
+| Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values (`rawValues()`) |
 | Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |
 | Discovery | `getSheetNames()`, `getSheetHeaders()` |
 | Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files |

@@ -88,7 +88,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - `CellError` and `RowError.cellErrors()` — structured cell-level read errors
 - Numeric `as*()` conversions (`asInt/asLong/asDouble/asFloat/asNumber/asBigDecimal`) use the stored XLSX number, not the display format (`0.25` in a `0%` cell stays `0.25`); CSV/text cells use their text
 - `asBigDecimal()` parses the decimal directly, avoiding Double conversion
-- `rawNumber()` reads the stored XLSX number before display formatting
+- `rawNumber()` reads the stored XLSX number before display formatting; `rawValues()` on read results and errors returns the source row's values using it
 - `asZonedDateTimeStrict(zone)` rejects local date-times in a DST gap or overlap
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time

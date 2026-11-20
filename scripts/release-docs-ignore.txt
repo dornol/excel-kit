@@ -1,0 +1,12 @@
+# Names in CHANGELOG "### Added" sections that are not excel-kit APIs to document individually
+# (JDK types, enum constants described by their type, text literals). One name per line.
+_xHHHH_
+Date
+DATE
+DATETIME
+Time
+TIME
+Instant
+OffsetDateTime
+Timestamp
+ZonedDateTime

@@ -29,6 +29,9 @@ jobs:
       - name: Verify release version
         run: ./gradlew verifyReleaseVersion --no-daemon
 
+      - name: Verify new APIs are documented
+        run: scripts/verify-release-docs.sh "${GITHUB_REF_NAME#v}"
+
       - name: Verify consumers resolve released artifacts from Maven Central
         run: scripts/verify-consumers.sh "${GITHUB_REF_NAME#v}" https://repo1.maven.org/maven2
 
