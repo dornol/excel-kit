@@ -371,7 +371,9 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         public void startElement(String uri, String localName, String qName,
                                  org.xml.sax.Attributes attributes) {
             if ("row".equals(qName) || "row".equals(localName)) {
-                currentRow++;
+                // Rows without cells are omitted from the XML, so the row's own number is authoritative.
+                String reference = attributes.getValue("r");
+                currentRow = reference == null ? currentRow + 1 : Integer.parseInt(reference) - 1;
                 if (currentRow > headerRowIndex) {
                     dataRowCount++;
                 }

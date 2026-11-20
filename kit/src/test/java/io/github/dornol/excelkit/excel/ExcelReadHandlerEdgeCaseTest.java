@@ -161,6 +161,29 @@ class ExcelReadHandlerEdgeCaseTest {
     }
 
     @Test
+    void countRows_usesRowNumbersWhenLeadingRowsAreEmptyOrHeadersSpanRows() throws Exception {
+        for (int headerRows : new int[]{1, 2}) {
+            byte[] excel;
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+                 var out = new ByteArrayOutputStream()) {
+                var sheet = workbook.createSheet();
+                int row = 3; // rows 0-2 are empty and absent from the XML
+                for (int h = 0; h < headerRows; h++) sheet.createRow(row++).createCell(0).setCellValue("H" + h);
+                for (int i = 0; i < 3; i++) sheet.createRow(row++).createCell(0).setCellValue("d" + i);
+                workbook.write(out);
+                excel = out.toByteArray();
+            }
+            List<Long> totals = new ArrayList<>();
+            int[] emitted = {0};
+            ExcelReader.mapping(data -> data).headerRows(headerRows).headerRowIndex(2 + headerRows).countRows()
+                    .onProgress(1, (count, cursor) -> totals.add(cursor.getTotalRows()))
+                    .read(new ByteArrayInputStream(excel), r -> emitted[0]++);
+            assertEquals(3, emitted[0]);
+            assertEquals(List.of(3L, 3L, 3L), totals, "headerRows=" + headerRows);
+        }
+    }
+
+    @Test
     void withoutCountRows_cursorTotalRowsShouldBeNegative() throws IOException {
         byte[] excel = writeTestExcel();
 
