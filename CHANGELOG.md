@@ -38,6 +38,8 @@ All notable changes to this project will be documented in this file.
 - Updated hibernate-validator and the Gradle wrapper to 9.9.1.
 
 ### Fixed
+- Charts are placed below summary and `afterData` rows instead of covering them, and are
+  skipped when a sheet has no data rows instead of failing the write with an invalid range.
 - Group headers no longer merge equal inner labels across different parent groups.
 - Rolled-over sheet names keep their ` (n)` suffix within Excel's 31-character limit, so long
   base names no longer produce truncated or duplicate names.
