@@ -227,7 +227,8 @@ class ExcelWriteSupport {
                 String v = grid[r][c];
                 if (v == null) { c++; continue; }
                 int start = c;
-                while (c < numCols && Objects.equals(v, grid[r][c])) c++;
+                // Equal labels merge only under the same parent groups.
+                while (c < numCols && Objects.equals(v, grid[r][c]) && sameParents(grid, r, start, c)) c++;
                 if (c - start > 1) {
                     sheet.addMergedRegion(new CellRangeAddress(startRow + r, startRow + r, start, c - 1));
                 }
@@ -249,6 +250,13 @@ class ExcelWriteSupport {
                 }
             }
         }
+    }
+
+    private static boolean sameParents(String[][] grid, int level, int first, int other) {
+        for (int k = 0; k < level; k++) {
+            if (!Objects.equals(grid[k][first], grid[k][other])) return false;
+        }
+        return true;
     }
 
     /**
