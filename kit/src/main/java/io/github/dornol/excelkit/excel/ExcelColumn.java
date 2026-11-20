@@ -100,12 +100,10 @@ public class ExcelColumn<T> {
     }
 
     /**
-     * Applies the column's function to extract a value from the row and cursor.
-     * <p>
-     * Intentionally catches exceptions and returns {@code null} (empty cell) instead of
-     * propagating. In bulk exports (100K+ rows), failing the entire export for one bad cell
-     * is worse than leaving it blank. Errors are logged with column name, row data, and cursor
-     * for debugging.
+     * Applies the column's function leniently: an exception is logged and {@code null}
+     * (an empty cell) is returned. Writers use {@link #applyFunction(Object, Cursor, ExcelWriteErrorPolicy)}
+     * with their configured policy instead; this shortcut exists for callers that always want
+     * {@link ExcelWriteErrorPolicy#LENIENT}.
      *
      * @param rowData the current row
      * @param cursor  the current cursor (position)
@@ -115,6 +113,20 @@ public class ExcelColumn<T> {
         return applyFunction(rowData, cursor, ExcelWriteErrorPolicy.LENIENT);
     }
 
+    /**
+     * Applies the column's function to extract a value from the row and cursor.
+     * <p>
+     * With {@link ExcelWriteErrorPolicy#FAIL_FAST} (the writers' default) an exception aborts the
+     * write as an {@link ExcelWriteException} naming the column. With
+     * {@link ExcelWriteErrorPolicy#LENIENT} the error is logged with the column name, row data, and
+     * cursor, and {@code null} (an empty cell) is returned so one bad cell does not fail a bulk export.
+     *
+     * @param rowData the current row
+     * @param cursor  the current cursor (position)
+     * @param policy  how to handle an exception thrown by the function
+     * @return the cell value, or {@code null} if the function threw and the policy is lenient
+     * @throws ExcelWriteException if the function threw and the policy is fail-fast
+     */
     @Nullable Object applyFunction(T rowData, Cursor cursor, ExcelWriteErrorPolicy policy) {
         try {
             return function.apply(rowData, cursor);
@@ -148,12 +160,21 @@ public class ExcelColumn<T> {
     }
 
     /**
-     * Writes a value into a given cell using the column's setter logic.
+     * Writes a value into a given cell leniently: a value that cannot be stored as the column's
+     * type is written as text. Writers call
+     * {@link #setColumnData(SXSSFCell, Object, ExcelWriteErrorPolicy)} with their configured policy.
      */
     void setColumnData(SXSSFCell cell, @Nullable Object columnData) {
         setColumnData(cell, columnData, ExcelWriteErrorPolicy.LENIENT);
     }
 
+    /**
+     * Writes a value into a given cell using the column's setter logic.
+     * With {@link ExcelWriteErrorPolicy#FAIL_FAST} a value that cannot be stored as the column's type
+     * throws {@link ExcelWriteException}; with {@link ExcelWriteErrorPolicy#LENIENT} it is written as text.
+     *
+     * @return the style to apply to the cell
+     */
     CellStyle setColumnData(SXSSFCell cell, @Nullable Object columnData, ExcelWriteErrorPolicy policy) {
         if (columnData == null) {
             if (nullValue != null) {

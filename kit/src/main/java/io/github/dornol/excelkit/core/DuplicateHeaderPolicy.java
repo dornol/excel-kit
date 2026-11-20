@@ -10,6 +10,9 @@ public enum DuplicateHeaderPolicy {
     FIRST,
     /** Use the last occurrence of a duplicated header name. */
     LAST,
-    /** Fail fast when a duplicated header name is detected. */
+    /**
+     * Fail fast when a duplicated header name is detected, before any data row is read.
+     * This is the default; blank headers are ignored.
+     */
     FAIL
 }
