@@ -77,7 +77,7 @@ class SheetConfig<T> {
     @Nullable Map<List<String>, ExcelCellComment> groupComments;
     /** Named ranges: name → column index. Applied after data is written. */
     @Nullable Map<String, Integer> namedRanges;
-    ExcelWriteErrorPolicy writeErrorPolicy = ExcelWriteErrorPolicy.LENIENT;
+    ExcelWriteErrorPolicy writeErrorPolicy = ExcelWriteErrorPolicy.FAIL_FAST;
 
     record RowStyleEntry<T>(java.util.function.Predicate<T> predicate, RowStyleConfig style) {}
 

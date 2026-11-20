@@ -111,6 +111,7 @@ class ImageTest {
     void image_nonImageValue_shouldFallbackToString() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<String>create()
+                .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
                 .column("Data", s -> s, c -> c.type(ExcelDataType.IMAGE))
                 .write(Stream.of("not-an-image"))
                 .writeTo(out);

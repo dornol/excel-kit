@@ -648,7 +648,7 @@ class V06FeaturesTest {
                             .border(ExcelBorderStyle.MEDIUM)
                             .comment(s -> "Note: " + s)
                             .locked(false))
-                    .column("Value", s -> "100", c -> c
+                    .column("Value", s -> 100, c -> c
                             .type(ExcelDataType.INTEGER)
                             .border(ExcelBorderStyle.THICK))
                     .protectSheet("pass")

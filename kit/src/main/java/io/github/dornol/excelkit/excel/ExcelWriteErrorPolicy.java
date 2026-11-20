@@ -7,14 +7,14 @@ package io.github.dornol.excelkit.excel;
  */
 public enum ExcelWriteErrorPolicy {
     /**
-     * Existing behavior: value extraction failures produce a blank cell, and cell
-     * type write failures fall back to writing the value as text.
+     * Value extraction failures produce a blank cell, and cell type write failures
+     * fall back to writing the value as text. Failures are logged.
      */
     LENIENT,
 
     /**
      * Abort writing by throwing {@link ExcelWriteException} on the first value
-     * extraction or cell type write failure.
+     * extraction or cell type write failure. This is the default.
      */
     FAIL_FAST
 }

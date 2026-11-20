@@ -1372,7 +1372,7 @@ class NewFeaturesV08Test {
                                 .borderLeft(ExcelBorderStyle.DASHED)
                                 .borderRight(ExcelBorderStyle.DOTTED)
                                 .backgroundColor(ExcelColor.LIGHT_YELLOW))
-                        .column("Validated", s -> s, c -> c
+                        .column("Validated", s -> Integer.parseInt(s), c -> c
                                 .validation(ExcelValidation.integerBetween(1, 100))
                                 .type(ExcelDataType.INTEGER))
                         .column("Hidden", s -> s, c -> c.hidden())

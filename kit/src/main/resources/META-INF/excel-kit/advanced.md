@@ -316,7 +316,7 @@ Backing sheet resolution uses public POI workbook APIs and throws
 `ExcelWriteException` for removed or unregistered sheets instead of silently omitting
 configured features. Data-bar, icon-set and chart data-label failures also propagate
 as `ExcelWriteException`. These errors are independent of the cell
-extraction/conversion `writeErrorPolicy`.
+extraction/conversion `writeErrorPolicy` (default `FAIL_FAST`; `LENIENT` writes blank cells or text instead).
 
 Structured-table column names are preserved after streaming header rows are flushed.
 Template lists using existing headers retain the template's header names.

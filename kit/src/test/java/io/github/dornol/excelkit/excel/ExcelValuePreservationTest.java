@@ -136,7 +136,7 @@ class ExcelValuePreservationTest {
         var first = base.withNano(123_400_000);
         var second = base.withNano(123_800_000);
         var output = new ByteArrayOutputStream();
-        ExcelWriter.<LocalDateTime>create().column("Time", time -> time)
+        ExcelWriter.<LocalDateTime>create().writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT).column("Time", time -> time)
                 .write(List.of(first, second, base.withNano(123_000_000))).writeTo(output);
         var cells = ExcelReader.mapping(row -> row.get("Time"))
                 .readAll(new ByteArrayInputStream(output.toByteArray()));
@@ -145,8 +145,7 @@ class ExcelValuePreservationTest {
         assertNull(cells.get(0).rawNumber());
         assertNull(cells.get(1).rawNumber());
         assertNotNull(cells.get(2).rawNumber());
-        var strict = ExcelWriter.<LocalDateTime>create().column("Time", time -> time)
-                .writeErrorPolicy(ExcelWriteErrorPolicy.FAIL_FAST);
+        var strict = ExcelWriter.<LocalDateTime>create().column("Time", time -> time);
         assertThrows(ExcelWriteException.class, () -> strict.write(List.of(first)));
     }
 
@@ -269,13 +268,13 @@ class ExcelValuePreservationTest {
     @Test
     void timeWithSubMillisecondPrecisionIsKeptAsTextInsteadOfTruncated() {
         var output = new ByteArrayOutputStream();
-        ExcelWriter.<LocalTime>create().column("Time", value -> value)
+        ExcelWriter.<LocalTime>create().writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT).column("Time", value -> value)
                 .write(List.of(LocalTime.of(10, 0, 0, 123_456_789))).writeTo(output);
         var rows = ExcelReader.mapping(row -> row).readAll(new ByteArrayInputStream(output.toByteArray()));
         assertEquals("10:00:00.123456789", rows.get(0).get("Time").formattedValue());
 
-        var strict = ExcelWriter.<LocalTime>create(opts -> { }).column("Time", value -> value);
-        assertDoesNotThrow(() -> strict.write(List.of(LocalTime.NOON)));
+        var strict = ExcelWriter.<LocalTime>create().column("Time", value -> value);
+        assertThrows(ExcelWriteException.class, () -> strict.write(List.of(LocalTime.of(10, 0, 0, 123_456_789))));
     }
 
     @Test

@@ -155,7 +155,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
 
     /**
      * Sets how row value extraction and cell value write failures are handled.
-     * Defaults to {@link ExcelWriteErrorPolicy#LENIENT}, preserving existing behavior.
+     * Defaults to {@link ExcelWriteErrorPolicy#FAIL_FAST}.
      *
      * @since 0.19.0
      */

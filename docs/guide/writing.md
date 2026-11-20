@@ -47,13 +47,13 @@ When an inferred column encounters a value of a different type, the writer
 preserves that value's type where possible. An inferred integer column can store
 later fractional values as numbers.
 When a value exceeds Excel's numeric precision or the range or precision of
-an explicitly selected integer type, the default `LENIENT` policy writes it as text.
-Use `FAIL_FAST` to reject those values. Template cell writes also use text
+an explicitly selected integer type, the default `FAIL_FAST` policy rejects it with `ExcelWriteException`.
+Use `LENIENT` to write those values as text. Template cell writes also use text
 when a value exceeds Excel's numeric precision.
 
 `LocalTime` values are stored as a fraction of a day. Dates outside the workbook's
 date system and date-times with sub-millisecond precision are preserved as ISO text
-with `LENIENT` and rejected with `FAIL_FAST`. Template cell writes preserve such
+with `LENIENT` and rejected with the default `FAIL_FAST`. Template cell writes preserve such
 values as ISO text.
 Default date-time and time styles show fractional seconds to milliseconds when
 present. An explicit column format controls the cell's display precision.
@@ -87,13 +87,13 @@ Full type table: [Reference](reference.md#excelDataType-reference)
 
 ## Write Error Policy
 
-By default, Excel writing is lenient: a value extraction failure becomes a blank
-cell, and a cell type mismatch falls back to text. Use fail-fast mode when a bad
-cell should abort the export:
+By default, Excel writing is fail-fast (like CSV): a value extraction failure or a cell
+type mismatch aborts the export with `ExcelWriteException`. Use lenient mode when a bad
+cell should become a blank cell (extraction failure) or text (type mismatch) instead:
 
 ```java
 ExcelWriter.<Product>create()
-    .writeErrorPolicy(ExcelWriteErrorPolicy.FAIL_FAST)
+    .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
     .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
     .write(products);
 ```
