@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `ExcelReader.forMapRaw()` / `forMapRaw(String...)` return stored XLSX numbers as plain
+  strings instead of displayed text.
+- `CellData.rawNumber()` reads the stored XLSX number (including cached formula results,
+  date serials, and percentage fractions); `rawValues()` on read results and errors use it.
+- `CellData.asZonedDateTimeStrict(...)` rejects local times in a gap or overlap.
+- CSV delimiter detection ignores quoted fields and honors `headerRowIndex(...)`; explicit
+  charset, delimiter, and dialect settings take precedence.
+- XLSX text cells preserve literal `_xHHHH_` text and control characters, and ISO
+  date, date-time, and time cells are read across POI versions.
+
+### Changed
+- **Breaking:** the default `ExcelWriteErrorPolicy` is now `FAIL_FAST`. A failing value
+  extractor or a value that cannot be stored as the column's type throws
+  `ExcelWriteException`; use `writeErrorPolicy(LENIENT)` for blank cells and text fallback.
+- **Breaking:** the default `DuplicateHeaderPolicy` is now `FAIL` (blank headers are ignored).
+  Use `FIRST` or `LAST` to keep the previous resolution.
+- **Breaking:** for XLSX numeric cells, `asNumber/asInt/asLong/asDouble/asFloat/asBigDecimal`
+  convert the stored number instead of the displayed text (`2.5` in a `0` cell stays `2.5`,
+  `0.25` in a `0%` cell stays `0.25`). Date-formatted cells convert to their serial number.
+- `forMap()` on CSV and Excel returns `""` for missing trailing columns instead of omitting
+  the key.
+- Summary rows throw `ExcelWriteException` for an unknown summary or label column, and write
+  no formulas when the sheet has no data rows.
+- `dropdown(...)` throws `IllegalArgumentException` when the comma-joined options exceed
+  Excel's 255-character limit.
+- Date-times and times with sub-millisecond precision, dates outside Excel's date system,
+  and numbers that Excel cannot store exactly are rejected (`FAIL_FAST`) or written as text
+  (`LENIENT`) instead of being rounded.
+- Updated hibernate-validator and the Gradle wrapper to 9.9.1.
+
+### Fixed
+- `TIME` columns no longer silently truncate sub-millisecond values.
+- `Float` values are stored by their decimal value (`0.1f` is `0.1`, not `0.10000000149011612`).
+- Named ranges work for sheet names containing an apostrophe.
+- `maxRows(1)` starts a new sheet for every row.
+- XLSX setter columns receive an empty cell for missing trailing cells, like blank cells and CSV.
+- `countRows()` totals use row numbers, so leading empty rows no longer skew them.
+- CSV values, line endings inside quoted fields, numeric and time conversions, and
+  scientific notation are parsed without silent changes; invalid CSV data is rejected.
+- Excel numeric and temporal conversions no longer silently change values (1900 leap day,
+  1904 date system, time zones, formula results, cell positions without references).
+
 ## [0.24.0] - 2026-11-02
 
 ### Added

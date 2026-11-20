@@ -79,6 +79,7 @@ Can be mixed: name-based + index-based in same reader.
 | `asLocalDate()` | LocalDate | Parse as date |
 | `asLocalDateTime()` | LocalDateTime | Parse as datetime |
 | `asZonedDateTime(ZoneId)` | ZonedDateTime | Parse with timezone |
+| `asZonedDateTimeStrict(ZoneId)` | ZonedDateTime | Like `asZonedDateTime`, but rejects times in a DST gap or overlap |
 | `as(Function<String, T>)` | T | Custom conversion (e.g., `UUID::fromString`) |
 | `asInt(defaultValue)` | int | With default for null/empty |
 | `asString(defaultValue)` | String | With default for null/empty |

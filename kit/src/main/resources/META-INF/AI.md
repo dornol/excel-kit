@@ -87,6 +87,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - Numeric `as*()` conversions (`asInt/asLong/asDouble/asFloat/asNumber/asBigDecimal`) use the stored XLSX number, not the display format (`0.25` in a `0%` cell stays `0.25`); CSV/text cells use their text
 - `asBigDecimal()` parses the decimal directly, avoiding Double conversion
 - `rawNumber()` reads the stored XLSX number before display formatting
+- `asZonedDateTimeStrict(zone)` rejects local date-times in a DST gap or overlap
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time
 - `ExcelImage.size(w, h)` sets cell span; `ExcelImage.fromUrl(url)` downloads and auto-detects type

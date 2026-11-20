@@ -296,8 +296,9 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Category | Highlights |
 |----------|-----------|
 | Column matching | By name, aliases, by index, positional with skip |
-| Read modes | Setter (mutable), Mapping (records), Map (schema-less) |
-| Headers | Strict header validation, duplicate header policies, single or multi-row headers (`headerRows(int)`, Excel) |
+| Read modes | Setter (mutable), Mapping (records), Map (schema-less; `forMapRaw()` returns stored Excel numbers) |
+| Cell values | Numeric conversions use the stored XLSX number (`rawNumber()`), strict zoned date-times (`asZonedDateTimeStrict`) |
+| Headers | Strict header validation, duplicate header policies (fail by default), single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values |
 | Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |
@@ -361,7 +362,7 @@ Follow links to individual topic files only when you need full details.
 | Write CSV | `CsvWriter.<T>create().column(...).write(stream)` |
 | Read Excel (setter) | `ExcelReader.setter(T::new).column(...).read(in, ...)` |
 | Read Excel (mapping) | `ExcelReader.mapping(row -> ...).read(in, ...)` |
-| Read Excel (map) | `ExcelReader.forMap().read(in, ...)` |
+| Read Excel (map) | `ExcelReader.forMap().read(in, ...)` / `forMapRaw()` for stored numbers |
 | Read CSV | `CsvReader.setter(T::new).column(...).read(in, ...)` |
 
 ## Build & Test
