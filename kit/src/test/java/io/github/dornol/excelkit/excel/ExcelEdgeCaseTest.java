@@ -792,5 +792,29 @@ class ExcelEdgeCaseTest {
                     () -> ExcelWriter.<Integer>create().column("V", v -> v, c -> c.dropdown(options)));
             assertTrue(failure.getMessage().contains("255"));
         }
+
+        @Test
+        void defaultStyleAppliesEveryPropertyUnlessAColumnOverridesIt() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<String>create()
+                    .defaultStyle(c -> c.minWidth(40 * 256).headerBackgroundColor(ExcelColor.RED)
+                            .cellColor((value, cursor) -> ExcelColor.YELLOW).dropdown("a", "b"))
+                    .column("Default", s -> s)
+                    .column("Own", s -> s, c -> c.minWidth(10 * 256).dropdown("x"))
+                    .column("Hidden", s -> s, c -> c.hidden())
+                    .write(List.of("a")).writeTo(out);
+            try (var xssf = read(out)) {
+                var sheet = xssf.getSheetAt(0);
+                assertEquals(40, sheet.getColumnWidth(0) / 256);
+                assertEquals(10, sheet.getColumnWidth(1) / 256);
+                var header = (org.apache.poi.xssf.usermodel.XSSFCellStyle) sheet.getRow(0).getCell(0).getCellStyle();
+                assertEquals("FFFF0000", header.getFillForegroundColorColor().getARGBHex());
+                var data = (org.apache.poi.xssf.usermodel.XSSFCellStyle) sheet.getRow(1).getCell(0).getCellStyle();
+                assertEquals("FFFFFF00", ((org.apache.poi.xssf.usermodel.XSSFColor) data.getFillForegroundColorColor()).getARGBHex());
+                assertEquals(3, sheet.getDataValidations().size(), "every column gets a dropdown");
+                assertTrue(sheet.isColumnHidden(2));
+                assertFalse(sheet.isColumnHidden(0));
+            }
+        }
     }
 }

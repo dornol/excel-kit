@@ -666,9 +666,26 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
 
     /**
      * Applies defaults from the given config to this config.
-     * Only null/default fields in this config are overridden.
+     * Only null/default fields in this config are overridden; every configurable
+     * property is covered so a default is never silently ignored.
      */
+    @SuppressWarnings("unchecked")
     void applyDefaults(ColumnStyleConfig<?, ?> defaults) {
+        if (this.minWidth == 0) this.minWidth = defaults.minWidth;
+        if (this.maxWidth == 0) this.maxWidth = defaults.maxWidth;
+        this.fixedWidth |= defaults.fixedWidth;
+        this.hidden |= defaults.hidden;
+        if (this.headerFontColor == null) this.headerFontColor = defaults.headerFontColor;
+        if (this.headerBackgroundColor == null) this.headerBackgroundColor = defaults.headerBackgroundColor;
+        if (this.cellColorFunction == null) this.cellColorFunction = (CellColorFunction<T>) defaults.cellColorFunction;
+        if (this.dropdownOptions == null) this.dropdownOptions = defaults.dropdownOptions;
+        if (this.validation == null) this.validation = defaults.validation;
+        if (this.commentFunction == null) {
+            this.commentFunction = (Function<T, @Nullable String>) defaults.commentFunction;
+        }
+        if (this.headerComment == null) this.headerComment = defaults.headerComment;
+        if (this.commentWidth == 0) this.commentWidth = defaults.commentWidth;
+        if (this.commentHeight == 0) this.commentHeight = defaults.commentHeight;
         if (this.dataType == null) this.dataType = defaults.dataType;
         if (this.dataFormat == null) this.dataFormat = defaults.dataFormat;
         if (this.backgroundColor == null) this.backgroundColor = defaults.backgroundColor;
