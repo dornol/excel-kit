@@ -229,7 +229,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     }
 
     /**
-     * Sets duplicate header handling. Defaults to {@link DuplicateHeaderPolicy#FIRST}.
+     * Sets duplicate header handling. Defaults to {@link DuplicateHeaderPolicy#FAIL}; blank headers are ignored.
      */
     public SELF duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
         configuration.duplicateHeaderPolicy = Objects.requireNonNull(policy, "policy cannot be null");

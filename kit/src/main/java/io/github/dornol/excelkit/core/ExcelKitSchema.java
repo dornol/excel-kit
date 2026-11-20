@@ -278,7 +278,7 @@ public class ExcelKitSchema<T> {
     public static class Builder<T> {
         private final List<SchemaColumn<T>> columns = new ArrayList<>();
         private boolean strictHeaders;
-        private DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FIRST;
+        private DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FAIL;
         private @Nullable CellConversionConfig cellConversionConfig;
         private @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
         private long maxRows = -1;

@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.AbstractReader;
+import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
@@ -178,17 +179,46 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         return forMap(new LinkedHashSet<>(List.of(columnNames)));
     }
 
+    /**
+     * Like {@link #forMap()}, but numeric cells are returned as their stored number in plain
+     * notation (for example {@code 2.5} in a {@code 0}-formatted cell, {@code 0.25} in a
+     * {@code 0%} cell, or {@code 123456789012345} in a General cell) instead of the displayed text.
+     * Date cells become Excel serial numbers. Other cells return their text.
+     *
+     * @return a new ExcelReader in map mode that returns stored numbers
+     */
+    public static ExcelReader<Map<String, String>> forMapRaw() {
+        return forMap(null, true);
+    }
+
+    /**
+     * Like {@link #forMap(String...)}, but numeric cells are returned as stored numbers.
+     *
+     * @param columnNames the header names to include (others are filtered out)
+     * @return a new ExcelReader in map mode that returns stored numbers
+     * @see #forMapRaw()
+     */
+    public static ExcelReader<Map<String, String>> forMapRaw(String... columnNames) {
+        return forMap(new LinkedHashSet<>(List.of(columnNames)), true);
+    }
+
     private static ExcelReader<Map<String, String>> forMap(@Nullable Set<String> selectedColumns) {
+        return forMap(selectedColumns, false);
+    }
+
+    private static ExcelReader<Map<String, String>> forMap(@Nullable Set<String> selectedColumns, boolean raw) {
         Function<RowData, Map<String, String>> mapMapper = row -> {
             Map<String, String> map = new LinkedHashMap<>();
             List<String> headers = row.headerNames();
-            int bound = Math.min(headers.size(), row.size());
+            int bound = headers.size();
             for (int i = 0; i < bound; i++) {
                 String header = headers.get(i);
                 if (header == null) continue;
-                if (row.headerIndexOf(header) != i) continue;
                 if (selectedColumns != null && !selectedColumns.contains(header)) continue;
-                map.put(header, row.get(i).formattedValue());
+                if (row.headerIndexOf(header) != i) continue;
+                CellData cell = row.get(i);
+                var stored = raw ? cell.rawNumber() : null;
+                map.put(header, stored != null ? stored.toPlainString() : cell.formattedValue());
             }
             return map;
         };

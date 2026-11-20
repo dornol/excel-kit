@@ -300,7 +300,7 @@ class MapWriterReaderTest {
     @Test
     void csvMapReader_fewerDataColumnsThanHeaders() throws IOException {
         // Row has fewer columns than header. Behavior preserved from the deleted CsvMapReader:
-        // the map is truncated at min(headerCount, cellCount), so trailing header keys are absent.
+        // trailing header keys are present with an empty value, like an explicit blank cell.
         String csv = "Name,Age,City\nAlice,30\n";
         List<Map<String, String>> results = new ArrayList<>();
         CsvReader.forMap()
@@ -309,7 +309,7 @@ class MapWriterReaderTest {
         assertEquals(1, results.size());
         assertEquals("Alice", results.get(0).get("Name"));
         assertEquals("30", results.get(0).get("Age"));
-        assertFalse(results.get(0).containsKey("City"));
+        assertEquals("", results.get(0).get("City"));
     }
 
     @Test

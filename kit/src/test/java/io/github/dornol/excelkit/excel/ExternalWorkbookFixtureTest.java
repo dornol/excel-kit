@@ -154,7 +154,8 @@ class ExternalWorkbookFixtureTest {
 
     private static List<ReadResult<RowData>> read(Path path, int sheet, String password) {
         var rows = new ArrayList<ReadResult<RowData>>();
-        var reader = ExcelReader.<RowData>mapping(row -> row).sheetIndex(sheet).skipBlankRows();
+        var reader = ExcelReader.<RowData>mapping(row -> row).sheetIndex(sheet).skipBlankRows()
+                .duplicateHeaderPolicy(io.github.dornol.excelkit.core.DuplicateHeaderPolicy.FIRST);
         if (password != null) reader.password(password);
         reader.read(path, row -> { assertTrue(row.success(), row.messages().toString()); rows.add(row); });
         return rows;

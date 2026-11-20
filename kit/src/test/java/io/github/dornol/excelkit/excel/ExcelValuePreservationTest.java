@@ -305,4 +305,41 @@ class ExcelValuePreservationTest {
         assertEquals(0.1234, rows.get(1).get("Two").asNumber().doubleValue());
         assertEquals(0.1234, rows.get(1).get("Pct").asDouble());
     }
+
+    @Test
+    void forMapRawReturnsStoredNumbersWhileForMapReturnsDisplayedText() {
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<Double>create()
+                .column("Int", v -> v, c -> c.format("0"))
+                .column("Pct", v -> v, c -> c.format("0%"))
+                .column("Id", v -> 123_456_789_012_345.0, c -> c.format("General"))
+                .column("Text", v -> "x")
+                .write(List.of(2.5)).writeTo(output);
+        byte[] bytes = output.toByteArray();
+
+        var displayed = ExcelReader.forMap().readAll(new ByteArrayInputStream(bytes)).get(0);
+        assertEquals("3", displayed.get("Int"));
+        assertEquals("250%", displayed.get("Pct"));
+
+        var stored = ExcelReader.forMapRaw().readAll(new ByteArrayInputStream(bytes)).get(0);
+        assertEquals("2.5", stored.get("Int"));
+        assertEquals("2.5", stored.get("Pct"));
+        assertEquals("123456789012345", stored.get("Id"));
+        assertEquals("x", stored.get("Text"));
+
+        var selected = ExcelReader.forMapRaw("Int").readAll(new ByteArrayInputStream(bytes)).get(0);
+        assertEquals(List.of("Int"), List.copyOf(selected.keySet()));
+        assertEquals("2.5", selected.get("Int"));
+    }
+
+    @Test
+    void duplicateHeadersFailByDefaultButBlankHeadersAreIgnored() {
+        var csv = "a,a,b\n1,2,3\n".getBytes(StandardCharsets.UTF_8);
+        assertThrows(RuntimeException.class,
+                () -> io.github.dornol.excelkit.csv.CsvReader.forMap().readAll(new ByteArrayInputStream(csv)));
+
+        var blanks = ",a,\n1,2,3\n".getBytes(StandardCharsets.UTF_8);
+        var row = io.github.dornol.excelkit.csv.CsvReader.forMap().readAll(new ByteArrayInputStream(blanks)).get(0);
+        assertEquals("2", row.get("a"));
+    }
 }

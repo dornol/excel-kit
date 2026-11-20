@@ -24,7 +24,7 @@ Not annotation-based — columns are defined programmatically via builder chains
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` → `wb.finish().writeTo(path)` |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list(...).write(stream, out)` |
 | Read Excel (setter) | `ExcelReader<T>` | `ExcelReader.setter(T::new).validator(validator).column("Name", T::setName).required().read(in, r -> ...)` |
-| Read Excel (map) | `ExcelReader.forMap()` | `ExcelReader.forMap().read(in, r -> r.data().get("Name"))` |
+| Read Excel (map) | `ExcelReader.forMap()` / `forMapRaw()` | `ExcelReader.forMap().read(in, r -> r.data().get("Name"))` |
 | Read Excel (mapping) | `ExcelReader.mapping()` | `ExcelReader.mapping(row -> new Record(row.get("Name").asString())).read(in, r -> ...)` |
 | Summarize a read | `ReadSummary` / `ReadReport` | `reader.readWithSummary(in, r -> ...)` / `reader.readReport(in, 100)` |
 | Detect tabular input | `TabularFileDetector` | `TabularFileDetector.detect(path)` or `.detectDetailed(in)` |
@@ -134,8 +134,10 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - **Header aliases** — `column(List.of("Name", "User Name", "이름"), setter)` tries aliases in order.
 - **Strict headers** — `strictHeaders()` / `requireHeaders()` fail before data rows when configured
   headers or selected map-mode columns are missing.
-- **Duplicate headers** — `duplicateHeaderPolicy(DuplicateHeaderPolicy.FIRST|LAST|FAIL)` controls
-  duplicate header resolution.
+- **Duplicate headers** — `duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL|FIRST|LAST)` controls
+  duplicate header resolution; the default is `FAIL` (blank headers ignored).
+- **Map mode values** — `ExcelReader.forMap()` returns displayed text; `ExcelReader.forMapRaw()` returns
+  stored numbers as plain strings. Missing trailing cells are `""`.
 - **Schema read options** — `ExcelKitSchema.Builder.column(name, aliases, ...)` and
   `requiredColumn(...)` flow into generated Excel/CSV readers.
 - **Cell errors** — `CellError` is exposed through `ReadResult.cellErrors()` and

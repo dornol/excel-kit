@@ -67,7 +67,7 @@ public final class ReaderOptions {
         private int progressInterval;
         private @Nullable ProgressCallback progressCallback;
         private boolean strictHeaders;
-        private DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FIRST;
+        private DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FAIL;
         private @Nullable CellConversionConfig cellConversionConfig;
         private long maxRows = -1;
         private boolean skipBlankRows;

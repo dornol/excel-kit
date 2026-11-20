@@ -61,7 +61,8 @@ final class HeaderResolver {
             String normalized = normalize(original);
             List<Integer> positions = occurrences.computeIfAbsent(normalized, ignored -> new java.util.ArrayList<>());
             positions.add(i);
-            if (duplicatePolicy == DuplicateHeaderPolicy.FAIL && positions.size() > 1)
+            if (duplicatePolicy == DuplicateHeaderPolicy.FAIL && positions.size() > 1
+                    && original != null && !original.isBlank())
                 throw new ExcelKitException("Duplicate header '" + original + "' at columns "
                         + positions + " in " + source);
             if (duplicatePolicy == DuplicateHeaderPolicy.LAST) result.put(normalized, i);

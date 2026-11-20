@@ -13,7 +13,7 @@ final class ReaderConfiguration {
     @Nullable ProgressCallback progressCallback;
     int progressInterval;
     boolean strictHeaders;
-    DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FIRST;
+    DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FAIL;
     @Nullable CellConversionConfig cellConversionConfig;
     long maxRows = -1;
     boolean skipBlankRows;

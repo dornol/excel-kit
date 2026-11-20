@@ -247,7 +247,7 @@ class ExcelReaderMapModeTest {
         }
 
         @Test
-        @DisplayName("row with fewer cells than headers: trailing header keys are absent")
+        @DisplayName("row with fewer cells than headers: trailing header keys are blank")
         void excelMapReader_fewerDataColumnsThanHeaders() throws IOException {
             byte[] data = writeHandCraftedWorkbook(sheet -> {
                 Row header = sheet.createRow(0);
@@ -267,9 +267,8 @@ class ExcelReaderMapModeTest {
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
             assertEquals("30", results.get(0).get("Age"));
-            assertFalse(results.get(0).containsKey("City"),
-                    "trailing missing cell means the corresponding header key is absent "
-                            + "(preserved from deleted ExcelMapReader)");
+            assertEquals("", results.get(0).get("City"),
+                    "a trailing missing cell is returned as an empty value, like an explicit blank");
         }
 
         @Test

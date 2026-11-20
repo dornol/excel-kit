@@ -33,6 +33,8 @@ ExcelReader.forMap()
         String name = row.get("Name");
     });
 ```
+- `forMap()` returns displayed text (`2.5` in a `0` cell → `"3"`); `ExcelReader.forMapRaw()` returns stored numbers as plain strings
+- Rows shorter than the header return `""` for missing trailing columns
 
 ## Column Mapping Strategies
 

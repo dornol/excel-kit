@@ -184,12 +184,12 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         Function<RowData, Map<String, String>> mapMapper = row -> {
             Map<String, String> map = new LinkedHashMap<>();
             List<String> headers = row.headerNames();
-            int bound = Math.min(headers.size(), row.size());
+            int bound = headers.size();
             for (int i = 0; i < bound; i++) {
                 String header = headers.get(i);
                 if (header == null) continue;
-                if (row.headerIndexOf(header) != i) continue;
                 if (selectedColumns != null && !selectedColumns.contains(header)) continue;
+                if (row.headerIndexOf(header) != i) continue;
                 map.put(header, row.get(i).formattedValue());
             }
             return map;

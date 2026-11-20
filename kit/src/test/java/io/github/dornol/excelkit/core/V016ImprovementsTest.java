@@ -486,6 +486,7 @@ class V016ImprovementsTest {
 
             List<ReadResult<String>> results = new ArrayList<>();
             CsvReader.<String>mapping(row -> row.get("Name").asString())
+                    .duplicateHeaderPolicy(io.github.dornol.excelkit.core.DuplicateHeaderPolicy.FIRST)
                     .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
 
             assertEquals(1, results.size());

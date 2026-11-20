@@ -80,6 +80,12 @@ ExcelReader.forMap()
 CsvReader.forMap().read(inputStream, result -> { ... });
 ```
 
+`ExcelReader.forMap()` returns each cell's displayed text, so a `2.5` cell formatted as `0`
+is `"3"` and a General-format 15-digit id can be `"1.23457E+14"`. Use `ExcelReader.forMapRaw()`
+(or `forMapRaw("Name", "Age")`) to get stored numbers as plain strings (`"2.5"`, `"0.25"`,
+`"123456789012345"`). Date cells become Excel serial numbers. Rows with fewer cells than headers
+return `""` for the missing trailing columns.
+
 ## Column Matching
 
 ### Name-Based (default)
@@ -234,12 +240,13 @@ reader.strictHeaders();       // equivalent to requireHeaders()
 reader.strictHeaders(false);  // default
 ```
 
-**Duplicate headers** default to the first occurrence. You can choose another policy:
+**Duplicate headers** fail before data rows by default, so a repeated column is never dropped
+silently. Blank headers are ignored. You can choose another policy:
 
 ```java
-reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.FIRST); // default
+reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL);  // default
+reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.FIRST);
 reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.LAST);
-reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL);
 ```
 
 **Multi-row headers** (v0.16.13+, Excel only):
