@@ -38,6 +38,8 @@ All notable changes to this project will be documented in this file.
 - Updated hibernate-validator and the Gradle wrapper to 9.9.1.
 
 ### Fixed
+- Conditional formatting (rules, data bars, icon sets) stops at each sheet's last data row, so
+  summary and `afterData` rows are no longer formatted as data or used to scale data bars.
 - `ExcelWorkbookReader` reports a missing named sheet as a per-sheet failure that follows the
   failure policy, like a missing index, instead of aborting the whole read; `SheetReadReport`
   uses index `-1` for a sheet that was not found.
