@@ -1,6 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.RowData;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -21,6 +24,63 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExcelValuePreservationTest {
+
+    @Test
+    void infersMissingCellReferencesFromRowOrderAndExplicitGaps() throws IOException {
+        byte[] file = workbookWithSheetXml("""
+                <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                  <sheetData>
+                    <row>
+                      <c t="inlineStr"><is><t>First</t></is></c>
+                      <c r="C1" t="inlineStr"><is><t>Third</t></is></c>
+                      <c t="inlineStr"><is><t>Fourth</t></is></c>
+                      <c t="inlineStr"><is><t>Fifth</t></is></c>
+                    </row>
+                    <row r="5">
+                      <c><v>10</v></c><c r="C5"><v>30</v></c><c><v>40</v></c><c><f>1+1</f></c>
+                    </row>
+                    <row>
+                      <c><v>11</v></c><c/><c><v>31</v></c><c><v>41</v></c><c><v>51</v></c>
+                    </row>
+                  </sheetData>
+                </worksheet>
+                """);
+        assertEquals(List.of("First", "", "Third", "Fourth", "Fifth"),
+                ExcelReader.getSheetHeaders(new ByteArrayInputStream(file), 0, 0));
+        var results = new ArrayList<ReadResult<RowData>>();
+        ExcelReader.mapping(row -> row).read(new ByteArrayInputStream(file), results::add);
+        assertEquals(5L, results.get(0).fileRowNum());
+        assertEquals(6L, results.get(1).fileRowNum());
+        var first = results.get(0).data();
+        var second = results.get(1).data();
+        assertEquals(10L, first.get("First").asLong());
+        assertEquals("", first.get(1).formattedValue());
+        assertEquals(30L, first.get("Third").asLong());
+        assertEquals(40L, first.get("Fourth").asLong());
+        assertEquals("", first.get("Fifth").formattedValue());
+        assertEquals(51L, second.get("Fifth").asLong());
+        assertEquals(31L, second.get("Third").asLong());
+    }
+
+    @Test
+    void retainsSubMillisecondDateTimesAsTextAndKeepsMillisecondValuesNumeric() {
+        var base = LocalDateTime.of(2025, 4, 28, 15, 20, 30);
+        var first = base.withNano(123_400_000);
+        var second = base.withNano(123_800_000);
+        var output = new ByteArrayOutputStream();
+        ExcelWriter.<LocalDateTime>create().column("Time", time -> time)
+                .write(List.of(first, second, base.withNano(123_000_000))).writeTo(output);
+        var cells = ExcelReader.mapping(row -> row.get("Time"))
+                .readAll(new ByteArrayInputStream(output.toByteArray()));
+        assertEquals(first, cells.get(0).asLocalDateTime());
+        assertEquals(second, cells.get(1).asLocalDateTime());
+        assertNull(cells.get(0).rawNumber());
+        assertNull(cells.get(1).rawNumber());
+        assertNotNull(cells.get(2).rawNumber());
+        var strict = ExcelWriter.<LocalDateTime>create().column("Time", time -> time)
+                .writeErrorPolicy(ExcelWriteErrorPolicy.FAIL_FAST);
+        assertThrows(ExcelWriteException.class, () -> strict.write(List.of(first)));
+    }
 
     @Test
     void escapesLiteralSequencesAndControlsWithInlineAndSharedStrings() throws IOException {

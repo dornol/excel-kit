@@ -26,6 +26,24 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CsvReadHandlerTest {
 
+    @Test
+    void fileRowNumbersTrackPhysicalLinesAcrossMultilineRecords() {
+        byte[] csv = "\"pre\r\namble\"\rName,Count\r\n\"a\r\nb\",1\nbad,nope"
+                .getBytes(StandardCharsets.UTF_8);
+        var mapping = CsvReader.mapping(row -> row.get("Count").asLong()).headerRowIndex(1);
+        var setter = CsvReader.setter(() -> new long[1]).headerRowIndex(1)
+                .column("Count", (row, cell) -> row[0] = cell.asLong());
+        var parsed = new ArrayList<ReadResult<Long>>();
+        mapping.read(new ByteArrayInputStream(csv), parsed::add);
+        assertEquals(4L, parsed.get(0).fileRowNum());
+        assertEquals(6L, parsed.get(1).fileRowNum());
+        assertFalse(parsed.get(1).success());
+
+        var error = setter.readReport(new ByteArrayInputStream(csv), 10).errors().get(0);
+        assertEquals(2L, error.rowNum());
+        assertEquals(6L, error.fileRowNum());
+    }
+
     private Validator validator;
 
     @BeforeEach

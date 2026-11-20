@@ -144,6 +144,8 @@ reader.read(
 `RowError` fields:
 - `rowNum()` — 1-based row ordinal (header rows excluded)
 - `fileRowNum()` — 1-based physical row number in the original file
+
+For a CSV record spanning several lines, `fileRowNum()` identifies its first line.
 - `type()` — `VALIDATION` or `MAPPING`
 - `messages()` — human-readable messages (list)
 - `cause()` — nullable throwable (for `MAPPING` errors)
@@ -366,6 +368,7 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 | `asLocalDate()` | `LocalDate` |
 | `asLocalDateTime()` | `LocalDateTime` |
 | `asLocalTime()` | `LocalTime` |
+| `asZonedDateTimeStrict(zone)` | `ZonedDateTime` (rejects gaps and overlaps) |
 | `asEnum(Class<E>)` | `E` (case-insensitive) |
 | `as(Function<String, R>)` | `R` (custom, null if blank) |
 | `as(Function, default)` | `R` |
@@ -377,6 +380,8 @@ Date and date-time conversion with pattern strings rejects invalid calendar date
 `asNumber()`, `asDouble()`, and `asFloat()` reject non-finite values and nonzero
 values that would round to zero. Numeric conversion accepts currency and percent markers at the
 edges of a value. Custom time patterns validate the parsed time strictly.
+`asFloat()` rounds directly from the decimal text. The strict zoned date-time
+overloads accept only local times with exactly one valid offset in the supplied zone.
 
 **Custom conversion:**
 ```java
@@ -435,6 +440,7 @@ CSV-specific options: see [CSV](csv.md).
 
 Workbook-specific 1900/1904 date systems are applied to formatted numeric cells and
 header extraction. ISO date, date-time, and time cells are supported across POI versions.
+When XLSX omits a cell reference, the reader uses the next column in that row.
 In the 1900 date system, a calendar-formatted serial 60 is reported as
 `1900-02-29` with its time fraction when present. Java calendar conversions reject
 that date, and `rawNumber()` returns the original serial.

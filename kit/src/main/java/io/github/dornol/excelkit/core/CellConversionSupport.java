@@ -47,8 +47,12 @@ final class CellConversionSupport {
 
     static @Nullable Double floatingNumber(String value, Locale locale, boolean singlePrecision)
             throws ParseException {
-        Number parsed = number(value, locale, false);
+        Number parsed = number(value, locale, singlePrecision);
         if (parsed == null) return null;
+        // DecimalFormat's exact mode represents both signed zeros as BigDecimal.ZERO.
+        if (singlePrecision && parsed instanceof BigDecimal exact && exact.signum() == 0) {
+            parsed = number(value, locale, false);
+        }
         double converted = singlePrecision ? parsed.floatValue() : parsed.doubleValue();
         validateFloatingPoint(converted, value, locale);
         return converted;

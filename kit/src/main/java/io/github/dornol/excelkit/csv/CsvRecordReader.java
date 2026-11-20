@@ -17,6 +17,8 @@ final class CsvRecordReader implements Closeable {
     private final char[] buffer = new char[8192];
     private int position;
     private int end;
+    private long nextPhysicalLine = 1;
+    private long recordStartLine;
 
     CsvRecordReader(Reader input, CSVParser parser) {
         this.input = input;
@@ -24,6 +26,7 @@ final class CsvRecordReader implements Closeable {
     }
 
     @Nullable String[] readNext() throws IOException {
+        recordStartLine = nextPhysicalLine;
         PhysicalLine line = readLine();
         if (line == null) return null;
         String[] cells = parser.parseLineMulti(line.text());
@@ -50,6 +53,10 @@ final class CsvRecordReader implements Closeable {
         return fields.toArray(String[]::new);
     }
 
+    long recordStartLine() {
+        return recordStartLine;
+    }
+
     private static String restoreEndings(String field, List<EmbeddedEnding> endings) {
         var restored = new StringBuilder(field.length());
         int start = 0;
@@ -73,6 +80,7 @@ final class CsvRecordReader implements Closeable {
                 String text = fragments == null ? new String(buffer, start, length)
                         : fragments.append(buffer, start, length).toString();
                 char terminator = buffer[position++];
+                nextPhysicalLine++;
                 if (terminator == '\n') return new PhysicalLine(text, "\n");
                 if (peek() != '\n') return new PhysicalLine(text, "\r");
                 position++;

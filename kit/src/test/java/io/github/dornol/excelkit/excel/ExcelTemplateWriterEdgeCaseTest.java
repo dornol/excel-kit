@@ -233,6 +233,15 @@ class ExcelTemplateWriterEdgeCaseTest {
     }
 
     @Test
+    void templateDateTimePreservesSubMillisecondPrecisionAsText() throws IOException {
+        var value = LocalDateTime.of(2025, 4, 28, 15, 20, 30, 123_400_000);
+
+        try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(writeTemplateCell("B4", value)))) {
+            assertEquals(value.toString(), workbook.getSheetAt(0).getRow(3).getCell(1).getStringCellValue());
+        }
+    }
+
+    @Test
     void cell_withNull_shouldSetBlankCell() throws IOException {
         byte[] result = writeTemplateCell("B4", null);
 

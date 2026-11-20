@@ -111,7 +111,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                         rowCount++;
                         continue;
                     }
-                    guardedConsumer.accept(processRowMapping(line, headerIndexMap, fileRowNum(rowCount), rawValues));
+                    guardedConsumer.accept(processRowMapping(line, headerIndexMap, reader.recordStartLine(), rawValues));
                     recordEmittedRow();
                     rowCount++;
                     notifyLegacyProgress(rowCount, null);
@@ -130,7 +130,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                         rowCount++;
                         continue;
                     }
-                    guardedConsumer.accept(processRow(line, resolvedIndices, fileRowNum(rowCount), rawValues));
+                    guardedConsumer.accept(processRow(line, resolvedIndices, reader.recordStartLine(), rawValues));
                     recordEmittedRow();
                     rowCount++;
                     notifyLegacyProgress(rowCount, null);
@@ -244,10 +244,6 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 i -> columns.get(i).columnIndex(),
                 headerNames, "CSV"
         );
-    }
-
-    private long fileRowNum(long zeroBasedDataRowIndex) {
-        return headerRowIndex + 2L + zeroBasedDataRowIndex;
     }
 
     private CsvRecordReader buildCsvReader() throws IOException {

@@ -52,8 +52,9 @@ Use `FAIL_FAST` to reject those values. Template cell writes also use text
 when a value exceeds Excel's numeric precision.
 
 `LocalTime` values are stored as a fraction of a day. Dates outside the workbook's
-date system are preserved as text with `LENIENT` and rejected with `FAIL_FAST`.
-Template cell writes preserve such dates as text.
+date system and date-times with sub-millisecond precision are preserved as ISO text
+with `LENIENT` and rejected with `FAIL_FAST`. Template cell writes preserve such
+values as ISO text.
 
 Built-in formula columns and summary rows ask Excel to recalculate on open.
 Their results read as blank until an application calculates and saves them.

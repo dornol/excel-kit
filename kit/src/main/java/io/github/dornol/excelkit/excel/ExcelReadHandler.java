@@ -270,7 +270,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private final StringBuilder numericValue = new StringBuilder();
         private boolean numericCell;
         private boolean readingNumericValue;
-        private @Nullable String cellReference;
         private boolean formula;
         private boolean hasCachedValue;
 
@@ -287,7 +286,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 if ("c".equals(localName)) {
                     String type = attributes.getValue("t");
                     numericCell = type == null || "n".equals(type);
-                    cellReference = attributes.getValue("r");
                     formula = false;
                     hasCachedValue = false;
                 } else if ("f".equals(localName)) {
@@ -325,6 +323,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 }
                 if ("c".equals(localName)) {
                     numericCell = false;
+                    String cellReference = cellReference();
                     if (formula && !hasCachedValue && cellReference != null) {
                         sheetHandler.addCell(cellReference, "");
                     }

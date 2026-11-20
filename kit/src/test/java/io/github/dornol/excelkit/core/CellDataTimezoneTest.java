@@ -2,8 +2,10 @@ package io.github.dornol.excelkit.core;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,6 +14,19 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for {@link CellData#asZonedDateTime(ZoneId)} and related timezone methods.
  */
 class CellDataTimezoneTest {
+
+    @Test
+    void strictZoneConversionRejectsGapsAndOverlaps() {
+        var zone = ZoneId.of("America/New_York");
+        var gap = new CellData(0, "2025-03-09T02:30:00");
+        var overlap = new CellData(0, "02/11/2025 01:30");
+        assertThrows(DateTimeException.class, () -> gap.asZonedDateTimeStrict(zone));
+        assertThrows(DateTimeException.class, () -> overlap.asZonedDateTimeStrict("dd/MM/yyyy HH:mm", zone));
+        var valid = new CellData(0, "2025-03-09T04:30:00").asZonedDateTimeStrict(zone);
+        assertEquals(LocalDateTime.of(2025, 3, 9, 4, 30), valid.toLocalDateTime());
+        assertEquals(ZoneOffset.ofHours(-4), valid.getOffset());
+        assertNull(new CellData(0, "").asZonedDateTimeStrict(zone));
+    }
 
     @Test
     void asZonedDateTime_withZoneId_shouldAttachTimezone() {

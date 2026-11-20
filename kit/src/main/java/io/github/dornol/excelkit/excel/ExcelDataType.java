@@ -178,6 +178,7 @@ public enum ExcelDataType {
     private static final LocalDate START_1904 = LocalDate.of(1904, 1, 1);
     private static final LocalDate LAST_EXCEL_DATE = LocalDate.of(9999, 12, 31);
     private static final long NANOS_PER_DAY = 86_400_000_000_000L;
+    private static final int NANOS_PER_MILLISECOND = 1_000_000;
 
     static void setDateTime(Cell cell, LocalDateTime value) {
         var workbook = cell.getSheet().getWorkbook();
@@ -186,6 +187,9 @@ public enum ExcelDataType {
         LocalDate date = value.toLocalDate();
         if (date.isBefore(date1904 ? START_1904 : START_1900) || date.isAfter(LAST_EXCEL_DATE)) {
             throw new IllegalArgumentException("Date is outside the Excel date system: " + value);
+        }
+        if (value.getNano() % NANOS_PER_MILLISECOND != 0) {
+            throw new IllegalArgumentException("Date-time exceeds Excel's millisecond precision: " + value);
         }
         cell.setCellValue(value);
     }

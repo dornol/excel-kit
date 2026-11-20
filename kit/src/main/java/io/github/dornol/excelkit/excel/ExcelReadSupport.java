@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.util.XMLHelper;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
@@ -89,6 +90,8 @@ class ExcelReadSupport {
         private final StringBuilder cachedText = new StringBuilder();
         private boolean stringCell;
         private boolean readingCachedText;
+        private int rowNumber;
+        private @Nullable String cellReference;
 
         SheetXmlHandler(@Nullable Styles styles, SharedStrings strings, SheetContentsHandler handler,
                         DataFormatter formatter) {
@@ -99,20 +102,39 @@ class ExcelReadSupport {
         public void startElement(String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
             if (SPREADSHEET_NAMESPACE.equals(uri)) {
-                if ("c".equals(localName)) {
+                if ("row".equals(localName)) {
+                    String rowReference = attributes.getValue("r");
+                    rowNumber = rowReference == null ? rowNumber + 1 : Integer.parseInt(rowReference);
+                    cellReference = null;
+                } else if ("c".equals(localName)) {
                     String type = attributes.getValue("t");
                     stringCell = "str".equals(type);
-                    if ("d".equals(type)) {
+                    String explicitReference = attributes.getValue("r");
+                    if (explicitReference == null || "d".equals(type)) {
                         var normalized = new AttributesImpl(attributes);
-                        normalized.setValue(normalized.getIndex("t"), "str");
+                        if ("d".equals(type)) normalized.setValue(normalized.getIndex("t"), "str");
+                        if (explicitReference == null) {
+                            int column = cellReference == null ? 0 : getColumnIndex(cellReference) + 1;
+                            if (column >= EXCEL_MAX_COLUMNS) {
+                                throw new ExcelReadException("Implicit cell exceeds Excel maximum column (XFD) at row "
+                                        + rowNumber);
+                            }
+                            explicitReference = CellReference.convertNumToColString(column) + rowNumber;
+                            normalized.addAttribute("", "r", "r", "CDATA", explicitReference);
+                        }
                         attributes = normalized;
                     }
+                    cellReference = explicitReference;
                 } else if (stringCell && "v".equals(localName)) {
                     readingCachedText = true;
                     cachedText.setLength(0);
                 }
             }
             super.startElement(uri, localName, qName, attributes);
+        }
+
+        @Nullable String cellReference() {
+            return cellReference;
         }
 
         @Override

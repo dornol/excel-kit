@@ -27,6 +27,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class CellDataConversionTest {
 
     @Test
+    void floatConversionRoundsDirectlyFromTheLocalizedDecimal() {
+        var us = CellConversionConfig.builder().locale(Locale.US).build();
+        var german = CellConversionConfig.builder().locale(Locale.GERMANY).build();
+        assertEquals(Math.nextUp(1.0f), new CellData(0, "1.0000000596046448", us).asFloat());
+        assertEquals(-Math.nextUp(1.0f), new CellData(0, "-1,0000000596046448", german).asFloat());
+        assertEquals(1.0f, new CellData(0, "1.000000059604644775390625", us).asFloat());
+        assertEquals(-0.0f, new CellData(0, "-0", us).asFloat());
+    }
+
+    @Test
     void numericConversionRejectsEmbeddedAffixes() {
         var us = CellConversionConfig.builder().locale(Locale.US).build();
         for (String value : List.of("1$2", "12%34", "$12%", "$$12")) {

@@ -9,6 +9,7 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.regex.Pattern;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -413,6 +414,7 @@ public final class CellData {
     /**
      * Converts the value to {@link ZonedDateTime} by parsing as {@link LocalDateTime}
      * and attaching the given time zone.
+     * Uses {@link LocalDateTime#atZone(ZoneId)} to resolve gaps and overlaps.
      * Returns {@code null} if the value is empty or blank.
      *
      * @param zone the time zone to apply
@@ -426,6 +428,7 @@ public final class CellData {
 
     /**
      * Converts the value to {@link ZonedDateTime} using the specified format and time zone.
+     * Uses {@link LocalDateTime#atZone(ZoneId)} to resolve gaps and overlaps.
      * Returns {@code null} if the value is empty or blank.
      *
      * @param format the date-time pattern
@@ -436,6 +439,39 @@ public final class CellData {
     public @Nullable ZonedDateTime asZonedDateTime(String format, ZoneId zone) {
         LocalDateTime ldt = asLocalDateTime(format);
         return ldt != null ? ldt.atZone(zone) : null;
+    }
+
+    /**
+     * Attaches a time zone only when the local date-time has exactly one valid offset.
+     *
+     * @param zone the time zone to apply
+     * @return the zoned date-time, or {@code null} if blank
+     * @throws DateTimeException if the local date-time is in a gap or overlap
+     */
+    public @Nullable ZonedDateTime asZonedDateTimeStrict(ZoneId zone) {
+        return strictZone(asLocalDateTime(), zone);
+    }
+
+    /**
+     * Parses with the specified format and attaches a time zone only when there is one valid offset.
+     *
+     * @param format the date-time pattern
+     * @param zone the time zone to apply
+     * @return the zoned date-time, or {@code null} if blank
+     * @throws DateTimeException if the local date-time is in a gap or overlap
+     */
+    public @Nullable ZonedDateTime asZonedDateTimeStrict(String format, ZoneId zone) {
+        return strictZone(asLocalDateTime(format), zone);
+    }
+
+    private static @Nullable ZonedDateTime strictZone(@Nullable LocalDateTime local, ZoneId zone) {
+        if (local == null) return null;
+        var offsets = zone.getRules().getValidOffsets(local);
+        if (offsets.size() != 1) {
+            String reason = offsets.isEmpty() ? "does not exist" : "is ambiguous";
+            throw new DateTimeException("Local date-time " + local + " " + reason + " in " + zone);
+        }
+        return ZonedDateTime.ofStrict(local, offsets.get(0), zone);
     }
 
     /**
