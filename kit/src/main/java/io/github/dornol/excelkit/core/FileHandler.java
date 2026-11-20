@@ -61,8 +61,8 @@ public interface FileHandler {
      * @since 0.14.0
      */
     default void writeTo(Path path) {
-        try (OutputStream out = Files.newOutputStream(path)) {
-            writeTo(out);
+        try {
+            AtomicFileWriter.write(path, this::writeTo);
         } catch (IOException e) {
             throw new ExcelKitException("Failed to write file: " + path, e);
         }

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.AtomicFileWriter;
 import io.github.dornol.excelkit.core.FileHandler;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
@@ -189,8 +190,8 @@ public final class ExcelHandler implements FileHandler {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
         rejectIfPasswordAlreadySet();
-        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
-            writeTo(out, password);
+        try {
+            AtomicFileWriter.write(path, out -> writeBuffered(out, password));
         } catch (IOException e) {
             throw new ExcelWriteException("Failed to write encrypted Excel to: " + path, e);
         }
@@ -216,8 +217,8 @@ public final class ExcelHandler implements FileHandler {
         }
         try {
             rejectIfPasswordAlreadySet();
-            try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
-                writeTo(out, password);
+            try {
+                AtomicFileWriter.write(path, out -> writeBuffered(out, password));
             } catch (IOException e) {
                 throw new ExcelWriteException("Failed to write encrypted Excel to: " + path, e);
             }
@@ -227,6 +228,23 @@ public final class ExcelHandler implements FileHandler {
             // (e.g., rejectIfPasswordAlreadySet or Files.newOutputStream failure).
             // Second zero on already-zeroed array is harmless.
             Arrays.fill(password, '\0');
+        }
+    }
+
+    private void writeBuffered(OutputStream out, String password) {
+        // Closing the buffer flushes it; closing the underlying stream again is harmless.
+        try (OutputStream buffered = new BufferedOutputStream(out)) {
+            writeTo(buffered, password);
+        } catch (IOException e) {
+            throw new ExcelWriteException("Failed to write encrypted Excel", e);
+        }
+    }
+
+    private void writeBuffered(OutputStream out, char[] password) {
+        try (OutputStream buffered = new BufferedOutputStream(out)) {
+            writeTo(buffered, password);
+        } catch (IOException e) {
+            throw new ExcelWriteException("Failed to write encrypted Excel", e);
         }
     }
 
