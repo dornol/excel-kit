@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
   charset, delimiter, and dialect settings take precedence.
 - XLSX text cells preserve literal `_xHHHH_` text and control characters, and ISO
   date, date-time, and time cells are read across POI versions.
+- `AtomicFileWriter` writes a file through a temporary sibling and replaces the target only on
+  success; `writeTo(Path)` and the password `writeTo(Path, ...)` overloads use it.
 
 ### Changed
 - **Breaking:** the default `ExcelWriteErrorPolicy` is now `FAIL_FAST`. A failing value
@@ -36,6 +38,8 @@ All notable changes to this project will be documented in this file.
 - Updated hibernate-validator and the Gradle wrapper to 9.9.1.
 
 ### Fixed
+- `writeTo(Path)` no longer destroys an existing file when the write fails or the handler was
+  already consumed, and no longer leaves a partial file behind.
 - `ReadSecurityPolicy` formula detection can no longer be bypassed with a namespace prefix, an
   upper-case part path, or a worksheet stored outside `xl/worksheets/`; the preflight scan is
   also about 35 times faster on large workbooks.
