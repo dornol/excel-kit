@@ -374,6 +374,9 @@ List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 
 `asInt()` and `asLong()` reject fractional, non-finite, and out-of-range values.
 Date and date-time conversion with pattern strings rejects invalid calendar dates.
+`asDouble()` and `asFloat()` reject non-finite values and nonzero values that would
+round to zero. Numeric conversion accepts currency and percent markers at the
+edges of a value. Custom time patterns validate the parsed time strictly.
 
 **Custom conversion:**
 ```java
@@ -408,6 +411,11 @@ CsvReader.<Order>mapping(row -> new Order(
 ```
 
 ## CSV Reading
+
+By default, CSV reading treats backslashes as literal text and preserves line
+endings inside quoted fields. Use `.escapeChar('\\')` to read legacy files
+that use backslash escapes. Malformed input for the configured charset raises a
+`CsvReadException`.
 
 ```java
 CsvReader.setter(Product::new)

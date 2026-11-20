@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +24,7 @@ import java.util.Objects;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,6 +65,7 @@ public class CsvWriter<T> {
     }
 
     private static final Logger log = LoggerFactory.getLogger(CsvWriter.class);
+    private static final Pattern DECIMAL_NUMBER = Pattern.compile("[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[Ee][+-]?[0-9]+)?");
     private final List<CsvColumn<T>> columns = new ArrayList<>();
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
@@ -144,7 +147,7 @@ public class CsvWriter<T> {
     }
 
     /**
-     * Sets whether to write a UTF-8 BOM at the start of the file.
+     * Sets whether to write a BOM when the selected charset can encode one.
      * Defaults to {@code true}.
      *
      * @param bom Whether to write the BOM
@@ -287,7 +290,8 @@ public class CsvWriter<T> {
      * <p>
      * When enabled (default), cell values starting with formula characters
      * ({@code =}, {@code +}, {@code -}, {@code @}, {@code \t}, {@code \r})
-     * are prefixed with a single quote to prevent formula injection.
+     * are prefixed with a single quote to prevent formula injection. Numeric objects
+     * whose text is an ordinary decimal or scientific number keep their sign.
      * <p>
      * Disable only when writing trusted data where the prefix would corrupt values.
      *
@@ -357,15 +361,20 @@ public class CsvWriter<T> {
      * @param stream       The data stream
      * @param outputStream The output stream to write to
      */
-    private void writeTempFile(Stream<T> stream, OutputStream outputStream, CsvWriteOptions<T> options) {
+    private void writeTempFile(Stream<T> stream, OutputStream outputStream, CsvWriteOptions<T> options)
+            throws IOException {
         Stream<T> sequential = stream.sequential();
         String joining = String.valueOf(options.delimiter());
-        try (var writer = new PrintWriter(new OutputStreamWriter(outputStream, options.charset()))) {
+        var encoder = options.charset().newEncoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        var writer = new PrintWriter(new OutputStreamWriter(outputStream, encoder));
+        try (writer) {
             Cursor cursor = new Cursor();
             cursor.initRow();
 
-            // UTF-8 BOM for Excel compatibility
-            if (options.bom()) {
+            // The UTF-16 encoder emits its own BOM. Legacy charsets may not support one.
+            if (options.bom() && !StandardCharsets.UTF_16.equals(options.charset()) && encoder.canEncode('\uFEFF')) {
                 writer.write('\uFEFF');
             }
 
@@ -396,6 +405,7 @@ public class CsvWriter<T> {
                 options.afterDataWriter().write(writer);
             }
         }
+        if (writer.checkError()) throw new IOException("Could not encode or write CSV using " + options.charset());
     }
 
     /**
@@ -419,7 +429,9 @@ public class CsvWriter<T> {
         if (options.csvInjectionDefense() && !value.isEmpty()) {
             char first = value.charAt(0);
             if (isFormulaCharacter(first)) {
-                value = "'" + value;
+                if (!(input instanceof Number && DECIMAL_NUMBER.matcher(value).matches())) {
+                    value = "'" + value;
+                }
             } else if (first == ' ') {
                 // Check if a formula character follows leading spaces
                 int i = 0;

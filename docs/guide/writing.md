@@ -30,6 +30,10 @@ CsvHandler ch = CsvWriter.<Row>create()
 ch.writeTo(Path.of("rows.csv"));
 ```
 
+CSV writes report a `CsvWriteException` when a value cannot be encoded in the
+selected charset. With formula-injection defense enabled, numeric objects keep
+their signs and formula-like text is prefixed with a single quote.
+
 ## Data Types
 
 Types are inferred from the first non-null value when `.type(...)` is omitted. Use

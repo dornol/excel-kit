@@ -24,7 +24,8 @@ import java.util.regex.Pattern;
 
 /** Stateless conversion engine used by the CellData facade. */
 final class CellConversionSupport {
-    private static final Pattern CURRENCY_SYMBOLS = Pattern.compile("[$₩€%원]");
+    private static final Pattern LEADING_CURRENCY = Pattern.compile("^([+\\p{Pd}\\p{Cf}]*) *[$₩€] *");
+    private static final Pattern TRAILING_NUMBER_AFFIX = Pattern.compile(" *[$₩€%원]$");
     private static final Pattern EXPONENT_MARKER = Pattern.compile("[Ee](?:\\+(?=\\p{Nd})|(?!\\+))");
     private static final Pattern LEADING_NUMBER_SIGN = Pattern.compile("^[+\\p{Pd}\\p{Cf}]*");
 
@@ -40,6 +41,20 @@ final class CellConversionSupport {
         if (parsed == null) return null;
         if (parsed instanceof BigDecimal decimal) return decimal.longValueExact();
         return new BigDecimal(parsed.toString()).longValueExact();
+    }
+
+    static @Nullable Double floatingNumber(String value, Locale locale, boolean singlePrecision)
+            throws ParseException {
+        Number parsed = number(value, locale, false);
+        if (parsed == null) return null;
+        double converted = singlePrecision ? parsed.floatValue() : parsed.doubleValue();
+        if (!Double.isFinite(converted)) {
+            throw new NumberFormatException("Non-finite floating-point value: " + value);
+        }
+        if (converted == 0.0 && number(value, locale, true) instanceof BigDecimal exact && exact.signum() != 0) {
+            throw new NumberFormatException("Floating-point value underflow: " + value);
+        }
+        return converted;
     }
 
     private static @Nullable Number number(String value, Locale locale, boolean exact) throws ParseException {
@@ -103,12 +118,14 @@ final class CellConversionSupport {
     static @Nullable LocalTime time(String value, @Nullable String pattern) {
         if (value.isBlank()) return null;
         return pattern == null ? LocalTime.parse(value)
-                : LocalTime.parse(value, DateTimeFormatter.ofPattern(pattern));
+                : LocalTime.parse(value, DateTimeFormatter.ofPattern(pattern).withResolverStyle(ResolverStyle.STRICT));
     }
 
     private static String cleanNumber(String value, DecimalFormatSymbols symbols, NumberFormat format) {
-        String cleaned = CURRENCY_SYMBOLS.matcher(value.replace('\u00A0', ' ').replace('\u202F', ' '))
-                .replaceAll("").strip();
+        String cleaned = value.replace('\u00A0', ' ').replace('\u202F', ' ').strip();
+        Matcher leadingCurrency = LEADING_CURRENCY.matcher(cleaned);
+        cleaned = leadingCurrency.find() ? leadingCurrency.replaceFirst("$1")
+                : TRAILING_NUMBER_AFFIX.matcher(cleaned).replaceFirst("");
         char groupingSeparator = symbols.getGroupingSeparator();
         if (Character.isSpaceChar(groupingSeparator)) cleaned = cleaned.replace(' ', groupingSeparator);
         int firstSeparator = cleaned.indexOf(groupingSeparator);

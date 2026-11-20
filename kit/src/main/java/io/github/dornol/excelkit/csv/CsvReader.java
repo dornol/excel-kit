@@ -49,7 +49,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
     private char quoteChar = '"';
-    private char escapeChar = '\\';
+    private char escapeChar = ICSVParser.NULL_CHARACTER;
     private boolean strictQuotes = false;
     private boolean ignoreLeadingWhiteSpace = false;
     private int detectionSampleBytes = TabularFileDetector.DEFAULT_SAMPLE_BYTES;
@@ -251,6 +251,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     /**
      * Sets the escape character used by the CSV parser.
+     * By default quotes are escaped by doubling them, and backslashes are literal.
      *
      * @since 0.19.0
      */

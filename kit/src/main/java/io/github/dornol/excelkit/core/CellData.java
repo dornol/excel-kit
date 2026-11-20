@@ -205,7 +205,7 @@ public final class CellData {
 
     /**
      * Parses the value as a {@link Number} using the given locale.
-     * This method removes formatting characters such as commas, currency symbols, and percent signs.
+     * Recognizes locale-specific grouping, a leading or trailing currency marker, and a trailing percent sign.
      * Returns {@code null} if the value is empty or blank.
      *
      * @param locale the locale to use for number formatting (e.g. {@code Locale.KOREA})
@@ -441,12 +441,12 @@ public final class CellData {
     /**
      * Converts the value to {@link Double}.
      * Returns {@code null} if the value is empty or blank.
+     * Rejects non-finite values and nonzero values that underflow to zero.
      *
      * @return the double value, or {@code null} if blank
      */
     public @Nullable Double asDouble() {
-        Number number = asNumber();
-        return number != null ? number.doubleValue() : null;
+        return asFloatingPoint(false);
     }
 
     /** Returns the parsed double value as an empty optional for blank cells. */
@@ -458,12 +458,21 @@ public final class CellData {
     /**
      * Converts the value to {@link Float}.
      * Returns {@code null} if the value is empty or blank.
+     * Rejects non-finite values and nonzero values that underflow to zero.
      *
      * @return the float value, or {@code null} if blank
      */
     public @Nullable Float asFloat() {
-        Number number = asNumber();
-        return number != null ? number.floatValue() : null;
+        Double value = asFloatingPoint(true);
+        return value != null ? value.floatValue() : null;
+    }
+
+    private @Nullable Double asFloatingPoint(boolean singlePrecision) {
+        try {
+            return CellConversionSupport.floatingNumber(formattedValue, effectiveLocale(), singlePrecision);
+        } catch (ParseException | NumberFormatException e) {
+            throw new IllegalArgumentException("Failed to convert to floating point: " + formattedValue, e);
+        }
     }
 
     /**

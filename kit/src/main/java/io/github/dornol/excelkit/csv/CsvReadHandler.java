@@ -2,10 +2,6 @@ package io.github.dornol.excelkit.csv;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
-import com.opencsv.ICSVParser;
-import com.opencsv.exceptions.CsvValidationException;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.CellConversionConfig;
@@ -21,14 +17,12 @@ import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.core.RowError;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -58,8 +52,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 2025-07-19
  */
 final class CsvReadHandler<T> extends AbstractReadHandler<T> {
-    private static final Logger log = LoggerFactory.getLogger(CsvReadHandler.class);
-
     CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config) {
         this(input, config, false, null);
     }
@@ -100,7 +92,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     public void read(Consumer<ReadResult<T>> consumer) {
         markConsumed();
         Consumer<ReadResult<T>> guardedConsumer = guardedConsumer(consumer);
-        try (CSVReader reader = buildCsvReader()) {
+        try (CsvRecordReader reader = buildCsvReader()) {
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);
             prepareColumnHeaders(headerLine);
@@ -155,7 +147,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             throw e;
         } catch (CsvReadException | ReadAbortException e) {
             throw e;
-        } catch (IOException | CsvValidationException | RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             throw new CsvReadException("Failed to read CSV", e);
         } finally {
             notifyReadCompletion(-1, -1);
@@ -229,7 +221,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         return Arrays.asList(line.clone());
     }
 
-    private void skipToHeader(CSVReader reader) throws IOException, CsvValidationException {
+    private void skipToHeader(CsvRecordReader reader) throws IOException {
         for (int i = 0; i < headerRowIndex; i++) {
             if (reader.readNext() == null) {
                 throw new CsvReadException("CSV file has insufficient rows for headerRowIndex=" + headerRowIndex);
@@ -237,7 +229,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
-    private String[] readHeaderLine(CSVReader reader) throws IOException, CsvValidationException {
+    private String[] readHeaderLine(CsvRecordReader reader) throws IOException {
         String[] headerLine = reader.readNext();
         if (headerLine == null) {
             throw new CsvReadException("CSV file is empty or missing header row");
@@ -258,20 +250,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         return headerRowIndex + 2L + zeroBasedDataRowIndex;
     }
 
-    private void closeQuietly(@Nullable CSVReader reader) {
-        if (reader == null) return;
-        try {
-            reader.close();
-        } catch (IOException e) {
-            // Log at debug level — closeQuietly is used in cleanup paths
-            // where reporting errors is less critical
-            if (log.isDebugEnabled()) {
-                log.debug("Failed to close CSVReader", e);
-            }
-        }
-    }
-
-    private CSVReader buildCsvReader() throws IOException {
+    private CsvRecordReader buildCsvReader() throws IOException {
         CSVParser csvParser = new CSVParserBuilder()
                 .withSeparator(this.delimiter)
                 .withQuoteChar(this.quoteChar)
@@ -279,8 +258,10 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                 .withStrictQuotes(this.strictQuotes)
                 .withIgnoreLeadingWhiteSpace(this.ignoreLeadingWhiteSpace)
                 .build();
-        return new CSVReaderBuilder(new InputStreamReader(Files.newInputStream(getTempFile()), this.charset))
-                .withCSVParser(csvParser).build();
+        var decoder = charset.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        return new CsvRecordReader(new InputStreamReader(Files.newInputStream(getTempFile()), decoder), csvParser);
     }
 
     private void prepareColumnHeaders(String[] line) {

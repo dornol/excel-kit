@@ -2,9 +2,13 @@ package io.github.dornol.excelkit.csv;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,6 +17,50 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for {@link CsvWriter} class.
  */
 class CsvWriterTest {
+
+    @Test
+    void roundTripPreservesBackslashesAndEachEmbeddedLineEnding() {
+        var values = List.of(
+                Map.<String, Object>of("First", "C:\\new\\test", "Second", "a\\b,\"c\""),
+                Map.<String, Object>of("First", "a\r\nb\r\r\nc\n\nd", "Second", "e\rf\r\ng"),
+                Map.<String, Object>of("First", "x".repeat(16_384) + "\r\ny", "Second", "last"));
+        var out = new ByteArrayOutputStream();
+        CsvWriter.forMap("First", "Second").write(values).writeTo(out);
+
+        assertEquals(values, CsvReader.forMap().readAll(new ByteArrayInputStream(out.toByteArray())));
+    }
+
+    @Test
+    void roundTripPreservesNegativeNumbersAndStillProtectsText() {
+        var out = new ByteArrayOutputStream();
+        CsvWriter.<Object>create().column("Value", value -> value)
+                .write(List.of(-123L, new BigDecimal("-1.25E+20"), "-123", "=SUM(A1)")).writeTo(out);
+
+        var values = CsvReader.forMap().readAll(new ByteArrayInputStream(out.toByteArray()));
+        assertEquals(List.of("-123", "-1.25E+20", "'-123", "'=SUM(A1)"),
+                values.stream().map(row -> row.get("Value")).toList());
+    }
+
+    @Test
+    void encodingErrorsAreReportedAndAsciiOmitsTheUnsupportedBom() {
+        var writer = CsvWriter.<String>create().charset(StandardCharsets.US_ASCII).column("Value", value -> value);
+        var out = new ByteArrayOutputStream();
+        writer.write(List.of("ASCII")).writeTo(out);
+        assertEquals(List.of("Value", "ASCII"), out.toString(StandardCharsets.US_ASCII).lines().toList());
+        assertThrows(CsvWriteException.class, () -> writer.write(List.of("한글")));
+
+        byte[] malformed = {'V', '\n', (byte) 0xC3, 0x28, '\n'};
+        assertThrows(CsvReadException.class,
+                () -> CsvReader.forMap().readAll(new ByteArrayInputStream(malformed)));
+    }
+
+    @Test
+    void readerStillSupportsExplicitBackslashEscapesAndCrRecordSeparators() {
+        byte[] csv = "Value\r\"a\\\"b\"\rlast".getBytes(StandardCharsets.UTF_8);
+
+        assertEquals(List.of(Map.of("Value", "a\"b"), Map.of("Value", "last")),
+                CsvReader.forMap().escapeChar('\\').readAll(new ByteArrayInputStream(csv)));
+    }
 
     @Test
     void create_shouldReturnIndependentInstances() {

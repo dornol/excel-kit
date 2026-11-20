@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,38 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for CellData custom conversion and default value methods.
  */
 class CellDataConversionTest {
+
+    @Test
+    void numericConversionRejectsEmbeddedAffixes() {
+        var us = CellConversionConfig.builder().locale(Locale.US).build();
+        for (String value : List.of("1$2", "12%34", "$12%", "$$12")) {
+            var cell = new CellData(0, value, us);
+            assertThrows(IllegalArgumentException.class, cell::asNumber, value);
+            assertThrows(IllegalArgumentException.class, cell::asBigDecimal, value);
+        }
+        assertEquals(-1234.56, new CellData(0, "-$1,234.56", us).asDouble());
+        assertEquals(new BigDecimal("25"), new CellData(0, "25 %", us).asBigDecimal());
+    }
+
+    @Test
+    void floatingPointConversionsRejectNonFiniteAndUnderflowedValues() {
+        var us = CellConversionConfig.builder().locale(Locale.US).build();
+        for (String value : List.of("NaN", "∞", "1E309", "1E-400")) {
+            assertThrows(IllegalArgumentException.class, () -> new CellData(0, value, us).asDouble(), value);
+        }
+        for (String value : List.of("NaN", "3.5E38", "1E-50")) {
+            assertThrows(IllegalArgumentException.class, () -> new CellData(0, value, us).asFloat(), value);
+        }
+        assertEquals(Double.MIN_VALUE, new CellData(0, "4.9E-324", us).asDouble());
+        assertEquals(-0.0, new CellData(0, "-0", us).asDouble());
+        assertEquals(0.0f, new CellData(0, "0", us).asFloat());
+    }
+
+    @Test
+    void hourOfDayPatternRejectsTwentyFourRatherThanNormalizingIt() {
+        assertEquals(LocalTime.MIDNIGHT, cell("00:00").asLocalTime("HH:mm"));
+        assertThrows(DateTimeParseException.class, () -> cell("24:00").asLocalTime("HH:mm"));
+    }
 
     @Test
     void longConversionRejectsFractionsNonFiniteValuesAndOverflow() {
