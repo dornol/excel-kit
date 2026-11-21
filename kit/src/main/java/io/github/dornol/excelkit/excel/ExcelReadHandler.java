@@ -153,7 +153,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
-            throw new ExcelReadException("Failed to read excel", e);
+            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
         } finally {
             notifyReadCompletion(sheetIndex, -1);
             close();
@@ -185,7 +185,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
-            throw new ExcelReadException("Failed to read excel", e);
+            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
         } finally {
             notifyReadCompletion(sheetIndex, -1);
             close();
@@ -207,7 +207,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         } catch (ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
-            throw new ExcelReadException("Failed to read excel", e);
+            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
         } finally {
             notifyReadCompletion(sheetIndex, -1);
             close();

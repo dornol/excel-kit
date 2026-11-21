@@ -170,7 +170,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     + "dropped, so every header cell must be quoted; quote the header row or turn strictQuotes "
                     + "off. Cause: " + cause.getMessage();
         }
-        return "Failed to read CSV";
+        return readFailureMessage("Failed to read CSV", cause);
     }
 
     boolean wasStoppedEarly() { return stoppedEarly; }

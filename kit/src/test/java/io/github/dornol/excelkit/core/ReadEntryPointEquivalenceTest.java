@@ -584,13 +584,15 @@ class ReadEntryPointEquivalenceTest {
         }
 
         @Test
-        void aMissingHeaderWithoutStrictQuotesKeepsTheGenericMessage() {
+        void aMissingHeaderIsNamedInTheMessage() {
             String wrongHeader = "Wrong,Qty\n\"A\",\"1\"\n";
 
             var error = assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class,
                     () -> pairs(wrongHeader, reader -> { }));
 
-            assertEquals("Failed to read CSV", error.getMessage());
+            assertTrue(error.getMessage().startsWith("Failed to read CSV: "), error.getMessage());
+            assertTrue(error.getMessage().contains("Header aliases [Name] not found"), error.getMessage());
+            assertTrue(error.getMessage().contains("Available headers: [Wrong, Qty]"), error.getMessage());
         }
 
         @Test
@@ -600,7 +602,8 @@ class ReadEntryPointEquivalenceTest {
             var error = assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class,
                     () -> pairs(wrongHeader, reader -> reader.strictQuotes(true)));
 
-            assertEquals("Failed to read CSV", error.getMessage());
+            assertTrue(error.getMessage().contains("Header aliases [Name] not found"), error.getMessage());
+            assertFalse(error.getMessage().contains("strictQuotes"), error.getMessage());
         }
 
         @Test

@@ -181,4 +181,19 @@ class ExcelKitMockMvcTest {
                 () -> mvc.perform(multipart("/upload/excel").file(file)));
         assertTrue(error.getCause() instanceof ExcelKitUploadException, String.valueOf(error));
     }
+
+    @Test
+    void csvUploadWithAWrongHeaderExplainsWhichHeaderIsMissing() {
+        MockMultipartFile file = new MockMultipartFile("file", "products.csv", "text/csv",
+                "Name,Cost\nNotebook,1200\n".getBytes(StandardCharsets.UTF_8));
+
+        Exception error = org.junit.jupiter.api.Assertions.assertThrows(Exception.class,
+                () -> mvc.perform(multipart("/upload/csv").file(file)));
+
+        // What a controller advice or an error body reports is getMessage() of the library exception.
+        Throwable failure = error.getCause();
+        assertTrue(failure instanceof io.github.dornol.excelkit.csv.CsvReadException, String.valueOf(failure));
+        assertTrue(failure.getMessage().contains("Header aliases [Price] not found"), failure.getMessage());
+        assertTrue(failure.getMessage().contains("Available headers: [Name, Cost]"), failure.getMessage());
+    }
 }

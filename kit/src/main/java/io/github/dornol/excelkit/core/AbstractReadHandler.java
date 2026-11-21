@@ -149,6 +149,24 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     }
 
     /**
+     * The message of a failed read.
+     * <p>
+     * When the cause is one of the library's own checks on the file (a missing, duplicate or unusable
+     * header, ...), its message says what is wrong with the file, so it goes into the message instead
+     * of only into the cause chain. Callers that report just {@code getMessage()} (an API error body,
+     * a log line) would otherwise see nothing but the generic text. Any other cause keeps the generic
+     * message: it describes the environment or the parser, not the file's contents.
+     *
+     * @param generic the generic message, such as {@code "Failed to read CSV"}
+     * @param cause   what went wrong
+     * @return {@code generic}, followed by the cause's message for a library check
+     */
+    protected static String readFailureMessage(String generic, Exception cause) {
+        String detail = cause instanceof ExcelKitException ? cause.getMessage() : null;
+        return detail == null || detail.isBlank() ? generic : generic + ": " + detail;
+    }
+
+    /**
      * Runs a subclass constructor's validation. The superclass constructor has already copied the
      * input to a temp file, and a handler whose constructor throws is never returned, so nobody
      * could close it: release the temp file here before the exception propagates.

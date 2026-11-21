@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- A read that fails because of what is in the file now says what in its message, not only in the cause:
+  `Failed to read CSV: Header aliases [Price] not found in CSV. Available headers: [Name, Cost]`
+  (the same for Excel, and for duplicate or unusable headers and a missing header row). Before, the
+  message was just `Failed to read CSV` / `Failed to read excel`, so an API that reports `getMessage()`
+  gave no clue. Other causes keep the generic message.
 - **Breaking:** a column whose header is blank is no longer a `""` key in `forMap()` rows of CSV and
   Excel readers. It has no name to look it up by, so it is left out of the header index; before, the
   first blank column became the `""` key and every further blank column's values were silently lost.
