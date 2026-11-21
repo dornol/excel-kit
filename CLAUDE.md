@@ -65,3 +65,6 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 - 생성 진입점: `ExcelWriter.create()` / `ExcelWriter.create(opts -> ...)`, `ExcelWorkbook.create()` / `ExcelWorkbook.create(opts -> ...)` — `InitOptions` Consumer 로 초기 설정만 받고, 그 외 설정은 fluent 메서드
 - Reader 진입점: `setter()`, `mapping()`, `forMap()` 정적 팩토리
 - 외부 사용자 없음: breaking change 시 deprecation 없이 즉시 삭제 허용
+- public API 의 참조형 파라미터는 null 을 받으면 `@Nullable`, 아니면 호출 시점에 `Objects.requireNonNull`(또는 `IllegalArgumentException`)로
+  거부할 것 — `NullArgumentContractTest`(`kit/src/test/.../contract/`)가 리플렉션으로 새 세터까지 자동 검사하며,
+  새 진입점 클래스는 그 테스트의 `TARGETS` 에 추가

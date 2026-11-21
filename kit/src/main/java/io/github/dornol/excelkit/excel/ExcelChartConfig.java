@@ -131,6 +131,7 @@ public class ExcelChartConfig {
      * @return this config for chaining
      */
     public ExcelChartConfig type(ChartType type) {
+        java.util.Objects.requireNonNull(type, "type cannot be null");
         this.chartType = type;
         return this;
     }
@@ -141,7 +142,7 @@ public class ExcelChartConfig {
      * @param title the chart title
      * @return this config for chaining
      */
-    public ExcelChartConfig title(String title) {
+    public ExcelChartConfig title(@Nullable String title) {
         this.title = title;
         return this;
     }
@@ -168,6 +169,7 @@ public class ExcelChartConfig {
      * @return this config for chaining
      */
     public ExcelChartConfig valueColumn(int columnIndex, String seriesTitle) {
+        java.util.Objects.requireNonNull(seriesTitle, "seriesTitle cannot be null");
         if (columnIndex < 0) {
             throw new IllegalArgumentException("valueColumn index must be non-negative");
         }
@@ -199,7 +201,7 @@ public class ExcelChartConfig {
      * @return this config for chaining
      * @since 0.6.1
      */
-    public ExcelChartConfig categoryAxisTitle(String title) {
+    public ExcelChartConfig categoryAxisTitle(@Nullable String title) {
         this.categoryAxisTitle = title;
         return this;
     }
@@ -211,7 +213,7 @@ public class ExcelChartConfig {
      * @return this config for chaining
      * @since 0.6.1
      */
-    public ExcelChartConfig valueAxisTitle(String title) {
+    public ExcelChartConfig valueAxisTitle(@Nullable String title) {
         this.valueAxisTitle = title;
         return this;
     }
@@ -223,7 +225,7 @@ public class ExcelChartConfig {
      * @return this config for chaining
      * @since 0.6.1
      */
-    public ExcelChartConfig legendPosition(LegendPosition position) {
+    public ExcelChartConfig legendPosition(@Nullable LegendPosition position) {
         this.legendPosition = position;
         return this;
     }
@@ -252,6 +254,7 @@ public class ExcelChartConfig {
      * @since 0.6.1
      */
     public ExcelChartConfig barGrouping(BarGrouping grouping) {
+        java.util.Objects.requireNonNull(grouping, "grouping cannot be null");
         this.barGrouping = grouping;
         return this;
     }
@@ -266,6 +269,7 @@ public class ExcelChartConfig {
      * @since 0.6.1
      */
     public ExcelChartConfig barDirection(BarDirection direction) {
+        java.util.Objects.requireNonNull(direction, "direction cannot be null");
         this.barDirection = direction;
         return this;
     }

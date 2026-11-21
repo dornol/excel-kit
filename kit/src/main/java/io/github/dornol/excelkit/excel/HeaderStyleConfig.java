@@ -43,7 +43,7 @@ public class HeaderStyleConfig {
      * @param alignment the horizontal alignment
      * @return this config for chaining
      */
-    public HeaderStyleConfig alignment(HorizontalAlignment alignment) {
+    public HeaderStyleConfig alignment(@Nullable HorizontalAlignment alignment) {
         this.alignment = alignment;
         return this;
     }
@@ -54,7 +54,7 @@ public class HeaderStyleConfig {
      * @param verticalAlignment the vertical alignment
      * @return this config for chaining
      */
-    public HeaderStyleConfig verticalAlignment(VerticalAlignment verticalAlignment) {
+    public HeaderStyleConfig verticalAlignment(@Nullable VerticalAlignment verticalAlignment) {
         this.verticalAlignment = verticalAlignment;
         return this;
     }
@@ -65,7 +65,7 @@ public class HeaderStyleConfig {
      * @param borderStyle the border style
      * @return this config for chaining
      */
-    public HeaderStyleConfig border(ExcelBorderStyle borderStyle) {
+    public HeaderStyleConfig border(@Nullable ExcelBorderStyle borderStyle) {
         this.borderStyle = borderStyle;
         return this;
     }

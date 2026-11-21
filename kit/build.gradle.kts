@@ -26,6 +26,8 @@ dependencies {
     testImplementation(if (opencsvVersion != null) "com.opencsv:opencsv:$opencsvVersion" else libs.opencsv)
     testImplementation(libs.slf4j.simple)
     testImplementation(libs.jakarta.validation.api)
+    // The null contract test reads @Nullable by reflection, so the annotation must exist at runtime.
+    testImplementation(libs.jspecify)
     testImplementation(libs.hibernate.validator)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

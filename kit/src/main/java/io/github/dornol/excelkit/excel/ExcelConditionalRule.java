@@ -110,6 +110,8 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule greaterThan(String value, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.GT, value, null, bgColor));
         return this;
     }
@@ -122,6 +124,8 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule greaterThanOrEqual(String value, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.GE, value, null, bgColor));
         return this;
     }
@@ -134,6 +138,8 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule lessThan(String value, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.LT, value, null, bgColor));
         return this;
     }
@@ -146,6 +152,8 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule lessThanOrEqual(String value, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.LE, value, null, bgColor));
         return this;
     }
@@ -158,6 +166,8 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule equalTo(String value, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.EQUAL, value, null, bgColor));
         return this;
     }
@@ -170,6 +180,8 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule notEqualTo(String value, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.NOT_EQUAL, value, null, bgColor));
         return this;
     }
@@ -183,6 +195,9 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule between(String value1, String value2, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value1, "value1 cannot be null");
+        java.util.Objects.requireNonNull(value2, "value2 cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.BETWEEN, value1, value2, bgColor));
         return this;
     }
@@ -196,6 +211,9 @@ public class ExcelConditionalRule {
      * @return this rule for chaining
      */
     public ExcelConditionalRule notBetween(String value1, String value2, ExcelColor bgColor) {
+        java.util.Objects.requireNonNull(value1, "value1 cannot be null");
+        java.util.Objects.requireNonNull(value2, "value2 cannot be null");
+        java.util.Objects.requireNonNull(bgColor, "bgColor cannot be null");
         rules.add(new RuleEntry(ComparisonOperator.NOT_BETWEEN, value1, value2, bgColor));
         return this;
     }
@@ -210,6 +228,7 @@ public class ExcelConditionalRule {
      * @since 0.9.2
      */
     public ExcelConditionalRule dataBar(ExcelColor color) {
+        java.util.Objects.requireNonNull(color, "color cannot be null");
         this.dataBarColor = color;
         this.dataBarMaxColor = null;
         return this;
@@ -226,6 +245,8 @@ public class ExcelConditionalRule {
      * @since 0.9.2
      */
     public ExcelConditionalRule dataBar(ExcelColor minColor, ExcelColor maxColor) {
+        java.util.Objects.requireNonNull(minColor, "minColor cannot be null");
+        java.util.Objects.requireNonNull(maxColor, "maxColor cannot be null");
         this.dataBarColor = minColor;
         this.dataBarMaxColor = maxColor;
         return this;
@@ -241,6 +262,7 @@ public class ExcelConditionalRule {
      * @since 0.9.2
      */
     public ExcelConditionalRule iconSet(IconSetType type) {
+        java.util.Objects.requireNonNull(type, "type cannot be null");
         this.iconSetType = type;
         return this;
     }

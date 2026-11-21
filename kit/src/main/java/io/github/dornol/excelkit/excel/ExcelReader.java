@@ -302,7 +302,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return this reader for chaining
      * @since 0.14.0
      */
-    public ExcelReader<T> password(String password) {
+    public ExcelReader<T> password(@Nullable String password) {
         this.password = password;
         return this;
     }

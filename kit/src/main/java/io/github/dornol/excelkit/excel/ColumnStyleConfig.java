@@ -98,7 +98,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param dataType the data type
      * @return this instance for chaining
      */
-    public SELF type(ExcelDataType dataType) {
+    public SELF type(@Nullable ExcelDataType dataType) {
         this.dataType = dataType;
         return self();
     }
@@ -109,7 +109,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param dataFormat the format string
      * @return this instance for chaining
      */
-    public SELF format(String dataFormat) {
+    public SELF format(@Nullable String dataFormat) {
         this.dataFormat = dataFormat;
         return self();
     }
@@ -120,7 +120,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param alignment the horizontal alignment
      * @return this instance for chaining
      */
-    public SELF alignment(HorizontalAlignment alignment) {
+    public SELF alignment(@Nullable HorizontalAlignment alignment) {
         this.alignment = alignment;
         this.alignmentSet = true;
         return self();
@@ -241,7 +241,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param cellColorFunction function to determine per-cell background color
      * @return this instance for chaining
      */
-    public SELF cellColor(CellColorFunction<T> cellColorFunction) {
+    public SELF cellColor(@Nullable CellColorFunction<T> cellColorFunction) {
         this.cellColorFunction = cellColorFunction;
         return self();
     }
@@ -296,7 +296,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param commentFunction function to generate comment text per row
      * @return this instance for chaining
      */
-    public SELF comment(Function<T, @Nullable String> commentFunction) {
+    public SELF comment(@Nullable Function<T, @Nullable String> commentFunction) {
         this.commentFunction = commentFunction;
         return self();
     }
@@ -360,7 +360,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param borderStyle the border style to apply
      * @return this instance for chaining
      */
-    public SELF border(ExcelBorderStyle borderStyle) {
+    public SELF border(@Nullable ExcelBorderStyle borderStyle) {
         this.borderStyle = borderStyle;
         return self();
     }
@@ -371,7 +371,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param borderStyle the border style to apply to the top border
      * @return this instance for chaining
      */
-    public SELF borderTop(ExcelBorderStyle borderStyle) {
+    public SELF borderTop(@Nullable ExcelBorderStyle borderStyle) {
         this.borderTop = borderStyle;
         return self();
     }
@@ -382,7 +382,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param borderStyle the border style to apply to the bottom border
      * @return this instance for chaining
      */
-    public SELF borderBottom(ExcelBorderStyle borderStyle) {
+    public SELF borderBottom(@Nullable ExcelBorderStyle borderStyle) {
         this.borderBottom = borderStyle;
         return self();
     }
@@ -393,7 +393,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param borderStyle the border style to apply to the left border
      * @return this instance for chaining
      */
-    public SELF borderLeft(ExcelBorderStyle borderStyle) {
+    public SELF borderLeft(@Nullable ExcelBorderStyle borderStyle) {
         this.borderLeft = borderStyle;
         return self();
     }
@@ -404,7 +404,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param borderStyle the border style to apply to the right border
      * @return this instance for chaining
      */
-    public SELF borderRight(ExcelBorderStyle borderStyle) {
+    public SELF borderRight(@Nullable ExcelBorderStyle borderStyle) {
         this.borderRight = borderStyle;
         return self();
     }
@@ -532,7 +532,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param verticalAlignment vertical alignment (e.g., TOP, CENTER, BOTTOM, JUSTIFY)
      * @return this instance for chaining
      */
-    public SELF verticalAlignment(VerticalAlignment verticalAlignment) {
+    public SELF verticalAlignment(@Nullable VerticalAlignment verticalAlignment) {
         this.verticalAlignment = verticalAlignment;
         return self();
     }
@@ -567,7 +567,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param fontName the font name (e.g., "Arial", "맑은 고딕", "Times New Roman")
      * @return this instance for chaining
      */
-    public SELF fontName(String fontName) {
+    public SELF fontName(@Nullable String fontName) {
         this.fontName = fontName;
         return self();
     }
@@ -654,7 +654,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param value the value to write for null cells (e.g., "N/A", 0, "-")
      * @return this instance for chaining
      */
-    public SELF nullValue(Object value) {
+    public SELF nullValue(@Nullable Object value) {
         this.nullValue = value;
         return self();
     }
@@ -665,7 +665,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @param validation the validation configuration
      * @return this instance for chaining
      */
-    public SELF validation(ExcelValidation validation) {
+    public SELF validation(@Nullable ExcelValidation validation) {
         this.validation = validation;
         return self();
     }

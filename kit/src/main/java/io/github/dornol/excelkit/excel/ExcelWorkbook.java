@@ -152,6 +152,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook documentProperty(String key, String value) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
         ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
@@ -242,7 +243,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      */
     public ExcelWorkbook headerFontName(String fontName) {
-        this.headerFontName = fontName;
+        this.headerFontName = java.util.Objects.requireNonNull(fontName, "fontName cannot be null");
         this.headerStyle = rebuildHeaderStyle();
         return this;
     }

@@ -58,6 +58,7 @@ public class ExcelSummary {
      * @return this summary for chaining
      */
     public ExcelSummary label(String text) {
+        java.util.Objects.requireNonNull(text, "text cannot be null");
         this.labelText = text;
         this.labelColumnName = null;
         return this;
@@ -71,6 +72,8 @@ public class ExcelSummary {
      * @return this summary for chaining
      */
     public ExcelSummary label(String columnName, String text) {
+        java.util.Objects.requireNonNull(columnName, "columnName cannot be null");
+        java.util.Objects.requireNonNull(text, "text cannot be null");
         this.labelColumnName = columnName;
         this.labelText = text;
         return this;
@@ -127,6 +130,7 @@ public class ExcelSummary {
     }
 
     private ExcelSummary addEntry(Op op, String columnName) {
+        java.util.Objects.requireNonNull(columnName, "columnName cannot be null");
         entries.computeIfAbsent(op, k -> new ArrayList<>()).add(columnName);
         return this;
     }

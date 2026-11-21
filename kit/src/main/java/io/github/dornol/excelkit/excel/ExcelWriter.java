@@ -248,6 +248,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @since 0.17.0
      */
     public ExcelWriter<T> documentProperty(String key, String value) {
+        java.util.Objects.requireNonNull(value, "value cannot be null");
         ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
@@ -496,7 +497,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function,
-                                  Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+                                  @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         java.util.Objects.requireNonNull(function, "function cannot be null");
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
@@ -531,7 +532,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> column(String name, RowFunction<T, @Nullable Object> function,
-                                  Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+                                  @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
         if (configurer != null) {
@@ -568,7 +569,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function,
-                                    Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+                                    @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         if (condition) {
             column(name, function, configurer);
         }
@@ -602,7 +603,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function,
-                                    Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+                                    @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         if (condition) {
             column(name, function, configurer);
         }
@@ -629,7 +630,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> constColumn(String name, @Nullable Object value,
-                                       Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+                                       @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
         return column(name, (RowFunction<T, Object>) (r, c) -> value, configurer);
     }
 

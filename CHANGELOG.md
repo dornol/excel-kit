@@ -14,6 +14,14 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** more writer arguments are rejected where they are passed (`NullPointerException` naming the
+  argument) instead of failing later: `ExcelSummary` (`sum`, `average`, `min`, `max`, `count`, `label`),
+  `ExcelConditionalRule` (every comparison, `dataBar`, `iconSet`), `ExcelChartConfig.type/barGrouping/barDirection`
+  and the series title of `valueColumn`, `documentProperty` values, `ExcelWorkbook.headerFontName`, and the stream
+  given to `ExcelSheetWriter.write` (before, a missing column list was reported first). Arguments whose `null` means
+  "not set" are now annotated `@Nullable`: the optional column `configurer`, style alignments, borders, formats and
+  fonts of `ColumnConfig`, `HeaderStyleConfig`, `RowStyleConfig`, `ExcelPrintSetup` headers/footers/orientation/paper,
+  chart titles and legend position, and `ExcelReader.password`.
 - **Breaking:** the writers reject a null argument where it is passed, with a `NullPointerException` naming it,
   instead of failing on the first row (or not at all): the callbacks and functions of `beforeHeader`,
   `afterData`, `afterAll`, `rowColor`, `rowStyle`, `onProgress`, `sheetName`, `column`/`columnIf` (every

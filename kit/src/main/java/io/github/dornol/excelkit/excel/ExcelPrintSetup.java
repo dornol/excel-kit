@@ -99,7 +99,7 @@ public class ExcelPrintSetup {
      * @param orientation the page orientation
      * @return this instance for chaining
      */
-    public ExcelPrintSetup orientation(Orientation orientation) {
+    public ExcelPrintSetup orientation(@Nullable Orientation orientation) {
         this.orientation = orientation;
         return this;
     }
@@ -110,7 +110,7 @@ public class ExcelPrintSetup {
      * @param paperSize the paper size
      * @return this instance for chaining
      */
-    public ExcelPrintSetup paperSize(PaperSize paperSize) {
+    public ExcelPrintSetup paperSize(@Nullable PaperSize paperSize) {
         this.paperSize = paperSize;
         return this;
     }
@@ -185,7 +185,7 @@ public class ExcelPrintSetup {
      * @param text header text
      * @return this instance for chaining
      */
-    public ExcelPrintSetup headerLeft(String text) {
+    public ExcelPrintSetup headerLeft(@Nullable String text) {
         this.headerLeft = text;
         return this;
     }
@@ -197,7 +197,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      * @see #headerLeft(String) for special codes
      */
-    public ExcelPrintSetup headerCenter(String text) {
+    public ExcelPrintSetup headerCenter(@Nullable String text) {
         this.headerCenter = text;
         return this;
     }
@@ -209,7 +209,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      * @see #headerLeft(String) for special codes
      */
-    public ExcelPrintSetup headerRight(String text) {
+    public ExcelPrintSetup headerRight(@Nullable String text) {
         this.headerRight = text;
         return this;
     }
@@ -221,7 +221,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      * @see #headerLeft(String) for special codes
      */
-    public ExcelPrintSetup footerLeft(String text) {
+    public ExcelPrintSetup footerLeft(@Nullable String text) {
         this.footerLeft = text;
         return this;
     }
@@ -233,7 +233,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      * @see #headerLeft(String) for special codes
      */
-    public ExcelPrintSetup footerCenter(String text) {
+    public ExcelPrintSetup footerCenter(@Nullable String text) {
         this.footerCenter = text;
         return this;
     }
@@ -245,7 +245,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      * @see #headerLeft(String) for special codes
      */
-    public ExcelPrintSetup footerRight(String text) {
+    public ExcelPrintSetup footerRight(@Nullable String text) {
         this.footerRight = text;
         return this;
     }

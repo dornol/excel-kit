@@ -46,7 +46,7 @@ public class RowStyleConfig {
     /**
      * Sets the font color for the row.
      */
-    public RowStyleConfig fontColor(ExcelColor color) {
+    public RowStyleConfig fontColor(@Nullable ExcelColor color) {
         this.fontColor = color;
         return this;
     }
@@ -62,7 +62,7 @@ public class RowStyleConfig {
     /**
      * Sets the background color for the row.
      */
-    public RowStyleConfig backgroundColor(ExcelColor color) {
+    public RowStyleConfig backgroundColor(@Nullable ExcelColor color) {
         this.backgroundColor = color;
         return this;
     }

@@ -217,6 +217,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
      * @param stream the data stream to write
      */
     public void write(Stream<T> stream) {
+        java.util.Objects.requireNonNull(stream, "stream cannot be null");
         if (written) {
             throw new ExcelWriteException("write() has already been called on this sheet");
         }
