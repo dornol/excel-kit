@@ -43,23 +43,13 @@ import java.util.function.Supplier;
 public class ExcelKitSchema<T> {
 
     private final List<SchemaColumn<T>> columns;
-    private final boolean strictHeaders;
-    private final DuplicateHeaderPolicy duplicateHeaderPolicy;
-    private final @Nullable CellConversionConfig cellConversionConfig;
+    private final ReaderOptions readOptions;
     private final @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
-    private final long maxRows;
-    private final boolean skipBlankRows;
-    private final int stopAtBlankRows;
 
     private ExcelKitSchema(List<SchemaColumn<T>> columns, Builder<T> builder) {
         this.columns = Collections.unmodifiableList(columns);
-        this.strictHeaders = builder.strictHeaders;
-        this.duplicateHeaderPolicy = builder.duplicateHeaderPolicy;
-        this.cellConversionConfig = builder.cellConversionConfig;
+        this.readOptions = builder.readSettings.build();
         this.writeErrorPolicy = builder.writeErrorPolicy;
-        this.maxRows = builder.maxRows;
-        this.skipBlankRows = builder.skipBlankRows;
-        this.stopAtBlankRows = builder.stopAtBlankRows;
     }
 
     /**
@@ -115,7 +105,7 @@ public class ExcelKitSchema<T> {
      * @return A configured ExcelReader instance
      */
     public ExcelReader<T> excelReader(Supplier<T> supplier, @Nullable Validator validator) {
-        return SchemaReaderFactory.excelSetter(columns, readOptions(), supplier, validator);
+        return SchemaReaderFactory.excelSetter(columns, readOptions, supplier, validator);
     }
 
     /**
@@ -138,7 +128,7 @@ public class ExcelKitSchema<T> {
      * @return A configured ExcelReader instance in mapping mode
      */
     public ExcelReader<T> excelReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        return SchemaReaderFactory.excelMapping(readOptions(), rowMapper, validator);
+        return SchemaReaderFactory.excelMapping(readOptions, rowMapper, validator);
     }
 
     /** Creates a schema-configured Excel mapping reader without Bean Validation. */
@@ -158,7 +148,7 @@ public class ExcelKitSchema<T> {
      * @return A configured CsvReader instance
      */
     public CsvReader<T> csvReader(Supplier<T> supplier, @Nullable Validator validator) {
-        return SchemaReaderFactory.csvSetter(columns, readOptions(), supplier, validator);
+        return SchemaReaderFactory.csvSetter(columns, readOptions, supplier, validator);
     }
 
     /**
@@ -178,17 +168,12 @@ public class ExcelKitSchema<T> {
      * @return A configured CsvReader instance in mapping mode
      */
     public CsvReader<T> csvReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
-        return SchemaReaderFactory.csvMapping(readOptions(), rowMapper, validator);
+        return SchemaReaderFactory.csvMapping(readOptions, rowMapper, validator);
     }
 
     /** Creates a schema-configured CSV mapping reader without Bean Validation. */
     public CsvReader<T> csvReader(Function<RowData, T> rowMapper) {
         return csvReader(rowMapper, null);
-    }
-
-    private SchemaReaderFactory.SchemaReadOptions readOptions() {
-        return new SchemaReaderFactory.SchemaReadOptions(strictHeaders, duplicateHeaderPolicy,
-                cellConversionConfig, maxRows, skipBlankRows, stopAtBlankRows);
     }
 
     /**
@@ -277,13 +262,9 @@ public class ExcelKitSchema<T> {
      */
     public static class Builder<T> {
         private final List<SchemaColumn<T>> columns = new ArrayList<>();
-        private boolean strictHeaders;
-        private DuplicateHeaderPolicy duplicateHeaderPolicy = DuplicateHeaderPolicy.FAIL;
-        private @Nullable CellConversionConfig cellConversionConfig;
+        /** The readers' common settings; the same code, defaults and checks as a reader's own chaining. */
+        private final ReaderOptions.Builder readSettings = ReaderOptions.builder();
         private @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
-        private long maxRows = -1;
-        private boolean skipBlankRows;
-        private int stopAtBlankRows;
 
         private Builder() {}
 
@@ -437,17 +418,17 @@ public class ExcelKitSchema<T> {
         }
 
         public Builder<T> strictHeaders() {
-            this.strictHeaders = true;
+            readSettings.strictHeaders();
             return this;
         }
 
         public Builder<T> duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
-            this.duplicateHeaderPolicy = Objects.requireNonNull(policy, "policy cannot be null");
+            readSettings.duplicateHeaderPolicy(policy);
             return this;
         }
 
         public Builder<T> cellConversion(CellConversionConfig config) {
-            this.cellConversionConfig = Objects.requireNonNull(config, "config cannot be null");
+            readSettings.cellConversion(config);
             return this;
         }
 
@@ -457,23 +438,17 @@ public class ExcelKitSchema<T> {
         }
 
         public Builder<T> maxRows(long maxRows) {
-            if (maxRows < 0) {
-                throw new IllegalArgumentException("maxRows must be non-negative");
-            }
-            this.maxRows = maxRows;
+            readSettings.maxRows(maxRows);
             return this;
         }
 
         public Builder<T> skipBlankRows() {
-            this.skipBlankRows = true;
+            readSettings.skipBlankRows();
             return this;
         }
 
         public Builder<T> stopAtBlankRows(int count) {
-            if (count < 0) {
-                throw new IllegalArgumentException("count must be non-negative");
-            }
-            this.stopAtBlankRows = count;
+            readSettings.stopAtBlankRows(count);
             return this;
         }
     }

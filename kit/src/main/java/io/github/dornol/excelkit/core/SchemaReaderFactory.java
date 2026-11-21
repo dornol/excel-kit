@@ -15,36 +15,36 @@ final class SchemaReaderFactory {
     }
 
     static <T> ExcelReader<T> excelSetter(List<ExcelKitSchema.SchemaColumn<T>> columns,
-                                          SchemaReadOptions options, Supplier<T> supplier,
+                                          ReaderOptions options, Supplier<T> supplier,
                                           @Nullable Validator validator) {
         ExcelReader<T> reader = new ExcelReader<>(supplier, validator);
         configureColumns(reader, columns);
-        configure(reader, options);
+        configure(reader, options, validator);
         return reader;
     }
 
-    static <T> ExcelReader<T> excelMapping(SchemaReadOptions options,
+    static <T> ExcelReader<T> excelMapping(ReaderOptions options,
                                            Function<RowData, T> mapper,
                                            @Nullable Validator validator) {
         ExcelReader<T> reader = ExcelReader.mapping(mapper, validator);
-        configure(reader, options);
+        configure(reader, options, validator);
         return reader;
     }
 
     static <T> CsvReader<T> csvSetter(List<ExcelKitSchema.SchemaColumn<T>> columns,
-                                      SchemaReadOptions options, Supplier<T> supplier,
+                                      ReaderOptions options, Supplier<T> supplier,
                                       @Nullable Validator validator) {
         CsvReader<T> reader = new CsvReader<>(supplier, validator);
         configureColumns(reader, columns);
-        configure(reader, options);
+        configure(reader, options, validator);
         return reader;
     }
 
-    static <T> CsvReader<T> csvMapping(SchemaReadOptions options,
+    static <T> CsvReader<T> csvMapping(ReaderOptions options,
                                        Function<RowData, T> mapper,
                                        @Nullable Validator validator) {
         CsvReader<T> reader = CsvReader.mapping(mapper, validator);
-        configure(reader, options);
+        configure(reader, options, validator);
         return reader;
     }
 
@@ -56,20 +56,12 @@ final class SchemaReaderFactory {
         }
     }
 
+    /**
+     * Applies the schema's common settings. {@code options(...)} replaces every common setting,
+     * including the validator, so the validator given for this reader goes into the options first.
+     */
     private static <T, R extends AbstractReader<T, R>> void configure(
-            R reader, SchemaReadOptions options) {
-        reader.duplicateHeaderPolicy(options.duplicateHeaderPolicy());
-        if (options.strictHeaders()) reader.strictHeaders();
-        if (options.cellConversionConfig() != null) {
-            reader.cellConversion(options.cellConversionConfig());
-        }
-        if (options.maxRows() >= 0) reader.maxRows(options.maxRows());
-        if (options.skipBlankRows()) reader.skipBlankRows();
-        if (options.stopAtBlankRows() > 0) reader.stopAtBlankRows(options.stopAtBlankRows());
-    }
-
-    record SchemaReadOptions(boolean strictHeaders, DuplicateHeaderPolicy duplicateHeaderPolicy,
-                             @Nullable CellConversionConfig cellConversionConfig, long maxRows,
-                             boolean skipBlankRows, int stopAtBlankRows) {
+            R reader, ReaderOptions options, @Nullable Validator validator) {
+        reader.options(options.toBuilder().validator(validator).build());
     }
 }
