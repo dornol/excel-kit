@@ -11,6 +11,8 @@ package io.github.dornol.excelkit.core;
  * @since 2025-07-19
  */
 public class ReadAbortException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
     private final ReadAbortReason reason;
     private final long maxErrors;
     private final long errorCount;

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.usermodel.PageMargin;
 import org.apache.poi.ss.usermodel.PrintSetup;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddress;
@@ -320,10 +321,10 @@ public class ExcelPrintSetup {
             ps.setFitHeight((short) fitHeight);
         }
 
-        if (leftMargin != null) sheet.setMargin(Sheet.LeftMargin, leftMargin);
-        if (rightMargin != null) sheet.setMargin(Sheet.RightMargin, rightMargin);
-        if (topMargin != null) sheet.setMargin(Sheet.TopMargin, topMargin);
-        if (bottomMargin != null) sheet.setMargin(Sheet.BottomMargin, bottomMargin);
+        if (leftMargin != null) sheet.setMargin(PageMargin.LEFT, leftMargin);
+        if (rightMargin != null) sheet.setMargin(PageMargin.RIGHT, rightMargin);
+        if (topMargin != null) sheet.setMargin(PageMargin.TOP, topMargin);
+        if (bottomMargin != null) sheet.setMargin(PageMargin.BOTTOM, bottomMargin);
 
         if (headerLeft != null) sheet.getHeader().setLeft(headerLeft);
         if (headerCenter != null) sheet.getHeader().setCenter(headerCenter);

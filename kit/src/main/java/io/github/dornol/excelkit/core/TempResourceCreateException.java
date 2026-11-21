@@ -7,6 +7,7 @@ package io.github.dornol.excelkit.core;
  * @since 2025-07-19
  */
 public class TempResourceCreateException extends ExcelKitException {
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new TempResourceCreateException with the specified cause.

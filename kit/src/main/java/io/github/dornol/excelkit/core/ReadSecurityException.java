@@ -2,6 +2,8 @@ package io.github.dornol.excelkit.core;
 
 /** Raised when workbook content violates a configured security policy. */
 public final class ReadSecurityException extends ExcelKitException {
+    private static final long serialVersionUID = 1L;
+
     /** Identifies the security rule that rejected the workbook. */
     public enum Reason {
         FORMULA, EXTERNAL_LINK, ENTRY_SIZE, TOTAL_SCAN_SIZE, COMPRESSION_RATIO, ZIP_ENTRIES

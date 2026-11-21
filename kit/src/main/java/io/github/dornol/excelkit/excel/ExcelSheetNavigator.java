@@ -10,6 +10,8 @@ final class ExcelSheetNavigator {
     private ExcelSheetNavigator() {}
     @FunctionalInterface interface SheetConsumer { void accept(InputStream sheet) throws Exception; }
 
+    // Each sheet stream is opened only to advance the iterator and is closed right away.
+    @SuppressWarnings("try")
     static void enforceLimit(XSSFReader reader, int maximum) throws Exception {
         if (maximum < 0) return;
         int count = 0;

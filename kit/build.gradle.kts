@@ -36,6 +36,12 @@ sourceSets.test {
     resources.srcDir("../test-support/resources")
 }
 
+// Main code compiles without warnings; keep it that way. A new warning (for example a deprecation
+// that arrives with a POI upgrade) fails the build and has to be fixed or suppressed with a reason.
+tasks.compileJava {
+    options.compilerArgs.addAll(listOf("-Xlint:all,-processing", "-Werror"))
+}
+
 tasks.test {
     useJUnitPlatform {
         excludeTags("benchmark")

@@ -56,6 +56,9 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     private final ReadRowPolicy rowPolicy;
     protected boolean stoppedEarly;
 
+    // initTempFile only uses this class's own temp file accessors, and the only subclasses are the
+    // final CSV and Excel handlers of this library, so nothing observes a half-built object.
+    @SuppressWarnings("this-escape")
     protected AbstractReadHandler(InputStream input, @Nullable Supplier<T> supplier,
             @Nullable Function<RowData, T> mapper, @Nullable Validator validator, String extension,
             @Nullable Set<String> selectedColumns, ReadOptions readOptions) {

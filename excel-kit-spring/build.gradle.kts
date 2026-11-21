@@ -48,6 +48,11 @@ sourceSets.test {
     resources.srcDir("../test-support/resources")
 }
 
+// Main code compiles without warnings; keep it that way.
+tasks.compileJava {
+    options.compilerArgs.addAll(listOf("-Xlint:all,-processing", "-Werror"))
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
     // A private, freshly emptied temp dir per test task, so TempFileLeakGuard counts exactly.

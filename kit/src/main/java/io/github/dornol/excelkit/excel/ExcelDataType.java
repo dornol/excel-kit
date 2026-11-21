@@ -168,7 +168,7 @@ public enum ExcelDataType {
      */
     RICH_TEXT((cell, value) -> {
         if (value instanceof ExcelRichText rt) {
-            SXSSFWorkbook wb = (SXSSFWorkbook) cell.getSheet().getWorkbook();
+            SXSSFWorkbook wb = cell.getSheet().getWorkbook();
             ExcelCellText.writeStreaming(cell, rt.toRichTextString(wb, ExcelRichText.getFontCache(wb)));
         } else {
             ExcelCellText.write(cell, String.valueOf(value));

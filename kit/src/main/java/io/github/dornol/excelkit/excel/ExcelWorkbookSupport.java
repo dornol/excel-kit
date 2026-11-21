@@ -20,7 +20,20 @@ final class ExcelWorkbookSupport {
         try {
             workbook.close();
         } finally {
+            dispose(workbook);
+        }
+    }
+
+    /**
+     * {@code dispose()} is deprecated in newer POI releases, where {@code close()} already does the
+     * work. Should a release drop it, that release's {@code close()} is all that is needed.
+     */
+    @SuppressWarnings("deprecation")
+    private static void dispose(SXSSFWorkbook workbook) {
+        try {
             workbook.dispose();
+        } catch (NoSuchMethodError removed) {
+            // nothing left to dispose beyond what close() did
         }
     }
     private ExcelWorkbookSupport() { }

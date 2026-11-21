@@ -6,6 +6,7 @@ import io.github.dornol.excelkit.core.ExcelKitException;
  * Raised when a Spring upload cannot be opened for reading.
  */
 public class ExcelKitUploadException extends ExcelKitException {
+    private static final long serialVersionUID = 1L;
 
     public ExcelKitUploadException(String message) {
         super(message);

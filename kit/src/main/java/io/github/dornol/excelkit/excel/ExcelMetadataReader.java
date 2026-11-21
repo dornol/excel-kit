@@ -59,6 +59,8 @@ final class ExcelMetadataReader {
         }
     }
 
+    // Each sheet stream is opened only to advance the iterator and is closed right away.
+    @SuppressWarnings("try")
     private static List<ExcelSheetInfo> readSheetNames(Path path) {
         try (OPCPackage pkg = OPCPackage.open(path.toFile(), PackageAccess.READ)) {
             XSSFReader reader = new XSSFReader(pkg);
@@ -173,6 +175,8 @@ final class ExcelMetadataReader {
             }
         }
 
+        // Deprecated in newer POI, but it is the callback POI 5 runtimes invoke.
+        @SuppressWarnings("deprecation")
         @Override
         public void cell(String cellReference, String formattedValue, XSSFComment comment) {
             cell(cellReference, formattedValue, (Comment) comment);

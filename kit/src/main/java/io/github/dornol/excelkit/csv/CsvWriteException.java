@@ -9,6 +9,7 @@ import io.github.dornol.excelkit.core.ExcelKitException;
  * @since 2025-07-19
  */
 public class CsvWriteException extends ExcelKitException {
+    private static final long serialVersionUID = 1L;
 
     /** Creates an exception with the given message.
      * @param message the detail message */

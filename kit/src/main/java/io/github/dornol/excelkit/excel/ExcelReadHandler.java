@@ -388,6 +388,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private static final class StopReadingException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
     }
 
 
@@ -532,6 +534,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         /**
          * Called for each cell in the current row.
          */
+        // Deprecated in newer POI, but it is the callback POI 5 runtimes invoke.
+        @SuppressWarnings("deprecation")
         @Override
         public void cell(String cellReference, String formattedValue, XSSFComment comment) {
             cell(cellReference, formattedValue, (Comment) comment);

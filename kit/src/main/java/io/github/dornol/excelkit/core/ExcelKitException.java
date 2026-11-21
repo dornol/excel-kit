@@ -9,6 +9,7 @@ package io.github.dornol.excelkit.core;
  * @since 2025-07-19
  */
 public class ExcelKitException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
 
     /** Creates an exception with the given message.
      * @param message the detail message */
