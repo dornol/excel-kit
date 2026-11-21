@@ -319,6 +319,14 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
+    /**
+     * Matches headers through one of the {@link HeaderPolicy} presets (trim, case-insensitive,
+     * Unicode-normalized); shorthand for {@link #headerNormalizer(UnaryOperator)} with the preset's
+     * normalizer.
+     *
+     * @param policy the preset to match headers with
+     * @return this reader for chaining
+     */
     public SELF headerPolicy(HeaderPolicy policy) {
         return headerNormalizer(Objects.requireNonNull(policy, "policy cannot be null").normalizer());
     }
@@ -335,11 +343,30 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
+    /**
+     * Lets another thread stop the read. The token is checked before every row; once it reports a
+     * cancellation the read ends normally without an exception, the rows already emitted stay valid,
+     * the summary reports the read as stopped early and the final {@link ReadProgress} has
+     * {@code cancelled} set.
+     *
+     * @param token the cancellation signal to poll
+     * @return this reader for chaining
+     */
     public SELF cancellationToken(CancellationToken token) {
         settings.cancellationToken(token);
         return self();
     }
 
+    /**
+     * Reports progress as {@link ReadProgress} snapshots (rows processed, succeeded and failed, elapsed
+     * time) every {@code interval} rows, plus one final event with {@code completed} set when the read
+     * ends. The callback runs on the reading thread. Unlike {@link #onProgress(int, ProgressCallback)}
+     * it also counts failed rows separately and sees completion and cancellation.
+     *
+     * @param interval rows between two events; must be positive
+     * @param callback receives each snapshot
+     * @return this reader for chaining
+     */
     public SELF onReadProgress(int interval, ReadProgressCallback callback) {
         settings.onReadProgress(interval, callback);
         return self();
