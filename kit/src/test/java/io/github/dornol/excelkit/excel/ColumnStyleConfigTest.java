@@ -533,8 +533,7 @@ class ColumnStyleConfigTest {
                     .border(ExcelBorderStyle.MEDIUM)
                     .locked(true)
                     .hidden()
-                    .validation(ExcelValidation.integerBetween(1, 100))
-                    .dropdown("A", "B"));
+                    .validation(ExcelValidation.integerBetween(1, 100)));
 
             // Verify it returns ExcelWriter (not ExcelColumnBuilder)
             assertInstanceOf(ExcelWriter.class, result);

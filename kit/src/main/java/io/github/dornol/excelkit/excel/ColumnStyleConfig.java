@@ -213,15 +213,31 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      *
      * @param options The list of allowed values for the dropdown
      * @return this instance for chaining
-     * @throws IllegalArgumentException if the comma-joined options exceed Excel's 255-character limit
+     * @throws IllegalArgumentException if there is no option, an option contains a comma (use
+     *         {@link ExcelValidation#listFromRange(String)}), or the comma-joined options exceed Excel's 255-character
+     *         limit
      */
     public SELF dropdown(String... options) {
-        int length = String.join(",", options).length();
+        java.util.Objects.requireNonNull(options, "options cannot be null");
+        if (options.length == 0) {
+            throw new IllegalArgumentException("A dropdown needs at least one option");
+        }
+        String[] escaped = new String[options.length];
+        for (int i = 0; i < options.length; i++) {
+            String option = java.util.Objects.requireNonNull(options[i], "a dropdown option cannot be null");
+            if (option.indexOf(',') >= 0) {
+                throw new IllegalArgumentException("The dropdown option '" + option + "' contains a comma, which "
+                        + "Excel reads as the end of an option; use ExcelValidation.listFromRange(...) for such values");
+            }
+            // inside the quoted list a quote is written twice
+            escaped[i] = option.replace("\"", "\"\"");
+        }
+        int length = String.join(",", escaped).length();
         if (length > MAX_DROPDOWN_LENGTH) {
             throw new IllegalArgumentException("Dropdown options total " + length
                     + " characters (comma-joined); Excel allows at most " + MAX_DROPDOWN_LENGTH);
         }
-        this.dropdownOptions = options;
+        this.dropdownOptions = escaped;
         return self();
     }
 
@@ -684,8 +700,12 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         if (this.headerFontColor == null) this.headerFontColor = defaults.headerFontColor;
         if (this.headerBackgroundColor == null) this.headerBackgroundColor = defaults.headerBackgroundColor;
         if (this.cellColorFunction == null) this.cellColorFunction = (CellColorFunction<T>) defaults.cellColorFunction;
-        if (this.dropdownOptions == null) this.dropdownOptions = defaults.dropdownOptions;
-        if (this.validation == null) this.validation = defaults.validation;
+        // A column that chose a dropdown or a validation of its own keeps it, and the default of the other kind
+        // is not added: a cell has one data validation.
+        if (this.dropdownOptions == null && this.validation == null) {
+            this.dropdownOptions = defaults.dropdownOptions;
+            this.validation = defaults.validation;
+        }
         if (this.commentFunction == null) {
             this.commentFunction = (Function<T, @Nullable String>) defaults.commentFunction;
         }

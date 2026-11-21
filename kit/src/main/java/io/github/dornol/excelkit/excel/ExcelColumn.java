@@ -89,6 +89,10 @@ public class ExcelColumn<T> {
         this.borderStyle = config.borderStyle;
         this.locked = config.locked;
         this.hidden = config.hidden;
+        if (config.validation != null && config.dropdownOptions != null) {
+            throw new IllegalArgumentException("Column '" + name + "' has both a dropdown and a validation; "
+                    + "a cell has one data validation, so use one of them (listFromRange(...) makes a list)");
+        }
         this.validation = config.validation;
         this.headerFontColor = config.headerFontColor;
         this.headerBackgroundColor = config.headerBackgroundColor;

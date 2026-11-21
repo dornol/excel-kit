@@ -17,6 +17,14 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** data validation setup mistakes are refused where they are made, with `IllegalArgumentException`,
+  instead of writing a broken validation or failing after the whole stream: `dropdown(...)` without options, with a
+  `null` option, or with an option that contains a comma (Excel splits the list there; use `listFromRange(...)`);
+  `listFromRange` and `formula` with blank text; `decimalBetween` with NaN or infinite bounds; bounds that no value
+  could meet (`integerBetween(10, 1)`, `decimalBetween`, `textLength` with min above max or below 0, `dateRange` with
+  the start after the end); an error title over 32 or a message over 255 characters; a column with both a `dropdown`
+  and a `validation` (a cell has one data validation; the column's own choice is no longer joined by a
+  `defaultStyle` of the other kind).
 - A list written into a template (`ExcelTemplateWriter.list(...)`) keeps the column widths the template set, instead of
   overwriting every list column's width with one fitted to its content. A column given `width(n)` still uses that width,
   and a column the template left at the default width is still fitted to its content. A template without custom
@@ -55,6 +63,9 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A `dropdown(...)` option containing a double quote wrote a broken list formula (`"say "hi",c"`); quotes are now
+  written twice, as Excel's formula syntax asks, and count twice towards the 255-character limit. A single-bound
+  validation (`integerGreaterThan`, `integerLessThan`) no longer writes an empty `<formula2/>`.
 - `ExcelTemplateWriter.cell(...)` with a date or time in a cell that has no number format (any cell below the template)
   showed it as a serial number (`45356`). Such a cell now gets `yyyy-mm-dd`, `yyyy-mm-dd hh:mm:ss` or `hh:mm:ss`, keeping
   its font and borders; a cell whose template gave it a format keeps that one.

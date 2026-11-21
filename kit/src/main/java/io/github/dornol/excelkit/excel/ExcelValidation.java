@@ -43,6 +43,22 @@ public class ExcelValidation {
         LIST_FORMULA
     }
 
+    /** Excel's limits for the title and the text of the error box. */
+    private static final int MAX_ERROR_TITLE = 32;
+    private static final int MAX_ERROR_MESSAGE = 255;
+
+    private static void requireOrdered(double min, double max, String method) {
+        if (min > max) {
+            throw new IllegalArgumentException(method + " min " + min + " is above its max " + max
+                    + ": no value could be valid");
+        }
+    }
+
+    private static void requireText(@Nullable String text, String name) {
+        java.util.Objects.requireNonNull(text, name + " cannot be null");
+        if (text.isBlank()) throw new IllegalArgumentException(name + " cannot be blank");
+    }
+
     private final ValidationType type;
     private final int operator;
     private final @Nullable String value1;
@@ -67,6 +83,7 @@ public class ExcelValidation {
      * @return the validation instance
      */
     public static ExcelValidation integerBetween(int min, int max) {
+        requireOrdered(min, max, "integerBetween");
         return new ExcelValidation(ValidationType.INTEGER,
                 DataValidationConstraint.OperatorType.BETWEEN,
                 String.valueOf(min), String.valueOf(max));
@@ -104,6 +121,10 @@ public class ExcelValidation {
      * @return the validation instance
      */
     public static ExcelValidation decimalBetween(double min, double max) {
+        if (!Double.isFinite(min) || !Double.isFinite(max)) {
+            throw new IllegalArgumentException("decimalBetween needs finite bounds, got " + min + " and " + max);
+        }
+        requireOrdered(min, max, "decimalBetween");
         return new ExcelValidation(ValidationType.DECIMAL,
                 DataValidationConstraint.OperatorType.BETWEEN,
                 String.valueOf(min), String.valueOf(max));
@@ -117,6 +138,8 @@ public class ExcelValidation {
      * @return the validation instance
      */
     public static ExcelValidation textLength(int min, int max) {
+        if (min < 0) throw new IllegalArgumentException("textLength min must not be negative, got " + min);
+        requireOrdered(min, max, "textLength");
         return new ExcelValidation(ValidationType.TEXT_LENGTH,
                 DataValidationConstraint.OperatorType.BETWEEN,
                 String.valueOf(min), String.valueOf(max));
@@ -130,6 +153,11 @@ public class ExcelValidation {
      * @return the validation instance
      */
     public static ExcelValidation dateRange(LocalDate start, LocalDate end) {
+        java.util.Objects.requireNonNull(start, "start cannot be null");
+        java.util.Objects.requireNonNull(end, "end cannot be null");
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("dateRange start " + start + " is after its end " + end);
+        }
         return new ExcelValidation(ValidationType.DATE,
                 DataValidationConstraint.OperatorType.BETWEEN,
                 "DATE(" + start.getYear() + "," + start.getMonthValue() + "," + start.getDayOfMonth() + ")",
@@ -146,6 +174,7 @@ public class ExcelValidation {
      * @return the validation instance
      */
     public static ExcelValidation listFromRange(String range) {
+        requireText(range, "range");
         return new ExcelValidation(ValidationType.LIST_FORMULA,
                 DataValidationConstraint.OperatorType.BETWEEN, range, null);
     }
@@ -157,6 +186,7 @@ public class ExcelValidation {
      * @return the validation instance
      */
     public static ExcelValidation formula(String formula) {
+        requireText(formula, "formula");
         return new ExcelValidation(ValidationType.FORMULA,
                 DataValidationConstraint.OperatorType.BETWEEN,
                 formula, null);
@@ -168,7 +198,11 @@ public class ExcelValidation {
      * @param errorTitle the error dialog title
      * @return this instance for chaining
      */
-    public ExcelValidation errorTitle(String errorTitle) {
+    public ExcelValidation errorTitle(@Nullable String errorTitle) {
+        if (errorTitle != null && errorTitle.length() > MAX_ERROR_TITLE) {
+            throw new IllegalArgumentException("The error title is " + errorTitle.length()
+                    + " characters; Excel allows at most " + MAX_ERROR_TITLE);
+        }
         this.errorTitle = errorTitle;
         return this;
     }
@@ -179,7 +213,11 @@ public class ExcelValidation {
      * @param errorMessage the error message text
      * @return this instance for chaining
      */
-    public ExcelValidation errorMessage(String errorMessage) {
+    public ExcelValidation errorMessage(@Nullable String errorMessage) {
+        if (errorMessage != null && errorMessage.length() > MAX_ERROR_MESSAGE) {
+            throw new IllegalArgumentException("The error message is " + errorMessage.length()
+                    + " characters; Excel allows at most " + MAX_ERROR_MESSAGE);
+        }
         this.errorMessage = errorMessage;
         return this;
     }
@@ -217,13 +255,13 @@ public class ExcelValidation {
     private DataValidationConstraint createConstraint(DataValidationHelper helper) {
         return switch (type) {
             case INTEGER -> helper.createIntegerConstraint(operator,
-                    value1 != null ? value1 : "", value2 != null ? value2 : "");
+                    value1 != null ? value1 : "", value2);
             case DECIMAL -> helper.createDecimalConstraint(operator,
-                    value1 != null ? value1 : "", value2 != null ? value2 : "");
+                    value1 != null ? value1 : "", value2);
             case TEXT_LENGTH -> helper.createTextLengthConstraint(operator,
-                    value1 != null ? value1 : "", value2 != null ? value2 : "");
+                    value1 != null ? value1 : "", value2);
             case DATE -> helper.createDateConstraint(operator,
-                    value1 != null ? value1 : "", value2 != null ? value2 : "",
+                    value1 != null ? value1 : "", value2,
                     "yyyy-MM-dd");
             case FORMULA -> helper.createCustomConstraint(value1 != null ? value1 : "TRUE");
             case LIST_FORMULA -> helper.createFormulaListConstraint(value1 != null ? value1 : "");
