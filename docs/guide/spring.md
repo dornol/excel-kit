@@ -78,6 +78,13 @@ public ResponseEntity<UploadResult<User>> upload(MultipartFile file) {
 }
 ```
 
+Schema-backed `excel(...)` and `csv(...)` overloads check the file's content signature
+before reading, so a file whose content is not XLSX (or CSV) is rejected with
+`ExcelKitUploadException` regardless of its filename. The `UploadReader` overloads
+(`excel(file, reader)`, `csv(file, reader)`, `read(type, file, reader)`) do not inspect the
+content; call `ExcelKitMultipartFile.requireExcelOrCsvContent(file)` first, or use
+`ExcelKitUpload.readDetected(...)`, when you need the same guarantee.
+
 `UploadResult.summary()` includes total rows, success/error counts, duration,
 filename, and file size. `UploadError.rawValues()` carries the source row values
 for correction screens.
