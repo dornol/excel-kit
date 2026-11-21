@@ -93,6 +93,8 @@ public final class ExcelKitUpload {
     /**
      * Reads an XLSX upload with a schema. The content signature is checked first, so a file
      * whose content is not XLSX is rejected with {@link ExcelKitUploadException} regardless of its name.
+     * The read is bounded by {@link ReadLimits#UPLOAD}; pass limits of your own to the overload that
+     * takes them, or {@link ReadLimits#UNLIMITED} to lift the bounds.
      */
     public static <T> UploadResult<T> excel(
             MultipartFile file,
@@ -101,13 +103,13 @@ public final class ExcelKitUpload {
         return excel(file, schema, supplier, null);
     }
 
+    /** Like the three-argument overload, with a Bean Validation provider; bounded by {@link ReadLimits#UPLOAD}. */
     public static <T> UploadResult<T> excel(
             MultipartFile file,
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
             Validator validator) {
-        return readDetected("Excel", TabularFileType.XLSX, file, (input, consumer) ->
-                schema.excelReader(supplier, validator).read(input, consumer));
+        return excel(file, schema, supplier, validator, ReadLimits.UPLOAD);
     }
 
     public static <T> UploadResult<T> csv(
@@ -125,6 +127,8 @@ public final class ExcelKitUpload {
     /**
      * Reads a CSV upload with a schema. The content signature is checked first, so a file
      * whose content is not CSV is rejected with {@link ExcelKitUploadException} regardless of its name.
+     * The read is bounded by {@link ReadLimits#UPLOAD}; pass limits of your own to the overload that
+     * takes them, or {@link ReadLimits#UNLIMITED} to lift the bounds.
      */
     public static <T> UploadResult<T> csv(
             MultipartFile file,
@@ -133,12 +137,12 @@ public final class ExcelKitUpload {
         return csv(file, schema, supplier, null);
     }
 
+    /** Like the three-argument overload, with a Bean Validation provider; bounded by {@link ReadLimits#UPLOAD}. */
     public static <T> UploadResult<T> csv(
             MultipartFile file,
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
             Validator validator) {
-        return readDetected("CSV", TabularFileType.CSV, file, (input, consumer) ->
-                schema.csvReader(supplier, validator).read(input, consumer));
+        return csv(file, schema, supplier, validator, ReadLimits.UPLOAD);
     }
 }

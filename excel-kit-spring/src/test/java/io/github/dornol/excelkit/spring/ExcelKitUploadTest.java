@@ -79,6 +79,38 @@ class ExcelKitUploadTest {
         assertEquals("Notebook", result.rows().get(0).name);
     }
 
+    private static ExcelKitSchema<Product> nameSchema() {
+        return ExcelKitSchema.<Product>builder()
+                .column("Name", p -> p.name, (p, cell) -> p.name = cell.asString())
+                .build();
+    }
+
+    private static MockMultipartFile csvWithCellOf(int characters) {
+        return new MockMultipartFile("file", "products.csv", "text/csv",
+                ("Name\n" + "x".repeat(characters) + "\n").getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void schemaUploadsAreBoundedByTheUploadPresetByDefault() {
+        MockMultipartFile file = csvWithCellOf(ReadLimits.UPLOAD.maxCellCharacters() + 1);
+
+        ReadLimitExceededException threeArguments = assertThrows(ReadLimitExceededException.class,
+                () -> ExcelKitUpload.csv(file, nameSchema(), Product::new));
+        assertEquals(ReadLimitExceededException.Limit.CELL_CHARACTERS, threeArguments.limit());
+        assertThrows(ReadLimitExceededException.class,
+                () -> ExcelKitUpload.csv(file, nameSchema(), Product::new, null));
+    }
+
+    @Test
+    void unlimitedLiftsTheDefaultBounds() {
+        MockMultipartFile file = csvWithCellOf(ReadLimits.UPLOAD.maxCellCharacters() + 1);
+
+        UploadResult<Product> result =
+                ExcelKitUpload.csv(file, nameSchema(), Product::new, null, ReadLimits.UNLIMITED);
+
+        assertEquals(1, result.successCount());
+    }
+
     @Test
     void read_closesMultipartStreamExactlyOnce() {
         MultipartFile file = new MockMultipartFile(

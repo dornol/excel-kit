@@ -191,7 +191,10 @@ ExcelHandler handler = writer.write(flux.toStream());
 ```
 ## Signature validation and limits
 
-Schema uploads can apply core `ReadLimits`, and `readDetected(...)` validates XLSX/CSV content
+Schema uploads (`ExcelKitUpload.excel/csv(file, schema, supplier[, validator])`) are bounded by
+`ReadLimits.UPLOAD` by default. Pass your own `ReadLimits` to the overload that takes them, or
+`ReadLimits.UNLIMITED` to lift the bounds. Uploads read through an `UploadReader` use the reader you
+build, so give that reader `limits(...)` yourself. Schema uploads can apply core `ReadLimits`, and `readDetected(...)` validates XLSX/CSV content
 by signature rather than trusting the filename or HTTP content type. Limit failures retain
 their structured `ReadLimitExceededException` details for mapping to HTTP 413 responses.
 `UploadCollectionLimits` independently bounds retained successful rows and errors while

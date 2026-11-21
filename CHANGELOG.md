@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** `ExcelKitUpload.excel/csv(file, schema, supplier[, validator])` without explicit limits are
+  now bounded by `ReadLimits.UPLOAD` (50 MiB, 50 sheets, 1,000 columns, 32,767 characters per cell, 10 million
+  cells); they used to read without limits. Pass `ReadLimits.UNLIMITED` to the overload that takes limits to
+  keep the old behavior. Uploads read through an `UploadReader` are unchanged.
 - **Breaking:** `CsvWriter` ends rows with CRLF as RFC 4180 requires, on every operating system. It used
   the operating system's line separator, so the same export was CRLF on Windows and LF elsewhere.
   `CsvDialect` now carries a line separator (`getLineSeparator()`): `RFC4180` and `EXCEL` use CRLF,
