@@ -51,7 +51,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char quoteChar = '"';
     private char escapeChar = ICSVParser.NULL_CHARACTER;
     private boolean strictQuotes = false;
-    private boolean ignoreLeadingWhiteSpace = false;
+    private boolean ignoreLeadingWhiteSpace = true;
     private int detectionSampleBytes = TabularFileDetector.DEFAULT_SAMPLE_BYTES;
 
     /**
@@ -277,10 +277,15 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     /**
-     * Controls whether leading whitespace before quoted values is ignored (default: not ignored).
+     * Controls whether leading whitespace before quoted values is ignored (default: ignored).
      * <p>
      * When enabled, {@code a, "b"} reads the second value as {@code b}. Whitespace around values
      * that are not quoted is always kept.
+     * <p>
+     * Turn it off only for files in which a space before a quote is meant literally. The parser then does not
+     * treat that quote as the start of a quoted value but still lets it hide a following delimiter, and it drops
+     * the closing quote: {@code 1, "x,y"} reads as {@code  "x,y}, which is neither what the file says nor the quoted
+     * value.
      *
      * @since 0.19.0
      */

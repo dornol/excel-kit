@@ -124,7 +124,7 @@ CsvReader.setter(Row::new)
     .quoteChar('\'')
     .escapeChar('\\')
     .strictQuotes(false)             // true drops text outside quotes: quote the header row too
-    .ignoreLeadingWhiteSpace(true)
+    .ignoreLeadingWhiteSpace(true)   // default: a space before a quote is skipped, so  a, "b"  reads b
     .headerRowIndex(1)            // skip first row
     .dialect(CsvDialect.TSV)
     .column((r, cell) -> r.name = cell.asString())

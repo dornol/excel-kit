@@ -75,6 +75,15 @@ class CsvReaderOptionsTest {
     }
 
     @Test
+    void aSpaceBeforeAQuoteIsSkippedByDefault() {
+        // hand-written files often have a space after the comma: the value is the quoted text, whole
+        assertEquals(List.of("{a=1, b=x,y}@2"), read("a,b\n1, \"x,y\"\n"));
+        assertEquals(List.of("{a=1, b=x}@2"), read("a,b\n1, \"x\"\n"));
+        assertEquals(List.of("{a=1, b=x,y, c=3}@2"), read("a,b,c\n1, \"x,y\", \"3\"\n"));
+        assertEquals(List.of("{a=  x, b=  y}@2"), read("a,b\n  x,  y\n"), "unquoted values keep their spaces");
+    }
+
+    @Test
     void leadingWhiteSpaceIsIgnoredBeforeAQuotedValueOnlyWhenAsked() {
         assertEquals(List.of("{a=1, b=x,y}@2"), read("a,b\n1, \"x,y\"\n", r -> r.ignoreLeadingWhiteSpace(true)));
         assertEquals(List.of("{a=1, b=x}@2"), read("a,b\n1, \"x\"\n", r -> r.ignoreLeadingWhiteSpace(true)));

@@ -17,6 +17,11 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** `CsvReader.ignoreLeadingWhiteSpace` defaults to `true`. With `false`, a hand-written file such as
+  `1, "x,y"` (a space after the comma) read as `b= "x,y`: the opening quote kept and the closing one dropped, which is
+  neither the text of the file nor the quoted value. Now the value is `x,y`. Whitespace around values that are not
+  quoted is kept either way; `ignoreLeadingWhiteSpace(false)` is still there for files that mean a space before a
+  quote literally.
 - **Breaking:** `CsvReader` refuses a delimiter, quote and escape character it cannot tell apart before it reads the
   file, with `IllegalArgumentException`: a delimiter equal to the quote or the escape character, a quote equal to the
   escape character, a NUL delimiter, or any of them a line break. These used to fail inside opencsv
