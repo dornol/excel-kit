@@ -181,4 +181,27 @@ class ConditionalRuleDetailsTest {
         assertFalse(priorities.isEmpty());
         assertTrue(priorities.stream().distinct().count() == priorities.size());
     }
+
+    // ---- the XML is valid
+
+    private static void assertValid(XSSFSheet sheet, String what) {
+        List<org.apache.xmlbeans.XmlError> errors = new ArrayList<>();
+        boolean valid = sheet.getCTWorksheet().validate(new org.apache.xmlbeans.XmlOptions().setErrorListener(errors));
+        assertTrue(valid, what + " is not valid SpreadsheetML: " + errors);
+    }
+
+    @Test
+    void everyKindOfRuleWritesValidSpreadsheetML() throws Exception {
+        assertValid(write(3, rule -> rule.dataBar(ExcelColor.BLUE)), "a data bar");
+        for (IconSetType type : IconSetType.values()) {
+            assertValid(write(3, rule -> rule.iconSet(type)), "icon set " + type);
+        }
+        assertValid(write(3, rule -> rule.greaterThan("1", ExcelColor.LIGHT_GREEN).lessThan("9", ExcelColor.LIGHT_RED)
+                .between("2", "3", ExcelColor.LIGHT_YELLOW).notBetween("4", "5", ExcelColor.LIGHT_RED)
+                .equalTo("6", ExcelColor.LIGHT_GREEN).notEqualTo("7", ExcelColor.LIGHT_RED)
+                .greaterThanOrEqual("8", ExcelColor.LIGHT_GREEN).lessThanOrEqual("9", ExcelColor.LIGHT_RED)), "comparisons");
+        assertValid(write(3, rule -> rule.dataBar(ExcelColor.BLUE).iconSet(IconSetType.ARROWS_3)
+                .greaterThan("1", ExcelColor.LIGHT_GREEN)), "all of them together");
+        // dataBar(min, max) is left out on purpose: it writes a second <color> element, which the schema does not allow
+    }
 }

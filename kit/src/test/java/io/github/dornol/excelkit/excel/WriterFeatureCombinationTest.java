@@ -277,6 +277,7 @@ class WriterFeatureCombinationTest {
             }
             try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(file))) {
                 List<Layout> sheets = layouts(workbook);
+                schemaProblems(workbook).forEach(problem -> failures.add("[" + label + "] " + problem));
                 for (Feature feature : features) {
                     try {
                         feature.check().verify(workbook, sheets);
@@ -327,6 +328,36 @@ class WriterFeatureCombinationTest {
             workbook.finish().writeTo(out);
             return out.toByteArray();
         }
+    }
+
+    // ---- the XML itself
+
+    /**
+     * The parts of the workbook that must be valid SpreadsheetML: its worksheets, its styles and the workbook
+     * part. (Tables, charts and drawings need schemas that POI's lite artifact does not carry.)
+     * <p>
+     * POI writes a color given as three bytes as a six digit {@code rgb}, where the schema asks for eight
+     * (alpha first). Excel reads the short form, as it has for every program that goes through POI's
+     * {@code new XSSFColor(byte[3])}, so that one error is not counted.
+     */
+    private static List<String> schemaProblems(XSSFWorkbook workbook) {
+        java.util.Map<String, org.apache.xmlbeans.XmlObject> parts = new java.util.LinkedHashMap<>();
+        parts.put("the styles", workbook.getStylesSource().getCTStylesheet());
+        parts.put("the workbook", workbook.getCTWorkbook());
+        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+            parts.put("sheet " + i, workbook.getSheetAt(i).getCTWorksheet());
+        }
+        List<String> problems = new ArrayList<>();
+        parts.forEach((name, xml) -> {
+            List<org.apache.xmlbeans.XmlError> errors = new ArrayList<>();
+            xml.validate(new org.apache.xmlbeans.XmlOptions().setErrorListener(errors));
+            for (org.apache.xmlbeans.XmlError error : errors) {
+                if (!String.valueOf(error.getMessage()).contains("ST_UnsignedIntHex")) {
+                    problems.add(name + " is not valid SpreadsheetML: " + error.getMessage());
+                }
+            }
+        });
+        return problems;
     }
 
     // ---- reading back
