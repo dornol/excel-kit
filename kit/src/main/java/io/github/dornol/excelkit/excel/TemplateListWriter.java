@@ -283,7 +283,9 @@ public class TemplateListWriter<T> {
         ExcelWriteSupport.validateUniqueColumnNames(columns);
 
         Cursor cursor = new Cursor(startRow);
-        int headerRowIndex = startRow;
+        // The header row is the one this writer writes, or else the template's own, just above the data. A summary
+        // and afterData start counting from it: taking startRow for it left out the first data row of a summary.
+        int headerRowIndex = writeHeaders ? startRow : startRow - 1;
 
         List<String> tableHeaders = tableOptions == null ? List.of() : columns.stream().map(ExcelColumn::getName).toList();
         if (tableOptions != null && !writeHeaders) {

@@ -51,6 +51,10 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A `summary` on a template list written with `write(...)` (the template already has the headers) left out the first
+  data row: `SUM(B5:B6)` for data in rows 4 to 6. The list took its own start row for the header row; the header is the
+  template's row above it. `afterData` was told the wrong header row too (`SheetContext.getHeaderRowIndex()`).
+  `writeWithHeaders(...)` was not affected.
 - `ExcelWorkbookReader` can read a password-protected workbook. It listed the sheets without decrypting the file,
   so every read failed with `Failed to read sheet names` (`OLE2NotOfficeXmlFileException`), however the sheet readers
   were set up with `password(...)`. The sheets are now listed from a decrypted copy (deleted afterwards), and a wrong
