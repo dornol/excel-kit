@@ -2,11 +2,11 @@ package io.github.dornol.excelkit;
 
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.excel.*;
+import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.ReadResult;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -30,13 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * CellData, ExcelDataType, and ExcelHyperlink.
  */
 class CoverageBoostTest {
-
-    @AfterEach
-    void resetCellDataDefaults() {
-        CellData.setDefaultLocale(Locale.getDefault());
-        CellData.resetDateFormats();
-        CellData.resetDateTimeFormats();
-    }
 
     // -----------------------------------------------------------------------
     // 1. CsvReader — skipColumn, skipColumns, columnAt
@@ -661,8 +654,8 @@ class CoverageBoostTest {
     }
 
     @Test
-    void cellData_setDefaultLocale_nullThrows() {
-        assertThrows(IllegalArgumentException.class, () -> CellData.setDefaultLocale(null));
+    void cellConversionBuilder_localeNullThrows() {
+        assertThrows(NullPointerException.class, () -> CellConversionConfig.builder().locale(null));
     }
 
     @Test

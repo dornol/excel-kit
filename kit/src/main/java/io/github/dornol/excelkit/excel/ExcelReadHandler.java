@@ -251,7 +251,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             XMLReader parser = XMLHelper.newXMLReader();
             SheetHandler sheetHandler = new SheetHandler(consumer, totalRows);
             CellConversionConfig conversionConfig = readOptions.cellConversionConfig();
-            Locale locale = conversionConfig != null ? conversionConfig.locale() : CellData.getDefaultLocale();
+            Locale locale = (conversionConfig != null ? conversionConfig : CellConversionConfig.defaults()).locale();
             XSSFSheetXMLHandler sheetParser = new NumericSheetXmlHandler(styles, ss, sheetHandler,
                     ExcelReadSupport.dataFormatter(reader, locale));
             parser.setContentHandler(sheetParser);

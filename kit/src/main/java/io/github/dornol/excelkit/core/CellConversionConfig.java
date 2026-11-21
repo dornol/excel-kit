@@ -1,6 +1,9 @@
 package io.github.dornol.excelkit.core;
 
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -9,9 +12,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Per-reader conversion settings used by {@link CellData}.
  * <p>
- * Existing no-arg {@code CellData} conversions use global defaults for backward
- * compatibility. Readers can attach an immutable config to every cell so locale
- * and date parsing rules do not have to be changed globally.
+ * A {@code CellData} created without a config uses {@link #defaults()}. Readers attach an
+ * immutable config to every cell, so locale and date parsing rules are scoped to that reader
+ * and never change process-wide state.
  *
  * @since 0.19.0
  */
@@ -28,18 +31,40 @@ public final class CellConversionConfig {
         this.dateTimeFormats = List.copyOf(dateTimeFormats);
     }
 
-    /**
-     * Creates a config from the current global {@link CellData} defaults.
-     */
-    public static CellConversionConfig defaults() {
-        return new CellConversionConfig(
-                CellData.getDefaultLocale(),
-                CellData.getDateFormats(),
-                CellData.getDateTimeFormats());
+    private static final List<DateTimeFormatter> BUILT_IN_DATE_FORMATS = List.of(
+            CellConversionSupport.strictDatePattern("yyyy-MM-dd"),
+            CellConversionSupport.strictDatePattern("yyyy/MM/dd"),
+            CellConversionSupport.strictDatePattern("MM/dd/yy"),
+            CellConversionSupport.strictDatePattern("M/d/yy"),
+            DateTimeFormatter.ISO_LOCAL_DATE);
+    private static final List<DateTimeFormatter> BUILT_IN_DATE_TIME_FORMATS = List.of(
+            dateTimePattern("yyyy-MM-dd"),
+            dateTimePattern("yyyy/MM/dd"),
+            dateTimePattern("MM/dd/yy"),
+            dateTimePattern("M/d/yy"),
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    private static final CellConversionConfig DEFAULTS = new CellConversionConfig(
+            Locale.getDefault(), BUILT_IN_DATE_FORMATS, BUILT_IN_DATE_TIME_FORMATS);
+
+    private static DateTimeFormatter dateTimePattern(String date) {
+        return new DateTimeFormatterBuilder().append(CellConversionSupport.strictDatePattern(date))
+                .optionalStart().appendPattern(" HH:mm")
+                .optionalStart().appendPattern(":ss")
+                .optionalStart().appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true).optionalEnd()
+                .optionalEnd().optionalEnd()
+                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
     }
 
     /**
-     * Creates a mutable builder initialized from current global defaults.
+     * Returns the built-in settings: the JVM default locale at class initialization and the
+     * built-in date and date-time patterns. The returned instance is immutable.
+     */
+    public static CellConversionConfig defaults() {
+        return DEFAULTS;
+    }
+
+    /**
+     * Creates a mutable builder initialized from the built-in {@linkplain #defaults() defaults}.
      */
     public static Builder builder() {
         return new Builder(defaults());

@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.CellData;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -574,44 +574,46 @@ class CellDataTest {
     @Nested
     class DateFormatTests {
 
-        @AfterEach
-        void resetFormats() {
-            CellData.resetDateFormats();
-            CellData.resetDateTimeFormats();
+        private CellConversionConfig withDateFormat(String pattern) {
+            return CellConversionConfig.builder().addDateFormat(pattern).build();
         }
 
         @Test
         void addDateFormat_shouldBeUsableForParsing() {
-            CellData.addDateFormat("dd.MM.yyyy");
-            LocalDate result = new CellData(0, "25.12.2024").asLocalDate();
+            CellConversionConfig config = withDateFormat("dd.MM.yyyy");
+            LocalDate result = new CellData(0, "25.12.2024", config).asLocalDate();
             assertEquals(LocalDate.of(2024, 12, 25), result);
         }
 
         @Test
-        void resetDateFormats_shouldRestoreDefaults() {
-            int before = CellData.getDateFormats().size();
-            CellData.addDateFormat("dd.MM.yyyy");
-            assertEquals(before + 1, CellData.getDateFormats().size());
+        void addDateFormat_isScopedToItsConfig() {
+            withDateFormat("dd.MM.yyyy");
+            assertThrows(DateTimeParseException.class, () -> new CellData(0, "25.12.2024").asLocalDate());
+        }
 
-            CellData.resetDateFormats();
-            assertEquals(before, CellData.getDateFormats().size());
+        @Test
+        void addDateFormat_addsOneFormatInFrontOfTheBuiltInOnes() {
+            CellConversionConfig defaults = CellConversionConfig.defaults();
+            CellConversionConfig config = withDateFormat("dd.MM.yyyy");
+            assertEquals(defaults.dateFormats().size() + 1, config.dateFormats().size());
+            assertEquals(defaults.dateFormats().size(), CellConversionConfig.defaults().dateFormats().size());
         }
 
         @Test
         void addDateTimeFormat_shouldBeUsableForParsing() {
-            CellData.addDateTimeFormat("dd.MM.yyyy HH:mm:ss");
-            LocalDateTime result = new CellData(0, "25.12.2024 10:30:00").asLocalDateTime();
+            CellConversionConfig config = CellConversionConfig.builder()
+                    .addDateTimeFormat("dd.MM.yyyy HH:mm:ss").build();
+            LocalDateTime result = new CellData(0, "25.12.2024 10:30:00", config).asLocalDateTime();
             assertEquals(LocalDateTime.of(2024, 12, 25, 10, 30, 0), result);
         }
 
         @Test
-        void resetDateTimeFormats_shouldRestoreDefaults() {
-            int before = CellData.getDateTimeFormats().size();
-            CellData.addDateTimeFormat("dd.MM.yyyy HH:mm:ss");
-            assertEquals(before + 1, CellData.getDateTimeFormats().size());
-
-            CellData.resetDateTimeFormats();
-            assertEquals(before, CellData.getDateTimeFormats().size());
+        void addDateTimeFormat_addsOneFormatInFrontOfTheBuiltInOnes() {
+            CellConversionConfig defaults = CellConversionConfig.defaults();
+            CellConversionConfig config = CellConversionConfig.builder()
+                    .addDateTimeFormat("dd.MM.yyyy HH:mm:ss").build();
+            assertEquals(defaults.dateTimeFormats().size() + 1, config.dateTimeFormats().size());
+            assertEquals(defaults.dateTimeFormats().size(), CellConversionConfig.defaults().dateTimeFormats().size());
         }
 
         @Test
@@ -642,26 +644,21 @@ class CellDataTest {
     @Nested
     class LocaleTests {
 
-        @AfterEach
-        void resetLocale() {
-            CellData.setDefaultLocale(Locale.getDefault());
+        @Test
+        void defaults_useJvmDefaultLocale() {
+            assertEquals(Locale.getDefault(), CellConversionConfig.defaults().locale());
         }
 
         @Test
-        void getDefaultLocale_returnsJvmDefaultByDefault() {
-            CellData.setDefaultLocale(Locale.getDefault());
-            assertEquals(Locale.getDefault(), CellData.getDefaultLocale());
+        void configuredLocale_isUsedByNoArgNumberParsing() {
+            CellConversionConfig german = CellConversionConfig.builder().locale(Locale.GERMANY).build();
+            assertEquals(new java.math.BigDecimal("1234.56"),
+                    new CellData(0, "1.234,56", german).asBigDecimal());
         }
 
         @Test
-        void setDefaultLocale_changesLocale() {
-            CellData.setDefaultLocale(Locale.US);
-            assertEquals(Locale.US, CellData.getDefaultLocale());
-        }
-
-        @Test
-        void setDefaultLocale_null_throws() {
-            assertThrows(IllegalArgumentException.class, () -> CellData.setDefaultLocale(null));
+        void builder_nullLocale_throws() {
+            assertThrows(NullPointerException.class, () -> CellConversionConfig.builder().locale(null));
         }
     }
 }

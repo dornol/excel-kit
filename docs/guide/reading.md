@@ -404,20 +404,13 @@ UUID id = cell.as(UUID::fromString, DEFAULT_UUID);
 int qty = cell.asInt(0);  // 0 if blank
 ```
 
-**Custom date formats:**
-```java
-CellData.addDateFormat("dd/MM/yyyy");
-CellData.addDateTimeFormat("dd/MM/yyyy HH:mm");
-CellData.resetDateFormats();
-```
+**Number parsing locale and custom date formats:**
 
-**Number parsing locale:**
-```java
-CellData.setDefaultLocale(Locale.US);
-```
+Conversion settings are scoped to a reader. `CellData` without an explicit config uses
+`CellConversionConfig.defaults()` (the JVM default locale and the built-in date patterns).
 
 Excel readers use the same locale for cell display formatting and numeric
-conversion. Prefer reader-scoped conversion settings in server applications:
+conversion. Configure the locale and extra date patterns per reader:
 
 ```java
 CsvReader.<Order>mapping(row -> new Order(

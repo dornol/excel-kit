@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Breaking:** removed the process-wide `CellData` conversion defaults: `setDefaultLocale`,
+  `getDefaultLocale`, `addDateFormat`, `addDateTimeFormat`, `getDateFormats`,
+  `getDateTimeFormats`, `resetDateFormats` and `resetDateTimeFormats`. Use
+  `reader.cellConversion(c -> c.locale(...).addDateFormat(...))` instead. A `CellData` without a
+  config, and a reader without `cellConversion(...)`, use the immutable
+  `CellConversionConfig.defaults()` (JVM default locale, built-in date patterns).
 - `ExcelKitUpload.excel/csv(file, schema, supplier[, validator])` now check the content signature
   like the `ReadLimits` overloads, so a file whose content does not match throws
   `ExcelKitUploadException` instead of a reader-specific failure.

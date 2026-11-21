@@ -39,96 +39,11 @@ public final class CellData {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
     private final int columnIndex;
     private final String formattedValue;
-    private final @Nullable CellConversionConfig conversionConfig;
+    private final CellConversionConfig conversionConfig;
     private final @Nullable String rawNumericValue;
 
     /**
-     * Returns the default locale used by no-arg number parsing methods.
-     *
-     * @return The current default locale
-     */
-    public static Locale getDefaultLocale() {
-        return LegacyCellDefaults.locale();
-    }
-
-    /**
-     * Sets the default locale for number parsing.
-     * Affects all subsequent calls to {@link #asNumber()}, {@link #asLong()},
-     * {@link #asInt()}, {@link #asDouble()}, {@link #asFloat()}, and {@link #asBigDecimal()}.
-     * <p>
-     * The default value is {@link Locale#getDefault()}.
-     *
-     * @param locale The locale to use as default (must not be null)
-     */
-    public static void setDefaultLocale(Locale locale) {
-        if (locale == null) throw new IllegalArgumentException("locale must not be null");
-        LegacyCellDefaults.locale(locale);
-    }
-
-    /**
-     * Adds a custom date format pattern for {@link #asLocalDate()}.
-     * The pattern is inserted at the beginning of the list so it takes priority over built-in patterns.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @param pattern the date pattern (e.g., "dd.MM.yyyy")
-     */
-    public static void addDateFormat(String pattern) {
-        LegacyCellDefaults.addDate(pattern);
-    }
-
-    /**
-     * Adds a custom date-time format pattern for {@link #asLocalDateTime()}.
-     * The pattern is inserted at the beginning of the list so it takes priority over built-in patterns.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @param pattern the date-time pattern (e.g., "dd.MM.yyyy HH:mm:ss")
-     */
-    public static void addDateTimeFormat(String pattern) {
-        LegacyCellDefaults.addDateTime(pattern);
-    }
-
-    /**
-     * Returns an unmodifiable view of the currently registered date format patterns.
-     *
-     * @return the list of date format patterns
-     */
-    public static List<DateTimeFormatter> getDateFormats() {
-        return LegacyCellDefaults.dates();
-    }
-
-    /**
-     * Returns an unmodifiable view of the currently registered date-time format patterns.
-     *
-     * @return the list of date-time format patterns
-     */
-    public static List<DateTimeFormatter> getDateTimeFormats() {
-        return LegacyCellDefaults.dateTimes();
-    }
-
-    /**
-     * Resets the date format patterns to the built-in defaults.
-     * Removes any custom patterns previously added via {@link #addDateFormat(String)}.
-     * <p>
-     * This method is thread-safe.
-     */
-    public static void resetDateFormats() {
-        LegacyCellDefaults.resetDates();
-    }
-
-    /**
-     * Resets the date-time format patterns to the built-in defaults.
-     * Removes any custom patterns previously added via {@link #addDateTimeFormat(String)}.
-     * <p>
-     * This method is thread-safe.
-     */
-    public static void resetDateTimeFormats() {
-        LegacyCellDefaults.resetDateTimes();
-    }
-
-    /**
-     * Creates cell data using global conversion defaults.
+     * Creates cell data using the built-in {@linkplain CellConversionConfig#defaults() conversion defaults}.
      *
      * @param columnIndex    the column index of the cell (0-based)
      * @param formattedValue the formatted string value extracted from Excel
@@ -142,7 +57,7 @@ public final class CellData {
      *
      * @param columnIndex      the column index of the cell (0-based)
      * @param formattedValue   the formatted string value extracted from Excel
-     * @param conversionConfig conversion settings, or {@code null} to use global defaults
+     * @param conversionConfig conversion settings, or {@code null} to use {@link CellConversionConfig#defaults()}
      * @since 0.19.0
      */
     public CellData(int columnIndex, @Nullable String formattedValue,
@@ -155,7 +70,7 @@ public final class CellData {
      *
      * @param columnIndex      the column index of the cell (0-based)
      * @param formattedValue   the formatted string value
-     * @param conversionConfig conversion settings, or {@code null} to use global defaults
+     * @param conversionConfig conversion settings, or {@code null} to use {@link CellConversionConfig#defaults()}
      * @param rawNumericValue  the stored numeric value in locale-independent notation, or {@code null}
      */
     public CellData(int columnIndex, @Nullable String formattedValue,
@@ -168,7 +83,7 @@ public final class CellData {
         }
         this.columnIndex = columnIndex;
         this.formattedValue = formattedValue;
-        this.conversionConfig = conversionConfig;
+        this.conversionConfig = conversionConfig != null ? conversionConfig : CellConversionConfig.defaults();
         this.rawNumericValue = rawNumericValue;
     }
 
@@ -207,15 +122,15 @@ public final class CellData {
     }
 
     private Locale effectiveLocale() {
-        return conversionConfig != null ? conversionConfig.locale() : LegacyCellDefaults.locale();
+        return conversionConfig.locale();
     }
 
     private List<DateTimeFormatter> effectiveDateFormats() {
-        return conversionConfig != null ? conversionConfig.dateFormats() : LegacyCellDefaults.dates();
+        return conversionConfig.dateFormats();
     }
 
     private List<DateTimeFormatter> effectiveDateTimeFormats() {
-        return conversionConfig != null ? conversionConfig.dateTimeFormats() : LegacyCellDefaults.dateTimes();
+        return conversionConfig.dateTimeFormats();
     }
 
     /**
@@ -242,11 +157,11 @@ public final class CellData {
     }
 
     /**
-     * Parses the value as a {@link Number} using the configured default locale.
+     * Parses the value as a {@link Number} using the locale of this cell's {@link CellConversionConfig}.
      * Returns {@code null} if the value is empty or blank.
      *
      * @return parsed number, or {@code null} if blank
-     * @see #setDefaultLocale(Locale)
+     * @see CellConversionConfig#locale()
      */
     public @Nullable Number asNumber() {
         return asNumber(effectiveLocale());
