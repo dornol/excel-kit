@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.core;
 
+import java.util.Objects;
+
 /** Raised when a defensive reader limit is exceeded. */
 public final class ReadLimitExceededException extends ExcelKitException {
     private static final long serialVersionUID = 1L;
@@ -10,7 +12,7 @@ public final class ReadLimitExceededException extends ExcelKitException {
     private final long actual;
     public ReadLimitExceededException(Limit limit, long configured, long actual) {
         super("Read limit exceeded: " + limit + " configured=" + configured + ", actual=" + actual);
-        this.limit = java.util.Objects.requireNonNull(limit, "limit cannot be null");
+        this.limit = Objects.requireNonNull(limit, "limit cannot be null");
         this.configured = configured;
         this.actual = actual;
     }

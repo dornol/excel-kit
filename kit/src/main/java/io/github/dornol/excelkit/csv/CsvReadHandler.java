@@ -4,24 +4,21 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.CellData;
-import io.github.dornol.excelkit.core.CellConversionConfig;
-import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.ReadStoppedException;
 import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.core.RowData;
 import io.github.dornol.excelkit.core.RowError;
-import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
@@ -31,11 +28,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -169,7 +163,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         if (cause instanceof CsvFormatException) {
             return "Failed to read CSV: " + cause.getMessage();
         }
-        if (cause instanceof java.nio.charset.CharacterCodingException) {
+        if (cause instanceof CharacterCodingException) {
             return "Failed to read CSV: the input is not valid " + charset.name() + " text. If the file uses another "
                     + "encoding (EUC-KR, windows-1252, UTF-16, ...), set it with charset(...); " + cause.getMessage();
         }

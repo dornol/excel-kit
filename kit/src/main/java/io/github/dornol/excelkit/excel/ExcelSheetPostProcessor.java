@@ -5,6 +5,7 @@ import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.util.CellRangeAddressList;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCols;
 import java.util.List;
 
 /** Applies final sheet features after streaming rows are complete. */
@@ -48,7 +49,7 @@ final class ExcelSheetPostProcessor {
 
     /** Whether the template gave the column (0-based) a width of its own: a {@code <col>} with customWidth. */
     private static boolean templateSetsWidth(
-            org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCols[] groups, int column) {
+            CTCols[] groups, int column) {
         for (var group : groups) {
             for (var col : group.getColArray()) {
                 if (col.getCustomWidth() && col.getMin() <= column + 1 && column + 1 <= col.getMax()) return true;

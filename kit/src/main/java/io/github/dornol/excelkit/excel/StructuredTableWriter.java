@@ -5,6 +5,7 @@ import org.apache.poi.ss.util.AreaReference;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +17,7 @@ final class StructuredTableWriter {
      * Called when a write is about to roll over to another sheet: a table that cannot continue on the next
      * sheet has to fail now, not after the rest of the stream has been written.
      */
-    static void requireRolloverAllowed(@org.jspecify.annotations.Nullable TableOptions options) {
+    static void requireRolloverAllowed(@Nullable TableOptions options) {
         if (options != null && !options.perRolloverSheet()) {
             throw new ExcelWriteException("Structured table '" + options.name()
                     + "' spans multiple rollover sheets; enable perRolloverSheet");

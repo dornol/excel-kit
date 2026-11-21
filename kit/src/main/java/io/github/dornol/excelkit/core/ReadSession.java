@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -16,7 +17,7 @@ public interface ReadSession<T> extends AutoCloseable {
     void readWhile(Predicate<ReadResult<T>> predicate);
 
     default List<T> readAll() {
-        List<T> rows = new java.util.ArrayList<>();
+        List<T> rows = new ArrayList<>();
         readStrict(rows::add);
         return List.copyOf(rows);
     }

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Shared per-sheet configuration used by both {@link ExcelWriter} and {@link ExcelSheetWriter}.
@@ -81,7 +82,7 @@ class SheetConfig<T> {
     @Nullable Map<String, Integer> namedRanges;
     ExcelWriteErrorPolicy writeErrorPolicy = ExcelWriteErrorPolicy.FAIL_FAST;
 
-    record RowStyleEntry<T>(java.util.function.Predicate<T> predicate, RowStyleConfig style) {}
+    record RowStyleEntry<T>(Predicate<T> predicate, RowStyleConfig style) {}
 
     void putGroupComment(List<String> path, ExcelCellComment comment) {
         if (groupComments == null) {

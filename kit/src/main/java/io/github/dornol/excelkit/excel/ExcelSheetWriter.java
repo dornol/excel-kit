@@ -13,10 +13,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 
 /**
@@ -70,7 +72,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
      * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function) {
-        java.util.Objects.requireNonNull(function, "function cannot be null");
+        Objects.requireNonNull(function, "function cannot be null");
         columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
         return this;
     }
@@ -84,7 +86,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
      * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
-        java.util.Objects.requireNonNull(function, "function cannot be null");
+        Objects.requireNonNull(function, "function cannot be null");
         ColumnConfig<T> config = new ColumnConfig<>();
         cfg.accept(config);
         columns.add(buildColumn(name, (r, c) -> function.apply(r), config));
@@ -202,7 +204,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     public ExcelSheetWriter<T> table(TableOptions options) {
-        StructuredTableWriter.validateName(java.util.Objects.requireNonNull(options, "options cannot be null").name());
+        StructuredTableWriter.validateName(Objects.requireNonNull(options, "options cannot be null").name());
         this.tableOptions = options;
         return this;
     }
@@ -217,7 +219,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
      * @param stream the data stream to write
      */
     public void write(Stream<T> stream) {
-        java.util.Objects.requireNonNull(stream, "stream cannot be null");
+        Objects.requireNonNull(stream, "stream cannot be null");
         if (written) {
             throw new ExcelWriteException("write() has already been called on this sheet");
         }
@@ -298,8 +300,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
     /** Writes rows from an Iterable without copying them. */
     public void write(Iterable<T> rows) {
-        java.util.Objects.requireNonNull(rows, "rows cannot be null");
-        write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
+        Objects.requireNonNull(rows, "rows cannot be null");
+        write(StreamSupport.stream(rows.spliterator(), false));
     }
 
     private SXSSFSheet createRolloverSheet(int rolloverIndex) {
@@ -316,7 +318,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     private ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
-        java.util.Objects.requireNonNull(function, "function cannot be null");
+        Objects.requireNonNull(function, "function cannot be null");
         ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
         if (cfg.defaultStyleConfig != null) {
             c.applyDefaults(cfg.defaultStyleConfig);

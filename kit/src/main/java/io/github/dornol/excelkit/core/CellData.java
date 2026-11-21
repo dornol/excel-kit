@@ -5,10 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.regex.Pattern;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

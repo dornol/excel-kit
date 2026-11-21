@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
@@ -20,13 +21,18 @@ import java.nio.file.Path;
 import io.github.dornol.excelkit.core.ProgressCallback;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * CSV writer for streaming large datasets into a temporary file.
@@ -152,7 +158,7 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> charset(Charset charset) {
-        this.charset = java.util.Objects.requireNonNull(charset, "charset cannot be null");
+        this.charset = Objects.requireNonNull(charset, "charset cannot be null");
         return this;
     }
 
@@ -178,7 +184,7 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> afterData(CsvAfterDataWriter afterDataWriter) {
-        this.afterDataWriter = java.util.Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
+        this.afterDataWriter = Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
         return this;
     }
 
@@ -190,7 +196,7 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
-        var column = new CsvColumn<>(name, java.util.Objects.requireNonNull(function, "function cannot be null"));
+        var column = new CsvColumn<>(name, Objects.requireNonNull(function, "function cannot be null"));
         this.columns.add(column);
         return this;
     }
@@ -203,7 +209,7 @@ public class CsvWriter<T> {
      * @return This writer instance
      */
     public CsvWriter<T> column(String name, Function<T, @Nullable Object> function) {
-        java.util.Objects.requireNonNull(function, "function cannot be null");
+        Objects.requireNonNull(function, "function cannot be null");
         return column(name, (r, c) -> function.apply(r));
     }
 
@@ -278,7 +284,7 @@ public class CsvWriter<T> {
             throw new IllegalArgumentException("progress interval must be positive");
         }
         this.progressInterval = interval;
-        this.progressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
+        this.progressCallback = Objects.requireNonNull(callback, "callback cannot be null");
         return this;
     }
 
@@ -292,7 +298,7 @@ public class CsvWriter<T> {
      * @since 0.9.2
      */
     public CsvWriter<T> quoting(CsvQuoting quoting) {
-        this.quoting = java.util.Objects.requireNonNull(quoting, "quoting cannot be null");
+        this.quoting = Objects.requireNonNull(quoting, "quoting cannot be null");
         return this;
     }
 
@@ -359,7 +365,7 @@ public class CsvWriter<T> {
      * @return A handler for streaming the resulting CSV
      */
     public CsvHandler write(Stream<T> stream) {
-        java.util.Objects.requireNonNull(stream, "stream cannot be null");
+        Objects.requireNonNull(stream, "stream cannot be null");
         CsvWriteOptions<T> options = snapshotOptions();
         if (options.columns().isEmpty()) {
             throw new CsvWriteException("columns setting required");
@@ -382,13 +388,13 @@ public class CsvWriter<T> {
     /** Writes rows from an Iterable without copying them. */
     public CsvHandler write(Iterable<T> rows) {
         Objects.requireNonNull(rows, "rows cannot be null");
-        return write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
+        return write(StreamSupport.stream(rows.spliterator(), false));
     }
 
     private void cleanup(Path tempDir) {
         try {
             try (var files = Files.walk(tempDir)) {
-                files.sorted(java.util.Comparator.reverseOrder())
+                files.sorted(Comparator.reverseOrder())
                         .forEach(path -> {
                             try {
                                 Files.deleteIfExists(path);
@@ -482,7 +488,7 @@ public class CsvWriter<T> {
 
     /** Unicode encoders only fail on unpaired surrogates; every other charset can lack characters. */
     private static boolean encodingCanFail(Charset charset) {
-        return !charset.name().toUpperCase(java.util.Locale.ROOT).startsWith("UTF");
+        return !charset.name().toUpperCase(Locale.ROOT).startsWith("UTF");
     }
 
     /**
@@ -495,7 +501,7 @@ public class CsvWriter<T> {
         for (int i = 0; i < field.length(); ) {
             int codePoint = field.codePointAt(i);
             if (!probe.canEncode(new String(Character.toChars(codePoint)))) {
-                throw new CsvWriteException(String.format(java.util.Locale.ROOT,
+                throw new CsvWriteException(String.format(Locale.ROOT,
                         "Cannot write CSV %s: character '%s' (U+%04X) cannot be encoded in %s",
                         where, new String(Character.toChars(codePoint)), codePoint,
                         options.charset()));
@@ -506,11 +512,11 @@ public class CsvWriter<T> {
     }
 
     /** Remembers the first failure of the underlying writer, which {@link PrintWriter} would swallow. */
-    private static final class FailureRecordingWriter extends java.io.Writer {
-        private final java.io.Writer delegate;
+    private static final class FailureRecordingWriter extends Writer {
+        private final Writer delegate;
         private @Nullable IOException failure;
 
-        FailureRecordingWriter(java.io.Writer delegate) {
+        FailureRecordingWriter(Writer delegate) {
             this.delegate = delegate;
         }
 
@@ -634,7 +640,7 @@ public class CsvWriter<T> {
     }
 
     private void validateUniqueColumnNames() {
-        java.util.Set<String> seen = new java.util.HashSet<>();
+        Set<String> seen = new HashSet<>();
         for (CsvColumn<T> col : columns) {
             if (!seen.add(col.getName())) {
                 throw new CsvWriteException("Duplicate column name: '" + col.getName() + "'");

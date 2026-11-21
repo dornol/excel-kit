@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.core;
 
+import java.util.Objects;
+
 /** Raised when workbook content violates a configured security policy. */
 public final class ReadSecurityException extends ExcelKitException {
     private static final long serialVersionUID = 1L;
@@ -12,7 +14,7 @@ public final class ReadSecurityException extends ExcelKitException {
     /** Creates an exception with a machine-readable rejection reason. */
     public ReadSecurityException(Reason reason, String message) {
         super(message);
-        this.reason = java.util.Objects.requireNonNull(reason, "reason cannot be null");
+        this.reason = Objects.requireNonNull(reason, "reason cannot be null");
     }
     /** Returns the rule that rejected the workbook. */
     /**
@@ -24,7 +26,7 @@ public final class ReadSecurityException extends ExcelKitException {
      */
     public ReadSecurityException(Reason reason, String message, Throwable cause) {
         super(message, cause);
-        this.reason = java.util.Objects.requireNonNull(reason, "reason cannot be null");
+        this.reason = Objects.requireNonNull(reason, "reason cannot be null");
     }
     public Reason reason() { return reason; }
 }

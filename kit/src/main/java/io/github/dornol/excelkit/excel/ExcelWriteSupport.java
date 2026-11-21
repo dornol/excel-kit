@@ -5,9 +5,6 @@ import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.CellRangeAddressList;
-import org.apache.poi.ss.util.AreaReference;
-import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -18,11 +15,12 @@ import org.apache.poi.xssf.usermodel.XSSFFont;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.Set;
 
 /**
  * Package-private utility methods shared by {@link ExcelWriter} and {@link ExcelSheetWriter}
@@ -42,7 +40,7 @@ class ExcelWriteSupport {
      * or {@code rowStyle} function returns needs a style of its own, so a function with many distinct
      * results runs into this.
      */
-    static final int MAX_CELL_STYLES = org.apache.poi.ss.SpreadsheetVersion.EXCEL2007.getMaxCellStyles();
+    static final int MAX_CELL_STYLES = SpreadsheetVersion.EXCEL2007.getMaxCellStyles();
 
     /**
      * Creates a style for a color or row style, or says why the workbook cannot take another one:
@@ -279,7 +277,7 @@ class ExcelWriteSupport {
                     sheet.addMergedRegion(new CellRangeAddress(startRow + r, startRow + r, start, c - 1));
                 }
                 if (groupComments != null && !groupComments.isEmpty()) {
-                    List<String> path = new java.util.ArrayList<>(r + 1);
+                    List<String> path = new ArrayList<>(r + 1);
                     boolean valid = true;
                     for (int k = 0; k <= r; k++) {
                         String s = grid[k][start];
@@ -463,7 +461,7 @@ class ExcelWriteSupport {
     }
 
     static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
-        java.util.Set<String> seen = new java.util.HashSet<>();
+        Set<String> seen = new HashSet<>();
         for (ExcelColumn<T> col : columns) {
             if (!seen.add(col.getName())) {
                 throw new ExcelWriteException("Duplicate column name: '" + col.getName() + "'");

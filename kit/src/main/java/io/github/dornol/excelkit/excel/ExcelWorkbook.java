@@ -7,9 +7,11 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -151,7 +153,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook documentProperty(String key, String value) {
-        java.util.Objects.requireNonNull(value, "value cannot be null");
+        Objects.requireNonNull(value, "value cannot be null");
         ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
@@ -242,7 +244,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      */
     public ExcelWorkbook headerFontName(String fontName) {
-        this.headerFontName = java.util.Objects.requireNonNull(fontName, "fontName cannot be null");
+        this.headerFontName = Objects.requireNonNull(fontName, "fontName cannot be null");
         this.headerStyle = rebuildHeaderStyle();
         return this;
     }
@@ -269,7 +271,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      * @since 0.17.0
      */
-    public ExcelWorkbook headerStyle(java.util.function.Consumer<HeaderStyleConfig> configurer) {
+    public ExcelWorkbook headerStyle(Consumer<HeaderStyleConfig> configurer) {
         HeaderStyleConfig config = new HeaderStyleConfig();
         configurer.accept(config);
         this.headerStyleConfig = config;
@@ -320,7 +322,7 @@ public class ExcelWorkbook implements AutoCloseable {
         if (!finished) {
             try {
                 ExcelWorkbookSupport.close(wb);
-            } catch (RuntimeException | java.io.IOException e) {
+            } catch (RuntimeException | IOException e) {
                 log.warn("Failed to close workbook", e);
             }
         }

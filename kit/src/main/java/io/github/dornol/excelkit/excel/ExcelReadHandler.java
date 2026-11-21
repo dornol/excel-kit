@@ -2,13 +2,10 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
-import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.ReadAbortException;
-import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.RowError;
 import io.github.dornol.excelkit.core.RowData;
@@ -17,7 +14,6 @@ import io.github.dornol.excelkit.core.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.ReadSecurityException;
 import io.github.dornol.excelkit.core.CellError;
 import io.github.dornol.excelkit.core.TempResourceCreator;
-import jakarta.validation.Validator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Comment;
@@ -46,11 +42,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -367,7 +360,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
         @Override
         public void startElement(String uri, String localName, String qName,
-                                 org.xml.sax.Attributes attributes) {
+                                 Attributes attributes) {
             if ("row".equals(qName) || "row".equals(localName)) {
                 // Rows without cells are omitted from the XML, so the row's own number is authoritative.
                 String reference = attributes.getValue("r");

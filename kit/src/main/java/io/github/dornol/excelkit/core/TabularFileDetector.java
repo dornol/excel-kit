@@ -2,12 +2,14 @@ package io.github.dornol.excelkit.core;
 
 import org.jspecify.annotations.Nullable;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 /** Signature-based file type detection that does not depend on filename extensions. */
 public final class TabularFileDetector {
@@ -28,9 +30,9 @@ public final class TabularFileDetector {
     }
 
     public static TabularDetectionResult detectDetailed(InputStreamSource source, int sampleBytes) {
-        java.util.Objects.requireNonNull(source, "source cannot be null");
+        Objects.requireNonNull(source, "source cannot be null");
         try (InputStream input = source.openStream()) {
-            return detectDetailed(new java.io.BufferedInputStream(input), sampleBytes);
+            return detectDetailed(new BufferedInputStream(input), sampleBytes);
         } catch (IOException e) {
             throw new ExcelKitException("Failed to inspect input", e);
         }
@@ -38,7 +40,7 @@ public final class TabularFileDetector {
 
     public static TabularDetectionResult detectDetailed(Path path) {
         try (InputStream input = Files.newInputStream(path)) {
-            return detectDetailed(new java.io.BufferedInputStream(input));
+            return detectDetailed(new BufferedInputStream(input));
         } catch (IOException e) {
             throw new ExcelKitException("Failed to inspect input", e);
         }
@@ -72,7 +74,7 @@ public final class TabularFileDetector {
     public static TabularDetectionResult detectDetailed(InputStream input, int sampleBytes,
                                                          @Nullable Charset configuredCharset,
                                                          char quoteChar, char escapeChar, int headerRowIndex) {
-        java.util.Objects.requireNonNull(input, "input cannot be null");
+        Objects.requireNonNull(input, "input cannot be null");
         if (sampleBytes < 64) throw new IllegalArgumentException("sampleBytes must be at least 64");
         if (headerRowIndex < 0) throw new IllegalArgumentException("headerRowIndex cannot be negative");
         if (!input.markSupported()) throw new IllegalArgumentException("input must support mark/reset");

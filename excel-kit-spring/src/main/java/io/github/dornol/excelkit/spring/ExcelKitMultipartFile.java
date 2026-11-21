@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.core.TabularFileDetector;
 import io.github.dornol.excelkit.core.TabularFileType;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -100,7 +102,7 @@ public final class ExcelKitMultipartFile {
         byte[] prefix = readPrefix(file, CONTENT_PREFIX_BYTES);
         if (extension.equals("xlsx") || extension.equals("xlsm")) {
             // The signature of a ZIP package, not just "PK": a text file that starts with those letters is no workbook.
-            if (TabularFileDetector.detect(new java.io.ByteArrayInputStream(prefix)) != TabularFileType.XLSX) {
+            if (TabularFileDetector.detect(new ByteArrayInputStream(prefix)) != TabularFileType.XLSX) {
                 throw new ExcelKitUploadException("Upload file content is not a valid XLSX/XLSM package");
             }
             return file;
@@ -127,7 +129,7 @@ public final class ExcelKitMultipartFile {
         }
         // A workbook (or any binary) with a .csv name is not text CSV; the detector knows the signatures and
         // tells text from binary by its share of control characters.
-        if (TabularFileDetector.detect(new java.io.ByteArrayInputStream(prefix)) != TabularFileType.CSV) {
+        if (TabularFileDetector.detect(new ByteArrayInputStream(prefix)) != TabularFileType.CSV) {
             throw new ExcelKitUploadException("Upload file content is not text CSV");
         }
         var decoder = StandardCharsets.UTF_8.newDecoder()
@@ -147,7 +149,7 @@ public final class ExcelKitMultipartFile {
         // Sorted, so the message that lists the allowed extensions reads the same in every JVM.
         Set<String> normalized = Arrays.stream(extensions)
                 .map(ExcelKitMultipartFile::normalizeExtension)
-                .collect(Collectors.toCollection(java.util.TreeSet::new));
+                .collect(Collectors.toCollection(TreeSet::new));
         if (normalized.isEmpty()) {
             throw new IllegalArgumentException("extensions must not be empty");
         }

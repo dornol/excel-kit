@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.ArrayList;
 import java.util.function.Function;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -359,19 +360,19 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     /** Reads all successful rows into a list and fails on the first mapping or validation error. */
     public List<T> readAll(InputStream inputStream) {
-        List<T> rows = new java.util.ArrayList<>();
+        List<T> rows = new ArrayList<>();
         readStrict(inputStream, rows::add);
         return List.copyOf(rows);
     }
 
     public List<T> readAll(Path path) {
-        List<T> rows = new java.util.ArrayList<>();
+        List<T> rows = new ArrayList<>();
         readStrict(path, rows::add);
         return List.copyOf(rows);
     }
 
     public List<T> readAll(InputStreamSource source) {
-        List<T> rows = new java.util.ArrayList<>();
+        List<T> rows = new ArrayList<>();
         readStrict(source, rows::add);
         return List.copyOf(rows);
     }

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -93,7 +94,7 @@ public final class ExcelKitTemplateResponse {
                             + String.join(", ", column.readHeaderNames().subList(1, column.readHeaderNames().size()))
                             + ")";
                 })
-                .collect(java.util.stream.Collectors.joining(", "));
+                .collect(Collectors.joining(", "));
         return joined.isBlank() ? "(none)" : joined;
     }
 }

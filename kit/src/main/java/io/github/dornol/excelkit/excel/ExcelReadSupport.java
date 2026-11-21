@@ -1,5 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.poifs.crypt.Decryptor;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.util.CellReference;
@@ -17,6 +20,10 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 import org.jspecify.annotations.Nullable;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -36,16 +43,16 @@ class ExcelReadSupport {
      *
      * @throws ExcelReadException if the password is wrong
      */
-    static void decrypt(java.nio.file.Path encrypted, String password, java.nio.file.Path target) throws Exception {
-        try (org.apache.poi.poifs.filesystem.POIFSFileSystem fs =
-                     new org.apache.poi.poifs.filesystem.POIFSFileSystem(encrypted.toFile(), true)) {
-            org.apache.poi.poifs.crypt.EncryptionInfo info = new org.apache.poi.poifs.crypt.EncryptionInfo(fs);
-            org.apache.poi.poifs.crypt.Decryptor decryptor = org.apache.poi.poifs.crypt.Decryptor.getInstance(info);
+    static void decrypt(Path encrypted, String password, Path target) throws Exception {
+        try (POIFSFileSystem fs =
+                     new POIFSFileSystem(encrypted.toFile(), true)) {
+            EncryptionInfo info = new EncryptionInfo(fs);
+            Decryptor decryptor = Decryptor.getInstance(info);
             if (!decryptor.verifyPassword(password)) {
                 throw new ExcelReadException("Invalid password for encrypted Excel file");
             }
-            try (java.io.InputStream decrypted = decryptor.getDataStream(fs);
-                 java.io.OutputStream out = java.nio.file.Files.newOutputStream(target)) {
+            try (InputStream decrypted = decryptor.getDataStream(fs);
+                 OutputStream out = Files.newOutputStream(target)) {
                 decrypted.transferTo(out);
             }
         }

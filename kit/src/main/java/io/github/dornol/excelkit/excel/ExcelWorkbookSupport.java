@@ -1,17 +1,22 @@
 package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /** Workbook-level operations independent of sheet row rendering. */
 final class ExcelWorkbookSupport {
 
     /** The streaming workbooks that were created with a shared strings table. */
-    private static final java.util.Map<SXSSFWorkbook, Boolean> SHARED_STRINGS =
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    private static final Map<SXSSFWorkbook, Boolean> SHARED_STRINGS =
+            Collections.synchronizedMap(new WeakHashMap<>());
 
     /** Creates the streaming workbook a writer works on, and remembers whether it keeps shared strings. */
     static SXSSFWorkbook streamingWorkbook(StreamingOptions streaming) {
@@ -22,7 +27,7 @@ final class ExcelWorkbookSupport {
     }
 
     /** Creates the streaming workbook of a template writer: it wraps the template and keeps shared strings. */
-    static SXSSFWorkbook templateStreamingWorkbook(org.apache.poi.xssf.usermodel.XSSFWorkbook template, int rowAccessWindowSize) {
+    static SXSSFWorkbook templateStreamingWorkbook(XSSFWorkbook template, int rowAccessWindowSize) {
         SXSSFWorkbook workbook = new SXSSFWorkbook(template, rowAccessWindowSize, false, true);
         SHARED_STRINGS.put(workbook, Boolean.TRUE);
         return workbook;
@@ -44,7 +49,7 @@ final class ExcelWorkbookSupport {
      * {@code dispose()} from {@code close()}. Calling {@code dispose()} here keeps every supported
      * POI version from leaving one temp file per sheet behind. A second {@code dispose()} is a no-op.
      */
-    static void close(SXSSFWorkbook workbook) throws java.io.IOException {
+    static void close(SXSSFWorkbook workbook) throws IOException {
         try {
             workbook.close();
         } finally {

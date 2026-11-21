@@ -5,14 +5,21 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
 
 /**
@@ -199,7 +206,7 @@ public enum ExcelDataType {
                     + "without them POI writes the cell as plain text. Create the writer with "
                     + "ExcelWriter.create(o -> o.useSharedStrings(true)) (or ExcelWorkbook.create(...))");
         }
-        org.apache.poi.xssf.usermodel.XSSFFont base = cell.getCellStyle() instanceof org.apache.poi.xssf.usermodel.XSSFCellStyle xs
+        XSSFFont base = cell.getCellStyle() instanceof XSSFCellStyle xs
                 ? xs.getFont() : null;
         ExcelCellText.writeStreaming(cell, rt.toRichTextString(wb, ExcelRichText.getFontCache(wb), base));
     }
@@ -279,12 +286,12 @@ public enum ExcelDataType {
      * a runtime without the {@code java.sql} module keeps working.
      */
     static Object normalizeTemporal(Object value) {
-        if (value instanceof java.time.ZonedDateTime zoned) return zoned.toLocalDateTime();
-        if (value instanceof java.time.OffsetDateTime offset) return offset.toLocalDateTime();
-        if (value instanceof java.util.Date date) {
-            var zone = java.time.ZoneId.systemDefault();
+        if (value instanceof ZonedDateTime zoned) return zoned.toLocalDateTime();
+        if (value instanceof OffsetDateTime offset) return offset.toLocalDateTime();
+        if (value instanceof Date date) {
+            var zone = ZoneId.systemDefault();
             // java.sql.Date and java.sql.Time do not support toInstant(), so use the epoch milliseconds.
-            var zoned = java.time.Instant.ofEpochMilli(date.getTime()).atZone(zone);
+            var zoned = Instant.ofEpochMilli(date.getTime()).atZone(zone);
             if (isSqlType(date, "java.sql.Date")) return zoned.toLocalDate();
             if (isSqlType(date, "java.sql.Time")) return zoned.toLocalTime().withNano(0);
             // Keep the sub-millisecond precision of java.sql.Timestamp.

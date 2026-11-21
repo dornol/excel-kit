@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.core.ReadResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -40,16 +41,16 @@ public record UploadResult<T>(
         this(type, successCount, errorCount, rows, errors, summary, false, false);
     }
 
-    public static <T> UploadResult<T> read(String type, java.util.function.Consumer<Consumer<ReadResult<T>>> reader) {
+    public static <T> UploadResult<T> read(String type, Consumer<Consumer<ReadResult<T>>> reader) {
         return read(type, reader, null, -1);
     }
 
-    static <T> UploadResult<T> read(String type, java.util.function.Consumer<Consumer<ReadResult<T>>> reader,
+    static <T> UploadResult<T> read(String type, Consumer<Consumer<ReadResult<T>>> reader,
                                     String filename, long fileSize) {
         return read(type, reader, filename, fileSize, UploadCollectionLimits.UNLIMITED);
     }
 
-    static <T> UploadResult<T> read(String type, java.util.function.Consumer<Consumer<ReadResult<T>>> reader,
+    static <T> UploadResult<T> read(String type, Consumer<Consumer<ReadResult<T>>> reader,
                                     String filename, long fileSize, UploadCollectionLimits limits) {
         long started = System.nanoTime();
         List<T> rows = new ArrayList<>();
@@ -70,7 +71,7 @@ public record UploadResult<T>(
             }
         });
 
-        long durationMillis = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+        long durationMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
         UploadSummary summary = new UploadSummary(rowNum.get(), successCount.get(), errorCount.get(),
                 durationMillis, filename, fileSize);
         return new UploadResult<>(type, Math.toIntExact(successCount.get()), Math.toIntExact(errorCount.get()),

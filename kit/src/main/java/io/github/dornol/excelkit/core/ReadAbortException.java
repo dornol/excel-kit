@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.core;
 
+import java.util.Objects;
+
 /**
  * Exception thrown by {@link AbstractReadHandler#readStrict(java.util.function.Consumer)}
  * when a row fails validation or mapping.
@@ -25,7 +27,7 @@ public class ReadAbortException extends RuntimeException {
 
     public ReadAbortException(String message, ReadAbortReason reason, long maxErrors, long errorCount) {
         super(message);
-        this.reason = java.util.Objects.requireNonNull(reason, "reason cannot be null");
+        this.reason = Objects.requireNonNull(reason, "reason cannot be null");
         this.maxErrors = maxErrors;
         this.errorCount = errorCount;
     }

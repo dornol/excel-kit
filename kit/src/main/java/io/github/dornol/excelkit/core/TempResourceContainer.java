@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * Abstract container class for managing temporary files and directories.
@@ -67,7 +68,7 @@ public class TempResourceContainer implements AutoCloseable {
     protected void useExternalFile(Path file) {
         close();
         this.tempDir = null;
-        this.tempFile = java.util.Objects.requireNonNull(file, "file cannot be null");
+        this.tempFile = Objects.requireNonNull(file, "file cannot be null");
         this.ownsFile = false;
     }
 

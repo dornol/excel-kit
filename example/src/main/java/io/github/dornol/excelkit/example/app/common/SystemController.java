@@ -2,7 +2,6 @@ package io.github.dornol.excelkit.example.app.common;
 
 import com.sun.management.OperatingSystemMXBean;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.management.ManagementFactory;

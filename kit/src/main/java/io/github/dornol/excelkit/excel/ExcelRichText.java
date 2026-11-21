@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
@@ -51,7 +52,7 @@ public class ExcelRichText {
      * @return this builder
      */
     public ExcelRichText text(String text) {
-        segments.add(new Segment(java.util.Objects.requireNonNull(text, "text cannot be null"), null));
+        segments.add(new Segment(Objects.requireNonNull(text, "text cannot be null"), null));
         return this;
     }
 
@@ -83,8 +84,8 @@ public class ExcelRichText {
      * @return this builder
      */
     public ExcelRichText styled(String text, Consumer<FontStyle> configurer) {
-        java.util.Objects.requireNonNull(text, "text cannot be null");
-        java.util.Objects.requireNonNull(configurer, "configurer cannot be null");
+        Objects.requireNonNull(text, "text cannot be null");
+        Objects.requireNonNull(configurer, "configurer cannot be null");
         FontStyle style = new FontStyle();
         configurer.accept(style);
         segments.add(new Segment(text, style));

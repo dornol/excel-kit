@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Builder for creating charts in an Excel sheet.
@@ -131,7 +132,7 @@ public class ExcelChartConfig {
      * @return this config for chaining
      */
     public ExcelChartConfig type(ChartType type) {
-        java.util.Objects.requireNonNull(type, "type cannot be null");
+        Objects.requireNonNull(type, "type cannot be null");
         this.chartType = type;
         return this;
     }
@@ -169,7 +170,7 @@ public class ExcelChartConfig {
      * @return this config for chaining
      */
     public ExcelChartConfig valueColumn(int columnIndex, String seriesTitle) {
-        java.util.Objects.requireNonNull(seriesTitle, "seriesTitle cannot be null");
+        Objects.requireNonNull(seriesTitle, "seriesTitle cannot be null");
         if (columnIndex < 0) {
             throw new IllegalArgumentException("valueColumn index must be non-negative");
         }
@@ -261,7 +262,7 @@ public class ExcelChartConfig {
      * @since 0.6.1
      */
     public ExcelChartConfig barGrouping(BarGrouping grouping) {
-        java.util.Objects.requireNonNull(grouping, "grouping cannot be null");
+        Objects.requireNonNull(grouping, "grouping cannot be null");
         this.barGrouping = grouping;
         return this;
     }
@@ -276,7 +277,7 @@ public class ExcelChartConfig {
      * @since 0.6.1
      */
     public ExcelChartConfig barDirection(BarDirection direction) {
-        java.util.Objects.requireNonNull(direction, "direction cannot be null");
+        Objects.requireNonNull(direction, "direction cannot be null");
         this.barDirection = direction;
         return this;
     }

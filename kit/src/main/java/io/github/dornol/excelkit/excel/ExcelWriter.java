@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import org.jspecify.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * ExcelWriter is a utility class for generating large Excel files using Apache POI's SXSSFWorkbook.
@@ -247,7 +249,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @since 0.17.0
      */
     public ExcelWriter<T> documentProperty(String key, String value) {
-        java.util.Objects.requireNonNull(value, "value cannot be null");
+        Objects.requireNonNull(value, "value cannot be null");
         ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
@@ -325,7 +327,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> afterAll(AfterDataWriter afterAllWriter) {
-        this.afterAllWriter = java.util.Objects.requireNonNull(afterAllWriter, "afterAllWriter cannot be null");
+        this.afterAllWriter = Objects.requireNonNull(afterAllWriter, "afterAllWriter cannot be null");
         return this;
     }
 
@@ -337,7 +339,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> sheetName(String name) {
-        java.util.Objects.requireNonNull(name, "name cannot be null");
+        Objects.requireNonNull(name, "name cannot be null");
         this.cfg.sheetNameFunction = index -> ExcelWriteSupport.rolloverSheetName(name, index);
         return this;
     }
@@ -411,7 +413,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> headerFontName(String fontName) {
-        this.headerFontName = java.util.Objects.requireNonNull(fontName, "fontName cannot be null");
+        this.headerFontName = Objects.requireNonNull(fontName, "fontName cannot be null");
         return this;
     }
 
@@ -473,7 +475,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function) {
-        java.util.Objects.requireNonNull(function, "function cannot be null");
+        Objects.requireNonNull(function, "function cannot be null");
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
         this.columns.add(builder.build());
@@ -497,7 +499,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function,
                                   @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
-        java.util.Objects.requireNonNull(function, "function cannot be null");
+        Objects.requireNonNull(function, "function cannot be null");
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
         if (configurer != null) {
@@ -661,8 +663,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return ExcelHandler wrapping the workbook
      */
     public ExcelHandler write(Stream<T> stream, WriteRowCallback<T> consumer) {
-        java.util.Objects.requireNonNull(stream, "stream cannot be null");
-        java.util.Objects.requireNonNull(consumer, "consumer cannot be null");
+        Objects.requireNonNull(stream, "stream cannot be null");
+        Objects.requireNonNull(consumer, "consumer cannot be null");
         ExcelWriteOptions<T> options = snapshotOptions();
         this.execution = new ExcelWriteSession<>(options);
         validateColumns(options);
@@ -755,7 +757,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     /** Writes rows from an Iterable without copying them. */
     public ExcelHandler write(Iterable<T> rows) {
         Objects.requireNonNull(rows, "rows cannot be null");
-        return write(java.util.stream.StreamSupport.stream(rows.spliterator(), false));
+        return write(StreamSupport.stream(rows.spliterator(), false));
     }
 
     /**
@@ -871,7 +873,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private void closeWorkbookQuietly() {
         try {
             ExcelWorkbookSupport.close(wb);
-        } catch (RuntimeException | java.io.IOException e) {
+        } catch (RuntimeException | IOException e) {
             log.warn("Failed to close workbook after error", e);
         }
     }

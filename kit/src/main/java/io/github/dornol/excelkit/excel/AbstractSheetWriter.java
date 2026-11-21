@@ -4,8 +4,11 @@ import io.github.dornol.excelkit.core.ProgressCallback;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Shared sheet-level configuration methods for {@link ExcelWriter} and {@link ExcelSheetWriter}.
@@ -92,7 +95,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Registers a callback that writes custom content before the column header row.
      */
     public SELF beforeHeader(BeforeHeaderWriter beforeHeaderWriter) {
-        cfg.beforeHeaderWriter = java.util.Objects.requireNonNull(beforeHeaderWriter, "beforeHeaderWriter cannot be null");
+        cfg.beforeHeaderWriter = Objects.requireNonNull(beforeHeaderWriter, "beforeHeaderWriter cannot be null");
         return self();
     }
 
@@ -100,7 +103,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Registers a callback that writes custom content after all data rows on each sheet.
      */
     public SELF afterData(AfterDataWriter afterDataWriter) {
-        cfg.afterDataWriter = java.util.Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
+        cfg.afterDataWriter = Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
         return self();
     }
 
@@ -116,7 +119,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * continuous gradient.
      */
     public SELF rowColor(Function<T, @Nullable ExcelColor> rowColorFunction) {
-        cfg.rowColorFunction = java.util.Objects.requireNonNull(rowColorFunction, "rowColorFunction cannot be null");
+        cfg.rowColorFunction = Objects.requireNonNull(rowColorFunction, "rowColorFunction cannot be null");
         return self();
     }
 
@@ -138,8 +141,8 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @param configurer style configuration to apply when the condition is true
      * @return this writer for chaining
      */
-    public SELF rowStyle(java.util.function.Predicate<T> predicate, Consumer<RowStyleConfig> configurer) {
-        java.util.Objects.requireNonNull(predicate, "predicate cannot be null");
+    public SELF rowStyle(Predicate<T> predicate, Consumer<RowStyleConfig> configurer) {
+        Objects.requireNonNull(predicate, "predicate cannot be null");
         RowStyleConfig style = new RowStyleConfig();
         configurer.accept(style);
         cfg.rowStyleEntries.add(new SheetConfig.RowStyleEntry<>(predicate, style));
@@ -156,7 +159,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
             throw new IllegalArgumentException("progress interval must be positive");
         }
         cfg.progressInterval = interval;
-        cfg.progressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
+        cfg.progressCallback = Objects.requireNonNull(callback, "callback cannot be null");
         return self();
     }
 
@@ -167,7 +170,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @since 0.19.0
      */
     public SELF writeErrorPolicy(ExcelWriteErrorPolicy policy) {
-        cfg.writeErrorPolicy = java.util.Objects.requireNonNull(policy, "policy must not be null");
+        cfg.writeErrorPolicy = Objects.requireNonNull(policy, "policy must not be null");
         return self();
     }
 
@@ -304,7 +307,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Sets a function that generates sheet names based on the sheet index (0-based).
      */
     public SELF sheetName(Function<Integer, String> sheetNameFunction) {
-        cfg.sheetNameFunction = java.util.Objects.requireNonNull(sheetNameFunction, "sheetNameFunction cannot be null");
+        cfg.sheetNameFunction = Objects.requireNonNull(sheetNameFunction, "sheetNameFunction cannot be null");
         return self();
     }
 
@@ -338,7 +341,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @since 0.16.11
      */
     public SELF groupComment(ExcelCellComment comment, String... path) {
-        java.util.Objects.requireNonNull(comment, "comment cannot be null");
+        Objects.requireNonNull(comment, "comment cannot be null");
         if (path == null || path.length == 0) {
             throw new IllegalArgumentException("path must not be empty");
         }
@@ -368,7 +371,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
             throw new IllegalArgumentException("columnIndex must be non-negative");
         }
         if (cfg.namedRanges == null) {
-            cfg.namedRanges = new java.util.LinkedHashMap<>();
+            cfg.namedRanges = new LinkedHashMap<>();
         }
         cfg.namedRanges.put(name, columnIndex);
         return self();

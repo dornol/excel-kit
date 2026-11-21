@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.core;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
@@ -43,7 +44,7 @@ public class RowData {
         this.cells = List.copyOf(cells);
         this.headerNames = List.copyOf(headerNames);
         this.headerIndex = Map.copyOf(headerIndex);
-        this.headerNormalizer = java.util.Objects.requireNonNull(headerNormalizer, "headerNormalizer cannot be null");
+        this.headerNormalizer = Objects.requireNonNull(headerNormalizer, "headerNormalizer cannot be null");
     }
 
     /**

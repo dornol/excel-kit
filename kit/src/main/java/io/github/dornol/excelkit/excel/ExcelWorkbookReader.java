@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ public final class ExcelWorkbookReader {
         try {
             Path temp = Files.createTempFile("excel-kit-workbook-", ".xlsx");
             try {
-                Files.copy(input, temp, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(input, temp, StandardCopyOption.REPLACE_EXISTING);
                 return read(temp);
             } finally {
                 Files.deleteIfExists(temp);

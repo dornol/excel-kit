@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -25,7 +26,7 @@ public final class AtomicFileWriter {
 
     /** Writes into the target through {@code writer}; see the class description for the guarantees. */
     public static void write(Path target, IoWriter writer) throws IOException {
-        java.util.Objects.requireNonNull(target, "path cannot be null");
+        Objects.requireNonNull(target, "path cannot be null");
         Path destination = Files.isSymbolicLink(target) ? target.toRealPath() : target;
         if (Files.exists(destination) && !Files.isRegularFile(destination)) {
             try (OutputStream out = Files.newOutputStream(destination)) {

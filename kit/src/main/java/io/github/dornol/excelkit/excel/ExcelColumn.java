@@ -2,7 +2,6 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.slf4j.Logger;
@@ -14,7 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Represents a single Excel column and how its value is derived, styled, and rendered.
@@ -375,7 +373,7 @@ public class ExcelColumn<T> {
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, RowFunction<T, @Nullable Object> function) {
             this.writer = writer;
             this.name = name;
-            this.function = java.util.Objects.requireNonNull(function, "function cannot be null");
+            this.function = Objects.requireNonNull(function, "function cannot be null");
         }
 
         /**

@@ -8,6 +8,7 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * Advanced data validation configuration for Excel columns.
@@ -55,7 +56,7 @@ public class ExcelValidation {
     }
 
     private static void requireText(@Nullable String text, String name) {
-        java.util.Objects.requireNonNull(text, name + " cannot be null");
+        Objects.requireNonNull(text, name + " cannot be null");
         if (text.isBlank()) throw new IllegalArgumentException(name + " cannot be blank");
     }
 
@@ -153,8 +154,8 @@ public class ExcelValidation {
      * @return the validation instance
      */
     public static ExcelValidation dateRange(LocalDate start, LocalDate end) {
-        java.util.Objects.requireNonNull(start, "start cannot be null");
-        java.util.Objects.requireNonNull(end, "end cannot be null");
+        Objects.requireNonNull(start, "start cannot be null");
+        Objects.requireNonNull(end, "end cannot be null");
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("dateRange start " + start + " is after its end " + end);
         }

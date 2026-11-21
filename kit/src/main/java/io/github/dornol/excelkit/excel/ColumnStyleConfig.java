@@ -4,6 +4,7 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -218,13 +219,13 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      *         limit
      */
     public SELF dropdown(String... options) {
-        java.util.Objects.requireNonNull(options, "options cannot be null");
+        Objects.requireNonNull(options, "options cannot be null");
         if (options.length == 0) {
             throw new IllegalArgumentException("A dropdown needs at least one option");
         }
         String[] escaped = new String[options.length];
         for (int i = 0; i < options.length; i++) {
-            String option = java.util.Objects.requireNonNull(options[i], "a dropdown option cannot be null");
+            String option = Objects.requireNonNull(options[i], "a dropdown option cannot be null");
             if (option.indexOf(',') >= 0) {
                 throw new IllegalArgumentException("The dropdown option '" + option + "' contains a comma, which "
                         + "Excel reads as the end of an option; use ExcelValidation.listFromRange(...) for such values");

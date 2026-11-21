@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -398,19 +399,19 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     /** Reads all successful rows into a list and fails on the first mapping or validation error. */
     public List<T> readAll(InputStream inputStream) {
-        List<T> rows = new java.util.ArrayList<>();
+        List<T> rows = new ArrayList<>();
         readStrict(inputStream, rows::add);
         return List.copyOf(rows);
     }
 
     public List<T> readAll(Path path) {
-        List<T> rows = new java.util.ArrayList<>();
+        List<T> rows = new ArrayList<>();
         readStrict(path, rows::add);
         return List.copyOf(rows);
     }
 
     public List<T> readAll(InputStreamSource source) {
-        List<T> rows = new java.util.ArrayList<>();
+        List<T> rows = new ArrayList<>();
         readStrict(source, rows::add);
         return List.copyOf(rows);
     }

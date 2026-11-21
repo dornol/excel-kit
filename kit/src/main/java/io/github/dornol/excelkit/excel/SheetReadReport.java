@@ -5,6 +5,7 @@ import io.github.dornol.excelkit.core.RowError;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Result of processing one registered workbook sheet.
@@ -18,7 +19,7 @@ public record SheetReadReport(String name, int index, ReadSummary summary,
     public SheetReadReport {
         if (index < -1) throw new IllegalArgumentException("index must be non-negative or -1 for an unresolved sheet");
         if (name == null || name.isBlank()) throw new IllegalArgumentException("name cannot be blank");
-        java.util.Objects.requireNonNull(summary, "summary cannot be null");
+        Objects.requireNonNull(summary, "summary cannot be null");
         errors = List.copyOf(errors);
     }
 

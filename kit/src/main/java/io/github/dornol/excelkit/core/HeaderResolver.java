@@ -1,8 +1,10 @@
 package io.github.dornol.excelkit.core;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
@@ -41,7 +43,7 @@ final class HeaderResolver {
                 continue;
             }
             Integer match = candidates.stream().map(this::normalize).map(index::get)
-                    .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+                    .filter(Objects::nonNull).findFirst().orElse(null);
             if (match == null) throw new ExcelKitException("Header aliases " + candidates
                     + " not found in " + source + ". Available headers: " + headers);
             resolved[i] = match;
@@ -62,7 +64,7 @@ final class HeaderResolver {
             // A column without a header has no name to look it up by, so it is left out of the index.
             // Judged after normalization: a normalizer may deliberately give a blank header a name.
             if (normalized.isBlank()) continue;
-            List<Integer> positions = occurrences.computeIfAbsent(normalized, ignored -> new java.util.ArrayList<>());
+            List<Integer> positions = occurrences.computeIfAbsent(normalized, ignored -> new ArrayList<>());
             positions.add(i);
             if (duplicatePolicy == DuplicateHeaderPolicy.FAIL && positions.size() > 1
                     && original != null && !original.isBlank())

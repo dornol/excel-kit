@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -313,7 +314,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
         if (!finished) {
             try {
                 ExcelWorkbookSupport.close(wb);
-            } catch (RuntimeException | java.io.IOException e) {
+            } catch (RuntimeException | IOException e) {
                 log.warn("Failed to close template workbook", e);
             }
         }
@@ -335,7 +336,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
 
     /** A position inside the sheet, checked before anything is recorded about it. */
     private static void requirePosition(int row, int col) {
-        var version = org.apache.poi.ss.SpreadsheetVersion.EXCEL2007;
+        var version = SpreadsheetVersion.EXCEL2007;
         if (row < 0 || row > version.getLastRowIndex()) {
             throw new IllegalArgumentException("Invalid row number (" + row + ") outside allowable range (0.."
                     + version.getLastRowIndex() + ")");
