@@ -22,6 +22,9 @@ import org.jspecify.annotations.Nullable;
  *   <li>{@code &T} — current time</li>
  *   <li>{@code &F} — file name</li>
  * </ul>
+ * An ampersand is the start of such a code, so a literal one is written twice: {@code "R&&D"} prints
+ * {@code R&D}, where {@code "R&D"} prints {@code R} and the date. Excel allows 255 characters in a header or
+ * footer, counting the {@code &L}, {@code &C} and {@code &R} that mark its sections.
  *
  * @author dhkim
  */
@@ -71,6 +74,34 @@ public class ExcelPrintSetup {
 
         short getCode() {
             return code;
+        }
+    }
+
+    /** The most pages Excel fits a sheet to, in either direction. */
+    private static final int MAX_FIT_PAGES = 32_767;
+    /** What Excel keeps of a header or a footer. */
+    private static final int MAX_HEADER_FOOTER = 255;
+
+    private static double requireMargin(double inches, String side) {
+        if (!Double.isFinite(inches) || inches < 0) {
+            throw new IllegalArgumentException("The " + side + " margin must be a number of inches that is not "
+                    + "negative, got " + inches);
+        }
+        return inches;
+    }
+
+    /** Fails if the header or the footer is longer than Excel keeps; called when the setup is handed to a writer. */
+    void validate() {
+        checkLength("header", headerLeft, headerCenter, headerRight);
+        checkLength("footer", footerLeft, footerCenter, footerRight);
+    }
+
+    private static void checkLength(String what, @Nullable String left, @Nullable String center, @Nullable String right) {
+        int length = (left == null ? 0 : 2 + left.length()) + (center == null ? 0 : 2 + center.length())
+                + (right == null ? 0 : 2 + right.length());
+        if (length > MAX_HEADER_FOOTER) {
+            throw new IllegalArgumentException("The " + what + " is " + length + " characters (the &L, &C and &R "
+                    + "that mark its sections count); Excel allows at most " + MAX_HEADER_FOOTER);
         }
     }
 
@@ -125,10 +156,10 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup margins(double left, double right, double top, double bottom) {
-        this.leftMargin = left;
-        this.rightMargin = right;
-        this.topMargin = top;
-        this.bottomMargin = bottom;
+        this.leftMargin = requireMargin(left, "left");
+        this.rightMargin = requireMargin(right, "right");
+        this.topMargin = requireMargin(top, "top");
+        this.bottomMargin = requireMargin(bottom, "bottom");
         return this;
     }
 
@@ -139,7 +170,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup leftMargin(double inches) {
-        this.leftMargin = inches;
+        this.leftMargin = requireMargin(inches, "left");
         return this;
     }
 
@@ -150,7 +181,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup rightMargin(double inches) {
-        this.rightMargin = inches;
+        this.rightMargin = requireMargin(inches, "right");
         return this;
     }
 
@@ -161,7 +192,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup topMargin(double inches) {
-        this.topMargin = inches;
+        this.topMargin = requireMargin(inches, "top");
         return this;
     }
 
@@ -172,7 +203,7 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup bottomMargin(double inches) {
-        this.bottomMargin = inches;
+        this.bottomMargin = requireMargin(inches, "bottom");
         return this;
     }
 
@@ -259,6 +290,8 @@ public class ExcelPrintSetup {
      */
     public ExcelPrintSetup repeatHeaderRows() {
         this.repeatHeader = true;
+        this.repeatRowsStart = -1;
+        this.repeatRowsEnd = -1;
         return this;
     }
 
@@ -270,6 +303,11 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup repeatRows(int firstRow, int lastRow) {
+        if (firstRow < 0 || lastRow < firstRow || lastRow > ExcelWriteSupport.EXCEL_MAX_ROWS) {
+            throw new IllegalArgumentException("repeatRows needs 0 <= firstRow <= lastRow <= "
+                    + ExcelWriteSupport.EXCEL_MAX_ROWS + ", got " + firstRow + " and " + lastRow);
+        }
+        this.repeatHeader = false;
         this.repeatRowsStart = firstRow;
         this.repeatRowsEnd = lastRow;
         return this;
@@ -285,6 +323,10 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup fitToPage(int width, int height) {
+        if (width < 0 || width > MAX_FIT_PAGES || height < 0 || height > MAX_FIT_PAGES) {
+            throw new IllegalArgumentException("fitToPage needs pages wide and tall between 0 (as many as needed) and "
+                    + MAX_FIT_PAGES + ", got " + width + " and " + height);
+        }
         this.fitToPage = true;
         this.fitWidth = width;
         this.fitHeight = height;

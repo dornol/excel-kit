@@ -17,6 +17,15 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** a page setup that Excel cannot use is refused where it is made, with `IllegalArgumentException`,
+  instead of writing a broken sheet or failing after the whole stream: a margin that is negative, NaN or infinite;
+  `fitToPage` pages outside 0–32,767 (40,000 used to wrap to a negative number and 65,536 to 0, and a negative count
+  wrote XML the schema does not allow); `repeatRows` with a negative or reversed range or a row past 1,048,575 (a
+  negative first row used to be ignored silently, the others failed with `Failed to write excel`); a header or
+  footer over Excel's 255 characters (the `&L`, `&C`, `&R` marks count), checked when the setup is handed to
+  `printSetup(...)`.
+- `repeatHeaderRows()` and `repeatRows(first, last)` replace each other, the later call winning; `repeatHeaderRows()`
+  used to win whatever the order.
 - **Breaking:** data validation setup mistakes are refused where they are made, with `IllegalArgumentException`,
   instead of writing a broken validation or failing after the whole stream: `dropdown(...)` without options, with a
   `null` option, or with an option that contains a comma (Excel splits the list there; use `listFromRange(...)`);

@@ -252,6 +252,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
     public SELF printSetup(Consumer<ExcelPrintSetup> configurer) {
         ExcelPrintSetup config = new ExcelPrintSetup();
         configurer.accept(config);
+        config.validate();
         cfg.printSetup = config;
         return self();
     }
