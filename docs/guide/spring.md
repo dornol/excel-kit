@@ -43,6 +43,15 @@ public ResponseEntity<StreamingResponseBody> downloadEncrypted() {
 }
 ```
 
+To choose the password when the response is built, pass it to the helper:
+
+```java
+return ExcelKitResponse.excel(handler, "secret", password);
+```
+
+A null or blank `password` throws `IllegalArgumentException` right away, before the response is
+created, and the handler's workbook is released.
+
 For upload endpoints, return structured read errors when the client asks for
 JSON and a readable HTML/text summary for manual testing:
 

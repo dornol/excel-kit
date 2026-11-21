@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
   `reader.cellConversion(c -> c.locale(...).addDateFormat(...))` instead. A `CellData` without a
   config, and a reader without `cellConversion(...)`, use the immutable
   `CellConversionConfig.defaults()` (JVM default locale, built-in date patterns).
+- `ExcelKitResponse.excel(handler, filename, password)` rejects a null or blank password when the
+  response is built (`IllegalArgumentException`) instead of while the body streams, and releases the
+  handler's workbook.
 - `ExcelKitUpload.excel/csv(file, schema, supplier[, validator])` now check the content signature
   like the `ReadLimits` overloads, so a file whose content does not match throws
   `ExcelKitUploadException` instead of a reader-specific failure.

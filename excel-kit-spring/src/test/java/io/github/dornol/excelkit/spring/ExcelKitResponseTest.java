@@ -44,4 +44,37 @@ class ExcelKitResponseTest {
         assertThrows(IllegalArgumentException.class,
                 () -> ExcelKitResponse.csv("report", null));
     }
+
+    private static io.github.dornol.excelkit.excel.ExcelHandler handler() {
+        return io.github.dornol.excelkit.excel.ExcelWriter.<String>create()
+                .column("A", value -> value)
+                .write(java.util.List.of("x"));
+    }
+
+    @Test
+    void encryptedExcel_rejectsBlankPasswordBeforeBuildingTheResponse() {
+        for (String password : new String[]{null, "", "   "}) {
+            var handler = handler();
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> ExcelKitResponse.excel(handler, "report", password));
+
+            // The rejected handler released its workbook, so it is already consumed.
+            assertThrows(io.github.dornol.excelkit.excel.ExcelWriteException.class,
+                    () -> handler.writeTo(java.io.OutputStream.nullOutputStream()));
+        }
+    }
+
+    @Test
+    void encryptedExcel_withPasswordStillStreamsLater() throws Exception {
+        var handler = handler();
+
+        var response = ExcelKitResponse.excel(handler, "report", "pw1234");
+
+        assertEquals(200, response.getStatusCode().value());
+        // Nothing is consumed until the body runs.
+        var out = new java.io.ByteArrayOutputStream();
+        response.getBody().writeTo(out);
+        assertTrue(out.size() > 0);
+    }
 }
