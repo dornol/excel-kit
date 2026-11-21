@@ -25,6 +25,7 @@ public class SheetContext {
     private final int columnCount;
     private final List<String> columnNames;
     private final int headerRowIndex;
+    private final int dataEndRow;
 
     SheetContext(SXSSFSheet sheet, SXSSFWorkbook workbook, int currentRow,
                  List<? extends ExcelColumn<?>> columns) {
@@ -33,6 +34,13 @@ public class SheetContext {
 
     SheetContext(SXSSFSheet sheet, SXSSFWorkbook workbook, int currentRow,
                  List<? extends ExcelColumn<?>> columns, int headerRowIndex) {
+        this(sheet, workbook, currentRow, columns, headerRowIndex, currentRow);
+    }
+
+    /** @param dataEndRow the 1-based last data row, which differs from {@code currentRow} after {@code afterData} rows */
+    SheetContext(SXSSFSheet sheet, SXSSFWorkbook workbook, int currentRow,
+                 List<? extends ExcelColumn<?>> columns, int headerRowIndex, int dataEndRow) {
+        this.dataEndRow = dataEndRow;
         this.sheet = sheet;
         this.workbook = workbook;
         this.currentRow = currentRow;
@@ -78,12 +86,18 @@ public class SheetContext {
     }
 
     /**
-     * Returns the header row index (zero-based) for this sheet.
+     * Returns the header row index (zero-based) for this sheet: the row holding the column names, which is
+     * the last row of a multi-row (grouped) header.
      *
      * @return the header row index
      */
     public int getHeaderRowIndex() {
         return headerRowIndex;
+    }
+
+    /** The 1-based last data row, which is where a summary's range ends. */
+    int dataEndRow() {
+        return dataEndRow;
     }
 
     /**

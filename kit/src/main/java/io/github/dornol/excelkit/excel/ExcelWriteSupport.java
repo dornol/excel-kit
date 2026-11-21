@@ -94,7 +94,9 @@ class ExcelWriteSupport {
             row = cfg.afterDataWriter.write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
         }
         if (cfg.summaryConfig != null) {
-            row = cfg.summaryConfig.toAfterDataWriter().write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
+            // The summary covers the data rows only, not whatever afterData wrote below them.
+            row = cfg.summaryConfig.toAfterDataWriter().write(
+                    new SheetContext(sheet, wb, row, columns, headerRowIndex, startRow));
         }
         return row;
     }
@@ -500,8 +502,12 @@ class ExcelWriteSupport {
                 (byte) tabColor[0], (byte) tabColor[1], (byte) tabColor[2]}));
     }
 
+    /**
+     * Defines the named ranges of one sheet. A workbook cannot hold two names alike, so the sheets of a
+     * rollover get {@code name_2}, {@code name_3}, ... (the first keeps {@code name}), as tables do.
+     */
     static void applyNamedRanges(SXSSFSheet sheet, @Nullable Map<String, Integer> namedRanges,
-                                  int headerRowIndex) {
+                                  int headerRowIndex, int sheetIndex) {
         if (namedRanges == null || namedRanges.isEmpty()) return;
         int lastRow = sheet.getLastRowNum();
         if (lastRow <= headerRowIndex) return; // no data rows
@@ -512,7 +518,7 @@ class ExcelWriteSupport {
             int dataStart = headerRowIndex + 2; // 1-based, after header
             String ref = "'%s'!$%s$%d:$%s$%d".formatted(sheetName.replace("'", "''"), col, dataStart, col, lastRow + 1);
             var name = wb.createName();
-            name.setNameName(entry.getKey());
+            name.setNameName(sheetIndex == 0 ? entry.getKey() : entry.getKey() + "_" + (sheetIndex + 1));
             name.setRefersToFormula(ref);
         }
     }

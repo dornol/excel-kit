@@ -350,6 +350,9 @@ writer
 // Other sheets can reference: =SUM(PriceData)
 ```
 
+When the data rolls over to more sheets, each sheet covers its own rows: the first keeps `PriceData`, the
+next ones are `PriceData_2`, `PriceData_3`, ... (a workbook cannot hold two names alike).
+
 For manual control, use `SheetContext.namedRange()` in `afterData` callbacks.
 ## Streaming initialization
 

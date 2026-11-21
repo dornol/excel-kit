@@ -146,7 +146,7 @@ public class ExcelSummary {
 
             // Data range: from row after header to last data row (1-based for Excel)
             int dataStartRow = headerRow + 2; // 1-based, skip header
-            int dataEndRow = currentRow;       // 1-based (currentRow is 0-based next row, so = last data row + 1 in 0-based = last data row in 1-based)
+            int dataEndRow = ctx.dataEndRow(); // 1-based last data row, even when afterData wrote rows below it
 
             int row = currentRow;
             for (var entry : entries.entrySet()) {

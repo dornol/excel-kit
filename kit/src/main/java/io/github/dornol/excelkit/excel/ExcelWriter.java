@@ -712,6 +712,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
         ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), headerStyle, wb, headerStyleCache,
                 options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
+        // With group headers the column names sit below the group rows: that row is the header row.
+        execution().headerRow(cursor().getRowOfSheet() - 1);
         applySheetOptions();
     }
 
@@ -782,9 +784,9 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             turnOverSheet();
             int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
             cursor().setRowOfSheet(preambleRow);
-            execution().headerRow(preambleRow);
             ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), headerStyle, wb, headerStyleCache,
                     options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
+            execution().headerRow(cursor().getRowOfSheet() - 1);
             applySheetOptions();
         }
         ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb);
@@ -849,7 +851,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             SXSSFSheet target = wb.getSheetAt(i);
             ExcelWriteOptions<T> options = executionOptions();
             ExcelSheetPostProcessor.apply(target, options.columns(), execution().headerRow(target),
-                    execution().dataEndRow(target), options.sheetConfig());
+                    execution().dataEndRow(target), options.sheetConfig(), i);
         }
     }
 

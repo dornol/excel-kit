@@ -13,11 +13,13 @@ final class ExcelSheetPostProcessor {
     }
 
     /**
+     * @param headerRowIndex the row holding the column names (the last row of a multi-row header)
      * @param dataEndRow the last data row of this sheet; conditional formatting stops there so that
      *                   summary and {@code afterData} rows are not formatted (or scaled) as data
+     * @param sheetIndex 0 for the first sheet of a write, 1 for its first rollover sheet, ...
      */
     static <T> void apply(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
-                          int headerRowIndex, int dataEndRow, SheetConfig<T> config) {
+                          int headerRowIndex, int dataEndRow, SheetConfig<T> config, int sheetIndex) {
         applyColumnWidths(sheet, columns);
         applyDataValidations(sheet, columns, headerRowIndex);
         applyColumnOutline(sheet, columns);
@@ -27,7 +29,7 @@ final class ExcelSheetPostProcessor {
             rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow);
         if (config.printSetup != null) config.printSetup.apply(sheet, headerRowIndex);
         ExcelWriteSupport.applyTabColor(sheet, config.tabColor);
-        ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex);
+        ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, sheetIndex);
     }
 
     static <T> void applyColumnWidths(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {

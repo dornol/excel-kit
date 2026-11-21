@@ -237,6 +237,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
         ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
         int headerRowIdx = cursor.getRowOfSheet() - 1;
+        // With group headers the column names sit below the group rows: that row is the header row.
+        headerRowIndex = headerRowIdx;
         ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
 
         SXSSFSheet activeSheet = this.sheet;
@@ -256,9 +258,9 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     cursor.initRow();
                     int preambleRow = ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
                     cursor.setRowOfSheet(preambleRow);
-                    headerRowIndex = preambleRow;
                     ExcelHeaderWriter.write(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
+                    headerRowIndex = hdrIdx;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
                 }
                 ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
@@ -271,7 +273,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
 
         for (int i = 0; i < allSheets.size(); i++) {
-            ExcelSheetPostProcessor.apply(allSheets.get(i), columns, headerRowIndex, dataEndRows.get(i), cfg);
+            ExcelSheetPostProcessor.apply(allSheets.get(i), columns, headerRowIndex, dataEndRows.get(i), cfg, i);
         }
         if (tableOptions != null) {
             for (int i = 0; i < allSheets.size(); i++) {

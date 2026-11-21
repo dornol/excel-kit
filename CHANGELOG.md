@@ -45,6 +45,16 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- With a multi-row (grouped) header the writers took the first header row for "the header row", so everything
+  placed relative to it was one or more rows too high: a `summary` range, a structured `table`, a
+  `conditionalFormatting` range, dropdown and `validation` ranges, a `chart`'s series, the rows repeated by
+  `printSetup(p -> p.repeatHeaderRows())` and named ranges all included the column-name row, and a table started on
+  the group row (which Excel may repair on open). `SheetContext.getHeaderRowIndex()` is now the row with the
+  column names, the last row of the header.
+- A `summary` ends at the last data row. When `afterData` wrote rows too, the range reached down through them (and
+  double counted any numbers there).
+- `namedRange(...)` with a rollover no longer fails with `Failed to write excel` (or POI's "workbook already
+  contains this name"): the first sheet keeps the name, later sheets get `name_2`, `name_3`, ..., as tables do.
 - A write that needs more than 64,000 distinct cell styles (every distinct `cellColor`, `rowColor` or `rowStyle`
   color needs one) fails with `ExcelWriteException: Too many distinct cell styles: an .xlsx workbook holds at most
   64000 …` instead of a generic `Failed to write excel`. The javadoc and the styling guide now say that the time
