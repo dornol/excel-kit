@@ -108,6 +108,12 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
 
     /**
      * Sets a function that determines the background color for each row.
+     * <p>
+     * Every distinct color needs a cell style of its own, and Apache POI looks each new style up in
+     * the styles created so far, so the cost grows with the square of the number of distinct colors:
+     * about 1,000 take a second, 4,000 about ten seconds, 8,000 about forty. An .xlsx workbook holds at
+     * most 64,000 styles. Return a small palette (round values into a few buckets) rather than a
+     * continuous gradient.
      */
     public SELF rowColor(Function<T, @Nullable ExcelColor> rowColorFunction) {
         cfg.rowColorFunction = java.util.Objects.requireNonNull(rowColorFunction, "rowColorFunction cannot be null");

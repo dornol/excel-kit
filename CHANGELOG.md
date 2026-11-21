@@ -34,6 +34,11 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A write that needs more than 64,000 distinct cell styles (every distinct `cellColor`, `rowColor` or `rowStyle`
+  color needs one) fails with `ExcelWriteException: Too many distinct cell styles: an .xlsx workbook holds at most
+  64000 …` instead of a generic `Failed to write excel`. The javadoc and the styling guide now say that the time
+  grows with the square of the number of distinct colors (1,000 ≈ 1s, 4,000 ≈ 10s, 8,000 ≈ 40s), so a continuous
+  gradient should be rounded to a palette.
 - A structured table with `perRolloverSheet` off now fails when the first rollover is due, with a message that
   names the table, instead of after the rest of the stream has been written.
 - A sheet that runs out of rows (`maxRows` set too high for the rows `beforeHeader`, the header, `afterData`

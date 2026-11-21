@@ -153,6 +153,13 @@ Per-cell background via `CellColorFunction`:
 
 **Priority:** `cellColor` > `rowStyle` bg > `rowColor` > column `backgroundColor`
 
+**Keep the number of distinct colors small.** Every distinct color needs a cell style of its own, and Apache
+POI looks each new style up in the styles created so far, so the time grows with the square of the number of
+distinct colors: about 1,000 take a second, 4,000 about ten seconds, 8,000 about forty (measured on a development
+machine). An .xlsx workbook holds at most 64,000 styles; past that the write fails with an
+`ExcelWriteException`. Return a palette of a few colors (round values into buckets) instead of a continuous
+gradient.
+
 ## Conditional Row Style
 
 For full row styling (bold, font size, font color, italic, etc.) — not just background color:

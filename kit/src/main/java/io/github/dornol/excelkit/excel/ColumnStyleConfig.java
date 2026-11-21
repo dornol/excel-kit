@@ -231,6 +231,12 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * The function receives the resolved cell value and the row data, and returns
      * an {@link ExcelColor} to apply as the cell background, or {@code null} for no override.
      * Cell-level color takes precedence over row-level {@code rowColor}.
+     * <p>
+     * Every distinct color needs a cell style of its own, and Apache POI looks each new style up in
+     * the styles created so far, so the cost grows with the square of the number of distinct colors:
+     * about 1,000 take a second, 4,000 about ten seconds, 8,000 about forty. An .xlsx workbook holds at
+     * most 64,000 styles. Return a small palette (round values into a few buckets) rather than a
+     * continuous gradient.
      *
      * @param cellColorFunction function to determine per-cell background color
      * @return this instance for chaining

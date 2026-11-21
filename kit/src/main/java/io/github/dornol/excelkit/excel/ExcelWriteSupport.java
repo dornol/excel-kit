@@ -37,6 +37,28 @@ class ExcelWriteSupport {
     /** Rows an Excel sheet can hold; row indices run from 0 to {@code SHEET_ROW_CAPACITY - 1}. */
     static final int SHEET_ROW_CAPACITY = 1_048_576;
 
+    /**
+     * Cell styles an .xlsx workbook can hold. Every distinct color a {@code cellColor}, {@code rowColor}
+     * or {@code rowStyle} function returns needs a style of its own, so a function with many distinct
+     * results runs into this.
+     */
+    static final int MAX_CELL_STYLES = org.apache.poi.ss.SpreadsheetVersion.EXCEL2007.getMaxCellStyles();
+
+    /** Creates a style for a color or row style, or says why the workbook cannot take another one. */
+    private static CellStyle createDerivedStyle(SXSSFWorkbook wb) {
+        return createDerivedStyle(wb, MAX_CELL_STYLES);
+    }
+
+    static CellStyle createDerivedStyle(SXSSFWorkbook wb, int maxStyles) {
+        if (wb.getNumCellStyles() >= maxStyles) {
+            throw new ExcelWriteException("Too many distinct cell styles: an .xlsx workbook holds at most "
+                    + maxStyles + ". Each distinct color returned by cellColor, rowColor or rowStyle "
+                    + "needs its own style; return fewer distinct colors, for example by rounding values "
+                    + "into a small palette.");
+        }
+        return wb.createCellStyle();
+    }
+
     /** Data rows per sheet before a writer rolls over to a new sheet. */
     static final int DEFAULT_MAX_ROWS = 1_000_000;
 
@@ -354,7 +376,7 @@ class ExcelWriteSupport {
                                         Map<String, CellStyle> cache, SXSSFWorkbook wb) {
         String key = baseStyle.getIndex() + "_" + color.getR() + "_" + color.getG() + "_" + color.getB();
         return cache.computeIfAbsent(key, k -> {
-            CellStyle style = wb.createCellStyle();
+            CellStyle style = createDerivedStyle(wb);
             style.cloneStyleFrom(baseStyle);
             style.setFillForegroundColor(new XSSFColor(new byte[]{
                     (byte) color.getR(), (byte) color.getG(), (byte) color.getB()}));
@@ -393,7 +415,7 @@ class ExcelWriteSupport {
                 : "none";
         String key = baseStyle.getIndex() + "_" + rowStyle.cacheKey() + "_bg" + bgKey;
         return cache.computeIfAbsent(key, k -> {
-            CellStyle style = wb.createCellStyle();
+            CellStyle style = createDerivedStyle(wb);
             style.cloneStyleFrom(baseStyle);
 
             // Background color
