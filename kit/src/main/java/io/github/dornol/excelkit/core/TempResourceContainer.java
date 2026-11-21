@@ -78,20 +78,31 @@ public class TempResourceContainer implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (tempFile != null && ownsFile) {
+        releaseQuietly(ownsFile ? tempFile : null, tempDir);
+    }
+
+    /**
+     * Deletes a temp file and its directory, falling back to delete-on-exit when deletion fails.
+     * Static so that a cleanup action can run without holding a reference to the container.
+     *
+     * @param file the file to delete, or null
+     * @param dir  the directory to delete, or null
+     */
+    protected static void releaseQuietly(@Nullable Path file, @Nullable Path dir) {
+        if (file != null) {
             try {
-                Files.deleteIfExists(tempFile);
+                Files.deleteIfExists(file);
             } catch (IOException e) {
-                log.warn("Failed to delete temp file: {}", tempFile, e);
-                tempFile.toFile().deleteOnExit();
+                log.warn("Failed to delete temp file: {}", file, e);
+                file.toFile().deleteOnExit();
             }
         }
-        if (tempDir != null) {
+        if (dir != null) {
             try {
-                Files.deleteIfExists(tempDir);
+                Files.deleteIfExists(dir);
             } catch (IOException e) {
-                log.warn("Failed to delete temp dir: {}", tempDir, e);
-                tempDir.toFile().deleteOnExit();
+                log.warn("Failed to delete temp dir: {}", dir, e);
+                dir.toFile().deleteOnExit();
             }
         }
     }

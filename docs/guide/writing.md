@@ -34,6 +34,24 @@ ch.writeTo(Path.of("rows.csv"));
 replaces the target only when the write succeeded, via `AtomicFileWriter`. If the write fails, or the
 handler was already consumed, an existing target file is left untouched and no partial file remains.
 
+**Releasing a handler you will not write.** `write(...)` returns an `ExcelHandler` / `CsvHandler`
+that owns temp files until `writeTo(...)` consumes it. If the export is cancelled, or you hit an
+error after creating the handler, release it with `discard()`:
+
+```java
+ExcelHandler handler = writer.write(rows);
+if (!stillWanted()) {
+    handler.discard();   // idempotent; a no-op after writeTo
+    return;
+}
+handler.writeTo(out);
+```
+
+After `discard()` the `writeTo` methods throw. As a safety net a handler that is garbage collected
+without being consumed releases its temp files too, but only when the garbage collector runs, so do
+not rely on it. `ExcelKitResponse` in the Spring module discards the handler it was given when it
+rejects a blank password.
+
 CSV writes report a `CsvWriteException` when a value cannot be encoded in the
 selected charset. With formula-injection defense enabled, numeric objects keep
 their signs and formula-like text is prefixed with a single quote.

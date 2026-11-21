@@ -100,7 +100,10 @@ new CsvReader<>(Product::new, null)
 - `password("pw")` on writer — automatic encryption
 - `writeTo(out, "pw")` — late-binding encryption
 
-Output is consume-once via `ExcelHandler` / `CsvHandler`.
+Output is consume-once via `ExcelHandler` / `CsvHandler`. A handler that will not be written
+(cancelled export, error after creating it) must be released with `handler.discard()`; it is a no-op
+after `writeTo`. A handler that is garbage collected unconsumed releases its temp files as a safety
+net, at a time the garbage collector chooses.
 
 ## Map-Based (No POJO)
 

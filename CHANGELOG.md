@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
   `reader.cellConversion(c -> c.locale(...).addDateFormat(...))` instead. A `CellData` without a
   config, and a reader without `cellConversion(...)`, use the immutable
   `CellConversionConfig.defaults()` (JVM default locale, built-in date patterns).
+- `CsvHandler.close()` now behaves like `discard()`: it also marks the handler consumed, so a later
+  `writeTo` throws `CsvWriteException` instead of failing on the deleted file.
 - `ExcelKitResponse.excel(handler, filename, password)` rejects a null or blank password when the
   response is built (`IllegalArgumentException`) instead of while the body streams, and releases the
   handler's workbook.
@@ -19,6 +21,9 @@ All notable changes to this project will be documented in this file.
   `ExcelKitUploadException` instead of a reader-specific failure.
 
 ### Added
+- `ExcelHandler.discard()` and `CsvHandler.discard()` release a handler that will not be written
+  (idempotent, a no-op after `writeTo`). A handler that is garbage collected without being
+  consumed now releases its temp files as a safety net, at a time the garbage collector chooses.
 - `kit` and `excel-kit-spring` jars declare `Automatic-Module-Name` (`io.github.dornol.excelkit`,
   `io.github.dornol.excelkit.spring`) so module-path users get stable module names.
 

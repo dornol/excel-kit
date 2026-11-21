@@ -6,7 +6,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.OutputStream;
 import java.time.Duration;
 
 /**
@@ -26,8 +25,8 @@ public final class ExcelKitResponse {
      * Streams an Excel download encrypted with {@code password}.
      * <p>
      * A null or blank password is rejected here, before any response is built, instead of failing
-     * later while the body streams. The handler is consumed and its workbook closed, exactly as
-     * {@link ExcelHandler#writeTo(java.io.OutputStream, String)} does for a rejected password.
+     * later while the body streams. The handler is {@linkplain ExcelHandler#discard() discarded}, so
+     * its workbook is closed.
      *
      * @param handler  the handler to stream
      * @param filename the download filename
@@ -38,8 +37,7 @@ public final class ExcelKitResponse {
     public static ResponseEntity<StreamingResponseBody> excel(
             ExcelHandler handler, String filename, String password) {
         if (password == null || password.isBlank()) {
-            // The handler rejects a blank password by releasing its workbook, then throwing.
-            handler.writeTo(OutputStream.nullOutputStream(), password);
+            handler.discard();
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
         return excel(filename).body(out -> handler.writeTo(out, password));

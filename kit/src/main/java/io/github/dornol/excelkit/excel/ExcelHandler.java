@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.AtomicFileWriter;
 import io.github.dornol.excelkit.core.FileHandler;
+import io.github.dornol.excelkit.core.TempResourceCleaner;
 import io.github.dornol.excelkit.core.TempResourceCreator;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.crypt.EncryptionMode;
@@ -16,6 +17,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.Cleaner;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -35,9 +37,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Implementing {@link AutoCloseable} would cause IDE "resource not closed" warnings
  * in this pattern, requiring {@code @SuppressWarnings("resource")} on every call site.
  * <p>
- * The workbook is always closed inside {@link #writeTo(OutputStream)} overloads,
- * and there is no realistic code path where the handler is obtained but never consumed,
- * since callers either invoke it immediately or pass it to a {@code StreamingResponseBody} lambda.
+ * The workbook is closed inside the {@link #writeTo(OutputStream)} overloads. A handler that will not
+ * be written must be released with {@link #discard()}. As a safety net, a handler that is garbage
+ * collected without being consumed closes its workbook then; that happens at a time of the garbage
+ * collector's choosing, so do not rely on it.
  *
  * @author dhkim
  * @since 2025-07-19
@@ -46,7 +49,38 @@ public final class ExcelHandler implements FileHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
     private final SXSSFWorkbook wb;
     private final char @Nullable [] password;
-    private final AtomicBoolean consumed = new AtomicBoolean(false);
+
+    /**
+     * What must be released. It references the workbook but never the handler, so the handler can be
+     * garbage collected and then triggers this through {@link TempResourceCleaner}.
+     */
+    private static final class WorkbookRelease implements Runnable {
+        private final SXSSFWorkbook workbook;
+        private final AtomicBoolean consumed = new AtomicBoolean(false);
+
+        WorkbookRelease(SXSSFWorkbook workbook) {
+            this.workbook = workbook;
+        }
+
+        /** Marks the workbook as consumed; false if it already was. */
+        boolean claim() {
+            return consumed.compareAndSet(false, true);
+        }
+
+        @Override
+        public void run() {
+            if (claim()) {
+                try {
+                    ExcelWorkbookSupport.close(workbook);
+                } catch (IOException | RuntimeException e) {
+                    log.warn("Failed to close an unconsumed workbook", e);
+                }
+            }
+        }
+    }
+
+    private final WorkbookRelease release;
+    private final Cleaner.Cleanable cleanable;
 
     /**
      * Constructs an ExcelHandler wrapping the given workbook.
@@ -56,6 +90,8 @@ public final class ExcelHandler implements FileHandler {
     ExcelHandler(SXSSFWorkbook wb) {
         this.wb = wb;
         this.password = null;
+        this.release = new WorkbookRelease(wb);
+        this.cleanable = TempResourceCleaner.register(this, release);
     }
 
     /**
@@ -67,6 +103,8 @@ public final class ExcelHandler implements FileHandler {
     ExcelHandler(SXSSFWorkbook wb, @Nullable String password) {
         this.wb = wb;
         this.password = password != null ? password.toCharArray() : null;
+        this.release = new WorkbookRelease(wb);
+        this.cleanable = TempResourceCleaner.register(this, release);
     }
 
     /**
@@ -80,6 +118,19 @@ public final class ExcelHandler implements FileHandler {
     ExcelHandler(SXSSFWorkbook wb, char @Nullable [] password) {
         this.wb = wb;
         this.password = password != null ? password.clone() : null;
+        this.release = new WorkbookRelease(wb);
+        this.cleanable = TempResourceCleaner.register(this, release);
+    }
+
+    /**
+     * Releases the workbook and its temp files without writing it.
+     * <p>
+     * Use this when the handler will not be written, for example when the export is cancelled or
+     * the handler is dropped after an error. It does nothing if the handler was already consumed or
+     * discarded; afterwards the {@code writeTo} methods throw {@link ExcelWriteException}.
+     */
+    public void discard() {
+        cleanable.clean();
     }
 
     /**
@@ -258,13 +309,7 @@ public final class ExcelHandler implements FileHandler {
      * example inside a streaming response) does not keep temp files.
      */
     private IllegalArgumentException rejectBlankPassword() {
-        if (consumed.compareAndSet(false, true)) {
-            try {
-                ExcelWorkbookSupport.close(wb);
-            } catch (IOException | RuntimeException e) {
-                log.warn("Failed to close workbook after a rejected password", e);
-            }
-        }
+        discard();
         return new IllegalArgumentException("Password cannot be null or blank");
     }
 
@@ -290,13 +335,22 @@ public final class ExcelHandler implements FileHandler {
         try {
             wb.write(outputStream);
         } finally {
-            ExcelWorkbookSupport.close(wb);
+            closeConsumedWorkbook();
         }
     }
 
     private void markConsumed() {
-        if (!consumed.compareAndSet(false, true)) {
+        if (!release.claim()) {
             throw new ExcelWriteException("Already consumed");
+        }
+    }
+
+    /** Closes the workbook this handler consumed, then unregisters the safety net. */
+    private void closeConsumedWorkbook() throws IOException {
+        try {
+            ExcelWorkbookSupport.close(wb);
+        } finally {
+            cleanable.clean();
         }
     }
 
@@ -310,7 +364,7 @@ public final class ExcelHandler implements FileHandler {
             try (OutputStream tempOut = Files.newOutputStream(tempFile)) {
                 wb.write(tempOut);
             } finally {
-                ExcelWorkbookSupport.close(wb);
+                closeConsumedWorkbook();
             }
 
             // Encrypt the plain temp file into an in-memory POIFS, then stream it out.

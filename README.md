@@ -289,7 +289,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |
 | Null handling | `nullValue()` default for null cells, `defaultStyle()` for writer-level defaults |
 | Metadata | Document properties (title, author, subject, keywords), named ranges (fluent API) |
-| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, fail-fast write errors, atomic file writes (`AtomicFileWriter`: `writeTo(Path)` keeps the existing file on failure) |
+| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, fail-fast write errors, atomic file writes (`AtomicFileWriter`: `writeTo(Path)` keeps the existing file on failure), `discard()` to release a handler you will not write |
 
 **Reading (Excel & CSV)**
 

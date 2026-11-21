@@ -91,6 +91,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - `rawNumber()` reads the stored XLSX number before display formatting; `rawValues()` on read results and errors returns the source row's values using it
 - `asZonedDateTimeStrict(zone)` rejects local date-times in a DST gap or overlap
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
+- `ExcelHandler.discard()` / `CsvHandler.discard()` release an unwritten handler (idempotent, no-op after `writeTo`); an unconsumed handler that is garbage collected is released as a safety net
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time
 - `ExcelImage.size(w, h)` sets cell span; `ExcelImage.fromUrl(url)` downloads and auto-detects type
 - `rowStyle(predicate, config)` — conditional row-level bold/font/color (first match wins)
