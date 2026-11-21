@@ -97,6 +97,23 @@ specify the delimiter explicitly.
 `readDetected(InputStreamSource, ...)` and `readDetectedWithSummary(...)` close streams opened by
 the source. Caller-owned `InputStream` instances remain open.
 
+### What the parser does with sloppy quoting
+
+Files written by `CsvWriter` always read back as written. Files written by hand are read as far as the parser
+(opencsv) follows them. A space (or tab) before the opening quote of a quoted value is skipped by default
+(`ignoreLeadingWhiteSpace`), so `1, "x,y"` reads `x,y`; a doubled quote, a line break and the delimiter inside the value
+all work, with any delimiter, quote or escape character. These shapes are **not** read as one might expect, with either
+setting:
+
+| Input | Reads as | Why |
+|---|---|---|
+| `"x" ,2` (a space after the closing quote) | `x" ` | the closing quote followed by a space is taken as a literal |
+| `  "x",1` (spaces before the quote of the **first** value of a row) | `  x` | the spaces stay; so a header such as `"a"` with spaces before it reads as ` a` |
+| `1, ""` (an empty quoted value after a space) | ` "` | the quote is not recognised as a pair |
+| `1, ab "cd"` (quotes inside unquoted text) | ` ab "cd` | the closing quote is dropped |
+
+Write such files without the stray spaces, or read them with `.strictQuotes(true)` when every value is quoted.
+
 ### Mapping Mode
 
 ```java

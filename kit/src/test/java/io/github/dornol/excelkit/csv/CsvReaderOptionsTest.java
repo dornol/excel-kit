@@ -84,6 +84,23 @@ class CsvReaderOptionsTest {
     }
 
     @Test
+    void aSpaceBeforeAQuoteIsSkippedInEveryShapeOfQuotedValue() {
+        // a doubled quote, a line break and a delimiter inside the value; another delimiter, quote and escape character
+        assertEquals(List.of("{a=1, b=x\"y}@2"), read("a,b\n1, \"x\"\"y\"\n"));
+        assertEquals(List.of("{a=1, b=x\ny}@2"), read("a,b\n1, \"x\ny\"\n"));
+        assertEquals(List.of("{a=1, b=x\ty}@2"), read("a\tb\n1\t \"x\ty\"\n", r -> r.delimiter('\t')));
+        assertEquals(List.of("{a=1, b=x;y}@2"), read("a;b\n1; \"x;y\"\n", r -> r.delimiter(';')));
+        assertEquals(List.of("{a=1, b=x,y}@2"), read("a,b\n1, 'x,y'\n", r -> r.quoteChar('\'')));
+        assertEquals(List.of("{a=1, b=x\"y}@2"), read("a,b\n1, \"x\\\"y\"\n", r -> r.escapeChar('\\')));
+        assertEquals(List.of("{a=1, b=2}@2", "{a=3, b=4}@3"), read("a,b\n\"1\", \"2\"\r\n\"3\", \"4\"\r\n"));
+        // a tab counts as white space, spaces inside the quotes are the value's
+        assertEquals(List.of("{a=1, b=x}@2"), read("a,b\n1,\t\"x\"\n"));
+        assertEquals(List.of("{a=1, b= x }@2"), read("a,b\n1, \" x \"\n"));
+        // and the header row too, after its first cell
+        assertEquals(List.of("{a=1, b=2}@2"), read("\"a\", \"b\"\n1,2\n"));
+    }
+
+    @Test
     void leadingWhiteSpaceIsIgnoredBeforeAQuotedValueOnlyWhenAsked() {
         assertEquals(List.of("{a=1, b=x,y}@2"), read("a,b\n1, \"x,y\"\n", r -> r.ignoreLeadingWhiteSpace(true)));
         assertEquals(List.of("{a=1, b=x}@2"), read("a,b\n1, \"x\"\n", r -> r.ignoreLeadingWhiteSpace(true)));
