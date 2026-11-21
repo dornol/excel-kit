@@ -30,8 +30,8 @@ public final class ReaderOptions {
 
     ReadOptions toReadOptions() { return readOptions; }
 
-    /** A mutable copy, so a reader that is given these options never modifies them. */
-    Builder toBuilder() { return new Builder(this); }
+    /** A builder that starts from these options, so changing it never modifies them. */
+    public Builder toBuilder() { return new Builder(this); }
 
     /** Mutable builder used to create reusable immutable options. */
     public static final class Builder {

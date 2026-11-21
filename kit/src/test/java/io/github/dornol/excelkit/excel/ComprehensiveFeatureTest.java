@@ -4,7 +4,7 @@ import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.ExcelKitSchema;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import io.github.dornol.excelkit.core.ReadResult;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;

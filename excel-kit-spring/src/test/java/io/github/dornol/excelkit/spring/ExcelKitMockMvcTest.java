@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.ExcelKitSchema;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;

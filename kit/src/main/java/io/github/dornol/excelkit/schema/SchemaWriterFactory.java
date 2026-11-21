@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.core;
+package io.github.dornol.excelkit.schema;
 
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy;

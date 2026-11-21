@@ -6,6 +6,7 @@ import io.github.dornol.excelkit.excel.ExcelSheetInfo;
 import io.github.dornol.excelkit.excel.ExcelWorkbookReader;
 import io.github.dornol.excelkit.excel.SheetReadReport;
 import io.github.dornol.excelkit.excel.WorkbookReadReport;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -497,7 +498,7 @@ class ReadEntryPointEquivalenceTest {
 
             WorkbookReadReport report = read(kind, input, ExcelWorkbookReader.create()
                     .sheet("People", excelReader(), r -> people.add(describe(r)))
-                    .sheet(1, schema, Row::new, null, r -> other.add(describe(r))));
+                    .sheet(1, schema.excelReader(Row::new, null), r -> other.add(describe(r))));
 
             assertEquals(List.of("ok:A:1", "err:MAPPING@3", "ok:C:3"), people);
             assertEquals(List.of("ok:A:1", "ok:C:3"), other);
@@ -515,7 +516,7 @@ class ReadEntryPointEquivalenceTest {
             List<String> viaSchema = new ArrayList<>();
 
             read(kind, input, ExcelWorkbookReader.create().sheet("People", excelReader(), r -> viaReader.add(describe(r))));
-            read(kind, input, ExcelWorkbookReader.create().sheet("People", schema, Row::new, null,
+            read(kind, input, ExcelWorkbookReader.create().sheet("People", schema.excelReader(Row::new, null),
                     r -> viaSchema.add(describe(r))));
 
             assertEquals(viaReader, viaSchema);

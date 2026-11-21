@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
-import io.github.dornol.excelkit.core.ExcelKitSchema;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import io.github.dornol.excelkit.spring.ExcelKitErrorResponse;
 import io.github.dornol.excelkit.spring.ExcelKitTemplateResponse;
 import io.github.dornol.excelkit.spring.ExcelKitUpload;

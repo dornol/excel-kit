@@ -10,7 +10,7 @@
 WorkbookReadReport report = ExcelWorkbookReader.create()
     .sheet("Users", ExcelReader.mapping(row -> new User(row.get("Name").asString())),
         result -> { if (result.success()) importUser(result.data()); })
-    .sheet("Orders", orderSchema, Order::new, validator,
+    .sheet("Orders", orderSchema.excelReader(Order::new, validator),
         result -> { if (result.success()) importOrder(result.data()); })
     .failurePolicy(SheetFailurePolicy.CONTINUE)
     .read(inputStream);

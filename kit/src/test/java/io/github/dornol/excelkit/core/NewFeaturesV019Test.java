@@ -5,6 +5,7 @@ import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy;
 import io.github.dornol.excelkit.excel.ExcelWriteException;
 import io.github.dornol.excelkit.excel.ExcelWriter;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

@@ -1,12 +1,10 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.ExcelKitException;
-import io.github.dornol.excelkit.core.ExcelKitSchema;
 import io.github.dornol.excelkit.core.InputStreamSource;
 import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.core.ReadSummary;
 import io.github.dornol.excelkit.core.RowError;
-import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -21,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /** Reads multiple workbook sheets with independent readers and result aggregation. */
 public final class ExcelWorkbookReader {
@@ -65,20 +62,6 @@ public final class ExcelWorkbookReader {
         Objects.requireNonNull(consumer, "consumer cannot be null");
         plans.add(new SheetPlan(null, index, new ReaderSheetExecution<>(reader, consumer)));
         return this;
-    }
-
-    public <T> ExcelWorkbookReader sheet(String name, ExcelKitSchema<T> schema,
-                                         Supplier<T> supplier, @Nullable Validator validator,
-                                         Consumer<ReadResult<T>> consumer) {
-        Objects.requireNonNull(schema, "schema cannot be null");
-        return sheet(name, schema.excelReader(supplier, validator), consumer);
-    }
-
-    public <T> ExcelWorkbookReader sheet(int index, ExcelKitSchema<T> schema,
-                                         Supplier<T> supplier, @Nullable Validator validator,
-                                         Consumer<ReadResult<T>> consumer) {
-        Objects.requireNonNull(schema, "schema cannot be null");
-        return sheet(index, schema.excelReader(supplier, validator), consumer);
     }
 
     public WorkbookReadReport read(InputStream input) {

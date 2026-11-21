@@ -5,3 +5,12 @@
 # ExcelConditionalRule.dataBar(ExcelColor, ExcelColor) removed: it wrote a second <color> element, which the
 # OOXML schema does not allow, and Excel's data bars have no two-color gradient.
 io.github.dornol.excelkit.excel.ExcelConditionalRule#dataBar(io.github.dornol.excelkit.excel.ExcelColor,io.github.dornol.excelkit.excel.ExcelColor)
+# ExcelKitSchema (with its nested types and the schema factories) moved from core to the new schema package, so that
+# core no longer depends on excel and csv (the packages formed a cycle). Import io.github.dornol.excelkit.schema.ExcelKitSchema.
+io.github.dornol.excelkit.core.ExcelKitSchema*
+io.github.dornol.excelkit.core.SchemaReaderFactory
+io.github.dornol.excelkit.core.SchemaWriterFactory
+# ExcelWorkbookReader.sheet(name|index, schema, supplier, validator, consumer) removed: it only delegated to
+# sheet(name|index, schema.excelReader(supplier, validator), consumer), and kept excel depending on schema.
+io.github.dornol.excelkit.excel.ExcelWorkbookReader#sheet(java.lang.String,io.github.dornol.excelkit.core.ExcelKitSchema,java.util.function.Supplier,jakarta.validation.Validator,java.util.function.Consumer)
+io.github.dornol.excelkit.excel.ExcelWorkbookReader#sheet(int,io.github.dornol.excelkit.core.ExcelKitSchema,java.util.function.Supplier,jakarta.validation.Validator,java.util.function.Consumer)

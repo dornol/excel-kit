@@ -8,7 +8,7 @@ import io.github.dornol.excelkit.csv.CsvDialect;
 import io.github.dornol.excelkit.csv.CsvQuoting;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.core.ExcelKitSchema;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

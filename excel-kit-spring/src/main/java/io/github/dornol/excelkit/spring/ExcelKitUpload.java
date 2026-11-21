@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.ExcelKitSchema;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import io.github.dornol.excelkit.core.ReadLimits;
 import io.github.dornol.excelkit.core.TabularFileDetector;
 import io.github.dornol.excelkit.core.TabularFileType;

@@ -1,11 +1,13 @@
-package io.github.dornol.excelkit.core;
+package io.github.dornol.excelkit.schema;
 
+import io.github.dornol.excelkit.core.ReadResult;
 import io.github.dornol.excelkit.csv.CsvHandler;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelHandler;
 import io.github.dornol.excelkit.excel.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.Max;
