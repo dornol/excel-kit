@@ -571,6 +571,39 @@ class ReadEntryPointEquivalenceTest {
         }
 
         @Test
+        void aBlankedHeaderUnderStrictQuotesIsExplained() {
+            String unquotedHeader = "Name,Qty\n\"A\",\"1\"\n";
+
+            var error = assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class,
+                    () -> pairs(unquotedHeader, reader -> reader.strictQuotes(true)));
+
+            assertTrue(error.getMessage().contains("strictQuotes"), error.getMessage());
+            assertTrue(error.getMessage().contains("every header cell must be quoted"), error.getMessage());
+            assertTrue(error.getMessage().contains("Header aliases"), "the original cause is quoted");
+            assertTrue(error.getCause() instanceof ExcelKitException, "and still attached");
+        }
+
+        @Test
+        void aMissingHeaderWithoutStrictQuotesKeepsTheGenericMessage() {
+            String wrongHeader = "Wrong,Qty\n\"A\",\"1\"\n";
+
+            var error = assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class,
+                    () -> pairs(wrongHeader, reader -> { }));
+
+            assertEquals("Failed to read CSV", error.getMessage());
+        }
+
+        @Test
+        void aMissingHeaderUnderStrictQuotesIsNotBlamedOnQuoting() {
+            String wrongHeader = "\"Wrong\",\"Qty\"\n\"A\",\"1\"\n";
+
+            var error = assertThrows(io.github.dornol.excelkit.csv.CsvReadException.class,
+                    () -> pairs(wrongHeader, reader -> reader.strictQuotes(true)));
+
+            assertEquals("Failed to read CSV", error.getMessage());
+        }
+
+        @Test
         void ignoreLeadingWhiteSpaceSkipsBlanksBeforeAQuotedValue() {
             String text = "Name,Qty\nA, \"1\"\n";
 

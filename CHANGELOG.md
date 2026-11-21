@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- A CSV read that fails because `strictQuotes(true)` blanked an unquoted header row now says so
+  (`a header cell is blank … every header cell must be quoted`) instead of only
+  `Failed to read CSV`; the original cause is still attached. The javadoc of `strictQuotes` and
+  `ignoreLeadingWhiteSpace` now describes what they do.
 - **Breaking:** removed the process-wide `CellData` conversion defaults: `setDefaultLocale`,
   `getDefaultLocale`, `addDateFormat`, `addDateTimeFormat`, `getDateFormats`,
   `getDateTimeFormats`, `resetDateFormats` and `resetDateTimeFormats`. Use

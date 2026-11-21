@@ -263,7 +263,11 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     /**
-     * Enables or disables OpenCSV strict quote parsing.
+     * Enables or disables OpenCSV strict quote parsing (default: disabled).
+     * <p>
+     * When enabled, text outside quotes is dropped ({@code "A"junk} reads as {@code A}). That
+     * includes the header row, so every header cell must be quoted too; an unquoted header reads as
+     * blank and the read fails with a {@link CsvReadException} that says so.
      *
      * @since 0.19.0
      */
@@ -273,7 +277,10 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     /**
-     * Controls whether leading whitespace before quoted values is ignored.
+     * Controls whether leading whitespace before quoted values is ignored (default: not ignored).
+     * <p>
+     * When enabled, {@code a, "b"} reads the second value as {@code b}. Whitespace around values
+     * that are not quoted is always kept.
      *
      * @since 0.19.0
      */

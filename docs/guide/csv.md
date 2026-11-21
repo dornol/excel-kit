@@ -113,7 +113,7 @@ CsvReader.setter(Row::new)
     .charset(StandardCharsets.UTF_16)
     .quoteChar('\'')
     .escapeChar('\\')
-    .strictQuotes(false)
+    .strictQuotes(false)             // true drops text outside quotes: quote the header row too
     .ignoreLeadingWhiteSpace(true)
     .headerRowIndex(1)            // skip first row
     .dialect(CsvDialect.TSV)

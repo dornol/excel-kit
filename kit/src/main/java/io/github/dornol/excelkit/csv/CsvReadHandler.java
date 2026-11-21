@@ -6,6 +6,7 @@ import io.github.dornol.excelkit.core.AbstractReadHandler;
 import io.github.dornol.excelkit.core.CellData;
 import io.github.dornol.excelkit.core.CellConversionConfig;
 import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.ReadColumn;
 import io.github.dornol.excelkit.core.ReadAbortException;
 import io.github.dornol.excelkit.core.ReadResult;
@@ -150,11 +151,26 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         } catch (CsvReadException | ReadAbortException e) {
             throw e;
         } catch (IOException | RuntimeException e) {
-            throw new CsvReadException("Failed to read CSV", e);
+            throw new CsvReadException(failureMessage(e), e);
         } finally {
             notifyReadCompletion(-1, -1);
             close();
         }
+    }
+
+    /**
+     * With {@code strictQuotes} the parser drops text outside quotes, so a header row that is not
+     * quoted turns into blank headers and the columns are then "not found". Say so, because the
+     * cause alone ("Available headers: [, ]") does not explain it.
+     */
+    private String failureMessage(Exception cause) {
+        if (strictQuotes && cause instanceof ExcelKitException
+                && headerNames.stream().anyMatch(String::isBlank)) {
+            return "Failed to read CSV: a header cell is blank. With strictQuotes(true) text outside quotes is "
+                    + "dropped, so every header cell must be quoted; quote the header row or turn strictQuotes "
+                    + "off. Cause: " + cause.getMessage();
+        }
+        return "Failed to read CSV";
     }
 
     boolean wasStoppedEarly() { return stoppedEarly; }
