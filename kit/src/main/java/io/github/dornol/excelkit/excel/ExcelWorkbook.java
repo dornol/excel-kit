@@ -89,8 +89,7 @@ public class ExcelWorkbook implements AutoCloseable {
 
     private ExcelWorkbook(InitOptions opts) {
         StreamingOptions streaming = opts.state.options();
-        this.wb = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
-                streaming.compressTempFiles(), streaming.useSharedStrings());
+        this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
         ExcelColor defaultColor = ExcelColor.WHITE;
         this.headerColor = new XSSFColor(new byte[]{
                 (byte) defaultColor.getR(),

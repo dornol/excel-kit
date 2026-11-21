@@ -151,9 +151,12 @@ class ExcelValuePreservationTest {
 
     @Test
     void escapesLiteralSequencesAndControlsWithInlineAndSharedStrings() throws IOException {
-        List<Object> values = List.of("_x0041_", "_x0041_x0042_", "_x0041\0", "a\0b\fb\u0001", "a\r\nb",
-                "한글😀", "x".repeat(32760) + "_x0041_", new ExcelRichText().bold("_x").italic("0041_\f"));
+        List<Object> plain = List.of("_x0041_", "_x0041_x0042_", "_x0041\0", "a\0b\fb\u0001", "a\r\nb",
+                "한글😀", "x".repeat(32760) + "_x0041_");
         for (boolean shared : List.of(false, true)) {
+            // rich text keeps its formatting only with shared strings, and is refused without them
+            List<Object> values = new java.util.ArrayList<>(plain);
+            if (shared) values.add(new ExcelRichText().bold("_x").italic("0041_\f"));
             var output = new ByteArrayOutputStream();
             ExcelWriter.<Object>create(options -> options.useSharedStrings(shared))
                     .column("_x005F_", value -> value).write(values).writeTo(output);

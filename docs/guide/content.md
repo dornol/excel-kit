@@ -49,7 +49,20 @@ Mixed formatting within a single cell:
     c -> c.type(ExcelDataType.RICH_TEXT))
 ```
 
-FontStyle options: `bold()`, `italic()`, `underline()`, `strikethrough()`, `color()`, `fontSize()`
+FontStyle options: `bold()`, `italic()`, `underline()`, `strikethrough()`, `color()`, `fontSize()` (1–409)
+
+**Rich text needs shared strings.** Streaming writes a string cell as its plain text, so the formatting is kept only
+when the workbook is created with shared strings; without them the write fails (or, with
+`writeErrorPolicy(LENIENT)`, writes the plain text):
+
+```java
+ExcelWriter.<Item>create(o -> o.useSharedStrings(true))
+    .column("Desc", p -> new ExcelRichText().text("Status: ").bold("APPROVED"),
+        c -> c.type(ExcelDataType.RICH_TEXT))
+```
+
+The shared strings table is kept in memory, so with millions of distinct strings this costs heap. A segment's font
+starts from POI's default (Calibri 11), not from the column's font: give `fontSize(...)` where the column's differs.
 
 ## Image Embedding
 

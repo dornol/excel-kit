@@ -165,10 +165,20 @@ public enum ExcelDataType {
      * <p>
      * Accepts an {@link ExcelRichText} instance built using its fluent API.
      * If the value is not an {@code ExcelRichText}, it falls back to {@code String.valueOf(value)}.
+     * <p>
+     * The formatting is kept only when the workbook has shared strings
+     * ({@code ExcelWriter.create(o -> o.useSharedStrings(true))}); otherwise the write fails, or, with
+     * {@link ExcelWriteErrorPolicy#LENIENT}, writes the plain text.
      */
     RICH_TEXT((cell, value) -> {
         if (value instanceof ExcelRichText rt) {
             SXSSFWorkbook wb = cell.getSheet().getWorkbook();
+            if (!ExcelWorkbookSupport.usesSharedStrings(wb)) {
+                throw new IllegalStateException("Rich text keeps its formatting only in a workbook with shared strings; "
+                        + "without them POI writes the cell as plain text. Create the writer with "
+                        + "ExcelWriter.create(o -> o.useSharedStrings(true)) (or ExcelWorkbook.create(...)); an "
+                        + "ExcelTemplateWriter cannot write rich text");
+            }
             ExcelCellText.writeStreaming(cell, rt.toRichTextString(wb, ExcelRichText.getFontCache(wb)));
         } else {
             ExcelCellText.write(cell, String.valueOf(value));

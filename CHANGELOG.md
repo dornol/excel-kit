@@ -17,6 +17,12 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** an `ExcelRichText` value written into a workbook without shared strings is refused
+  (`ExcelWriteException`, whose cause says to create the writer with `useSharedStrings(true)`; with
+  `writeErrorPolicy(LENIENT)` it writes the plain text). Streaming writes a string cell as its plain text, so the
+  formatting was lost without a word: the cell held `<is><t>Hello world</t></is>` where the code and the guide
+  promised a bold word. Only a workbook created with `useSharedStrings(true)` keeps the runs.
+  `ExcelRichText.FontStyle.fontSize` accepts 1–409 points and `text`/`bold`/`italic`/`styled` refuse `null`, at the call.
 - **Breaking:** a page setup that Excel cannot use is refused where it is made, with `IllegalArgumentException`,
   instead of writing a broken sheet or failing after the whole stream: a margin that is negative, NaN or infinite;
   `fitToPage` pages outside 0–32,767 (40,000 used to wrap to a negative number and 65,536 to 0, and a negative count
@@ -72,6 +78,8 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- An emoji (a surrogate pair) split between two `ExcelRichText` segments was stored as two `?`; the run boundary now
+  moves behind the whole character.
 - A `dropdown(...)` option containing a double quote wrote a broken list formula (`"say "hi",c"`); quotes are now
   written twice, as Excel's formula syntax asks, and count twice towards the 255-character limit. A single-bound
   validation (`integerGreaterThan`, `integerLessThan`) no longer writes an empty `<formula2/>`.

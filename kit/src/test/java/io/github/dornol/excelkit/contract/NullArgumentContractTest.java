@@ -87,7 +87,9 @@ class NullArgumentContractTest {
             new Target(ExcelSummary.class, () -> new Receiver(construct(ExcelSummary.class), NOTHING)),
             new Target(ExcelConditionalRule.class, () -> new Receiver(construct(ExcelConditionalRule.class), NOTHING)),
             new Target(ExcelChartConfig.class, () -> new Receiver(construct(ExcelChartConfig.class), NOTHING)),
-            new Target(ExcelPrintSetup.class, () -> new Receiver(construct(ExcelPrintSetup.class), NOTHING)));
+            new Target(ExcelPrintSetup.class, () -> new Receiver(construct(ExcelPrintSetup.class), NOTHING)),
+            new Target(io.github.dornol.excelkit.excel.ExcelRichText.class,
+                    () -> new Receiver(new io.github.dornol.excelkit.excel.ExcelRichText(), NOTHING)));
 
     /** Methods that are not part of the contract: they take the object itself or are Object's. */
     private static boolean isContractMethod(Method method) {

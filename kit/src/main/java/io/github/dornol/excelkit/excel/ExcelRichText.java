@@ -51,7 +51,7 @@ public class ExcelRichText {
      * @return this builder
      */
     public ExcelRichText text(String text) {
-        segments.add(new Segment(text, null));
+        segments.add(new Segment(java.util.Objects.requireNonNull(text, "text cannot be null"), null));
         return this;
     }
 
@@ -83,6 +83,8 @@ public class ExcelRichText {
      * @return this builder
      */
     public ExcelRichText styled(String text, Consumer<FontStyle> configurer) {
+        java.util.Objects.requireNonNull(text, "text cannot be null");
+        java.util.Objects.requireNonNull(configurer, "configurer cannot be null");
         FontStyle style = new FontStyle();
         configurer.accept(style);
         segments.add(new Segment(text, style));
@@ -96,7 +98,31 @@ public class ExcelRichText {
      * @param fontCache a cache map to reuse fonts with identical styling
      * @return the rich text string ready to be set on a cell
      */
+    /**
+     * The segments, with no run boundary inside a surrogate pair: a character outside the BMP (an emoji) whose
+     * halves ended up in two segments is kept whole, in the segment its first half is in. Each run is stored as
+     * text of its own, and half of a pair cannot be.
+     */
+    private List<Segment> wholeCharacterSegments() {
+        List<Segment> result = new ArrayList<>(segments.size());
+        for (Segment segment : segments) {
+            String text = segment.text;
+            if (text.isEmpty()) continue;
+            if (!result.isEmpty() && Character.isLowSurrogate(text.charAt(0))) {
+                Segment previous = result.get(result.size() - 1);
+                if (Character.isHighSurrogate(previous.text.charAt(previous.text.length() - 1))) {
+                    result.set(result.size() - 1, new Segment(previous.text + text.charAt(0), previous.style));
+                    text = text.substring(1);
+                    if (text.isEmpty()) continue;
+                }
+            }
+            result.add(new Segment(text, segment.style));
+        }
+        return result;
+    }
+
     XSSFRichTextString toRichTextString(SXSSFWorkbook wb, Map<String, Font> fontCache) {
+        List<Segment> segments = wholeCharacterSegments();
         StringBuilder fullText = new StringBuilder();
         for (Segment seg : segments) {
             fullText.append(seg.text);
@@ -104,7 +130,7 @@ public class ExcelRichText {
         String logical = fullText.toString();
         String encoded = ExcelCellText.encode(logical);
         if (encoded != logical) {
-            return encodedRichText(wb, fontCache, logical, encoded);
+            return encodedRichText(wb, fontCache, segments, logical, encoded);
         }
         XSSFRichTextString rts = new XSSFRichTextString(logical);
 
@@ -121,7 +147,7 @@ public class ExcelRichText {
     }
 
     private XSSFRichTextString encodedRichText(SXSSFWorkbook wb, Map<String, Font> fontCache,
-                                              String logical, String encoded) {
+                                              List<Segment> segments, String logical, String encoded) {
         var text = new ExcelCellText.StreamingText(logical, encoded);
         int position = 0;
         int storedPosition = 0;
@@ -174,6 +200,9 @@ public class ExcelRichText {
     public static class FontStyle {
         /** Creates a new font style with defaults. */
         public FontStyle() {}
+
+        /** The largest font size Excel accepts, in points. */
+        private static final int MAX_FONT_SIZE = 409;
 
         private boolean bold;
         private boolean italic;
@@ -256,6 +285,9 @@ public class ExcelRichText {
          * @return this instance for chaining
          */
         public FontStyle fontSize(int size) {
+            if (size < 1 || size > MAX_FONT_SIZE) {
+                throw new IllegalArgumentException("fontSize must be between 1 and " + MAX_FONT_SIZE + " points, got " + size);
+            }
             this.fontSize = size;
             return this;
         }

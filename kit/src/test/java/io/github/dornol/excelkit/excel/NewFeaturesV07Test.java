@@ -184,7 +184,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_plainText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> new ExcelRichText().text("Hello World"),
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
@@ -200,7 +200,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_boldText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> new ExcelRichText().text("Normal ").bold("Bold"),
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
@@ -216,7 +216,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_italicText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> new ExcelRichText().text("Normal ").italic("Italic"),
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
@@ -232,7 +232,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_styledWithMultipleOptions() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> new ExcelRichText()
                                     .text("Normal ")
                                     .styled("Fancy", style -> style
@@ -254,7 +254,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_multipleSegments() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> new ExcelRichText()
                                     .text("Hello ")
                                     .bold("World")
@@ -291,7 +291,7 @@ class NewFeaturesV07Test {
                     .text("read this");
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> rt, c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
                     .writeTo(out);
@@ -307,7 +307,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_fallbackWhenNotExcelRichText() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> "plain string value",
                             c -> c.type(ExcelDataType.RICH_TEXT))
                     .write(Stream.of("row"))
@@ -323,7 +323,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_withExcelColorPreset() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> new ExcelRichText()
                                     .styled("Red text", style -> style.color(ExcelColor.RED))
                                     .styled("Blue text", style -> style.color(ExcelColor.BLUE)),
@@ -341,7 +341,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_inExcelSheetWriter() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try (ExcelWorkbook workbook = ExcelWorkbook.create()) {
+            try (ExcelWorkbook workbook = ExcelWorkbook.create(o -> o.useSharedStrings(true))) {
                 workbook.<String>sheet("RichSheet")
                         .column("Col", s -> new ExcelRichText()
                                         .text("Normal ")
@@ -361,7 +361,7 @@ class NewFeaturesV07Test {
         @Test
         void richText_emptySegments() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ExcelWriter.<String>create()
+            ExcelWriter.<String>create(o -> o.useSharedStrings(true))
                     .column("Col", s -> new ExcelRichText()
                                     .text("")
                                     .bold("")

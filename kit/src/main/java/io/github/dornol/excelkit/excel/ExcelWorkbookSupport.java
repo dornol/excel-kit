@@ -8,6 +8,26 @@ import java.util.Locale;
 /** Workbook-level operations independent of sheet row rendering. */
 final class ExcelWorkbookSupport {
 
+    /** The streaming workbooks that were created with a shared strings table. */
+    private static final java.util.Map<SXSSFWorkbook, Boolean> SHARED_STRINGS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Creates the streaming workbook a writer works on, and remembers whether it keeps shared strings. */
+    static SXSSFWorkbook streamingWorkbook(StreamingOptions streaming) {
+        SXSSFWorkbook workbook = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
+                streaming.compressTempFiles(), streaming.useSharedStrings());
+        if (streaming.useSharedStrings()) SHARED_STRINGS.put(workbook, Boolean.TRUE);
+        return workbook;
+    }
+
+    /**
+     * Whether the workbook keeps shared strings. Without them POI writes every string cell as its plain text,
+     * so formatting inside a cell (rich text) cannot be kept.
+     */
+    static boolean usesSharedStrings(SXSSFWorkbook workbook) {
+        return SHARED_STRINGS.containsKey(workbook);
+    }
+
     /**
      * Closes the workbook and deletes the temp files that back its sheets.
      * <p>
