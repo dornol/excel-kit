@@ -110,10 +110,8 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     List<String> rawValues = rawValues(line);
                     int rowDecision = evaluateRow(rawValues);
                     if (rowDecision == STOP_READING) break;
-                    if (rowDecision == SKIP_ROW) {
-                        rowCount++;
-                        continue;
-                    }
+                    // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
+                    if (rowDecision == SKIP_ROW) continue;
                     guardedConsumer.accept(processRowMapping(line, headerIndexMap, reader.recordStartLine(), rawValues));
                     recordEmittedRow();
                     rowCount++;
@@ -129,10 +127,8 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     List<String> rawValues = rawValues(line);
                     int rowDecision = evaluateRow(rawValues);
                     if (rowDecision == STOP_READING) break;
-                    if (rowDecision == SKIP_ROW) {
-                        rowCount++;
-                        continue;
-                    }
+                    // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
+                    if (rowDecision == SKIP_ROW) continue;
                     guardedConsumer.accept(processRow(line, resolvedIndices, reader.recordStartLine(), rawValues));
                     recordEmittedRow();
                     rowCount++;

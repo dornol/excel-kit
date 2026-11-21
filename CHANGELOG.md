@@ -45,6 +45,9 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A CSV read with `skipBlankRows` (or `stopAtBlankRows`) counted the skipped blank rows in its progress: `onProgress`
+  and `onReadProgress` reported more processed rows than were delivered, and the last `onReadProgress` event
+  (`completed`) then reported fewer. Skipped rows are no longer counted, as in the Excel reader.
 - With a multi-row (grouped) header the writers took the first header row for "the header row", so everything
   placed relative to it was one or more rows too high: a `summary` range, a structured `table`, a
   `conditionalFormatting` range, dropdown and `validation` ranges, a `chart`'s series, the rows repeated by
