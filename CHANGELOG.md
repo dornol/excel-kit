@@ -45,6 +45,11 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- `ExcelWorkbookReader` can read a password-protected workbook. It listed the sheets without decrypting the file,
+  so every read failed with `Failed to read sheet names` (`OLE2NotOfficeXmlFileException`), however the sheet readers
+  were set up with `password(...)`. The sheets are now listed from a decrypted copy (deleted afterwards), and a wrong
+  password is reported as `Invalid password for encrypted Excel file`. `ExcelReader.getSheetNames` and
+  `getSheetHeaders` still cannot open an encrypted file.
 - A CSV read with `skipBlankRows` (or `stopAtBlankRows`) counted the skipped blank rows in its progress: `onProgress`
   and `onReadProgress` reported more processed rows than were delivered, and the last `onReadProgress` event
   (`completed`) then reported fewer. Skipped rows are no longer counted, as in the Excel reader.

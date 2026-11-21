@@ -31,6 +31,27 @@ import java.util.regex.Pattern;
  */
 class ExcelReadSupport {
 
+    /**
+     * Decrypts an agile-encrypted workbook into {@code target}.
+     *
+     * @throws ExcelReadException if the password is wrong
+     */
+    static void decrypt(java.nio.file.Path encrypted, String password, java.nio.file.Path target) throws Exception {
+        try (org.apache.poi.poifs.filesystem.POIFSFileSystem fs =
+                     new org.apache.poi.poifs.filesystem.POIFSFileSystem(encrypted.toFile(), true)) {
+            org.apache.poi.poifs.crypt.EncryptionInfo info = new org.apache.poi.poifs.crypt.EncryptionInfo(fs);
+            org.apache.poi.poifs.crypt.Decryptor decryptor = org.apache.poi.poifs.crypt.Decryptor.getInstance(info);
+            if (!decryptor.verifyPassword(password)) {
+                throw new ExcelReadException("Invalid password for encrypted Excel file");
+            }
+            try (java.io.InputStream decrypted = decryptor.getDataStream(fs);
+                 java.io.OutputStream out = java.nio.file.Files.newOutputStream(target)) {
+                decrypted.transferTo(out);
+            }
+        }
+    }
+
+
     /** Excel maximum column count (XFD = 16,384). */
     static final int EXCEL_MAX_COLUMNS = 16_384;
     private static final Pattern FORMAT_LITERAL = Pattern.compile("\"[^\"]*\"|\\\\.|_.|\\*.");

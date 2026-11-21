@@ -403,6 +403,11 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         return password == null;
     }
 
+    /** The password this reader opens an encrypted workbook with, or {@code null}. */
+    @Nullable String password() {
+        return password;
+    }
+
     ReadSummary readSharedPackage(Path path, OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
         ExcelReadHandler<T> handler = createHandler(path);
         return summarizeRead(callback -> handler.readSharedPackage(pkg, callback), handler::wasStoppedEarly, consumer);

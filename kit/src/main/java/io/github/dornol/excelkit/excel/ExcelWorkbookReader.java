@@ -106,7 +106,7 @@ public final class ExcelWorkbookReader {
 
     public WorkbookReadReport read(Path path) {
         Objects.requireNonNull(path, "path cannot be null");
-        List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(path);
+        List<ExcelSheetInfo> sheets = sheetNames(path);
         List<SheetReadReport> reports = new ArrayList<>();
         boolean sharePackage = !plans.isEmpty() && plans.stream().allMatch(SheetPlan::canSharePackage);
         try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile(), PackageAccess.READ) : null) {
@@ -142,6 +142,34 @@ public final class ExcelWorkbookReader {
             throw new ExcelKitException("Failed to open workbook", e);
         }
         return new WorkbookReadReport(reports);
+    }
+
+    /**
+     * The sheets of the workbook. An encrypted workbook has to be decrypted first, with the password of the
+     * readers that were registered for it (all sheets of one file share one password).
+     */
+    private List<ExcelSheetInfo> sheetNames(Path path) {
+        String password = plans.stream().map(plan -> plan.execution.password()).filter(Objects::nonNull)
+                .findFirst().orElse(null);
+        if (password == null) return ExcelReader.getSheetNames(path);
+        Path decrypted = null;
+        try {
+            decrypted = Files.createTempFile("excel-kit-workbook-", ".xlsx");
+            ExcelReadSupport.decrypt(path, password, decrypted);
+            return ExcelReader.getSheetNames(decrypted);
+        } catch (ExcelReadException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelReadException("Failed to read sheet names", e);
+        } finally {
+            if (decrypted != null) {
+                try {
+                    Files.deleteIfExists(decrypted);
+                } catch (IOException ignored) {
+                    decrypted.toFile().deleteOnExit();
+                }
+            }
+        }
     }
 
     private @Nullable Integer findSheetIndex(@Nullable String name, List<ExcelSheetInfo> sheets) {
@@ -202,6 +230,8 @@ public final class ExcelWorkbookReader {
 
         default boolean canSharePackage() { return false; }
 
+        default @Nullable String password() { return null; }
+
         default SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg) {
             return read(path, index, maximumErrors);
         }
@@ -224,6 +254,11 @@ public final class ExcelWorkbookReader {
         @Override
         public boolean canSharePackage() {
             return reader.canSharePackage();
+        }
+
+        @Override
+        public @Nullable String password() {
+            return reader.password();
         }
 
         @Override
