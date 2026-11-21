@@ -352,6 +352,7 @@ class ExcelEdgeCaseTest {
                     () -> handler.writeTo(new ByteArrayOutputStream(), "second"));
             assertTrue(ex.getMessage().contains("already set"),
                     "Should indicate password conflict");
+            handler.writeTo(java.io.OutputStream.nullOutputStream());
         }
 
         @Test
@@ -371,6 +372,7 @@ class ExcelEdgeCaseTest {
             for (char c : charPassword) {
                 assertEquals('\0', c, "Password char array should be zeroed even on conflict exception");
             }
+            handler.writeTo(java.io.OutputStream.nullOutputStream());
         }
     }
 

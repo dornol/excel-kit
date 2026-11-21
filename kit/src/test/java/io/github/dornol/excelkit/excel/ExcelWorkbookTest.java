@@ -91,7 +91,7 @@ class ExcelWorkbookTest {
                 .column("Col", s -> s)
                 .write(Stream.of("x"));
 
-        workbook.finish();
+        workbook.finish().writeTo(java.io.OutputStream.nullOutputStream());
 
         assertThrows(ExcelWriteException.class, () -> workbook.<String>sheet("More"),
                 "Adding sheet to finished workbook should throw");
@@ -569,7 +569,7 @@ class ExcelWorkbookTest {
     void finish_twice_throws() {
         ExcelWorkbook wb = ExcelWorkbook.create();
         wb.<String>sheet("Data").column("Col", s -> s).write(Stream.of("x"));
-        wb.finish();
+        wb.finish().writeTo(java.io.OutputStream.nullOutputStream());
         assertThrows(ExcelWriteException.class, wb::finish,
                 "Calling finish() a second time should throw");
     }

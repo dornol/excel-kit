@@ -143,7 +143,7 @@ class ExcelTemplateWriterEdgeCaseTest {
     void cell_afterFinish_throws() throws IOException {
         byte[] template = createTemplate();
         var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template));
-        writer.finish();
+        writer.finish().writeTo(java.io.OutputStream.nullOutputStream());
         assertThrows(ExcelWriteException.class, () -> writer.cell("A1", "x"));
     }
 
@@ -151,7 +151,7 @@ class ExcelTemplateWriterEdgeCaseTest {
     void list_afterFinish_throws() throws IOException {
         byte[] template = createTemplate();
         var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template));
-        writer.finish();
+        writer.finish().writeTo(java.io.OutputStream.nullOutputStream());
         assertThrows(ExcelWriteException.class, () -> writer.list(5));
     }
 
@@ -159,7 +159,7 @@ class ExcelTemplateWriterEdgeCaseTest {
     void finish_afterFinish_throws() throws IOException {
         byte[] template = createTemplate();
         var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template));
-        writer.finish();
+        writer.finish().writeTo(java.io.OutputStream.nullOutputStream());
         assertThrows(ExcelWriteException.class, () -> writer.finish());
     }
 
@@ -388,7 +388,7 @@ class ExcelTemplateWriterEdgeCaseTest {
         try (var writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
             writer.sheet(1);
             writer.cell("B1", "data");
-            writer.finish();
+            writer.finish().writeTo(java.io.OutputStream.nullOutputStream());
         }
     }
 }

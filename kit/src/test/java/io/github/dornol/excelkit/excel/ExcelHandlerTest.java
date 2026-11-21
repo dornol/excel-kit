@@ -301,6 +301,7 @@ class ExcelHandlerTest {
         ExcelHandler h = new ExcelHandler(wb2, "pw1");
         Path target = tempDir.resolve("conflict.xlsx");
         assertThrows(IllegalStateException.class, () -> h.writeTo(target, "pw2"));
+        h.writeTo(java.io.OutputStream.nullOutputStream());
     }
 
     @Test

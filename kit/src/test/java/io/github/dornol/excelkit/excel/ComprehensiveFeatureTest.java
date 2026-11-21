@@ -230,7 +230,8 @@ class ComprehensiveFeatureTest {
                     totals.add(count);
                     rowOfSheets.add(cursor.getRowOfSheet());
                 })
-                .write(Stream.of(1, 2, 3, 4));
+                .write(Stream.of(1, 2, 3, 4))
+                .writeTo(java.io.OutputStream.nullOutputStream());
 
         assertEquals(List.of(2L, 4L), totals);
         // cursor rowOfSheet includes header row (row 0 = header)
@@ -353,7 +354,8 @@ class ComprehensiveFeatureTest {
                     totals.add(count);
                     sheetRows.add(cursor.getRowOfSheet());
                 })
-                .write(Stream.of(1, 2, 3, 4, 5, 6));
+                .write(Stream.of(1, 2, 3, 4, 5, 6))
+                .writeTo(java.io.OutputStream.nullOutputStream());
 
         assertEquals(List.of(3L, 6L), totals);
         // rowOfSheet should increase between callbacks

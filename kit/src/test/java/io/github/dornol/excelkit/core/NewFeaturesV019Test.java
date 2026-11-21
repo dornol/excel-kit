@@ -85,7 +85,7 @@ class NewFeaturesV019Test {
 
         ExcelWriter<String> writer = schema.excelWriter(opts -> opts.rowAccessWindowSize(10));
 
-        writer.write(Stream.of("Alice"));
+        writer.write(Stream.of("Alice")).writeTo(java.io.OutputStream.nullOutputStream());
     }
 
     @Test

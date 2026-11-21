@@ -37,6 +37,7 @@ class FileHandlerTest {
                 .write(Stream.of("x"));
         assertNotNull(handler);
         assertInstanceOf(ExcelHandler.class, handler);
+        handler.writeTo(java.io.OutputStream.nullOutputStream());
     }
 
     @Test
@@ -47,6 +48,7 @@ class FileHandlerTest {
                 .write(Stream.of("x"));
         assertNotNull(handler);
         assertInstanceOf(CsvHandler.class, handler);
+        handler.writeTo(java.io.OutputStream.nullOutputStream());
     }
 
     @Test

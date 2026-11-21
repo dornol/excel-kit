@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.testsupport.DisposingSxssfWorkbook;
 import io.github.dornol.excelkit.core.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -32,7 +33,7 @@ class ExcelColumnTest {
 
     @BeforeEach
     void setUp() {
-        workbook = new SXSSFWorkbook();
+        workbook = new DisposingSxssfWorkbook();
         cellStyle = workbook.createCellStyle();
         columnSetter = (c, value) -> c.setCellValue(String.valueOf(value));
         function = (data, cursor) -> data;

@@ -83,7 +83,8 @@ class ImprovementsV2Test {
                 CsvWriter.<String>create()
                         .column("Name", s -> s)
                         .column("Age", s -> s)
-                        .write(Stream.of("test")));
+                        .write(Stream.of("test"))
+                        .writeTo(java.io.OutputStream.nullOutputStream()));
     }
 
     // ========================================================================

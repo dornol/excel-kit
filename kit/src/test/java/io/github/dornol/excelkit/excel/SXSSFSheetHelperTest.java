@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.testsupport.DisposingSxssfWorkbook;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -10,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SXSSFSheetHelperTest {
     @Test
     void followsSheetIdentityAcrossRenameAndReorder() throws IOException {
-        try (var workbook = new SXSSFWorkbook()) {
+        try (var workbook = new DisposingSxssfWorkbook()) {
             var first = workbook.createSheet("First");
             var second = workbook.createSheet("Second");
             var backingFirst = workbook.getXSSFWorkbook().getSheet("First");
@@ -28,7 +29,7 @@ class SXSSFSheetHelperTest {
         try (var template = new XSSFWorkbook()) {
             var original = template.createSheet("Template");
             original.createRow(0).createCell(0).setCellValue("Original header");
-            try (var workbook = new SXSSFWorkbook(template, 1)) {
+            try (var workbook = new DisposingSxssfWorkbook(template, 1)) {
                 var sheet = workbook.getSheetAt(0);
                 sheet.createRow(1).createCell(0).setCellValue("one");
                 sheet.createRow(2).createCell(0).setCellValue("two");
@@ -41,7 +42,7 @@ class SXSSFSheetHelperTest {
 
     @Test
     void removedSheetNeverResolvesToAReplacementWithTheSameName() throws IOException {
-        try (var workbook = new SXSSFWorkbook()) {
+        try (var workbook = new DisposingSxssfWorkbook()) {
             var removed = workbook.createSheet("Data");
             workbook.removeSheetAt(0);
             var replacement = workbook.createSheet("Data");
@@ -54,7 +55,7 @@ class SXSSFSheetHelperTest {
     @Test
     void publicApiFailureKeepsItsOriginalCause() throws IOException {
         var cause = new IllegalStateException("index lookup failed");
-        try (var workbook = new SXSSFWorkbook() {
+        try (var workbook = new DisposingSxssfWorkbook() {
             @Override public int getSheetIndex(Sheet sheet) { throw cause; }
         }) {
             var sheet = workbook.createSheet("Data");
@@ -65,7 +66,7 @@ class SXSSFSheetHelperTest {
 
     @Test
     void configuredFeaturesRejectAnUnregisteredSheetInsteadOfBeingSilentlyOmitted() throws IOException {
-        try (var workbook = new SXSSFWorkbook()) {
+        try (var workbook = new DisposingSxssfWorkbook()) {
             var sheet = workbook.createSheet("Removed");
             workbook.removeSheetAt(0);
             assertAll(

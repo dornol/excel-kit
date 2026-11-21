@@ -37,6 +37,19 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
+// Give every test JVM its own, freshly emptied temp dir. POI temp files from one test task then
+// never mix with another's, and TempFileLeakGuard can count leaked files exactly. The benchmark
+// task manages its own temp dir below.
+tasks.withType<Test>().matching { it.name != "benchmark" }.configureEach {
+    val testTemp = layout.buildDirectory.dir("tmp/test-tmp/$name")
+    systemProperty("java.io.tmpdir", testTemp.get().asFile.absolutePath)
+    doFirst {
+        val directory = testTemp.get().asFile
+        check(!directory.exists() || directory.deleteRecursively()) { "Cannot reset test temp directory" }
+        check(directory.mkdirs()) { "Cannot create test temp directory" }
+    }
+}
+
 // Exercise the published artifact with each supported POI runtime, without
 // recompiling the library for that runtime's callback interface.
 val poiRuntimeTests = listOf("5.2.5", "5.5.1", "6.0.0").map { poiVersion ->

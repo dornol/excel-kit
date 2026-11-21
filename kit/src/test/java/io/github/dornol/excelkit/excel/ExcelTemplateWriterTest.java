@@ -508,7 +508,7 @@ class ExcelTemplateWriterTest {
                         .column("ID", i -> i)
                         .onProgress(10, (total, cursor) -> count[0]++)
                         .write(IntStream.range(0, 50).boxed());
-                w.finish();
+                w.finish().writeTo(java.io.OutputStream.nullOutputStream());
             }
             assertEquals(5, count[0]); // 50 rows / 10 interval
         }
@@ -635,7 +635,7 @@ class ExcelTemplateWriterTest {
         @Test
         void list_afterFinish_throws() throws IOException {
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.finish();
+                w.finish().writeTo(java.io.OutputStream.nullOutputStream());
                 assertThrows(ExcelWriteException.class, () -> w.list(5));
             }
         }
@@ -650,7 +650,7 @@ class ExcelTemplateWriterTest {
         @Test
         void finish_twice_throws() throws IOException {
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.finish();
+                w.finish().writeTo(java.io.OutputStream.nullOutputStream());
                 assertThrows(ExcelWriteException.class, w::finish);
             }
         }
@@ -664,7 +664,7 @@ class ExcelTemplateWriterTest {
         @Test
         void cell_afterFinish_throws() throws IOException {
             try (ExcelTemplateWriter w = new ExcelTemplateWriter(createTemplate())) {
-                w.finish();
+                w.finish().writeTo(java.io.OutputStream.nullOutputStream());
                 assertThrows(ExcelWriteException.class, () -> w.cell("A1", "x"));
             }
         }

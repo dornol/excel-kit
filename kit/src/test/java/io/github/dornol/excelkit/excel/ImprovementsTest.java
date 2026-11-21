@@ -45,7 +45,8 @@ class ImprovementsTest {
                 ExcelWriter.<String>create()
                         .column("Name", s -> s)
                         .column("Age", s -> s)
-                        .write(Stream.of("test")));
+                        .write(Stream.of("test"))
+                        .writeTo(java.io.OutputStream.nullOutputStream()));
     }
 
     // ========================================================================
@@ -121,7 +122,8 @@ class ImprovementsTest {
         CsvWriter.<Integer>create()
                 .column("Value", i -> i)
                 .onProgress(3, (count, cursor) -> counts.add(count))
-                .write(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9));
+                .write(Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9))
+                .writeTo(java.io.OutputStream.nullOutputStream());
 
         assertEquals(List.of(3L, 6L, 9L), counts);
     }
@@ -132,7 +134,8 @@ class ImprovementsTest {
         CsvWriter.<Integer>create()
                 .column("Value", i -> i)
                 .onProgress(100, (count, cursor) -> counts.add(count))
-                .write(Stream.of(1, 2, 3));
+                .write(Stream.of(1, 2, 3))
+                .writeTo(java.io.OutputStream.nullOutputStream());
 
         assertTrue(counts.isEmpty());
     }
@@ -246,7 +249,7 @@ class ImprovementsTest {
                     .column("Value", i -> i)
                     .onProgress(2, (count, cursor) -> counts.add(count))
                     .write(Stream.of(1, 2, 3, 4, 5, 6, 7));
-            wb.finish();
+            wb.finish().writeTo(java.io.OutputStream.nullOutputStream());
         }
 
         // Should fire at 2, 4, 6 (total count, not per-sheet)

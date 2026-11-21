@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.testsupport.DisposingSxssfWorkbook;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.junit.jupiter.api.AfterEach;
@@ -21,7 +22,7 @@ class SheetContextTest {
 
     @BeforeEach
     void setUp() {
-        wb = new SXSSFWorkbook(10);
+        wb = new DisposingSxssfWorkbook(10);
         sheet = wb.createSheet("TestSheet");
     }
 
