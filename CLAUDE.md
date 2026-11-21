@@ -15,7 +15,9 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 
 1. GitHub PR 확인 — 미처리 PR (dependabot 등) 머지 또는 정리
 2. `build.gradle.kts` — `version` 변경 (`kit`·`excel-kit-spring` 동일 버전, `verifyReleaseVersion` 대상)
-3. API 호환성 기준선 갱신 — `.github/workflows/api-compatibility.yml` 의 baseline 기본값(2곳)과 `.japicmp-allowlist` 주석을 직전 릴리스 버전으로 변경
+3. API 호환성 기준선 확인 — `.github/workflows/api-compatibility.yml` 의 baseline 기본값(2곳)과 `.japicmp-allowlist` 주석은
+   **직전에 배포된 버전**이어야 함(Maven Central 에서 내려받으므로 이번 버전으로 올리면 CI 실패). 의도적으로 제거한 API 는
+   `.japicmp-allowlist` 에 사유와 함께 제외. 릴리스 후에는 baseline 을 방금 배포한 버전으로 올리고 제외 항목을 비울 것
 4. `CHANGELOG.md` — `[x.y.z] - YYYY-MM-DD` 섹션 추가
 5. `README.md` 최신화:
    - Installation 섹션의 버전 번호 업데이트

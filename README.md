@@ -28,15 +28,15 @@ integrations you use, using versions compatible with the rest of your applicatio
 
 **Gradle — Excel**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.25.0")
-implementation("io.github.dornol:excel-kit-spring:0.25.0") // optional Spring MVC helpers
+implementation("io.github.dornol:excel-kit:0.26.0")
+implementation("io.github.dornol:excel-kit-spring:0.26.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:6.0.0")      // Excel read/write
 implementation("org.slf4j:slf4j-api:2.0.20")          // logging facade
 ```
 
 **Gradle — CSV**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.25.0")
+implementation("io.github.dornol:excel-kit:0.26.0")
 implementation("com.opencsv:opencsv:5.12.0")
 implementation("org.slf4j:slf4j-api:2.0.20")
 ```
@@ -51,12 +51,12 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.25.0</version>
+  <version>0.26.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit-spring</artifactId>
-  <version>0.25.0</version>
+  <version>0.26.0</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
@@ -298,7 +298,7 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Column matching | By name, aliases, by index, positional with skip |
 | Read modes | Setter (mutable), Mapping (records), Map (schema-less; `forMapRaw()` returns stored Excel numbers) |
 | Cell values | Numeric conversions use the stored XLSX number (`rawNumber()`), strict zoned date-times (`asZonedDateTimeStrict`) |
-| Headers | Strict header validation, duplicate header policies (fail by default), header row position (`headerRowIndex(int)`), single or multi-row headers (`headerRows(int)`, Excel) |
+| Headers | Strict header validation, duplicate header policies (fail by default), blank headers ignored, header row position (`headerRowIndex(int)`), single or multi-row headers (`headerRows(int)`, Excel) |
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values (`rawValues()`) |
 | Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |

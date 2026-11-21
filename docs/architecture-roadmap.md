@@ -139,8 +139,9 @@ matrix의 모든 가능한 조합을 매번 실행할 필요는 없다. 최소 �
 OpenCSV 5.12.0)을 JDK 21에서 검증한다. 별도 CI 축에서는 현재 dependency 조합을 JDK 17,
 21, 25에서 검증한다.
 
-공개 API 비교는 0.24.0 baseline을 사용한다. 0.25.0 릴리스에는 legacy API 제외 항목을
-적용하지 않으며, binary compatibility 변경이 있으면 CI에서 실패한다.
+공개 API 비교는 직전에 배포된 버전을 baseline으로 사용한다(0.26.0 릴리스는 0.25.0). 의도적으로
+제거한 API만 `.japicmp-allowlist`에 사유와 함께 제외하며, 그 밖의 binary compatibility 변경이
+있으면 CI에서 실패한다. 릴리스 직후 baseline을 방금 배포한 버전으로 올리고 제외 항목을 비운다.
 
 ### 누락된 의존성의 오류 경험
 

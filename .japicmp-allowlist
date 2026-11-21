@@ -1,5 +1,7 @@
-# Public API compatibility baseline: 0.25.0.
-# Add exclusions here only for intentional removals, with a comment explaining each.
+# Public API compatibility baseline: 0.25.0 (the last published release; the 0.26.0 release is checked
+# against it). Add exclusions here only for intentional removals, with a comment explaining each.
+# After a release is published: raise the baseline in .github/workflows/api-compatibility.yml to that
+# version and delete the exclusions below, which then describe changes the baseline already contains.
 # Process-wide CellData conversion defaults removed in favor of reader-scoped cellConversion(...).
 io.github.dornol.excelkit.core.CellData#setDefaultLocale(java.util.Locale)
 io.github.dornol.excelkit.core.CellData#getDefaultLocale()

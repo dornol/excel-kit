@@ -128,6 +128,8 @@ public final class ExcelHandler implements FileHandler {
      * Use this when the handler will not be written, for example when the export is cancelled or
      * the handler is dropped after an error. It does nothing if the handler was already consumed or
      * discarded; afterwards the {@code writeTo} methods throw {@link ExcelWriteException}.
+     *
+     * @since 0.26.0
      */
     public void discard() {
         cleanable.clean();

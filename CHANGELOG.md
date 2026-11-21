@@ -4,35 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Changed
-- A read that fails because of what is in the file now says what in its message, not only in the cause:
-  `Failed to read CSV: Header aliases [Price] not found in CSV. Available headers: [Name, Cost]`
-  (the same for Excel, and for duplicate or unusable headers and a missing header row). Before, the
-  message was just `Failed to read CSV` / `Failed to read excel`, so an API that reports `getMessage()`
-  gave no clue. Other causes keep the generic message.
-- **Breaking:** a column whose header is blank is no longer a `""` key in `forMap()` rows of CSV and
-  Excel readers. It has no name to look it up by, so it is left out of the header index; before, the
-  first blank column became the `""` key and every further blank column's values were silently lost.
-  Columns read by position are unaffected, and a `headerNormalizer` that names blank headers still
-  keeps those columns reachable by that name.
-- A CSV read that fails because `strictQuotes(true)` blanked an unquoted header row now says so
-  (`a header cell is blank … every header cell must be quoted`) instead of only
-  `Failed to read CSV`; the original cause is still attached. The javadoc of `strictQuotes` and
-  `ignoreLeadingWhiteSpace` now describes what they do.
-- **Breaking:** removed the process-wide `CellData` conversion defaults: `setDefaultLocale`,
-  `getDefaultLocale`, `addDateFormat`, `addDateTimeFormat`, `getDateFormats`,
-  `getDateTimeFormats`, `resetDateFormats` and `resetDateTimeFormats`. Use
-  `reader.cellConversion(c -> c.locale(...).addDateFormat(...))` instead. A `CellData` without a
-  config, and a reader without `cellConversion(...)`, use the immutable
-  `CellConversionConfig.defaults()` (JVM default locale, built-in date patterns).
-- `CsvHandler.close()` now behaves like `discard()`: it also marks the handler consumed, so a later
-  `writeTo` throws `CsvWriteException` instead of failing on the deleted file.
-- `ExcelKitResponse.excel(handler, filename, password)` rejects a null or blank password when the
-  response is built (`IllegalArgumentException`) instead of while the body streams, and releases the
-  handler's workbook.
-- `ExcelKitUpload.excel/csv(file, schema, supplier[, validator])` now check the content signature
-  like the `ReadLimits` overloads, so a file whose content does not match throws
-  `ExcelKitUploadException` instead of a reader-specific failure.
+## [0.26.0] - 2026-11-21
 
 ### Added
 - `ExcelHandler.discard()` and `CsvHandler.discard()` release a handler that will not be written
@@ -40,6 +12,36 @@ All notable changes to this project will be documented in this file.
   consumed now releases its temp files as a safety net, at a time the garbage collector chooses.
 - `kit` and `excel-kit-spring` jars declare `Automatic-Module-Name` (`io.github.dornol.excelkit`,
   `io.github.dornol.excelkit.spring`) so module-path users get stable module names.
+
+### Changed
+- **Breaking:** a column whose header is blank is no longer a `""` key in `forMap()` rows of CSV and
+  Excel readers. It has no name to look it up by, so it is left out of the header index; before, the
+  first blank column became the `""` key and every further blank column's values were silently lost.
+  Columns read by position are unaffected, and a `headerNormalizer` that names blank headers still
+  keeps those columns reachable by that name.
+- **Breaking:** removed the process-wide `CellData` conversion defaults: `setDefaultLocale`,
+  `getDefaultLocale`, `addDateFormat`, `addDateTimeFormat`, `getDateFormats`,
+  `getDateTimeFormats`, `resetDateFormats` and `resetDateTimeFormats`. Use
+  `reader.cellConversion(c -> c.locale(...).addDateFormat(...))` instead. A `CellData` without a
+  config, and a reader without `cellConversion(...)`, use the immutable
+  `CellConversionConfig.defaults()` (JVM default locale, built-in date patterns).
+- **Breaking:** `ExcelKitUpload.excel/csv(file, schema, supplier[, validator])` now check the content signature
+  like the `ReadLimits` overloads, so a file whose content does not match throws
+  `ExcelKitUploadException` instead of a reader-specific failure.
+- A read that fails because of what is in the file now says what in its message, not only in the cause:
+  `Failed to read CSV: Header aliases [Price] not found in CSV. Available headers: [Name, Cost]`
+  (the same for Excel, and for duplicate or unusable headers and a missing header row). Before, the
+  message was just `Failed to read CSV` / `Failed to read excel`, so an API that reports `getMessage()`
+  gave no clue. Other causes keep the generic message.
+- A CSV read that fails because `strictQuotes(true)` blanked an unquoted header row now says so
+  (`a header cell is blank … every header cell must be quoted`) instead of only
+  `Failed to read CSV`; the original cause is still attached. The javadoc of `strictQuotes` and
+  `ignoreLeadingWhiteSpace` now describes what they do.
+- `CsvHandler.close()` now behaves like `discard()`: it also marks the handler consumed, so a later
+  `writeTo` throws `CsvWriteException` instead of failing on the deleted file.
+- `ExcelKitResponse.excel(handler, filename, password)` rejects a null or blank password when the
+  response is built (`IllegalArgumentException`) instead of while the body streams, and releases the
+  handler's workbook.
 
 ### Fixed
 - Excel writers delete the temp files behind a workbook's sheets on every supported Apache POI
@@ -232,8 +234,6 @@ All notable changes to this project will be documented in this file.
 - STRICT security scanning now detects external workbook links declared in worksheet relationship files.
 - Detected CSV charset and delimiter settings now apply only to the current read operation.
 - Dependency compatibility CI now verifies the minimum POI/OpenCSV combination on JDK 17.
-
-## [Unreleased]
 
 ## [0.22.0] - 2026-08-06
 

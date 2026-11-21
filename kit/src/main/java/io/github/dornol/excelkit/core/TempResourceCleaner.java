@@ -10,6 +10,8 @@ import java.lang.ref.Cleaner;
  * garbage collector, so callers should still consume or discard handlers explicitly.
  * <p>
  * Internal helper shared by the Excel and CSV handlers; it is not part of the supported API.
+ *
+ * @since 0.26.0
  */
 public final class TempResourceCleaner {
     private static final Cleaner CLEANER = Cleaner.create();

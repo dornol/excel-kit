@@ -69,6 +69,8 @@ public final class CsvHandler extends TempResourceContainer implements FileHandl
     /**
      * Releases the temp file without writing it. Does nothing if the handler was already consumed or
      * discarded. Afterwards {@link #writeTo(OutputStream)} throws {@link CsvWriteException}.
+     *
+     * @since 0.26.0
      */
     public void discard() {
         cleanable.clean();
