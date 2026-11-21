@@ -64,8 +64,10 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                            boolean externalPath, @Nullable Path path) {
         super(input, config.supplier(), config.mapper(), config.validator(), ".csv",
                 config.selectedColumns(), config.options());
-        validateHeaderRowIndex(config.headerRowIndex());
-        if (config.columns() != null) validateColumns(config.columns());
+        validateOrClose(() -> {
+            validateHeaderRowIndex(config.headerRowIndex());
+            if (config.columns() != null) validateColumns(config.columns());
+        });
         this.columns = config.columns();
         this.headerRowIndex = config.headerRowIndex();
         this.delimiter = config.delimiter();
@@ -75,7 +77,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         this.strictQuotes = config.strictQuotes();
         this.ignoreLeadingWhiteSpace = config.ignoreLeadingWhiteSpace();
         if (externalPath) useExternalInput(path);
-        validateReadOptions();
+        validateOrClose(this::validateReadOptions);
     }
 
     private final List<String> headerNames = new ArrayList<>();

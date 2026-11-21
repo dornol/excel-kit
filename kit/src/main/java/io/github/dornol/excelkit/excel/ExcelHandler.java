@@ -260,7 +260,7 @@ public final class ExcelHandler implements FileHandler {
     private IllegalArgumentException rejectBlankPassword() {
         if (consumed.compareAndSet(false, true)) {
             try {
-                wb.close();
+                ExcelWorkbookSupport.close(wb);
             } catch (IOException | RuntimeException e) {
                 log.warn("Failed to close workbook after a rejected password", e);
             }
@@ -290,7 +290,7 @@ public final class ExcelHandler implements FileHandler {
         try {
             wb.write(outputStream);
         } finally {
-            wb.close();
+            ExcelWorkbookSupport.close(wb);
         }
     }
 
@@ -310,7 +310,7 @@ public final class ExcelHandler implements FileHandler {
             try (OutputStream tempOut = Files.newOutputStream(tempFile)) {
                 wb.write(tempOut);
             } finally {
-                wb.close();
+                ExcelWorkbookSupport.close(wb);
             }
 
             // Encrypt the plain temp file into an in-memory POIFS, then stream it out.

@@ -7,6 +7,22 @@ import java.util.Locale;
 
 /** Workbook-level operations independent of sheet row rendering. */
 final class ExcelWorkbookSupport {
+
+    /**
+     * Closes the workbook and deletes the temp files that back its sheets.
+     * <p>
+     * Older Apache POI releases (for example 5.2.5) close the sheet writers in
+     * {@code SXSSFWorkbook.close()} but do not delete their temp files; newer ones call
+     * {@code dispose()} from {@code close()}. Calling {@code dispose()} here keeps every supported
+     * POI version from leaving one temp file per sheet behind. A second {@code dispose()} is a no-op.
+     */
+    static void close(SXSSFWorkbook workbook) throws java.io.IOException {
+        try {
+            workbook.close();
+        } finally {
+            workbook.dispose();
+        }
+    }
     private ExcelWorkbookSupport() { }
 
     static void applyProtection(SXSSFWorkbook workbook, @Nullable String password) {

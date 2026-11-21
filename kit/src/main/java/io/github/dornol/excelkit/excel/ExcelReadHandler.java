@@ -98,10 +98,12 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                              boolean externalPath, @Nullable Path path) {
         super(input, config.supplier(), config.mapper(), config.validator(), ".xlsx",
                 config.selectedColumns(), config.options());
-        if (config.columns() != null) validateColumns(config.columns());
-        validateSheetIndex(config.sheetIndex());
-        validateHeaderRowIndex(config.headerRowIndex());
-        validateHeaderRows(config.headerRows());
+        validateOrClose(() -> {
+            if (config.columns() != null) validateColumns(config.columns());
+            validateSheetIndex(config.sheetIndex());
+            validateHeaderRowIndex(config.headerRowIndex());
+            validateHeaderRows(config.headerRows());
+        });
         this.columns = config.columns();
         this.sheetIndex = config.sheetIndex();
         this.headerRowIndex = config.headerRowIndex();
@@ -109,7 +111,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         this.password = config.password();
         this.countRows = config.countRows();
         if (externalPath) useExternalInput(path);
-        validateReadOptions();
+        validateOrClose(this::validateReadOptions);
     }
 
     private final @Nullable List<ReadColumn<T>> columns;

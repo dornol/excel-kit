@@ -20,6 +20,11 @@ All notable changes to this project will be documented in this file.
   `io.github.dornol.excelkit.spring`) so module-path users get stable module names.
 
 ### Fixed
+- Excel writers delete the temp files behind a workbook's sheets on every supported Apache POI
+  version. POI 5.2.5's `SXSSFWorkbook.close()` does not do this, so each export used to leave one
+  temp file per sheet in `java.io.tmpdir/poifiles`; the workbook is now also disposed explicitly.
+- A reader whose configuration is rejected while it opens its input (for example a negative
+  `headerRowIndex`) deletes the temp copy of the input instead of leaving it behind.
 - `ExcelWriter.write` releases the workbook's temp files when writing the first sheet's
   preamble or header fails (for example a throwing `beforeHeader` callback); the original
   exception is still thrown unchanged.

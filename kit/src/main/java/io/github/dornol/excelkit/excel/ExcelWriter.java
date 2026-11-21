@@ -856,7 +856,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
     private void closeWorkbookQuietly() {
         try {
-            wb.close();
+            ExcelWorkbookSupport.close(wb);
         } catch (RuntimeException | java.io.IOException e) {
             log.warn("Failed to close workbook after error", e);
         }

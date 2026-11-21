@@ -145,6 +145,20 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
         }
     }
 
+    /**
+     * Runs a subclass constructor's validation. The superclass constructor has already copied the
+     * input to a temp file, and a handler whose constructor throws is never returned, so nobody
+     * could close it: release the temp file here before the exception propagates.
+     */
+    protected final void validateOrClose(Runnable validation) {
+        try {
+            validation.run();
+        } catch (RuntimeException e) {
+            close();
+            throw e;
+        }
+    }
+
     private void initTempFile(InputStream inputStream, String extension) {
         try {
             setTempDir(TempResourceCreator.createTempDirectory());
