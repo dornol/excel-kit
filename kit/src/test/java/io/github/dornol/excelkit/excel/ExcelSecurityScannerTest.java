@@ -92,4 +92,54 @@ class ExcelSecurityScannerTest {
                 + "<xm:f>1</xm:f></ext></extLst></worksheet>") : text);
         assertDoesNotThrow(() -> read(file));
     }
+
+    /** Strict about links, but not about the ratio: repeated padding compresses very well. */
+    private static final ReadSecurityPolicy NO_LINKS =
+            new ReadSecurityPolicy(false, false, 32L << 20, 128L << 20, 1_000_000.0);
+
+    private static java.nio.file.Path zipWithRels(String content) throws Exception {
+        java.nio.file.Path file = java.nio.file.Files.createTempFile("rels-scan", ".xlsx");
+        try (var zip = new ZipOutputStream(java.nio.file.Files.newOutputStream(file))) {
+            zip.putNextEntry(new ZipEntry("xl/_rels/workbook.xml.rels"));
+            zip.write(content.getBytes(StandardCharsets.ISO_8859_1));
+            zip.closeEntry();
+        }
+        return file;
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 8180, 8185, 8190, 8192, 16380})
+    void anExternalLinkIsFoundWhereverItFallsInTheReadBuffer(int padding) throws Exception {
+        java.nio.file.Path file = zipWithRels("<!--" + "x".repeat(padding) + "-->Type=\"externalLink\"");
+        try {
+            var error = assertThrows(ReadSecurityException.class,
+                    () -> ExcelSecurityScanner.scan(file, NO_LINKS));
+            assertEquals(ReadSecurityException.Reason.EXTERNAL_LINK, error.reason());
+        } finally {
+            java.nio.file.Files.deleteIfExists(file);
+        }
+    }
+
+    @Test
+    void aRelationshipsPartWithoutExternalLinksPasses() throws Exception {
+        java.nio.file.Path file = zipWithRels("<Relationships>" + "<a b=\"external\"/>".repeat(2000)
+                + "<Relationship Type=\"link\"/></Relationships>");
+        try {
+            assertDoesNotThrow(() -> ExcelSecurityScanner.scan(file, NO_LINKS));
+        } finally {
+            java.nio.file.Files.deleteIfExists(file);
+        }
+    }
+
+    @Test
+    void aRelationshipsPartOverTheEntryLimitIsRejected() throws Exception {
+        java.nio.file.Path file = zipWithRels("y".repeat(5000));
+        try {
+            var policy = new ReadSecurityPolicy(false, false, 4096, 1 << 20, 10_000.0);
+            var error = assertThrows(ReadSecurityException.class, () -> ExcelSecurityScanner.scan(file, policy));
+            assertEquals(ReadSecurityException.Reason.ENTRY_SIZE, error.reason());
+        } finally {
+            java.nio.file.Files.deleteIfExists(file);
+        }
+    }
 }

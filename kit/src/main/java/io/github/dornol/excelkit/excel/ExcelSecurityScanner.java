@@ -158,15 +158,22 @@ final class ExcelSecurityScanner {
     }
 
     private static boolean containsExternalWorkbookLink(InputStream input, long maximum) throws IOException {
-        StringBuilder content = new StringBuilder();
-        for (int value; (value = input.read()) >= 0;) {
-            if (content.length() >= maximum) {
+        final String needle = "externalLink";
+        byte[] buffer = new byte[8192];
+        // Only the tail that could be the start of a match survives from one chunk to the next.
+        StringBuilder window = new StringBuilder(buffer.length + needle.length());
+        long total = 0;
+        for (int read; (read = input.read(buffer)) >= 0;) {
+            total += read;
+            if (total > maximum) {
                 throw security(ReadSecurityException.Reason.ENTRY_SIZE,
                         "Relationship entry exceeds security scan entry limit");
             }
-            content.append((char) value);
+            for (int i = 0; i < read; i++) window.append((char) (buffer[i] & 0xFF));
+            if (window.indexOf(needle) >= 0) return true;
+            window.delete(0, Math.max(0, window.length() - (needle.length() - 1)));
         }
-        return content.indexOf("externalLink") >= 0;
+        return false;
     }
 
     private static ReadSecurityException security(ReadSecurityException.Reason reason, String message) {
