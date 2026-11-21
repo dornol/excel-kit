@@ -529,6 +529,32 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     /**
+     * Returns the sheet names and indices of a password-protected Excel file.
+     *
+     * @param inputStream the input stream of the file (will be consumed)
+     * @param password    the file's password
+     * @return the sheets
+     * @throws ExcelReadException if the password is wrong, or the file is not an encrypted workbook
+     * @since 0.27.0
+     */
+    public static List<ExcelSheetInfo> getSheetNames(InputStream inputStream, String password) {
+        return ExcelMetadataReader.sheetNames(inputStream, Objects.requireNonNull(password, "password cannot be null"));
+    }
+
+    /** Like {@link #getSheetNames(InputStream, String)}, for a file. @since 0.27.0 */
+    public static List<ExcelSheetInfo> getSheetNames(Path path, String password) {
+        Objects.requireNonNull(path, "path cannot be null");
+        Objects.requireNonNull(password, "password cannot be null");
+        return ExcelMetadataReader.sheetNames((InputStreamSource) () -> Files.newInputStream(path), password);
+    }
+
+    /** Like {@link #getSheetNames(InputStream, String)}, for a source that is opened (and closed) here. @since 0.27.0 */
+    public static List<ExcelSheetInfo> getSheetNames(InputStreamSource source, String password) {
+        Objects.requireNonNull(source, "source cannot be null");
+        return ExcelMetadataReader.sheetNames(source, Objects.requireNonNull(password, "password cannot be null"));
+    }
+
+    /**
      * Returns the header names from a specific sheet.
      *
      * @param inputStream    The input stream of the Excel file (will be consumed)
@@ -548,6 +574,39 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     public static List<String> getSheetHeaders(InputStreamSource source, int sheetIndex, int headerRowIndex) {
         Objects.requireNonNull(source, "source cannot be null");
         return ExcelMetadataReader.headers(source, sheetIndex, headerRowIndex);
+    }
+
+    /**
+     * Returns the header names from a specific sheet of a password-protected Excel file.
+     *
+     * @param inputStream    the input stream of the file (will be consumed)
+     * @param sheetIndex     the 0-based sheet index
+     * @param headerRowIndex the 0-based header row index
+     * @param password       the file's password
+     * @return the header names
+     * @throws ExcelReadException if the password is wrong, or the file is not an encrypted workbook
+     * @since 0.27.0
+     */
+    public static List<String> getSheetHeaders(InputStream inputStream, int sheetIndex, int headerRowIndex,
+                                               String password) {
+        return ExcelMetadataReader.headers(inputStream, sheetIndex, headerRowIndex,
+                Objects.requireNonNull(password, "password cannot be null"));
+    }
+
+    /** Like {@link #getSheetHeaders(InputStream, int, int, String)}, for a file. @since 0.27.0 */
+    public static List<String> getSheetHeaders(Path path, int sheetIndex, int headerRowIndex, String password) {
+        Objects.requireNonNull(path, "path cannot be null");
+        Objects.requireNonNull(password, "password cannot be null");
+        return ExcelMetadataReader.headers((InputStreamSource) () -> Files.newInputStream(path),
+                sheetIndex, headerRowIndex, password);
+    }
+
+    /** Like {@link #getSheetHeaders(InputStream, int, int, String)}, for a source opened (and closed) here. @since 0.27.0 */
+    public static List<String> getSheetHeaders(InputStreamSource source, int sheetIndex, int headerRowIndex,
+                                               String password) {
+        Objects.requireNonNull(source, "source cannot be null");
+        return ExcelMetadataReader.headers(source, sheetIndex, headerRowIndex,
+                Objects.requireNonNull(password, "password cannot be null"));
     }
 
 }

@@ -370,6 +370,16 @@ sheets.forEach(s -> log.info("{}: {}", s.index(), s.name()));
 List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
 ```
 
+A password-protected workbook takes the password as the last argument of each overload; a wrong one fails with
+`ExcelReadException: Invalid password for encrypted Excel file`:
+
+```java
+List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(path, "secret");
+List<String> headers = ExcelReader.getSheetHeaders(path, 0, 0, "secret");
+```
+
+`ExcelWorkbookReader` does this on its own when the readers it was given have a `password(...)`.
+
 ## CellData Conversion Methods
 
 | Method | Return Type |

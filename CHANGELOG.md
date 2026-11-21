@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `ExcelReader.getSheetNames(input, password)` and `getSheetHeaders(input, sheetIndex, headerRowIndex, password)`
+  (`InputStream`, `Path` and `InputStreamSource` overloads) read a password-protected workbook. A wrong password is an
+  `ExcelReadException: Invalid password for encrypted Excel file`.
 - `maxCellStyles(int)` on `ExcelWriter` and `ExcelSheetWriter` caps the cell styles a write may create for
   `cellColor`, `rowColor` and `rowStyle` colors (default 64,000, the .xlsx limit), so a function returning too many
   distinct colors fails fast instead of spending minutes creating styles.
@@ -48,8 +51,7 @@ All notable changes to this project will be documented in this file.
 - `ExcelWorkbookReader` can read a password-protected workbook. It listed the sheets without decrypting the file,
   so every read failed with `Failed to read sheet names` (`OLE2NotOfficeXmlFileException`), however the sheet readers
   were set up with `password(...)`. The sheets are now listed from a decrypted copy (deleted afterwards), and a wrong
-  password is reported as `Invalid password for encrypted Excel file`. `ExcelReader.getSheetNames` and
-  `getSheetHeaders` still cannot open an encrypted file.
+  password is reported as `Invalid password for encrypted Excel file`.
 - A CSV read with `skipBlankRows` (or `stopAtBlankRows`) counted the skipped blank rows in its progress: `onProgress`
   and `onReadProgress` reported more processed rows than were delivered, and the last `onReadProgress` event
   (`completed`) then reported fewer. Skipped rows are no longer counted, as in the Excel reader.

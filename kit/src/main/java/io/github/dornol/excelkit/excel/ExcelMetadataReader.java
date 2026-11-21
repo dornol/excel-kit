@@ -11,6 +11,7 @@ import org.apache.poi.xssf.model.SharedStrings;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.xssf.usermodel.XSSFComment;
+import org.jspecify.annotations.Nullable;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
@@ -32,28 +33,47 @@ final class ExcelMetadataReader {
     }
 
     static List<ExcelSheetInfo> sheetNames(InputStream inputStream) {
-        return withTempWorkbook(inputStream, "Failed to read sheet names", ExcelMetadataReader::readSheetNames);
+        return sheetNames(inputStream, null);
+    }
+
+    /** @param password the password of an encrypted workbook, or {@code null} for a plain one */
+    static List<ExcelSheetInfo> sheetNames(InputStream inputStream, @Nullable String password) {
+        return withTempWorkbook(inputStream, "Failed to read sheet names", password, ExcelMetadataReader::readSheetNames);
     }
 
     static List<ExcelSheetInfo> sheetNames(InputStreamSource source) {
+        return sheetNames(source, null);
+    }
+
+    static List<ExcelSheetInfo> sheetNames(InputStreamSource source, @Nullable String password) {
         Objects.requireNonNull(source, "source cannot be null");
         try (InputStream input = source.openStream()) {
-            return sheetNames(input);
+            return sheetNames(input, password);
         } catch (IOException e) {
             throw new ExcelReadException("Failed to open Excel input", e);
         }
     }
 
     static List<String> headers(InputStream inputStream, int sheetIndex, int headerRowIndex) {
+        return headers(inputStream, sheetIndex, headerRowIndex, null);
+    }
+
+    static List<String> headers(InputStream inputStream, int sheetIndex, int headerRowIndex,
+                                @Nullable String password) {
         validateIndexes(sheetIndex, headerRowIndex);
-        return withTempWorkbook(inputStream, "Failed to read sheet headers",
+        return withTempWorkbook(inputStream, "Failed to read sheet headers", password,
                 path -> readHeaders(path, sheetIndex, headerRowIndex));
     }
 
     static List<String> headers(InputStreamSource source, int sheetIndex, int headerRowIndex) {
+        return headers(source, sheetIndex, headerRowIndex, null);
+    }
+
+    static List<String> headers(InputStreamSource source, int sheetIndex, int headerRowIndex,
+                                @Nullable String password) {
         Objects.requireNonNull(source, "source cannot be null");
         try (InputStream input = source.openStream()) {
-            return headers(input, sheetIndex, headerRowIndex);
+            return headers(input, sheetIndex, headerRowIndex, password);
         } catch (IOException e) {
             throw new ExcelReadException("Failed to open Excel input", e);
         }
@@ -109,22 +129,26 @@ final class ExcelMetadataReader {
         }
     }
 
-    private static <R> R withTempWorkbook(InputStream inputStream, String message,
+    private static <R> R withTempWorkbook(InputStream inputStream, String message, @Nullable String password,
                                           WorkbookOperation<R> operation) {
         Objects.requireNonNull(inputStream, "inputStream cannot be null");
         Path tempDir = null;
         Path tempFile = null;
+        Path decrypted = null;
         try {
             tempDir = TempResourceCreator.createTempDirectory();
             tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
             Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
-            return operation.apply(tempFile);
+            if (password == null) return operation.apply(tempFile);
+            decrypted = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
+            ExcelReadSupport.decrypt(tempFile, password, decrypted);
+            return operation.apply(decrypted);
         } catch (ExcelReadException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException(message, e);
         } finally {
-            cleanup(tempDir, tempFile);
+            cleanup(tempDir, decrypted, tempFile);
         }
     }
 
@@ -133,11 +157,15 @@ final class ExcelMetadataReader {
         if (headerRowIndex < 0) throw new IllegalArgumentException("headerRowIndex must be non-negative");
     }
 
-    private static void cleanup(Path tempDir, Path tempFile) {
-        try {
-            if (tempFile != null) Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            tempFile.toFile().deleteOnExit();
+    /** Deletes the files, then the directory that held them. */
+    private static void cleanup(Path tempDir, Path... files) {
+        for (Path file : files) {
+            if (file == null) continue;
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException e) {
+                file.toFile().deleteOnExit();
+            }
         }
         try {
             if (tempDir != null) Files.deleteIfExists(tempDir);

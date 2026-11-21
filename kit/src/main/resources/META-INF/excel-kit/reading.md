@@ -209,6 +209,10 @@ List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(inputStream);
 List<String> headers = ExcelReader.getSheetHeaders(inputStream, sheetIndex, headerRowIndex);
 ```
 
+Encrypted workbooks: pass the password last — `getSheetNames(path, "secret")`,
+`getSheetHeaders(path, sheetIndex, headerRowIndex, "secret")` (`InputStream`, `Path` and `InputStreamSource` overloads).
+`ExcelWorkbookReader` uses the password of the readers it is given.
+
 ## Bean Validation
 
 ```java

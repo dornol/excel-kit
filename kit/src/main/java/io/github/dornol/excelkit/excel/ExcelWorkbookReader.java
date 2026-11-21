@@ -145,31 +145,13 @@ public final class ExcelWorkbookReader {
     }
 
     /**
-     * The sheets of the workbook. An encrypted workbook has to be decrypted first, with the password of the
-     * readers that were registered for it (all sheets of one file share one password).
+     * The sheets of the workbook. An encrypted workbook is listed with the password of the readers that were
+     * registered for it (all sheets of one file share one password).
      */
     private List<ExcelSheetInfo> sheetNames(Path path) {
         String password = plans.stream().map(plan -> plan.execution.password()).filter(Objects::nonNull)
                 .findFirst().orElse(null);
-        if (password == null) return ExcelReader.getSheetNames(path);
-        Path decrypted = null;
-        try {
-            decrypted = Files.createTempFile("excel-kit-workbook-", ".xlsx");
-            ExcelReadSupport.decrypt(path, password, decrypted);
-            return ExcelReader.getSheetNames(decrypted);
-        } catch (ExcelReadException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ExcelReadException("Failed to read sheet names", e);
-        } finally {
-            if (decrypted != null) {
-                try {
-                    Files.deleteIfExists(decrypted);
-                } catch (IOException ignored) {
-                    decrypted.toFile().deleteOnExit();
-                }
-            }
-        }
+        return password == null ? ExcelReader.getSheetNames(path) : ExcelReader.getSheetNames(path, password);
     }
 
     private @Nullable Integer findSheetIndex(@Nullable String name, List<ExcelSheetInfo> sheets) {
