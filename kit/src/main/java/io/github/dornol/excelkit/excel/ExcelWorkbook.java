@@ -184,6 +184,9 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      */
     public ExcelWorkbook protectWorkbook(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
+        }
         this.workbookPassword = password;
         return this;
     }

@@ -325,7 +325,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> afterAll(AfterDataWriter afterAllWriter) {
-        this.afterAllWriter = afterAllWriter;
+        this.afterAllWriter = java.util.Objects.requireNonNull(afterAllWriter, "afterAllWriter cannot be null");
         return this;
     }
 
@@ -337,6 +337,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> sheetName(String name) {
+        java.util.Objects.requireNonNull(name, "name cannot be null");
         this.cfg.sheetNameFunction = index -> ExcelWriteSupport.rolloverSheetName(name, index);
         return this;
     }
@@ -350,6 +351,9 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> protectWorkbook(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
+        }
         this.workbookPassword = password;
         return this;
     }
@@ -407,7 +411,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> headerFontName(String fontName) {
-        this.headerFontName = fontName;
+        this.headerFontName = java.util.Objects.requireNonNull(fontName, "fontName cannot be null");
         return this;
     }
 
@@ -469,6 +473,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
         this.columns.add(builder.build());
@@ -492,6 +497,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function,
                                   Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         ExcelColumn.ExcelColumnBuilder<T> builder =
                 new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
         if (configurer != null) {
@@ -655,6 +661,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return ExcelHandler wrapping the workbook
      */
     public ExcelHandler write(Stream<T> stream, WriteRowCallback<T> consumer) {
+        java.util.Objects.requireNonNull(stream, "stream cannot be null");
+        java.util.Objects.requireNonNull(consumer, "consumer cannot be null");
         ExcelWriteOptions<T> options = snapshotOptions();
         this.execution = new ExcelWriteSession<>(options);
         validateColumns(options);

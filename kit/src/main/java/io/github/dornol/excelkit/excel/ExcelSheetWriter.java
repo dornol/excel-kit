@@ -70,6 +70,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
      * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
         return this;
     }
@@ -83,6 +84,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
      * @return this writer for chaining
      */
     public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         ColumnConfig<T> config = new ColumnConfig<>();
         cfg.accept(config);
         columns.add(buildColumn(name, (r, c) -> function.apply(r), config));
@@ -307,6 +309,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     private ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
         if (cfg.defaultStyleConfig != null) {
             c.applyDefaults(cfg.defaultStyleConfig);

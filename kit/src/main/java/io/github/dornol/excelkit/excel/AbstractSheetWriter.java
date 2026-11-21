@@ -92,7 +92,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Registers a callback that writes custom content before the column header row.
      */
     public SELF beforeHeader(BeforeHeaderWriter beforeHeaderWriter) {
-        cfg.beforeHeaderWriter = beforeHeaderWriter;
+        cfg.beforeHeaderWriter = java.util.Objects.requireNonNull(beforeHeaderWriter, "beforeHeaderWriter cannot be null");
         return self();
     }
 
@@ -100,7 +100,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Registers a callback that writes custom content after all data rows on each sheet.
      */
     public SELF afterData(AfterDataWriter afterDataWriter) {
-        cfg.afterDataWriter = afterDataWriter;
+        cfg.afterDataWriter = java.util.Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
         return self();
     }
 
@@ -110,7 +110,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Sets a function that determines the background color for each row.
      */
     public SELF rowColor(Function<T, @Nullable ExcelColor> rowColorFunction) {
-        cfg.rowColorFunction = rowColorFunction;
+        cfg.rowColorFunction = java.util.Objects.requireNonNull(rowColorFunction, "rowColorFunction cannot be null");
         return self();
     }
 
@@ -133,6 +133,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @return this writer for chaining
      */
     public SELF rowStyle(java.util.function.Predicate<T> predicate, Consumer<RowStyleConfig> configurer) {
+        java.util.Objects.requireNonNull(predicate, "predicate cannot be null");
         RowStyleConfig style = new RowStyleConfig();
         configurer.accept(style);
         cfg.rowStyleEntries.add(new SheetConfig.RowStyleEntry<>(predicate, style));
@@ -149,7 +150,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
             throw new IllegalArgumentException("progress interval must be positive");
         }
         cfg.progressInterval = interval;
-        cfg.progressCallback = callback;
+        cfg.progressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
         return self();
     }
 
@@ -186,6 +187,9 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Protects the sheet(s) with the given password.
      */
     public SELF protectSheet(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be null or blank");
+        }
         cfg.sheetPassword = password;
         return self();
     }
@@ -271,7 +275,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Sets a function that generates sheet names based on the sheet index (0-based).
      */
     public SELF sheetName(Function<Integer, String> sheetNameFunction) {
-        cfg.sheetNameFunction = sheetNameFunction;
+        cfg.sheetNameFunction = java.util.Objects.requireNonNull(sheetNameFunction, "sheetNameFunction cannot be null");
         return self();
     }
 
@@ -305,6 +309,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @since 0.16.11
      */
     public SELF groupComment(ExcelCellComment comment, String... path) {
+        java.util.Objects.requireNonNull(comment, "comment cannot be null");
         if (path == null || path.length == 0) {
             throw new IllegalArgumentException("path must not be empty");
         }

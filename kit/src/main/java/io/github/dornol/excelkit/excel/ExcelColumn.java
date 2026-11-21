@@ -363,7 +363,7 @@ public class ExcelColumn<T> {
         ExcelColumnBuilder(ExcelWriter<T> writer, String name, RowFunction<T, @Nullable Object> function) {
             this.writer = writer;
             this.name = name;
-            this.function = function;
+            this.function = java.util.Objects.requireNonNull(function, "function cannot be null");
         }
 
         /**

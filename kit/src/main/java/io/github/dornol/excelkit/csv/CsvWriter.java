@@ -144,7 +144,7 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> charset(Charset charset) {
-        this.charset = charset;
+        this.charset = java.util.Objects.requireNonNull(charset, "charset cannot be null");
         return this;
     }
 
@@ -170,7 +170,7 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> afterData(CsvAfterDataWriter afterDataWriter) {
-        this.afterDataWriter = afterDataWriter;
+        this.afterDataWriter = java.util.Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
         return this;
     }
 
@@ -182,7 +182,7 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
-        var column = new CsvColumn<>(name, function);
+        var column = new CsvColumn<>(name, java.util.Objects.requireNonNull(function, "function cannot be null"));
         this.columns.add(column);
         return this;
     }
@@ -195,6 +195,7 @@ public class CsvWriter<T> {
      * @return This writer instance
      */
     public CsvWriter<T> column(String name, Function<T, @Nullable Object> function) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         return column(name, (r, c) -> function.apply(r));
     }
 
@@ -269,7 +270,7 @@ public class CsvWriter<T> {
             throw new IllegalArgumentException("progress interval must be positive");
         }
         this.progressInterval = interval;
-        this.progressCallback = callback;
+        this.progressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
         return this;
     }
 
@@ -283,7 +284,7 @@ public class CsvWriter<T> {
      * @since 0.9.2
      */
     public CsvWriter<T> quoting(CsvQuoting quoting) {
-        this.quoting = quoting;
+        this.quoting = java.util.Objects.requireNonNull(quoting, "quoting cannot be null");
         return this;
     }
 
@@ -350,6 +351,7 @@ public class CsvWriter<T> {
      * @return A handler for streaming the resulting CSV
      */
     public CsvHandler write(Stream<T> stream) {
+        java.util.Objects.requireNonNull(stream, "stream cannot be null");
         CsvWriteOptions<T> options = snapshotOptions();
         if (options.columns().isEmpty()) {
             throw new CsvWriteException("columns setting required");

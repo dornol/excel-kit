@@ -11,6 +11,13 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** the writers reject a null argument where it is passed, with a `NullPointerException` naming it,
+  instead of failing on the first row (or not at all): the callbacks and functions of `beforeHeader`,
+  `afterData`, `afterAll`, `rowColor`, `rowStyle`, `onProgress`, `sheetName`, `column`/`columnIf` (every
+  overload, including the `Function` ones whose null used to hide inside a lambda), `groupComment`, plus
+  `headerFontName`, `CsvWriter.charset/quoting`, and a null `Stream` given to `write`. `protectSheet` and
+  `protectWorkbook` reject a null or blank password with `IllegalArgumentException`, like `password(...)`;
+  a null password used to leave the sheet or workbook silently unprotected.
 - **Breaking:** `ExcelSheetWriter` (sheets of an `ExcelWorkbook`) rolls over after 1,000,000 data rows by
   default, like `ExcelWriter`. Without `maxRows(...)` it never rolled over, so a sheet fed more than
   1,048,575 rows failed with POI's `Invalid row number (1048576) outside allowable range` once the

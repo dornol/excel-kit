@@ -72,6 +72,7 @@ public class TemplateListWriter<T> {
      * @return this writer for chaining
      */
     public TemplateListWriter<T> column(String name, Function<T, @Nullable Object> function) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
         return this;
     }
@@ -86,6 +87,7 @@ public class TemplateListWriter<T> {
      */
     public TemplateListWriter<T> column(String name, Function<T, @Nullable Object> function,
                                          Consumer<ColumnConfig<T>> cfg) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         ColumnConfig<T> config = new ColumnConfig<>();
         cfg.accept(config);
         columns.add(buildColumn(name, (r, c) -> function.apply(r), config));
@@ -138,7 +140,7 @@ public class TemplateListWriter<T> {
      * @return this writer for chaining
      */
     public TemplateListWriter<T> rowColor(Function<T, @Nullable ExcelColor> fn) {
-        this.cfg.rowColorFunction = fn;
+        this.cfg.rowColorFunction = java.util.Objects.requireNonNull(fn, "fn cannot be null");
         return this;
     }
 
@@ -151,6 +153,7 @@ public class TemplateListWriter<T> {
      */
     public TemplateListWriter<T> rowStyle(java.util.function.Predicate<T> predicate,
                                            java.util.function.Consumer<RowStyleConfig> configurer) {
+        java.util.Objects.requireNonNull(predicate, "predicate cannot be null");
         RowStyleConfig style = new RowStyleConfig();
         configurer.accept(style);
         cfg.rowStyleEntries.add(new SheetConfig.RowStyleEntry<>(predicate, style));
@@ -169,7 +172,7 @@ public class TemplateListWriter<T> {
             throw new IllegalArgumentException("progress interval must be positive");
         }
         this.cfg.progressInterval = interval;
-        this.cfg.progressCallback = callback;
+        this.cfg.progressCallback = java.util.Objects.requireNonNull(callback, "callback cannot be null");
         return this;
     }
 
@@ -194,7 +197,7 @@ public class TemplateListWriter<T> {
      * @return this writer for chaining
      */
     public TemplateListWriter<T> afterData(AfterDataWriter writer) {
-        this.cfg.afterDataWriter = writer;
+        this.cfg.afterDataWriter = java.util.Objects.requireNonNull(writer, "writer cannot be null");
         return this;
     }
 
@@ -323,6 +326,7 @@ public class TemplateListWriter<T> {
 
     private ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
                                         @Nullable ColumnConfig<T> config) {
+        java.util.Objects.requireNonNull(function, "function cannot be null");
         ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
         if (cfg.defaultStyleConfig != null) {
             c.applyDefaults(cfg.defaultStyleConfig);
