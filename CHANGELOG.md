@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- `reader.options(ReaderOptions)` no longer drops the Bean Validation provider given to
+  `setter(...)`/`mapping(...)` (or `validator(...)`) when the options carry none; before, rows
+  that violated constraints silently passed validation. Options that do carry a validator still override it.
+
 ## [0.26.0] - 2026-11-21
 
 ### Added

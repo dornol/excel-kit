@@ -70,9 +70,22 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
-    /** Applies reusable common reader settings. Format-specific settings are unchanged. */
+    /**
+     * Applies reusable common reader settings. Format-specific settings are unchanged.
+     * <p>
+     * The common settings given to this reader earlier (for example {@code headerRowIndex}) are replaced
+     * by the options, so call this before chaining individual settings. The Bean Validation provider is
+     * the exception: options that do not carry a validator keep the one already configured, such as the
+     * one passed to {@code setter(...)} or {@code mapping(...)}.
+     *
+     * @param options the settings to apply
+     * @return this reader for chaining
+     */
     public SELF options(ReaderOptions options) {
-        settings = Objects.requireNonNull(options, "options cannot be null").toBuilder();
+        Validator previous = settings.configuredValidator();
+        ReaderOptions.Builder applied = Objects.requireNonNull(options, "options cannot be null").toBuilder();
+        if (applied.configuredValidator() == null) applied.validator(previous);
+        settings = applied;
         return self();
     }
 
