@@ -43,7 +43,7 @@ Use with `.format(ExcelDataFormat.NUMBER.getFormat())`:
 
 ## ExcelKitSchema — Unified Read/Write
 
-Define columns once for both reading and writing:
+`ExcelKitSchema` is in `io.github.dornol.excelkit.schema`. Define columns once for both reading and writing:
 
 ```java
 ExcelKitSchema<Book> schema = ExcelKitSchema.<Book>builder()

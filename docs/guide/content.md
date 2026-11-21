@@ -128,6 +128,10 @@ writer
 
 **Chart types:** `BAR`, `LINE`, `PIE`, `SCATTER`, `AREA`, `DOUGHNUT`
 
+With `maxRows()` rollover each sheet gets its own chart over that sheet's rows. `position(...)` refuses a negative or
+backwards column pair and two given rows that run upwards; a category or value column that is not among the columns fails
+with `ExcelWriteException`.
+
 **Bar options:** `barDirection(VERTICAL | HORIZONTAL)`, `barGrouping(STANDARD | STACKED | PERCENT_STACKED)`
 
 **Legend positions:** `BOTTOM`, `LEFT`, `RIGHT`, `TOP`, `TOP_RIGHT`

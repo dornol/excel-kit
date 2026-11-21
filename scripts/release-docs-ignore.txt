@@ -13,3 +13,5 @@ ZonedDateTime
 # Package-name segments from the Automatic-Module-Name entry, not APIs.
 excelkit
 spring
+InputStream
+InputStreamSource

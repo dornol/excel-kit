@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.27.0] - 2026-11-21
 
 ### Added
 - `ExcelReader.getSheetNames(input, password)` and `getSheetHeaders(input, sheetIndex, headerRowIndex, password)`
@@ -21,7 +21,8 @@ All notable changes to this project will be documented in this file.
   `io.github.dornol.excelkit.schema` package (change the import). `core` no longer depends on `excel` and `csv`, which
   used to depend on each other in a cycle. `ExcelWorkbookReader.sheet(name|index, schema, supplier, validator, consumer)`
   is removed for the same reason: use `sheet(name|index, schema.excelReader(supplier, validator), consumer)`.
-  `ReaderOptions.toBuilder()` is public.
+  `ReaderOptions.toBuilder()` is public. In `excel-kit-spring`, the `ExcelKitTemplateResponse` and `ExcelKitUpload`
+  overloads that take an `ExcelKitSchema` now take the one from the `schema` package (same methods, recompile).
 - Rich text takes the font of its column: unformatted text and each formatted segment start from the column's font
   name, size, colour and bold, and the segment's own options are laid over it. Before, they started from POI's default
   font (Calibri 11), so a column in another font changed font inside a rich text cell.

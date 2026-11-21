@@ -28,15 +28,15 @@ integrations you use, using versions compatible with the rest of your applicatio
 
 **Gradle — Excel**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.26.0")
-implementation("io.github.dornol:excel-kit-spring:0.26.0") // optional Spring MVC helpers
+implementation("io.github.dornol:excel-kit:0.27.0")
+implementation("io.github.dornol:excel-kit-spring:0.27.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:6.0.0")      // Excel read/write
 implementation("org.slf4j:slf4j-api:2.0.20")          // logging facade
 ```
 
 **Gradle — CSV**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.26.0")
+implementation("io.github.dornol:excel-kit:0.27.0")
 implementation("com.opencsv:opencsv:5.12.0")
 implementation("org.slf4j:slf4j-api:2.0.20")
 ```
@@ -51,12 +51,12 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.26.0</version>
+  <version>0.27.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit-spring</artifactId>
-  <version>0.26.0</version>
+  <version>0.27.0</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
@@ -278,18 +278,18 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Category | Highlights |
 |----------|-----------|
 | Column DSL | Type, format, alignment, width, font, color, rotation, indentation |
-| Styling | Row/cell conditional colors, conditional row style (bold/font/color), borders (per-side), bold, strikethrough, underline |
+| Styling | Row/cell conditional colors (`cellColor`, `rowColor`), conditional row style (`rowStyle`: bold/font/color), borders (per-side), bold, strikethrough, underline; `maxCellStyles(int)` caps the styles those colors may create |
 | Layout | Auto-filter, freeze panes (row + column), multi-level group headers, column outline, hiding |
 | Header | Global/per-column header color, per-column header background, header row height, header style config, group header comments, row-number column |
 | Validation | Dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
 | Content | Formulas, hyperlinks, rich text, images (byte[] or URL, custom size), cell comments |
 | Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |
 | Protection | Sheet/workbook protection, per-column lock, password encryption (AES-256) |
-| Multi-sheet | `ExcelWorkbook` for typed multi-sheet, auto-rollover via `maxRows()` |
+| Multi-sheet | `ExcelWorkbook` for typed multi-sheet (each sheet an `ExcelSheetWriter`), auto-rollover via `maxRows()`; a chart is drawn on every rolled-over sheet |
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |
 | Null handling | `nullValue()` default for null cells, `defaultStyle()` for writer-level defaults |
 | Metadata | Document properties (title, author, subject, keywords), named ranges (fluent API) |
-| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, fail-fast write errors, atomic file writes (`AtomicFileWriter`: `writeTo(Path)` keeps the existing file on failure), `discard()` to release a handler you will not write |
+| Other | Summary rows (SUM/AVG/COUNT), conditional formatting, data bars, icon sets, print setup, fail-fast write errors, atomic file writes (`AtomicFileWriter`: `writeTo(Path)` keeps the existing file on failure), `discard()` to release a handler you will not write, `CsvWriter.lineSeparator(String)` for the CSV row terminator |
 
 **Reading (Excel & CSV)**
 
@@ -302,8 +302,8 @@ public ResponseEntity<StreamingResponseBody> download() {
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values (`rawValues()`) |
 | Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |
-| Discovery | `getSheetNames()`, `getSheetHeaders()` |
-| Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files |
+| Discovery | `getSheetNames()`, `getSheetHeaders()` (password overloads read encrypted workbooks) |
+| Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files, `limits(ReadLimits.UPLOAD)` preset for untrusted uploads (readers have no limits by default) |
 
 Reader configurations are reusable. Each `read()`, `readWhile()`, or `readStrict()` call creates
 an independent one-shot session for its input.

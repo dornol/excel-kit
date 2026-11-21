@@ -91,6 +91,15 @@ new CsvReader<>(Product::new, null)
     .read(inputStream, result -> { ... });
 ```
 
+Quoting and special characters:
+- `quoteChar(char)` / `escapeChar(char)` (NUL means none), `strictQuotes(boolean)`, and `ignoreLeadingWhiteSpace(boolean)`
+  (default `true`: a space before a quote is skipped, so `1, "x,y"` reads `x,y`).
+- The delimiter, quote and escape character must differ and none may be a line break (a delimiter may not be NUL):
+  `IllegalArgumentException` before the file is read. `CsvWriter.delimiter(...)` refuses `"`, line breaks and NUL.
+- Malformed input and a wrong charset are named in the message: a NUL character, an unterminated quote (with the line),
+  or text that is not valid in the charset (set it with `charset(...)`).
+- Hand-written files with stray spaces around quotes are read as far as opencsv follows them; see `docs/guide/csv.md`.
+
 ## CSV Map Writer
 
 ```java

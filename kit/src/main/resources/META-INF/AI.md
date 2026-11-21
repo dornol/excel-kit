@@ -159,6 +159,28 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - **`password(char[])`** — char-array overload on `ExcelWriter` / `ExcelWorkbook`. Array is copied
   internally and zeroed after encryption.
 
+## Key API Notes (v0.27.0+)
+
+- **Schema package** — `ExcelKitSchema` lives in `io.github.dornol.excelkit.schema` (it moved from `core`, which no
+  longer depends on `excel`/`csv`). Register a schema reader in a workbook reader with
+  `sheet(name, schema.excelReader(supplier, validator), consumer)`.
+- **Untrusted uploads** — readers have no limits by default; use `limits(ReadLimits.UPLOAD)` (50 MiB, 50 sheets,
+  1,000 columns, 32,767 characters per cell, 10 million cells) and, for Excel, `securityPolicy(ReadSecurityPolicy.STRICT)`.
+- **Encrypted discovery** — `ExcelReader.getSheetNames(input, password)` and
+  `getSheetHeaders(input, sheetIndex, headerRowIndex, password)` (`InputStream`, `Path`, `InputStreamSource`).
+- **Style cap** — `maxCellStyles(int)` on `ExcelWriter` / `ExcelSheetWriter` limits the cell styles that `cellColor`,
+  `rowColor` and `rowStyle` colors may create (default 64,000); a function returning more distinct colors fails fast.
+- **CSV** — `CsvWriter.lineSeparator("\r\n"|"\n"|"\r")`. `CsvReader` refuses a delimiter, quote and escape character
+  that cannot be told apart (and line breaks / NUL as delimiter); `CsvWriter.delimiter(...)` refuses `"`, line breaks and
+  NUL. `ignoreLeadingWhiteSpace` defaults to `true` (a space before a quote is skipped). A decode failure names the
+  charset and says to set `charset(...)`.
+- **Rich text** — unformatted text and every formatted segment start from the column's font; `ExcelTemplateWriter.cell`
+  accepts `ExcelRichText`. A `char[]` value is written as its characters.
+- **Charts** — with `maxRows()` rollover each sheet gets its own chart; `position(...)` and the chart's columns are
+  validated.
+- **Spring** — downloads send `Cache-Control: private, max-age=N`; `ExcelKitMultipartFile.requireExcelOrCsvContent`
+  checks the real ZIP signature and that a `.csv` is UTF-8 text.
+
 ## Spring response compatibility
 
 Spring responses accept an explicit `Duration` for cache max-age through

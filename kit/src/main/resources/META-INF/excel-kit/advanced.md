@@ -224,6 +224,10 @@ writer
     .write(data);
 ```
 
+With `maxRows()` rollover each sheet gets its own chart over that sheet's rows. `position(...)` refuses a negative or
+backwards column pair and two given rows that run upwards; a category or value column that is not among the columns fails
+with `ExcelWriteException`.
+
 ## Summary/Footer Rows
 
 ```java
