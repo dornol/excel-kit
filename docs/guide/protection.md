@@ -74,6 +74,8 @@ handler.writeTo(path, pwChars);               // Path + char[]
 ```
 
 > Using both `.password()` and `writeTo(out, password)` on the same handler throws `IllegalStateException`.
+> A null or blank password throws `IllegalArgumentException` and consumes the handler: its workbook is
+> closed and it cannot be written afterwards. The `IllegalStateException` above leaves the handler usable.
 
 ## Security Notes
 

@@ -125,12 +125,13 @@ public final class ExcelHandler implements FileHandler {
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
      * @throws ExcelWriteException If an I/O or encryption error occurs during writing
+     * @throws IllegalArgumentException If the password is null or blank; the handler is then consumed and its workbook closed
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      * @since 0.16.5
      */
     public void writeTo(OutputStream outputStream, String password) {
         if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
+            throw rejectBlankPassword();
         }
         try {
             rejectIfPasswordAlreadySet();
@@ -154,12 +155,13 @@ public final class ExcelHandler implements FileHandler {
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password as a char array (will be zeroed after use)
      * @throws ExcelWriteException If an I/O or encryption error occurs during writing
+     * @throws IllegalArgumentException If the password is null or blank; the handler is then consumed and its workbook closed
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      * @since 0.16.5
      */
     public void writeTo(OutputStream outputStream, char[] password) {
         if (password == null || password.length == 0 || isBlank(password)) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
+            throw rejectBlankPassword();
         }
         try {
             rejectIfPasswordAlreadySet();
@@ -182,12 +184,13 @@ public final class ExcelHandler implements FileHandler {
      * @param path     The destination file path
      * @param password The password to protect the Excel file with
      * @throws ExcelWriteException If an I/O or encryption error occurs during writing
+     * @throws IllegalArgumentException If the password is null or blank; the handler is then consumed and its workbook closed
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      * @since 0.16.6
      */
     public void writeTo(Path path, String password) {
         if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
+            throw rejectBlankPassword();
         }
         rejectIfPasswordAlreadySet();
         try {
@@ -208,12 +211,13 @@ public final class ExcelHandler implements FileHandler {
      * @param path     The destination file path
      * @param password The password as a char array (will be zeroed after use)
      * @throws ExcelWriteException If an I/O or encryption error occurs during writing
+     * @throws IllegalArgumentException If the password is null or blank; the handler is then consumed and its workbook closed
      * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
      * @since 0.16.6
      */
     public void writeTo(Path path, char[] password) {
         if (password == null || password.length == 0 || isBlank(password)) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
+            throw rejectBlankPassword();
         }
         try {
             rejectIfPasswordAlreadySet();
@@ -246,6 +250,22 @@ public final class ExcelHandler implements FileHandler {
         } catch (IOException e) {
             throw new ExcelWriteException("Failed to write encrypted Excel", e);
         }
+    }
+
+    /**
+     * A null or blank password is an argument error, not a recoverable state: the handler is
+     * consumed and its workbook closed, so a handler that is abandoned after the failure (for
+     * example inside a streaming response) does not keep temp files.
+     */
+    private IllegalArgumentException rejectBlankPassword() {
+        if (consumed.compareAndSet(false, true)) {
+            try {
+                wb.close();
+            } catch (IOException | RuntimeException e) {
+                log.warn("Failed to close workbook after a rejected password", e);
+            }
+        }
+        return new IllegalArgumentException("Password cannot be null or blank");
     }
 
     private void rejectIfPasswordAlreadySet() {

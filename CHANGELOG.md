@@ -23,6 +23,10 @@ All notable changes to this project will be documented in this file.
 - `ExcelWriter.write` releases the workbook's temp files when writing the first sheet's
   preamble or header fails (for example a throwing `beforeHeader` callback); the original
   exception is still thrown unchanged.
+- `ExcelHandler.writeTo(..., password)` with a null or blank password now consumes the handler and
+  closes its workbook before throwing `IllegalArgumentException`, so a rejected password no longer
+  leaves the workbook's temp files behind. A conflict with a writer-level `password(...)` still
+  throws `IllegalStateException` and leaves the handler usable with `writeTo(OutputStream)`.
 
 ## [0.25.0] - 2026-11-20
 
