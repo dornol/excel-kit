@@ -223,10 +223,18 @@ class TemplateListWriterDetailsTest {
         assertEquals(1, writeTable(false, List.of(new Item("a", 1))).getTables().size(), "one data row is enough");
     }
 
+    private static byte[] emptySheet() throws IOException {
+        try (XSSFWorkbook blank = new XSSFWorkbook(); ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
+            blank.createSheet("S");
+            blank.write(bytes);
+            return bytes.toByteArray();
+        }
+    }
+
     @Test
     void aTableFromATemplateNeedsItsHeaderOnTheRowAboveTheData() throws Exception {
-        // data from row 0: there is no row above it
-        try (ExcelTemplateWriter template = new ExcelTemplateWriter(new ByteArrayInputStream(template(-1)))) {
+        // data from row 0 of an empty sheet: there is no row above it
+        try (ExcelTemplateWriter template = new ExcelTemplateWriter(new ByteArrayInputStream(emptySheet()))) {
             ExcelWriteException error = assertThrows(ExcelWriteException.class, () -> template.<Item>list(0)
                     .column("name", Item::name).column("qty", Item::qty).table("Items").write(ITEMS));
             assertTrue(error.getMessage().contains("header row before startRow"), error.getMessage());
@@ -236,6 +244,48 @@ class TemplateListWriterDetailsTest {
             ExcelWriteException error = assertThrows(ExcelWriteException.class, () -> template.<Item>list(5)
                     .column("name", Item::name).column("qty", Item::qty).table("Items").write(ITEMS));
             assertTrue(error.getMessage().contains("header"), error.getMessage());
+        }
+    }
+
+    // ---- where a list may start
+
+    @Test
+    void aListMustStartBelowEveryRowOfTheTemplate() throws Exception {
+        // the template has content on rows 0 and 2; a list may start on row 3 or lower, not on or above row 2
+        for (int startRow : new int[]{0, 1, 2}) {
+            try (ExcelTemplateWriter template = new ExcelTemplateWriter(new ByteArrayInputStream(template(2)))) {
+                ExcelWriteException error = assertThrows(ExcelWriteException.class, () -> template.<Item>list(startRow), "row " + startRow);
+                assertTrue(error.getMessage().contains("below the template's last row"), error.getMessage());
+                assertTrue(error.getMessage().contains("row " + startRow) && error.getMessage().contains("row 2"), error.getMessage());
+            }
+        }
+        for (int startRow : new int[]{3, 4, 50}) {
+            try (ExcelTemplateWriter template = new ExcelTemplateWriter(new ByteArrayInputStream(template(2)))) {
+                assertDoesNotThrow(() -> template.<Item>list(startRow), "row " + startRow);
+            }
+        }
+    }
+
+    @Test
+    void aFooterInTheTemplateBelowTheListIsAlsoInTheWay() throws Exception {
+        byte[] withFooter;
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("S");
+            sheet.createRow(2).createCell(0).setCellValue("name");
+            sheet.createRow(8).createCell(0).setCellValue("FOOTER");
+            workbook.write(bytes);
+            withFooter = bytes.toByteArray();
+        }
+        try (ExcelTemplateWriter template = new ExcelTemplateWriter(new ByteArrayInputStream(withFooter))) {
+            ExcelWriteException error = assertThrows(ExcelWriteException.class, () -> template.<Item>list(3));
+            assertTrue(error.getMessage().contains("row 8"), error.getMessage());
+        }
+    }
+
+    @Test
+    void anEmptySheetOfATemplateTakesAListFromAnyRow() throws Exception {
+        try (ExcelTemplateWriter template = new ExcelTemplateWriter(new ByteArrayInputStream(emptySheet()))) {
+            assertDoesNotThrow(() -> template.<Item>list(0));
         }
     }
 

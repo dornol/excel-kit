@@ -51,6 +51,16 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- `ExcelTemplateWriter.cell(...)` with a date or time in a cell that has no number format (any cell below the template)
+  showed it as a serial number (`45356`). Such a cell now gets `yyyy-mm-dd`, `yyyy-mm-dd hh:mm:ss` or `hh:mm:ss`, keeping
+  its font and borders; a cell whose template gave it a format keeps that one.
+- A `list(startRow)` on a sheet whose template has rows at or below `startRow` failed deep in POI with `Attempting to
+  write a row[3] in the range [0,6] that is already written to disk`. `list(...)` now says what is wrong: the list must
+  start below the template's last row, and which row that is.
+- A `cell(...)` or `list(...)` that was refused (a row or column off the sheet, a text over 32,767 characters) still
+  moved the writer's row position, so the next valid write could fail with `Cells must be written in top-down row
+  order`. A refused write now leaves the position as it was. A row or column off the sheet is an
+  `IllegalArgumentException` at the call, also for `list(...)`.
 - A `summary` on a template list written with `write(...)` (the template already has the headers) left out the first
   data row: `SUM(B5:B6)` for data in rows 4 to 6. The list took its own start row for the header row; the header is the
   template's row above it. `afterData` was told the wrong header row too (`SheetContext.getHeaderRowIndex()`).

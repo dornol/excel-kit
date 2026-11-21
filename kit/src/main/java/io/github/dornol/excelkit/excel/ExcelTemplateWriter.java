@@ -33,6 +33,11 @@ import java.util.Map;
  *
  * <p><b>Important:</b> All writes must proceed in top-to-bottom row order.
  * SXSSFWorkbook flushes rows from memory, so previously written rows cannot be revisited.
+ * For the same reason a list must start <b>below the last row the template has</b> on its sheet (a footer or an
+ * empty formatted row further down is in the way): move that content out of the template and write it with
+ * {@link #cell(String, Object)} after the list.
+ * <p>A cell keeps the number format its template gave it. A date or time written to a cell that has none (any cell
+ * below the template) gets {@code yyyy-mm-dd}, {@code yyyy-mm-dd hh:mm:ss} or {@code hh:mm:ss}.
  *
  * <pre>{@code
  * try (ExcelTemplateWriter writer = new ExcelTemplateWriter(templateStream)) {
@@ -180,7 +185,8 @@ public class ExcelTemplateWriter implements AutoCloseable {
      */
     public ExcelTemplateWriter cell(int row, int col, @Nullable Object value, @Nullable CellStyle style) {
         checkNotFinished();
-        enforceRowOrder(activeSheetIndex, row);
+        requirePosition(row, col);
+        checkRowOrder(activeSheetIndex, row);
 
         int templateLastRow = templateLastRowBySheet.getOrDefault(activeSheetIndex, -1);
         if (row <= templateLastRow) {
@@ -197,6 +203,8 @@ public class ExcelTemplateWriter implements AutoCloseable {
             setCellValue(cell, value);
             if (style != null) {
                 cell.setCellStyle(style);
+            } else {
+                applyDefaultTemporalFormat(cell, value);
             }
         } else {
             // New row beyond template — write via SXSSFWorkbook
@@ -212,9 +220,35 @@ public class ExcelTemplateWriter implements AutoCloseable {
             setCellValue(cell, value);
             if (style != null) {
                 cell.setCellStyle(style);
+            } else {
+                applyDefaultTemporalFormat(cell, value);
             }
         }
+        // Only a write that went through moves the position, so a refused one leaves the writer as it was.
+        lastWrittenRowBySheet.put(activeSheetIndex, row);
         return this;
+    }
+
+    /**
+     * A date or time is a number to Excel, and a cell with the General format shows it as one ({@code 45356}).
+     * A cell that has no format of its own, such as any cell below the template, gets a date format; a cell whose
+     * template gave it one keeps it, and so does a cell given a style explicitly.
+     */
+    private void applyDefaultTemporalFormat(Cell cell, @Nullable Object value) {
+        if (value == null || cell.getCellType() != CellType.NUMERIC) return;
+        Object temporal = ExcelDataType.normalizeTemporal(value);
+        String format = temporal instanceof LocalDateTime ? ExcelDataFormat.DATETIME.getFormat()
+                : temporal instanceof LocalDate ? ExcelDataFormat.DATE.getFormat()
+                : temporal instanceof LocalTime ? ExcelDataFormat.TIME.getFormat() : null;
+        CellStyle current = cell.getCellStyle();
+        if (format == null || current.getDataFormat() != 0) return;
+        String key = "temporal_" + current.getIndex() + "_" + format;
+        cell.setCellStyle(cellStyleCache.computeIfAbsent(key, k -> {
+            CellStyle created = wb.createCellStyle();
+            created.cloneStyleFrom(current);
+            created.setDataFormat(wb.createDataFormat().getFormat(format));
+            return created;
+        }));
     }
 
     /**
@@ -241,7 +275,17 @@ public class ExcelTemplateWriter implements AutoCloseable {
      */
     public <T> TemplateListWriter<T> list(int sheetIndex, int startRow) {
         checkNotFinished();
-        enforceRowOrder(sheetIndex, startRow);
+        int templateLastRow = templateLastRowBySheet.getOrDefault(sheetIndex, -1);
+        if (startRow <= templateLastRow) {
+            // A streaming sheet cannot create rows the template already has; say so instead of failing in POI.
+            throw new ExcelWriteException("A list must start below the template's last row: row " + startRow
+                    + " is not below row " + templateLastRow + " on sheet " + sheetIndex + ". Move the list below "
+                    + "the template's content, or take what sits below it out of the template and write it with cell(...) "
+                    + "after the list.");
+        }
+        requirePosition(startRow, 0);
+        checkRowOrder(sheetIndex, startRow);
+        lastWrittenRowBySheet.put(sheetIndex, startRow);
         SXSSFSheet sheet = wb.getSheetAt(sheetIndex);
         return new TemplateListWriter<>(this, wb, sheet, startRow, cellStyleCache, sheetIndex);
     }
@@ -277,7 +321,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
         lastWrittenRowBySheet.merge(sheetIndex, row, Math::max);
     }
 
-    private void enforceRowOrder(int sheetIndex, int row) {
+    private void checkRowOrder(int sheetIndex, int row) {
         int lastRow = lastWrittenRowBySheet.getOrDefault(sheetIndex, -1);
         if (row < lastRow) {
             throw new ExcelWriteException(
@@ -285,7 +329,19 @@ public class ExcelTemplateWriter implements AutoCloseable {
                             + "Attempted row " + row + " but last written row was " + lastRow
                             + " on sheet " + sheetIndex);
         }
-        lastWrittenRowBySheet.put(sheetIndex, row);
+    }
+
+    /** A position inside the sheet, checked before anything is recorded about it. */
+    private static void requirePosition(int row, int col) {
+        var version = org.apache.poi.ss.SpreadsheetVersion.EXCEL2007;
+        if (row < 0 || row > version.getLastRowIndex()) {
+            throw new IllegalArgumentException("Invalid row number (" + row + ") outside allowable range (0.."
+                    + version.getLastRowIndex() + ")");
+        }
+        if (col < 0 || col > version.getLastColumnIndex()) {
+            throw new IllegalArgumentException("Invalid column index (" + col + "). Allowable column range for EXCEL2007 is (0.."
+                    + version.getLastColumnIndex() + ")");
+        }
     }
 
     private void checkNotFinished() {
