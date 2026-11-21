@@ -61,8 +61,10 @@ ExcelWriter.<Item>create(o -> o.useSharedStrings(true))
         c -> c.type(ExcelDataType.RICH_TEXT))
 ```
 
-The shared strings table is kept in memory, so with millions of distinct strings this costs heap. A segment's font
-starts from POI's default (Calibri 11), not from the column's font: give `fontSize(...)` where the column's differs.
+The shared strings table is kept in memory, so with millions of distinct strings this costs heap. Unformatted
+text and every formatted segment start from the column's font (name, size, colour, bold), and a segment's own
+options are laid over it; a cell with no formatted segment at all is a plain string in the column's font.
+`ExcelTemplateWriter.cell(...)` takes an `ExcelRichText` too and keeps its formatting.
 
 ## Image Embedding
 

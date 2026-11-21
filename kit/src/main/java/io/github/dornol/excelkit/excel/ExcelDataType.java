@@ -31,7 +31,7 @@ public enum ExcelDataType {
     /**
      * Generic string type. Calls {@code String.valueOf(value)}.
      */
-    STRING((cell, value) -> ExcelCellText.write(cell, String.valueOf(value)), null),
+    STRING((cell, value) -> ExcelCellText.write(cell, ExcelCellText.textOf(value)), null),
 
     /**
      * Boolean values are converted to "Y" or "N".
@@ -172,16 +172,9 @@ public enum ExcelDataType {
      */
     RICH_TEXT((cell, value) -> {
         if (value instanceof ExcelRichText rt) {
-            SXSSFWorkbook wb = cell.getSheet().getWorkbook();
-            if (!ExcelWorkbookSupport.usesSharedStrings(wb)) {
-                throw new IllegalStateException("Rich text keeps its formatting only in a workbook with shared strings; "
-                        + "without them POI writes the cell as plain text. Create the writer with "
-                        + "ExcelWriter.create(o -> o.useSharedStrings(true)) (or ExcelWorkbook.create(...)); an "
-                        + "ExcelTemplateWriter cannot write rich text");
-            }
-            ExcelCellText.writeStreaming(cell, rt.toRichTextString(wb, ExcelRichText.getFontCache(wb)));
+            writeRichText(cell, rt, cell.getSheet().getWorkbook());
         } else {
-            ExcelCellText.write(cell, String.valueOf(value));
+            ExcelCellText.write(cell, ExcelCellText.textOf(value));
         }
     }, null)
     ;
@@ -195,6 +188,21 @@ public enum ExcelDataType {
     private static final int NANOS_PER_MILLISECOND = 1_000_000;
     private static final String DATETIME_WITH_MILLIS = ExcelDataFormat.DATETIME.getFormat() + ".000";
     private static final String TIME_WITH_MILLIS = ExcelDataFormat.TIME.getFormat() + ".000";
+
+    /**
+     * Writes rich text into a cell. Text that has no formatting of its own takes the font of the cell's style, so a
+     * column's font applies to the cell as it would to plain text.
+     */
+    static void writeRichText(Cell cell, ExcelRichText rt, SXSSFWorkbook wb) {
+        if (!ExcelWorkbookSupport.usesSharedStrings(wb)) {
+            throw new IllegalStateException("Rich text keeps its formatting only in a workbook with shared strings; "
+                    + "without them POI writes the cell as plain text. Create the writer with "
+                    + "ExcelWriter.create(o -> o.useSharedStrings(true)) (or ExcelWorkbook.create(...))");
+        }
+        org.apache.poi.xssf.usermodel.XSSFFont base = cell.getCellStyle() instanceof org.apache.poi.xssf.usermodel.XSSFCellStyle xs
+                ? xs.getFont() : null;
+        ExcelCellText.writeStreaming(cell, rt.toRichTextString(wb, ExcelRichText.getFontCache(wb), base));
+    }
 
     static void setDateTime(Cell cell, LocalDateTime value) {
         var workbook = cell.getSheet().getWorkbook();

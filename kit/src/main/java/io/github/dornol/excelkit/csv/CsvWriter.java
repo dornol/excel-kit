@@ -549,7 +549,7 @@ public class CsvWriter<T> {
         if (input == null) {
             return options.quoting() == CsvQuoting.ALL ? "\"\"" : "";
         }
-        String value = input.toString();
+        String value = input instanceof char[] chars ? new String(chars) : input.toString();
         // One pass finds everything that decides the quoting; no per-field allocation.
         char delimiter = options.delimiter();
         boolean special = false;

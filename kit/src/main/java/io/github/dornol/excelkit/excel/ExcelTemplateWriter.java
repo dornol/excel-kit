@@ -95,7 +95,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
      */
     public ExcelTemplateWriter(InputStream templateStream, int rowAccessWindowSize) throws IOException {
         this.templateWb = new XSSFWorkbook(templateStream);
-        this.wb = new SXSSFWorkbook(templateWb, rowAccessWindowSize);
+        this.wb = ExcelWorkbookSupport.templateStreamingWorkbook(templateWb, rowAccessWindowSize);
         // Record last existing row per sheet so we know which rows are in the template
         for (int i = 0; i < templateWb.getNumberOfSheets(); i++) {
             int lastRow = templateWb.getSheetAt(i).getLastRowNum();
@@ -202,7 +202,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
             if (cell == null) {
                 cell = sheetRow.createCell(col);
             }
-            setCellValue(cell, value);
+            setCellValue(cell, value, wb);
             if (style != null) {
                 cell.setCellStyle(style);
             } else {
@@ -219,7 +219,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
             if (cell == null) {
                 cell = sheetRow.createCell(col);
             }
-            setCellValue(cell, value);
+            setCellValue(cell, value, wb);
             if (style != null) {
                 cell.setCellStyle(style);
             } else {
@@ -353,6 +353,10 @@ public class ExcelTemplateWriter implements AutoCloseable {
     }
 
     static void setCellValue(Cell cell, @Nullable Object value) {
+        setCellValue(cell, value, null);
+    }
+
+    static void setCellValue(Cell cell, @Nullable Object value, @Nullable SXSSFWorkbook streaming) {
         if (value != null && cell.getCellType() == CellType.FORMULA) {
             cell.removeFormula();
         }
@@ -361,6 +365,12 @@ public class ExcelTemplateWriter implements AutoCloseable {
             cell.setBlank();
         } else if (value instanceof String s) {
             ExcelCellText.write(cell, s);
+        } else if (value instanceof ExcelRichText rt) {
+            if (streaming == null) {
+                ExcelCellText.write(cell, rt.toString());
+            } else {
+                ExcelDataType.writeRichText(cell, rt, streaming);
+            }
         } else if (value instanceof Number n) {
             try {
                 ExcelDataType.setNumber(cell, n);
@@ -380,7 +390,7 @@ public class ExcelTemplateWriter implements AutoCloseable {
                 ExcelCellText.write(cell, lt.toString());
             }
         } else {
-            ExcelCellText.write(cell, String.valueOf(value));
+            ExcelCellText.write(cell, ExcelCellText.textOf(value));
         }
     }
 

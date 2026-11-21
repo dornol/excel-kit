@@ -157,7 +157,7 @@ public class ExcelColumn<T> {
         if (fixedWidth || value == null) {
             return;
         }
-        int width = getLogicalLength(String.valueOf(value));
+        int width = getLogicalLength(ExcelCellText.textOf(value));
         int candidate = Math.max(this.columnWidth, width);
         if (maxWidth > 0) candidate = Math.min(candidate, maxWidth);
         this.setColumnWidth(Math.max(candidate, minWidth));
@@ -204,13 +204,16 @@ public class ExcelColumn<T> {
                 }
             }
         }
+        if (columnData instanceof ExcelRichText) {
+            cell.setCellStyle(style);   // rich text takes the column's font for the text it does not format
+        }
         try {
             return writeValue(cell, columnData);
         } catch (RuntimeException e) {
             if (placeholder) {
                 // An explicit nullValue (for example "-" in a numeric column) is always written, as text
                 // when it does not fit the column type, whatever the error policy.
-                ExcelCellText.write(cell, String.valueOf(columnData));
+                ExcelCellText.write(cell, ExcelCellText.textOf(columnData));
                 return style;
             }
             if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
@@ -219,7 +222,7 @@ public class ExcelColumn<T> {
                         + (dataType == null ? "" : ", column type " + dataType) + "): " + e.getMessage(), e);
             }
             log.warn("Writing value as text after a cell write failure for column '{}' (value={})", name, columnData, e);
-            ExcelCellText.write(cell, String.valueOf(columnData));
+            ExcelCellText.write(cell, ExcelCellText.textOf(columnData));
             return style;
         }
     }

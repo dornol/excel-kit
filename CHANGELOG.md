@@ -17,6 +17,12 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- Rich text takes the font of its column: unformatted text and each formatted segment start from the column's font
+  name, size, colour and bold, and the segment's own options are laid over it. Before, they started from POI's default
+  font (Calibri 11), so a column in another font changed font inside a rich text cell.
+- `ExcelTemplateWriter.cell(...)` accepts `ExcelRichText` and keeps its formatting (it used to write the object's text
+  or fail). The template writer now keeps shared strings.
+- A `char[]` value is written as its characters in Excel cells (including templates) and CSV, not as `[C@1b6d3586`.
 - When a write rolls over to further sheets, a configured chart is drawn on every sheet over that sheet's own rows
   (it used to appear only on the last sheet and plot just the remainder).
 - **Breaking:** `ExcelChartConfig.position(...)` refuses a negative or backwards column pair and two given rows that run

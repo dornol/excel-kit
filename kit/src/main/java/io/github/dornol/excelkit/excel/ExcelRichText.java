@@ -122,7 +122,13 @@ public class ExcelRichText {
     }
 
     XSSFRichTextString toRichTextString(SXSSFWorkbook wb, Map<String, Font> fontCache) {
+        return toRichTextString(wb, fontCache, null);
+    }
+
+    XSSFRichTextString toRichTextString(SXSSFWorkbook wb, Map<String, Font> fontCache, @Nullable XSSFFont base) {
         List<Segment> segments = wholeCharacterSegments();
+        // Text nothing is formatted in is a plain string: the cell's own font already applies to it.
+        if (segments.stream().noneMatch(seg -> seg.style != null && !seg.text.isEmpty())) base = null;
         StringBuilder fullText = new StringBuilder();
         for (Segment seg : segments) {
             fullText.append(seg.text);
@@ -130,16 +136,16 @@ public class ExcelRichText {
         String logical = fullText.toString();
         String encoded = ExcelCellText.encode(logical);
         if (encoded != logical) {
-            return encodedRichText(wb, fontCache, segments, logical, encoded);
+            return encodedRichText(wb, fontCache, segments, logical, encoded, base);
         }
         XSSFRichTextString rts = new XSSFRichTextString(logical);
 
         int pos = 0;
         for (Segment seg : segments) {
             int end = pos + seg.text.length();
-            if (seg.style != null && !seg.text.isEmpty()) {
-                Font font = seg.style.resolveFont(wb, fontCache);
-                rts.applyFont(pos, end, font);
+            if (!seg.text.isEmpty()) {
+                Font font = fontOf(seg, wb, fontCache, base);
+                if (font != null) rts.applyFont(pos, end, font);
             }
             pos = end;
         }
@@ -147,7 +153,8 @@ public class ExcelRichText {
     }
 
     private XSSFRichTextString encodedRichText(SXSSFWorkbook wb, Map<String, Font> fontCache,
-                                              List<Segment> segments, String logical, String encoded) {
+                                              List<Segment> segments, String logical, String encoded,
+                                              @Nullable XSSFFont base) {
         var text = new ExcelCellText.StreamingText(logical, encoded);
         int position = 0;
         int storedPosition = 0;
@@ -158,7 +165,7 @@ public class ExcelRichText {
             while (position < end) {
                 storedPosition += ExcelCellText.needsEscape(logical, position++) ? 7 : 1;
             }
-            XSSFFont font = segment.style == null ? null : (XSSFFont) segment.style.resolveFont(wb, fontCache);
+            XSSFFont font = (XSSFFont) fontOf(segment, wb, fontCache, base);
             text.append(encoded.substring(storedStart, storedPosition), font);
         }
         return text;
@@ -173,6 +180,12 @@ public class ExcelRichText {
      * @param wb the workbook
      * @return the font cache map
      */
+    /** The font of a segment: its own style laid over the base font, or the base font itself when it has no style. */
+    private static @Nullable Font fontOf(Segment segment, SXSSFWorkbook wb, Map<String, Font> fontCache, @Nullable XSSFFont base) {
+        if (segment.style != null) return segment.style.resolveFont(wb, fontCache, base);
+        return base;
+    }
+
     static Map<String, Font> getFontCache(SXSSFWorkbook wb) {
         return FONT_CACHES.computeIfAbsent(wb, k -> new HashMap<>());
     }
@@ -299,15 +312,30 @@ public class ExcelRichText {
         }
 
         Font resolveFont(SXSSFWorkbook wb, Map<String, Font> fontCache) {
-            String key = cacheKey();
+            return resolveFont(wb, fontCache, null);
+        }
+
+        /** This style laid over {@code base}: what the style does not set (name, size, colour, ...) stays the base's. */
+        Font resolveFont(SXSSFWorkbook wb, Map<String, Font> fontCache, @Nullable XSSFFont base) {
+            String key = cacheKey() + (base == null ? "" : "|" + base.getIndex());
             return fontCache.computeIfAbsent(key, k -> {
                 Font font = wb.createFont();
-                font.setBold(bold);
-                font.setItalic(italic);
+                if (base != null) {
+                    font.setFontName(base.getFontName());
+                    font.setFontHeightInPoints(base.getFontHeightInPoints());
+                    font.setBold(base.getBold());
+                    font.setItalic(base.getItalic());
+                    font.setUnderline(base.getUnderline());
+                    font.setStrikeout(base.getStrikeout());
+                    font.setCharSet(base.getCharSet());
+                    if (font instanceof XSSFFont xf && base.getXSSFColor() != null) xf.setColor(base.getXSSFColor());
+                }
+                if (bold) font.setBold(true);
+                if (italic) font.setItalic(true);
                 if (underline) {
                     font.setUnderline(Font.U_SINGLE);
                 }
-                font.setStrikeout(strikethrough);
+                if (strikethrough) font.setStrikeout(true);
                 if (color != null && font instanceof XSSFFont xf) {
                     xf.setColor(new XSSFColor(new byte[]{(byte) color[0], (byte) color[1], (byte) color[2]}));
                 }

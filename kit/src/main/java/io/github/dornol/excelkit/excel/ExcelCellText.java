@@ -28,6 +28,14 @@ final class ExcelCellText {
         }
     }
 
+    /**
+     * The text of a value that is written as text: {@code toString()}, except that a {@code char[]} is its characters
+     * (its {@code toString()} is an object identity such as {@code [C@1b6d3586}).
+     */
+    static String textOf(@Nullable Object value) {
+        return value instanceof char[] chars ? new String(chars) : String.valueOf(value);
+    }
+
     static void writeStreaming(Cell cell, XSSFRichTextString text) {
         cell.setCellValue(text);
         if (text instanceof StreamingText encoded) encoded.attached = true;

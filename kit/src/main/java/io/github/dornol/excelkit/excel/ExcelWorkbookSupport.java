@@ -20,6 +20,13 @@ final class ExcelWorkbookSupport {
         return workbook;
     }
 
+    /** Creates the streaming workbook of a template writer: it wraps the template and keeps shared strings. */
+    static SXSSFWorkbook templateStreamingWorkbook(org.apache.poi.xssf.usermodel.XSSFWorkbook template, int rowAccessWindowSize) {
+        SXSSFWorkbook workbook = new SXSSFWorkbook(template, rowAccessWindowSize, false, true);
+        SHARED_STRINGS.put(workbook, Boolean.TRUE);
+        return workbook;
+    }
+
     /**
      * Whether the workbook keeps shared strings. Without them POI writes every string cell as its plain text,
      * so formatting inside a cell (rich text) cannot be kept.
