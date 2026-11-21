@@ -164,6 +164,19 @@ ExcelWriter.forMap("Name", "Age", "City")
 CsvWriter.forMap("Name", "Age").write(stream).writeTo(outputStream);
 ```
 
+## Closing a row stream
+
+`write(Stream)` reads the stream but does not close it; the code that opened it does. For a JPA or
+JDBC stream, wrap the call in try-with-resources so the cursor and connection are released:
+
+```java
+try (Stream<Order> orders = orderRepository.streamAll()) {
+    return ExcelWriter.<Order>create()
+        .column("Id", Order::id)
+        .write(orders);
+}
+```
+
 ## Conditional Columns
 
 ```java

@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- The javadoc of every `write(Stream)` now says that the stream is read but not closed, and the writing
+  guide shows try-with-resources for JPA/JDBC streams.
 - The external-link check of `ReadSecurityPolicy` (`allowExternalLinks(false)`, including `STRICT`) reads
   relationship parts in 8 KiB chunks instead of byte by byte. The verdicts are unchanged.
 - `CsvQuoting.NON_NUMERIC` and the CSV injection defense now share one definition of a number (an optional

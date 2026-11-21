@@ -240,6 +240,10 @@ public class TemplateListWriter<T> {
      * Does <b>not</b> write column headers — the template is expected to have them already.
      * Use {@link #writeWithHeaders(Stream)} if headers should be written.
      *
+     * <p>
+     * The stream is read but <b>not closed</b>: whoever opened it (a JPA or JDBC stream, for example)
+     * closes it, typically with try-with-resources around this call.
+     *
      * @param stream the data stream
      * @return the parent {@link ExcelTemplateWriter} for further chaining
      */

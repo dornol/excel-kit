@@ -342,6 +342,10 @@ public class CsvWriter<T> {
      * <p>
      * The returned {@link CsvHandler} can be used to write the file to an {@link OutputStream}.
      *
+     * <p>
+     * The stream is read but <b>not closed</b>: whoever opened it (a JPA or JDBC stream, for example)
+     * closes it, typically with try-with-resources around this call.
+     *
      * @param stream The row data stream
      * @return A handler for streaming the resulting CSV
      */

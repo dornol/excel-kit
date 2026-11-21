@@ -209,6 +209,10 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      *
+     * <p>
+     * The stream is read but <b>not closed</b>: whoever opened it (a JPA or JDBC stream, for example)
+     * closes it, typically with try-with-resources around this call.
+     *
      * @param stream the data stream to write
      */
     public void write(Stream<T> stream) {
