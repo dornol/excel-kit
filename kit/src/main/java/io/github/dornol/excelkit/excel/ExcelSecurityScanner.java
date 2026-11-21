@@ -112,8 +112,8 @@ final class ExcelSecurityScanner {
                 if (e instanceof ReadSecurityException security) throw security;
                 // Not XML (media, binaries) is not a worksheet; an unreadable worksheet fails closed.
                 if (worksheet) {
-                    throw security(ReadSecurityException.Reason.FORMULA,
-                            "Worksheet XML could not be scanned for formulas");
+                    throw new ReadSecurityException(ReadSecurityException.Reason.FORMULA,
+                            "Worksheet XML could not be scanned for formulas", e);
                 }
                 return new ScanResult(false, 0);
             } finally {

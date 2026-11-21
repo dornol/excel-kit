@@ -15,5 +15,16 @@ public final class ReadSecurityException extends ExcelKitException {
         this.reason = java.util.Objects.requireNonNull(reason, "reason cannot be null");
     }
     /** Returns the rule that rejected the workbook. */
+    /**
+     * Creates the exception with the failure that made the scan fail closed.
+     *
+     * @param reason  why the read was refused
+     * @param message the message
+     * @param cause   what went wrong while checking, kept for diagnosis
+     */
+    public ReadSecurityException(Reason reason, String message, Throwable cause) {
+        super(message, cause);
+        this.reason = java.util.Objects.requireNonNull(reason, "reason cannot be null");
+    }
     public Reason reason() { return reason; }
 }

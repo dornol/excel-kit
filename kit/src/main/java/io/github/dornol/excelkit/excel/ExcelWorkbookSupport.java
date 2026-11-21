@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 
@@ -61,6 +62,7 @@ final class ExcelWorkbookSupport {
             workbook.dispose();
         } catch (NoSuchMethodError removed) {
             // nothing left to dispose beyond what close() did
+            LoggerFactory.getLogger(ExcelWorkbookSupport.class).debug("SXSSFWorkbook.dispose() is gone; close() did the work");
         }
     }
     private ExcelWorkbookSupport() { }

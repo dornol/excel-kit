@@ -112,6 +112,10 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- Exceptions that are converted into another one keep what went wrong as their cause: the `IllegalArgumentException`
+  of `CellData.asBigDecimal()` carries the `NumberFormatException`, and the `ReadSecurityException` raised when a
+  worksheet cannot be scanned for formulas carries the scan failure (new constructor
+  `ReadSecurityException(Reason, String, Throwable)`).
 - A `*` in a download filename is escaped as `%2A` in the `filename*` parameter (RFC 8187 does not allow it as is).
 - An emoji (a surrogate pair) split between two `ExcelRichText` segments was stored as two `?`; the run boundary now
   moves behind the whole character.

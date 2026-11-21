@@ -463,7 +463,7 @@ public final class CellData {
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
             log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, text);
-            throw new IllegalArgumentException("Failed to parse BigDecimal: " + text);
+            throw new IllegalArgumentException("Failed to parse BigDecimal: " + text, e);
         }
     }
 
