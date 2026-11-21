@@ -180,9 +180,7 @@ class ReaderByteLimitTest {
     }
 
     private static ReadOptions options(long maximum) {
-        var configuration = new ReaderConfiguration();
-        configuration.limits = limits(maximum);
-        return configuration.snapshot();
+        return ReaderOptions.builder().limits(limits(maximum)).build().toReadOptions();
     }
 
     private static final class TrackedInput extends ByteArrayInputStream {

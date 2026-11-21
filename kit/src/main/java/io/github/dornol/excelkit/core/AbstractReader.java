@@ -39,20 +39,20 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected final List<ReadColumn<T>> columns = new ArrayList<>();
     protected final @Nullable Supplier<T> instanceSupplier;
     protected final @Nullable Function<RowData, T> rowMapper;
-    private final ReaderConfiguration configuration = new ReaderConfiguration();
+    private ReaderOptions.Builder settings = ReaderOptions.builder();
     private boolean mapMode;
     private @Nullable Set<String> selectedMapColumns;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier, "instanceSupplier cannot be null");
         this.rowMapper = null;
-        configuration.validator = validator;
+        settings.validator(validator);
     }
 
     protected AbstractReader(Function<RowData, T> rowMapper, @Nullable Validator validator) {
         this.instanceSupplier = null;
         this.rowMapper = Objects.requireNonNull(rowMapper, "rowMapper cannot be null");
-        configuration.validator = validator;
+        settings.validator(validator);
     }
 
     private SELF self() {
@@ -66,18 +66,18 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @return this reader for chaining
      */
     public SELF validator(Validator validator) {
-        configuration.validator = Objects.requireNonNull(validator, "validator cannot be null");
+        settings.validator(Objects.requireNonNull(validator, "validator cannot be null"));
         return self();
     }
 
     /** Applies reusable common reader settings. Format-specific settings are unchanged. */
     public SELF options(ReaderOptions options) {
-        configuration.apply(Objects.requireNonNull(options, "options cannot be null"));
+        settings = Objects.requireNonNull(options, "options cannot be null").toBuilder();
         return self();
     }
 
     protected final @Nullable Validator configuredValidator() {
-        return configuration.validator;
+        return settings.configuredValidator();
     }
 
     protected void requireNotMapMode(String method) {
@@ -92,12 +92,12 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * Sets the zero-based row index of the header row.
      */
     public SELF headerRowIndex(int headerRowIndex) {
-        configuration.headerRowIndex = headerRowIndex;
+        settings.headerRowIndex(headerRowIndex);
         return self();
     }
 
     protected final int configuredHeaderRowIndex() {
-        return configuration.headerRowIndex;
+        return settings.configuredHeaderRowIndex();
     }
 
     void addColumn(ReadColumn<T> column) {
@@ -196,11 +196,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * Registers a progress callback that fires every {@code interval} rows.
      */
     public SELF onProgress(int interval, ProgressCallback callback) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("progress interval must be positive");
-        }
-        configuration.progressInterval = interval;
-        configuration.progressCallback = Objects.requireNonNull(callback, "callback cannot be null");
+        settings.onProgress(interval, callback);
         return self();
     }
 
@@ -217,7 +213,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * Enables or disables strict header validation.
      */
     public SELF strictHeaders(boolean enabled) {
-        configuration.strictHeaders = enabled;
+        settings.strictHeaders(enabled);
         return self();
     }
 
@@ -232,7 +228,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * Sets duplicate header handling. Defaults to {@link DuplicateHeaderPolicy#FAIL}; blank headers are ignored.
      */
     public SELF duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
-        configuration.duplicateHeaderPolicy = Objects.requireNonNull(policy, "policy cannot be null");
+        settings.duplicateHeaderPolicy(policy);
         return self();
     }
 
@@ -242,7 +238,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @since 0.19.0
      */
     public SELF cellConversion(CellConversionConfig config) {
-        configuration.cellConversionConfig = Objects.requireNonNull(config, "config cannot be null");
+        settings.cellConversion(config);
         return self();
     }
 
@@ -264,10 +260,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @since 0.19.0
      */
     public SELF maxRows(long maxRows) {
-        if (maxRows < 0) {
-            throw new IllegalArgumentException("maxRows must be non-negative");
-        }
-        configuration.maxRows = maxRows;
+        settings.maxRows(maxRows);
         return self();
     }
 
@@ -286,7 +279,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @since 0.19.0
      */
     public SELF skipBlankRows(boolean enabled) {
-        configuration.skipBlankRows = enabled;
+        settings.skipBlankRows(enabled);
         return self();
     }
 
@@ -297,25 +290,19 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
      * @since 0.19.0
      */
     public SELF stopAtBlankRows(int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count must be non-negative");
-        }
-        configuration.stopAtBlankRows = count;
+        settings.stopAtBlankRows(count);
         return self();
     }
 
     /** Limits failed rows; zero aborts on the first failure. Disabled by default. */
     public SELF maxErrors(long maxErrors) {
-        if (maxErrors < 0) {
-            throw new IllegalArgumentException("maxErrors must be non-negative");
-        }
-        configuration.maxErrors = maxErrors;
+        settings.maxErrors(maxErrors);
         return self();
     }
 
     /** Normalizes headers before matching names and aliases. Original names remain available for diagnostics. */
     public SELF headerNormalizer(UnaryOperator<String> normalizer) {
-        configuration.headerNormalizer = Objects.requireNonNull(normalizer, "normalizer cannot be null");
+        settings.headerNormalizer(normalizer);
         return self();
     }
 
@@ -324,35 +311,33 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     }
 
     public SELF limits(ReadLimits limits) {
-        configuration.limits = Objects.requireNonNull(limits, "limits cannot be null");
+        settings.limits(limits);
         return self();
     }
 
     public SELF cancellationToken(CancellationToken token) {
-        configuration.cancellationToken = Objects.requireNonNull(token, "token cannot be null");
+        settings.cancellationToken(token);
         return self();
     }
 
     public SELF onReadProgress(int interval, ReadProgressCallback callback) {
-        if (interval <= 0) throw new IllegalArgumentException("progress interval must be positive");
-        configuration.readProgressInterval = interval;
-        configuration.readProgressCallback = Objects.requireNonNull(callback, "callback cannot be null");
+        settings.onReadProgress(interval, callback);
         return self();
     }
 
     public SELF securityPolicy(ReadSecurityPolicy policy) {
-        configuration.securityPolicy = Objects.requireNonNull(policy, "policy cannot be null");
+        settings.securityPolicy(policy);
         return self();
     }
 
     protected ReadOptions snapshotReadOptions() {
-        return configuration.snapshot();
+        return settings.toReadOptions();
     }
 
     /** Caps reads/skips at the remaining budget plus one byte to detect overflow. */
     protected InputStream limitInput(InputStream input) {
         Objects.requireNonNull(input, "input cannot be null");
-        long maximum = configuration.limits.maxInputBytes();
+        long maximum = settings.toReadOptions().limits().maxInputBytes();
         if (maximum < 0) return input;
         return new FilterInputStream(input) {
             private long count;
