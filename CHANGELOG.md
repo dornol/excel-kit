@@ -21,6 +21,10 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- `rowStyle(...)` no longer drops the column's RGB font color and underline (and charset, type offset and
+  font family) when it changes only some font attributes such as `bold`. It copied the font name, size,
+  bold, italic, strikeout and indexed color only, so a red underlined column turned plain after a row
+  style that merely set `bold(true)`.
 - The javadoc of `headerPolicy`, `cancellationToken`, `onReadProgress`, `HeaderPolicy`, `CancellationToken`,
   `ReadProgressCallback` and every `ReaderOptions.Builder` setting now says what it does.
 - The javadoc of every `write(Stream)` now says that the stream is read but not closed, and the writing

@@ -342,6 +342,28 @@ class ExcelWriteSupport {
         });
     }
 
+    /**
+     * A new font with every attribute of {@code base}, so that a row style changing one of them
+     * (bold, size, ...) does not drop the others, such as an RGB font color or an underline.
+     */
+    private static Font copyFont(Font base, SXSSFWorkbook wb) {
+        Font copy = wb.createFont();
+        copy.setFontName(base.getFontName());
+        copy.setFontHeight(base.getFontHeight());
+        copy.setBold(base.getBold());
+        copy.setItalic(base.getItalic());
+        copy.setStrikeout(base.getStrikeout());
+        copy.setUnderline(base.getUnderline());
+        copy.setTypeOffset(base.getTypeOffset());
+        copy.setCharSet(base.getCharSet());
+        copy.setColor(base.getColor());
+        if (base instanceof XSSFFont from && copy instanceof XSSFFont to) {
+            if (from.getXSSFColor() != null) to.setColor(from.getXSSFColor());
+            to.setFamily(from.getFamily());
+        }
+        return copy;
+    }
+
     static CellStyle resolveRowStyle(CellStyle baseStyle, @Nullable ExcelColor bgColor,
                                       RowStyleConfig rowStyle, Map<String, CellStyle> cache,
                                       SXSSFWorkbook wb) {
@@ -363,14 +385,7 @@ class ExcelWriteSupport {
             // Font modifications
             if (rowStyle.bold != null || rowStyle.fontSize != null || rowStyle.fontColor != null
                     || rowStyle.italic != null || rowStyle.strikethrough != null) {
-                Font baseFont = wb.getFontAt(baseStyle.getFontIndex());
-                Font newFont = wb.createFont();
-                newFont.setFontName(baseFont.getFontName());
-                newFont.setFontHeightInPoints(baseFont.getFontHeightInPoints());
-                newFont.setBold(baseFont.getBold());
-                newFont.setItalic(baseFont.getItalic());
-                newFont.setStrikeout(baseFont.getStrikeout());
-                newFont.setColor(baseFont.getColor());
+                Font newFont = copyFont(wb.getFontAt(baseStyle.getFontIndex()), wb);
 
                 if (rowStyle.bold != null) newFont.setBold(rowStyle.bold);
                 if (rowStyle.fontSize != null) newFont.setFontHeightInPoints(rowStyle.fontSize.shortValue());
