@@ -297,11 +297,10 @@ class CsvReaderMapModeTest {
         }
 
         @Test
-        @DisplayName("blank header cell is treated as empty string, not null")
+        @DisplayName("a column whose header cell is blank is left out of the map")
         void csvMapReader_blankHeaderCell() {
-            // CSV parsers represent a missing field between delimiters as empty string,
-            // which then becomes a header key of "" (non-null), so it's retained.
-            // This documents the behavior vs Excel's null-header path.
+            // A column without a header has no name to look it up by, so it is left out, the same
+            // as for Excel (previously it became a "" key).
             String csv = "Name,,City\nAlice,30,Seoul\n";
             List<Map<String, String>> results = new ArrayList<>();
             CsvReader.forMap()
@@ -310,9 +309,8 @@ class CsvReaderMapModeTest {
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
             assertEquals("Seoul", results.get(0).get("City"));
-            assertTrue(results.get(0).containsKey(""),
-                    "CSV empty header becomes a '' key (different from Excel's null-header path)");
-            assertEquals("30", results.get(0).get(""));
+            assertFalse(results.get(0).containsKey(""), "no key for the unnamed column");
+            assertEquals(2, results.get(0).size());
         }
 
         @Test

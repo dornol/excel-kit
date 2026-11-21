@@ -299,16 +299,13 @@ class ExcelReaderMapModeTest {
         }
 
         @Test
-        @DisplayName("blank header cell becomes an empty-string map key (CellData compact ctor coerces null → \"\")")
-        void excelMapReader_blankHeaderCell_becomesEmptyStringKey() throws IOException {
-            // This test documents an important subtlety: ExcelReadHandler's cell() callback
-            // backfills missing cells with CellData(i, null), which the record's compact
-            // constructor then coerces to formattedValue="". The extracted header is
-            // therefore "" (not null), and the mapMapper's "if (header == null) continue"
-            // branch is effectively dead code for Excel. The deleted ExcelMapReader had the
-            // same behavior — the apparent "null filter" in its code was a no-op for the
-            // same reason. This test pins the behavior so future CellData changes don't
-            // silently alter it.
+        @DisplayName("a column whose header cell is blank is left out of the map")
+        void excelMapReader_blankHeaderCell_isLeftOut() throws IOException {
+            // ExcelReadHandler backfills a missing header cell as "" (CellData's compact constructor
+            // coerces null to ""). That used to become a "" key, so a second blank header silently
+            // overwrote or lost a value. A column without a header has no name to look it up by, so
+            // it is now left out, as the "if (header == null) continue" intent of the original
+            // ExcelMapReader always was.
             byte[] data = writeHandCraftedWorkbook(sheet -> {
                 Row header = sheet.createRow(0);
                 header.createCell(0).setCellValue("Name");
@@ -327,11 +324,9 @@ class ExcelReaderMapModeTest {
             assertEquals(1, results.size());
             assertEquals("Alice", results.get(0).get("Name"));
             assertEquals("Seoul", results.get(0).get("City"));
-            assertTrue(results.get(0).containsKey(""),
-                    "blank header cell becomes an empty-string map key, matching the "
-                            + "deleted ExcelMapReader's behavior");
-            assertEquals("30", results.get(0).get(""));
-            assertEquals(3, results.get(0).size());
+            assertFalse(results.get(0).containsKey(""), "no key for the unnamed column");
+            assertFalse(results.get(0).containsValue("30"), "its value is not read");
+            assertEquals(2, results.get(0).size());
             assertFalse(results.get(0).containsKey(null));
         }
 

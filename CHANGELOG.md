@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Breaking:** a column whose header is blank is no longer a `""` key in `forMap()` rows of CSV and
+  Excel readers. It has no name to look it up by, so it is left out of the header index; before, the
+  first blank column became the `""` key and every further blank column's values were silently lost.
+  Columns read by position are unaffected, and a `headerNormalizer` that names blank headers still
+  keeps those columns reachable by that name.
 - A CSV read that fails because `strictQuotes(true)` blanked an unquoted header row now says so
   (`a header cell is blank … every header cell must be quoted`) instead of only
   `Failed to read CSV`; the original cause is still attached. The javadoc of `strictQuotes` and

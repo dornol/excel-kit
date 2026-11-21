@@ -241,7 +241,10 @@ reader.strictHeaders(false);  // default
 ```
 
 **Duplicate headers** fail before data rows by default, so a repeated column is never dropped
-silently. Blank headers are ignored. You can choose another policy:
+silently. A column whose header is blank is ignored: it has no name to look it up by, so it is not a
+key in `forMap()` rows (and several blank headers never collide or count as duplicates). Columns read
+by position (`column(setter)`, `row.get(int)`) do not depend on their headers. You can choose another
+policy for duplicates:
 
 ```java
 reader.duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL);  // default

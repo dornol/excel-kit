@@ -139,7 +139,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - **Strict headers** — `strictHeaders()` / `requireHeaders()` fail before data rows when configured
   headers or selected map-mode columns are missing.
 - **Duplicate headers** — `duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL|FIRST|LAST)` controls
-  duplicate header resolution; the default is `FAIL` (blank headers ignored).
+  duplicate header resolution; the default is `FAIL`. A column with a blank header is left out of the header index, so it is not a key in `forMap()` rows.
 - **Map mode values** — `ExcelReader.forMap()` returns displayed text; `ExcelReader.forMapRaw()` returns
   stored numbers as plain strings. Missing trailing cells are `""`.
 - **Schema read options** — `ExcelKitSchema.Builder.column(name, aliases, ...)` and

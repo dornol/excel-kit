@@ -59,6 +59,9 @@ final class HeaderResolver {
         for (int i = 0; i < headers.size(); i++) {
             String original = headers.get(i);
             String normalized = normalize(original);
+            // A column without a header has no name to look it up by, so it is left out of the index.
+            // Judged after normalization: a normalizer may deliberately give a blank header a name.
+            if (normalized.isBlank()) continue;
             List<Integer> positions = occurrences.computeIfAbsent(normalized, ignored -> new java.util.ArrayList<>());
             positions.add(i);
             if (duplicatePolicy == DuplicateHeaderPolicy.FAIL && positions.size() > 1
