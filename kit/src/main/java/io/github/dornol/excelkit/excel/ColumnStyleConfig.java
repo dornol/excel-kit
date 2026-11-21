@@ -135,7 +135,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @return this instance for chaining
      */
     public SELF backgroundColor(int r, int g, int b) {
-        this.backgroundColor = new int[]{r, g, b};
+        this.backgroundColor = ExcelColor.of(r, g, b).toRgb();
         return self();
     }
 
@@ -464,7 +464,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @return this instance for chaining
      */
     public SELF fontColor(int r, int g, int b) {
-        this.fontColor = new int[]{r, g, b};
+        this.fontColor = ExcelColor.of(r, g, b).toRgb();
         return self();
     }
 
@@ -594,7 +594,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @return this instance for chaining
      */
     public SELF headerFontColor(int r, int g, int b) {
-        this.headerFontColor = new int[]{r, g, b};
+        this.headerFontColor = ExcelColor.of(r, g, b).toRgb();
         return self();
     }
 
@@ -620,7 +620,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @since 0.16.11
      */
     public SELF headerBackgroundColor(int r, int g, int b) {
-        this.headerBackgroundColor = new int[]{r, g, b};
+        this.headerBackgroundColor = ExcelColor.of(r, g, b).toRgb();
         return self();
     }
 

@@ -230,7 +230,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * Sets the sheet tab color using RGB values.
      */
     public SELF tabColor(int r, int g, int b) {
-        cfg.tabColor = new int[]{r, g, b};
+        cfg.tabColor = ExcelColor.of(r, g, b).toRgb();
         return self();
     }
 

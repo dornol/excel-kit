@@ -235,7 +235,7 @@ public class ExcelRichText {
          * @return this instance for chaining
          */
         public FontStyle color(int r, int g, int b) {
-            this.color = new int[]{r, g, b};
+            this.color = ExcelColor.of(r, g, b).toRgb();
             return this;
         }
 

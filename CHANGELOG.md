@@ -21,6 +21,9 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- The RGB overloads `tabColor`, `backgroundColor`, `fontColor`, `headerFontColor`, `headerBackgroundColor`
+  (and `ExcelRichText`'s `color`) now reject a component outside 0–255 with `IllegalArgumentException`, like
+  `ExcelColor` and `RowStyleConfig` already did. Before, `fontColor(300, 0, 0)` silently became red 44.
 - `autoWidthSampleRows(n)` samples the first `n` data rows. It counted sheet rows instead, so rows written
   by `beforeHeader` (and the header) used up the sample: with a long enough preamble no data row was
   sampled and the column kept the header's width. The sample is also taken once from the start of the write,
