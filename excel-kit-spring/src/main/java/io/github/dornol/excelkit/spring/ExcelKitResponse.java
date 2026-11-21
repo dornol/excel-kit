@@ -89,6 +89,8 @@ public final class ExcelKitResponse {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, type.contentDisposition(filename))
                 .header(HttpHeaders.CONTENT_TYPE, type.getContentType())
-                .header(HttpHeaders.CACHE_CONTROL, "max-age=" + cacheMaxAge.toSeconds());
+                // A download is for the person who asked for it: "private" keeps shared caches (a proxy, a CDN)
+                // from storing and handing it to somebody else within the max-age.
+                .header(HttpHeaders.CACHE_CONTROL, "private, max-age=" + cacheMaxAge.toSeconds());
     }
 }

@@ -14,7 +14,7 @@ implementation("io.github.dornol:excel-kit-spring:<version>")
 with proper Content-Type, Content-Disposition (including RFC 5987 Korean
 filename encoding), and Cache-Control.
 
-The default cache max-age is 10 seconds. For a different duration, configure
+The default cache max-age is 10 seconds, sent as `Cache-Control: private, max-age=N` (shared caches do not keep downloads). For a different duration, configure
 the response builder directly:
 
 ```java

@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.spring;
 
+import io.github.dornol.excelkit.core.TabularFileDetector;
+import io.github.dornol.excelkit.core.TabularFileType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -97,7 +99,8 @@ public final class ExcelKitMultipartFile {
         String extension = extensionOf(file.getOriginalFilename());
         byte[] prefix = readPrefix(file, CONTENT_PREFIX_BYTES);
         if (extension.equals("xlsx") || extension.equals("xlsm")) {
-            if (prefix.length < 4 || prefix[0] != 'P' || prefix[1] != 'K') {
+            // The signature of a ZIP package, not just "PK": a text file that starts with those letters is no workbook.
+            if (TabularFileDetector.detect(new java.io.ByteArrayInputStream(prefix)) != TabularFileType.XLSX) {
                 throw new ExcelKitUploadException("Upload file content is not a valid XLSX/XLSM package");
             }
             return file;
@@ -122,10 +125,10 @@ public final class ExcelKitMultipartFile {
         if (prefix.length == 0) {
             throw new ExcelKitUploadException("Upload file is empty");
         }
-        for (byte b : prefix) {
-            if (b == 0) {
-                throw new ExcelKitUploadException("Upload file content is not text CSV");
-            }
+        // A workbook (or any binary) with a .csv name is not text CSV; the detector knows the signatures and
+        // tells text from binary by its share of control characters.
+        if (TabularFileDetector.detect(new java.io.ByteArrayInputStream(prefix)) != TabularFileType.CSV) {
+            throw new ExcelKitUploadException("Upload file content is not text CSV");
         }
         var decoder = StandardCharsets.UTF_8.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
@@ -141,9 +144,10 @@ public final class ExcelKitMultipartFile {
         if (extensions == null || extensions.length == 0) {
             throw new IllegalArgumentException("extensions must not be empty");
         }
+        // Sorted, so the message that lists the allowed extensions reads the same in every JVM.
         Set<String> normalized = Arrays.stream(extensions)
                 .map(ExcelKitMultipartFile::normalizeExtension)
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toCollection(java.util.TreeSet::new));
         if (normalized.isEmpty()) {
             throw new IllegalArgumentException("extensions must not be empty");
         }

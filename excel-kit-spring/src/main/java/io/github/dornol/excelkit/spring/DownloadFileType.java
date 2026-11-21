@@ -33,7 +33,9 @@ public enum DownloadFileType {
         String fallback = asciiFallback(downloadFilename);
         String encoded = URLEncoder.encode(downloadFilename, StandardCharsets.UTF_8)
                 .replace("+", "%20")
-                .replace("%2B", "+");
+                .replace("%2B", "+")
+                // URLEncoder leaves '*' as it is; RFC 8187 does not allow it unescaped in a filename*
+                .replace("*", "%2A");
 
         return String.format(Locale.ROOT,
                 "attachment; filename=\"%s\"; filename*=UTF-8''%s", fallback, encoded);

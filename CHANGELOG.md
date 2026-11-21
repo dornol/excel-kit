@@ -17,6 +17,12 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** download responses send `Cache-Control: private, max-age=N` instead of `max-age=N`, so a shared cache
+  (proxy, CDN) does not keep a generated file and hand it to another user within the max-age.
+- `ExcelKitMultipartFile.requireExcelOrCsvContent` checks the real signatures: an `.xlsx`/`.xlsm` upload must start with
+  the ZIP signature (a text file starting with `PK` used to pass), and a `.csv` upload that is a workbook or other binary
+  is refused as "not text CSV".
+- The "Allowed extensions" list in the upload error message is sorted, so it reads the same on every JVM.
 - **Breaking:** `CsvReader.ignoreLeadingWhiteSpace` defaults to `true`. With `false`, a hand-written file such as
   `1, "x,y"` (a space after the comma) read as `b= "x,y`: the opening quote kept and the closing one dropped, which is
   neither the text of the file nor the quoted value. Now the value is `x,y`. Whitespace around values that are not
@@ -95,6 +101,7 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A `*` in a download filename is escaped as `%2A` in the `filename*` parameter (RFC 8187 does not allow it as is).
 - An emoji (a surrogate pair) split between two `ExcelRichText` segments was stored as two `?`; the run boundary now
   moves behind the whole character.
 - A `dropdown(...)` option containing a double quote wrote a broken list formula (`"say "hi",c"`); quotes are now

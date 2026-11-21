@@ -17,7 +17,7 @@ class ExcelKitResponseTest {
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
-        assertEquals("max-age=10", response.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
+        assertEquals("private, max-age=10", response.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
         assertTrue(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION).contains("report.xlsx"));
     }
 
@@ -26,7 +26,7 @@ class ExcelKitResponseTest {
         var response = ExcelKitResponse.csv("report").build();
 
         assertEquals("text/csv; charset=UTF-8", response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
-        assertEquals("max-age=10", response.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
+        assertEquals("private, max-age=10", response.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
         assertTrue(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION).contains("report.csv"));
     }
 
@@ -34,7 +34,7 @@ class ExcelKitResponseTest {
     void builder_allowsCustomCacheMaxAge() {
         var response = ExcelKitResponse.excel("report", Duration.ofMinutes(5)).build();
 
-        assertEquals("max-age=300", response.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
+        assertEquals("private, max-age=300", response.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
     }
 
     @Test

@@ -56,8 +56,8 @@ class ExcelKitErrorResponseTest {
         var csv = ExcelKitErrorResponse.csv(errors, "errors", Duration.ofMinutes(1));
         var excel = ExcelKitErrorResponse.excel(errors, "errors", Duration.ofMinutes(1));
 
-        assertEquals("max-age=60", csv.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
-        assertEquals("max-age=60", excel.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
+        assertEquals("private, max-age=60", csv.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
+        assertEquals("private, max-age=60", excel.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
         assertTrue(StreamedBody.text(csv).contains("required"));
         try (var workbook = StreamedBody.workbook(excel)) {
             assertEquals("Read Errors", workbook.getSheetAt(0).getSheetName());
