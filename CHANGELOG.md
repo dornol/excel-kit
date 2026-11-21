@@ -17,6 +17,18 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** `CsvReader` refuses a delimiter, quote and escape character it cannot tell apart before it reads the
+  file, with `IllegalArgumentException`: a delimiter equal to the quote or the escape character, a quote equal to the
+  escape character, a NUL delimiter, or any of them a line break. These used to fail inside opencsv
+  (`UnsupportedOperationException` under `Failed to read CSV`), or, for a line break as delimiter, be read as nonsense.
+  The delimiter the detector picks for `readDetected` is checked the same way. A quote or escape character of NUL still
+  means "none". `CsvWriter.delimiter(...)` refuses the quote character, a line break and NUL, whose output could not be
+  read back.
+- A CSV read that fails because of what the file holds now says so in its message: `Failed to read CSV: CSV input
+  contains a NUL character`, `Failed to read CSV: Unterminated quoted CSV field in the record starting at line 2 ...`,
+  and, for text that is not valid in the charset, `Failed to read CSV: the input is not valid UTF-8 text. If the file
+  uses another encoding (EUC-KR, windows-1252, UTF-16, ...), set it with charset(...)`. Before, the message was only
+  `Failed to read CSV` and the reason sat in the cause.
 - **Breaking:** an `ExcelRichText` value written into a workbook without shared strings is refused
   (`ExcelWriteException`, whose cause says to create the writer with `useSharedStrings(true)`; with
   `writeErrorPolicy(LENIENT)` it writes the plain text). Streaming writes a string cell as its plain text, so the

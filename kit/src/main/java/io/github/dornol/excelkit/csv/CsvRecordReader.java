@@ -41,7 +41,7 @@ final class CsvRecordReader implements Closeable {
             }
             line = readLine();
             if (line == null) {
-                throw new IOException("Unterminated quoted CSV field in the record starting at line " + recordStartLine
+                throw new CsvFormatException("Unterminated quoted CSV field in the record starting at line " + recordStartLine
                         + ". A quote inside a value must be written as \"\" within a quoted field "
                         + "(for example \"12\"\" pipe\"); a bare quote such as 12\" pipe opens a quoted field.");
             }
@@ -76,7 +76,7 @@ final class CsvRecordReader implements Closeable {
         while (peek() >= 0) {
             int start = position;
             while (position < end && buffer[position] != '\n' && buffer[position] != '\r') {
-                if (buffer[position] == '\0') throw new IOException("CSV input contains a NUL character");
+                if (buffer[position] == '\0') throw new CsvFormatException("CSV input contains a NUL character");
                 position++;
             }
             int length = position - start;

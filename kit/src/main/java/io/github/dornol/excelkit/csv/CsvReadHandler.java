@@ -166,6 +166,13 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     + "dropped, so every header cell must be quoted; quote the header row or turn strictQuotes "
                     + "off. Cause: " + cause.getMessage();
         }
+        if (cause instanceof CsvFormatException) {
+            return "Failed to read CSV: " + cause.getMessage();
+        }
+        if (cause instanceof java.nio.charset.CharacterCodingException) {
+            return "Failed to read CSV: the input is not valid " + charset.name() + " text. If the file uses another "
+                    + "encoding (EUC-KR, windows-1252, UTF-16, ...), set it with charset(...); " + cause.getMessage();
+        }
         return readFailureMessage("Failed to read CSV", cause);
     }
 

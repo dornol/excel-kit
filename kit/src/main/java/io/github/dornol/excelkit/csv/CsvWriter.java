@@ -124,6 +124,13 @@ public class CsvWriter<T> {
         return this;
     }
 
+    private static void requireDelimiter(char delimiter) {
+        if (delimiter == '"' || delimiter == '\n' || delimiter == '\r' || delimiter == '\0') {
+            throw new IllegalArgumentException("The delimiter cannot be the quote character, a line break or NUL, "
+                    + "or the file could not be read back; got " + (delimiter == '"' ? "'\"'" : "U+" + String.format("%04X", (int) delimiter)));
+        }
+    }
+
     /**
      * Sets the delimiter character used to separate fields.
      * Defaults to comma ({@code ','}).
@@ -132,6 +139,7 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> delimiter(char delimiter) {
+        requireDelimiter(delimiter);
         this.delimiter = delimiter;
         return this;
     }

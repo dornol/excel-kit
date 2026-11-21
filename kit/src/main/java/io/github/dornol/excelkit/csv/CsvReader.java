@@ -339,11 +339,36 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private CsvReadSessionConfig<T> sessionConfig(char sessionDelimiter, Charset sessionCharset) {
+        requireDistinctCharacters(sessionDelimiter, quoteChar, escapeChar);
         return new CsvReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
                 instanceSupplier, rowMapper, configuredValidator(), configuredHeaderRowIndex(),
                 sessionDelimiter, sessionCharset,
                 configuredSelectedMapColumns(), quoteChar,
                 escapeChar, strictQuotes, ignoreLeadingWhiteSpace, snapshotReadOptions());
+    }
+
+    /**
+     * The delimiter, the quote and the escape character have to be told apart, and none of them may be a line
+     * break: otherwise the parser fails on its own terms, or reads something other than the file says. A quote
+     * or escape character of NUL means "none".
+     */
+    private static void requireDistinctCharacters(char delimiter, char quote, char escape) {
+        if (delimiter == '\0') throw new IllegalArgumentException("The delimiter cannot be the NUL character");
+        for (var entry : new char[][]{{delimiter, 'd'}, {quote, 'q'}, {escape, 'e'}}) {
+            if (entry[0] == '\n' || entry[0] == '\r') {
+                String what = entry[1] == 'd' ? "delimiter" : entry[1] == 'q' ? "quote character" : "escape character";
+                throw new IllegalArgumentException("The " + what + " cannot be a line break");
+            }
+        }
+        if (quote != '\0' && delimiter == quote) {
+            throw new IllegalArgumentException("The delimiter and the quote character must differ, both are '" + delimiter + "'");
+        }
+        if (escape != '\0' && delimiter == escape) {
+            throw new IllegalArgumentException("The delimiter and the escape character must differ, both are '" + delimiter + "'");
+        }
+        if (quote != '\0' && escape != '\0' && quote == escape) {
+            throw new IllegalArgumentException("The quote and the escape character must differ, both are '" + quote + "'");
+        }
     }
 
     private CsvReadHandler<T> createDetectedHandler(InputStream input) {
