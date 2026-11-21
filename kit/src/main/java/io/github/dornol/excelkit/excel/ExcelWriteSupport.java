@@ -33,6 +33,27 @@ import java.util.function.Function;
 class ExcelWriteSupport {
 
     static final int AUTO_WIDTH_SAMPLE_ROWS = 100;
+
+    /** Rows an Excel sheet can hold; row indices run from 0 to {@code SHEET_ROW_CAPACITY - 1}. */
+    static final int SHEET_ROW_CAPACITY = 1_048_576;
+
+    /** Data rows per sheet before a writer rolls over to a new sheet. */
+    static final int DEFAULT_MAX_ROWS = 1_000_000;
+
+    /**
+     * Validates a {@code maxRows} setting: positive, and small enough that a sheet can hold that many
+     * data rows below its header row.
+     */
+    static int requireMaxRows(int maxRows) {
+        if (maxRows <= 0) {
+            throw new IllegalArgumentException("maxRows must be positive");
+        }
+        if (maxRows > SHEET_ROW_CAPACITY - 1) {
+            throw new IllegalArgumentException("maxRows must be at most " + (SHEET_ROW_CAPACITY - 1)
+                    + ", the most data rows an Excel sheet can hold below its header row, got " + maxRows);
+        }
+        return maxRows;
+    }
     static final int EXCEL_MAX_ROWS = 1_048_575;
 
     private ExcelWriteSupport() {

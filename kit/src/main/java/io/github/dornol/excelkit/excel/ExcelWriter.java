@@ -34,7 +34,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private int maxRows = DEFAULT_MAX_ROWS;
+    private int maxRows = ExcelWriteSupport.DEFAULT_MAX_ROWS;
     private CellStyle headerStyle;
     private XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
@@ -50,7 +50,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private @Nullable TableOptions tableOptions;
 
 
-    private static final int DEFAULT_MAX_ROWS = 1_000_000;
 
     /**
      * Creates a new ExcelWriter with default initialization (white header, 1,000,000 max rows, 1000 row window).
@@ -290,17 +289,16 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
     /**
      * Sets the maximum number of rows per sheet before a new sheet is created.
-     * Must be called before {@link #write(Stream)}. Defaults to 1,000,000.
+     * Must be called before {@link #write(Stream)}. Defaults to 1,000,000. Rows written before the data
+     * (such as {@code beforeHeader} and the header) and after it ({@code afterData}, summary) count towards
+     * Excel's limit of 1,048,576 rows per sheet, so leave room for them.
      *
-     * @param maxRows maximum rows per sheet (must be positive)
+     * @param maxRows maximum data rows per sheet (positive, at most 1,048,575)
      * @return Current ExcelWriter instance for chaining
      * @since 0.17.0
      */
     public ExcelWriter<T> maxRows(int maxRows) {
-        if (maxRows <= 0) {
-            throw new IllegalArgumentException("maxRows must be positive");
-        }
-        this.maxRows = maxRows;
+        this.maxRows = ExcelWriteSupport.requireMaxRows(maxRows);
         return this;
     }
 

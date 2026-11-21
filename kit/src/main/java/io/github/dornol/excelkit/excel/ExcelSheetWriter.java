@@ -22,8 +22,8 @@ import java.util.stream.Stream;
 /**
  * Writes data of a specific type to one or more sheets within an {@link ExcelWorkbook}.
  * <p>
- * Supports optional auto-rollover via {@link #maxRows(int)} — when set, the writer
- * automatically creates additional sheets when the row limit is reached.
+ * Rolls over automatically: once a sheet holds {@link #maxRows(int)} data rows (1,000,000 by default),
+ * the writer creates an additional sheet.
  * <p>
  * Column configuration uses {@link ColumnConfig} (via {@code Consumer<ColumnConfig<T>>})
  * rather than {@link ExcelColumn.ExcelColumnBuilder}. Unlike ExcelWriter's builder, there
@@ -47,7 +47,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
-    private int maxRows = Integer.MAX_VALUE;
+    private int maxRows = ExcelWriteSupport.DEFAULT_MAX_ROWS;
     private boolean written = false;
     private @Nullable TableOptions tableOptions;
 
@@ -179,20 +179,19 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     /**
-     * Sets the maximum number of rows per sheet before auto-rollover.
+     * Sets the maximum number of data rows per sheet before auto-rollover. Defaults to 1,000,000.
      * <p>
-     * When set, the writer automatically creates additional sheets within the workbook
+     * The writer automatically creates additional sheets within the workbook
      * when the row limit is reached. Use {@link #sheetName(Function)} to control
-     * rollover sheet naming.
+     * rollover sheet naming. Rows written before the data (such as {@code beforeHeader} and the header)
+     * and after it ({@code afterData}, summary) count towards Excel's limit of 1,048,576 rows per sheet,
+     * so leave room for them.
      *
-     * @param maxRows maximum rows per sheet (must be positive)
+     * @param maxRows maximum data rows per sheet (positive, at most 1,048,575)
      * @return this writer for chaining
      */
     public ExcelSheetWriter<T> maxRows(int maxRows) {
-        if (maxRows <= 0) {
-            throw new IllegalArgumentException("maxRows must be positive");
-        }
-        this.maxRows = maxRows;
+        this.maxRows = ExcelWriteSupport.requireMaxRows(maxRows);
         return this;
     }
 
@@ -244,7 +243,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             while (it.hasNext()) {
                 T rowData = it.next();
                 cursor.plusTotal();
-                if (maxRows != Integer.MAX_VALUE && cursor.getCurrentTotal() > maxRows
+                if (cursor.getCurrentTotal() > maxRows
                         && (cursor.getCurrentTotal() - 1) % maxRows == 0) {
                     dataEndRows.add(cursor.getRowOfSheet() - 1);
                     ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);

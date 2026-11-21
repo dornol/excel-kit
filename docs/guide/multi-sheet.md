@@ -71,6 +71,11 @@ wb.<Product>sheet("Data")
 
 If `sheetName()` is not set, rollover sheets are named `"baseName (2)"`, `"baseName (3)"`, etc.
 
+Both writers roll over after 1,000,000 data rows unless `maxRows(...)` says otherwise. An Excel sheet
+holds 1,048,576 rows in total, so `maxRows` accepts at most 1,048,575, and the rows written before the
+data (`beforeHeader`, the header) and after it (`afterData`, summary) count towards that limit: leave room
+for them. A sheet that still runs out of rows fails with an `ExcelWriteException` that says so.
+
 ## Sheet Tab Color
 
 ```java

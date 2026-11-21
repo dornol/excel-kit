@@ -11,6 +11,12 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** `ExcelSheetWriter` (sheets of an `ExcelWorkbook`) rolls over after 1,000,000 data rows by
+  default, like `ExcelWriter`. Without `maxRows(...)` it never rolled over, so a sheet fed more than
+  1,048,575 rows failed with POI's `Invalid row number (1048576) outside allowable range` once the
+  limit was reached. Sheets with fewer rows are unchanged.
+- **Breaking:** `maxRows(...)` of `ExcelWriter` and `ExcelSheetWriter` rejects a value above 1,048,575, the
+  most data rows an Excel sheet can hold below its header row.
 - **Breaking:** `ExcelKitUpload.excel/csv(file, schema, supplier[, validator])` without explicit limits are
   now bounded by `ReadLimits.UPLOAD` (50 MiB, 50 sheets, 1,000 columns, 32,767 characters per cell, 10 million
   cells); they used to read without limits. Pass `ReadLimits.UNLIMITED` to the overload that takes limits to
@@ -21,6 +27,10 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A sheet that runs out of rows (`maxRows` set too high for the rows `beforeHeader`, the header, `afterData`
+  or a summary also use) now fails with `ExcelWriteException: Sheet 'S' is full: Excel sheets hold at most
+  1048576 rows. Lower maxRows(...) …` instead of POI's bare `Invalid row number` (or a generic
+  `Failed to write excel`).
 - The RGB overloads `tabColor`, `backgroundColor`, `fontColor`, `headerFontColor`, `headerBackgroundColor`
   (and `ExcelRichText`'s `color`) now reject a component outside 0–255 with `IllegalArgumentException`, like
   `ExcelColor` and `RowStyleConfig` already did. Before, `fontColor(300, 0, 0)` silently became red 44.
