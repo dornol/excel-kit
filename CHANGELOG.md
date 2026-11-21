@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `ReadLimits.UPLOAD`, a preset for files from untrusted users (50 MiB, 50 sheets, 1,000 columns,
+  32,767 characters per cell, 10 million cells). Readers still apply no limits unless given some; the
+  javadoc and guides now say so.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed

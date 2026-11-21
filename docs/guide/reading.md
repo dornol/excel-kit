@@ -291,6 +291,12 @@ Excel sheet discovery follows the same ownership rule: `getSheetNames(InputStrea
 Use `readWithSummary(...)` when aggregate counts and elapsed time are needed, or
 `readReport(input, maxCollectedErrors)` for a bounded error sample. Untrusted inputs can be
 guarded with `limits(new ReadLimits(maxBytes, maxSheets, maxColumns, maxCellCharacters, maxTotalCells))`.
+
+> **Reading files from untrusted users?** A reader applies no limits and allows formulas and
+> external links unless you say otherwise, and it copies the whole input to a temp file. For an
+> upload use `limits(ReadLimits.UPLOAD)` (50 MiB, 50 sheets, 1,000 columns, 32,767 characters per
+> cell, 10 million cells) and, for Excel, `securityPolicy(ReadSecurityPolicy.STRICT)`.
+
 `headerPolicy(...)` provides common trim, case-insensitive, whitespace, and Unicode-normalized
 matching presets. Long-running reads can use `cancellationToken(...)` and
 `onReadProgress(interval, callback)` without transferring execution to a library thread.

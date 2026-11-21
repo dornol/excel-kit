@@ -323,6 +323,13 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return headerNormalizer(Objects.requireNonNull(policy, "policy cannot be null").normalizer());
     }
 
+    /**
+     * Bounds the input, sheets, columns, cell size and cell count. No limits apply by default, so a
+     * reader of untrusted files should set some; {@link ReadLimits#UPLOAD} is a starting point.
+     *
+     * @param limits the limits to enforce
+     * @return this reader for chaining
+     */
     public SELF limits(ReadLimits limits) {
         settings.limits(limits);
         return self();
@@ -338,6 +345,13 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
+    /**
+     * Sets the Excel content restrictions. The default {@link ReadSecurityPolicy#DEFAULT} allows formulas
+     * and external links; use {@link ReadSecurityPolicy#STRICT} for files from untrusted sources.
+     *
+     * @param policy the policy to enforce
+     * @return this reader for chaining
+     */
     public SELF securityPolicy(ReadSecurityPolicy policy) {
         settings.securityPolicy(policy);
         return self();

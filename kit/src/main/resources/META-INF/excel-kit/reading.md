@@ -256,6 +256,9 @@ Caller-provided streams and paths remain caller-owned. File size is captured bef
 temporary-file cleanup so `ReadLimitExceededException` is preserved. Custom
 `ReadSecurityPolicy.maxCompressionRatio` values must be finite and positive.
 
+Readers have no limits by default. For untrusted uploads use `limits(ReadLimits.UPLOAD)` and, for Excel,
+`securityPolicy(ReadSecurityPolicy.STRICT)`.
+
 ## External workbook behavior
 
 Streaming cell and header formatting uses each workbook's 1900/1904 date system.
