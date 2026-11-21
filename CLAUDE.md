@@ -45,6 +45,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
 8. 빌드 확인:
    - `./gradlew clean test` — 단위 테스트 전체 통과
    - `./gradlew :kit:javadoc` — javadoc 경고 0 확인
+   - (선택) `./gradlew :kit:scaleTest` — 수백만 행을 256MB 힙으로 읽고 쓰며 순서·롤오버·힙 증가·임시 파일을 확인(1~2분)
 9. example 앱 실행 확인:
    - `cd example && docker compose up -d` → `./gradlew :example:bootRun`
    - `http://localhost:8080` 에서 showcase 페이지 접근

@@ -46,7 +46,7 @@ tasks.compileJava {
 
 tasks.test {
     useJUnitPlatform {
-        excludeTags("benchmark")
+        excludeTags("benchmark", "scale")
     }
     finalizedBy(tasks.jacocoTestReport)
 }
@@ -85,7 +85,7 @@ val poiRuntimeTests = listOf("5.2.5", "5.5.1", "6.0.0").map { poiVersion ->
         testClassesDirs = sourceSets.test.get().output.classesDirs
         classpath = files(sourceSets.test.get().output, tasks.jar.flatMap { it.archiveFile }, runtime)
         useJUnitPlatform {
-            excludeTags("benchmark")
+            excludeTags("benchmark", "scale")
         }
     }
 }
@@ -94,6 +94,33 @@ tasks.register("poiCompatibilityTest") {
     group = "verification"
     description = "Test the same library JAR with all supported POI runtimes"
     dependsOn(poiRuntimeTests)
+}
+
+// Millions of rows through the writers and readers with a small heap: what must hold at scale (every row arrives,
+// in order, across rollover sheets; the heap does not grow with the rows; no temp file is left behind). It takes
+// a minute or two, so it is not part of `test`.
+tasks.register<Test>("scaleTest") {
+    group = "verification"
+    description = "Write and read millions of rows with a small heap"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform {
+        includeTags("scale")
+    }
+    maxHeapSize = "256m"
+    maxParallelForks = 1
+    val scratch = layout.buildDirectory.dir("tmp/scale-tmp")
+    systemProperty("java.io.tmpdir", scratch.get().asFile.absolutePath)
+    providers.gradleProperty("scaleExcelRows").orNull?.let { systemProperty("excelkit.scale.excelRows", it) }
+    providers.gradleProperty("scaleCsvRows").orNull?.let { systemProperty("excelkit.scale.csvRows", it) }
+    doFirst {
+        val directory = scratch.get().asFile
+        check(!directory.exists() || directory.deleteRecursively()) { "Cannot reset scale temp directory" }
+        check(directory.mkdirs()) { "Cannot create scale temp directory" }
+    }
+    testLogging {
+        showStandardStreams = true
+    }
 }
 
 tasks.register<Test>("benchmark") {
