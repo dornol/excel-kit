@@ -434,14 +434,23 @@ public class CsvWriter<T> {
             cursor.plusRow();
 
             // Write data rows
+            List<CsvColumn<T>> columns = options.columns();
+            char delimiter = options.delimiter();
+            StringBuilder line = new StringBuilder(256);
             sequential.forEach(row -> {
                 cursor.plusTotal();
                 cursor.plusRow();
-                String line = options.columns().stream()
-                        .map(col -> checkEncodable(escapeCsv(col.applyFunction(row, cursor, options.failOnColumnError()),
-                                options), probe, options,
-                                "column '" + col.getName() + "' at row " + cursor.getRowOfSheet()))
-                        .collect(Collectors.joining(joining));
+                line.setLength(0);
+                for (int i = 0; i < columns.size(); i++) {
+                    CsvColumn<T> col = columns.get(i);
+                    String field = escapeCsv(col.applyFunction(row, cursor, options.failOnColumnError()), options);
+                    if (probe != null && !probe.canEncode(field)) {
+                        checkEncodable(field, probe, options,
+                                "column '" + col.getName() + "' at row " + cursor.getRowOfSheet());
+                    }
+                    if (i > 0) line.append(delimiter);
+                    line.append(field);
+                }
                 writer.println(line);
                 sink.rethrowAt(cursor.getRowOfSheet(), options.charset());
                 if (options.progressCallback() != null && options.progressInterval() > 0
@@ -524,16 +533,21 @@ public class CsvWriter<T> {
      * @param input The input value (nullable)
      * @return A properly escaped CSV field
      */
-    private String escapeCsv(@Nullable Object input) {
-        return escapeCsv(input, snapshotOptions());
-    }
-
     private String escapeCsv(@Nullable Object input, CsvWriteOptions<T> options) {
         if (input == null) {
             return options.quoting() == CsvQuoting.ALL ? "\"\"" : "";
         }
         String value = input.toString();
-        if (value.indexOf('\0') >= 0) throw new CsvWriteException("CSV fields cannot contain a NUL character");
+        // One pass finds everything that decides the quoting; no per-field allocation.
+        char delimiter = options.delimiter();
+        boolean special = false;
+        boolean hasQuote = false;
+        for (int i = 0, length = value.length(); i < length; i++) {
+            char c = value.charAt(i);
+            if (c == '\0') throw new CsvWriteException("CSV fields cannot contain a NUL character");
+            if (c == '"') { hasQuote = true; special = true; }
+            else if (c == delimiter || c == '\n' || c == '\r') special = true;
+        }
         // CSV Injection defense: prefix formula-triggering characters with a single quote.
         // Also checks after leading spaces — Excel strips spaces before evaluating formulas.
         if (options.csvInjectionDefense() && !value.isEmpty()) {
@@ -551,19 +565,10 @@ public class CsvWriter<T> {
                 }
             }
         }
-        boolean needsQuote = value.contains(String.valueOf(options.delimiter()))
-                || value.contains("\"") || value.contains("\n") || value.contains("\r");
-
-        if (options.quoting() == CsvQuoting.ALL) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        if (options.quoting() == CsvQuoting.NON_NUMERIC && !isNumeric(value)) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        if (needsQuote) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        return value;
+        boolean quote = special || options.quoting() == CsvQuoting.ALL
+                || (options.quoting() == CsvQuoting.NON_NUMERIC && !isNumeric(value));
+        if (!quote) return value;
+        return "\"" + (hasQuote ? value.replace("\"", "\"\"") : value) + "\"";
     }
 
     private CsvWriteOptions<T> snapshotOptions() {
