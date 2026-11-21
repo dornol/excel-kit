@@ -14,6 +14,11 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A CSV write that fails now says where. A character the charset cannot encode throws
+  `CsvWriteException: Cannot write CSV column 'name' at row 5: character 'é' (U+00E9) cannot be encoded in US-ASCII`
+  (or `header of column '…'`); before, the writer only said `Could not encode or write CSV` after it had
+  read the whole stream. An I/O failure on the temp file now stops reading rows at the next row instead of
+  at the end, and the message carries the underlying cause.
 - `reader.options(ReaderOptions)` no longer drops the Bean Validation provider given to
   `setter(...)`/`mapping(...)` (or `validator(...)`) when the options carry none; before, rows
   that violated constraints silently passed validation. Options that do carry a validator still override it.

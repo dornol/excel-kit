@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -404,8 +405,12 @@ public class CsvWriter<T> {
         var encoder = options.charset().newEncoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);
+        // A second encoder only answers canEncode, which must not run on one that is encoding.
+        CharsetEncoder probe = encodingCanFail(options.charset()) ? options.charset().newEncoder() : null;
         String terminator = options.lineSeparator();
-        var writer = new PrintWriter(new OutputStreamWriter(outputStream, encoder)) {
+        var sink = new FailureRecordingWriter(new OutputStreamWriter(outputStream, encoder));
+        // PrintWriter swallows IOExceptions; the sink keeps the first one so it is not lost.
+        var writer = new PrintWriter(sink) {
             @Override
             public void println() {
                 write(terminator);
@@ -423,7 +428,8 @@ public class CsvWriter<T> {
             // Write header row
             writer.println(options.columns().stream()
                     .map(CsvColumn::getName)
-                    .map(value -> escapeCsv(value, options))
+                    .map(name -> checkEncodable(escapeCsv(name, options), probe, options,
+                            "header of column '" + name + "'"))
                     .collect(Collectors.joining(joining)));
             cursor.plusRow();
 
@@ -432,10 +438,12 @@ public class CsvWriter<T> {
                 cursor.plusTotal();
                 cursor.plusRow();
                 String line = options.columns().stream()
-                        .map(col -> col.applyFunction(row, cursor, options.failOnColumnError()))
-                        .map(value -> escapeCsv(value, options))
+                        .map(col -> checkEncodable(escapeCsv(col.applyFunction(row, cursor, options.failOnColumnError()),
+                                options), probe, options,
+                                "column '" + col.getName() + "' at row " + cursor.getRowOfSheet()))
                         .collect(Collectors.joining(joining));
                 writer.println(line);
+                sink.rethrowAt(cursor.getRowOfSheet(), options.charset());
                 if (options.progressCallback() != null && options.progressInterval() > 0
                         && cursor.getCurrentTotal() % options.progressInterval() == 0) {
                     options.progressCallback().onProgress(cursor.getCurrentTotal(), cursor);
@@ -447,7 +455,66 @@ public class CsvWriter<T> {
                 options.afterDataWriter().write(writer);
             }
         }
+        sink.rethrowAt(-1, options.charset());
         if (writer.checkError()) throw new IOException("Could not encode or write CSV using " + options.charset());
+    }
+
+    /** Unicode encoders only fail on unpaired surrogates; every other charset can lack characters. */
+    private static boolean encodingCanFail(Charset charset) {
+        return !charset.name().toUpperCase(java.util.Locale.ROOT).startsWith("UTF");
+    }
+
+    /**
+     * Fails at the field that cannot be encoded, naming the row, the column and the character.
+     * Without this the encoder fails somewhere in a later buffer flush and the position is lost.
+     */
+    private static String checkEncodable(String field, @Nullable CharsetEncoder probe,
+                                         CsvWriteOptions<?> options, String where) {
+        if (probe == null || probe.canEncode(field)) return field;
+        for (int i = 0; i < field.length(); ) {
+            int codePoint = field.codePointAt(i);
+            if (!probe.canEncode(new String(Character.toChars(codePoint)))) {
+                throw new CsvWriteException(String.format(java.util.Locale.ROOT,
+                        "Cannot write CSV %s: character '%s' (U+%04X) cannot be encoded in %s",
+                        where, new String(Character.toChars(codePoint)), codePoint,
+                        options.charset()));
+            }
+            i += Character.charCount(codePoint);
+        }
+        return field;
+    }
+
+    /** Remembers the first failure of the underlying writer, which {@link PrintWriter} would swallow. */
+    private static final class FailureRecordingWriter extends java.io.Writer {
+        private final java.io.Writer delegate;
+        private @Nullable IOException failure;
+
+        FailureRecordingWriter(java.io.Writer delegate) {
+            this.delegate = delegate;
+        }
+
+        void rethrowAt(int row, Charset charset) {
+            if (failure == null) return;
+            throw new CsvWriteException("Failed to write CSV using " + charset
+                    + (row >= 0 ? " (detected at row " + row + ")" : "") + ": " + failure.getMessage(), failure);
+        }
+
+        private IOException record(IOException e) {
+            if (failure == null) failure = e;
+            return e;
+        }
+
+        @Override public void write(char[] buffer, int offset, int length) throws IOException {
+            try { delegate.write(buffer, offset, length); } catch (IOException e) { throw record(e); }
+        }
+
+        @Override public void flush() throws IOException {
+            try { delegate.flush(); } catch (IOException e) { throw record(e); }
+        }
+
+        @Override public void close() throws IOException {
+            try { delegate.close(); } catch (IOException e) { throw record(e); }
+        }
     }
 
     /**
