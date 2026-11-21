@@ -655,7 +655,14 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     public ExcelHandler write(Stream<T> stream, WriteRowCallback<T> consumer) {
         ExcelWriteOptions<T> options = snapshotOptions();
         this.execution = new ExcelWriteSession<>(options);
-        startSheet(options);
+        validateColumns(options);
+        try {
+            startSheet(options);
+        } catch (RuntimeException e) {
+            // The first sheet may already own a temp file; release it, but keep the original exception.
+            closeWorkbookQuietly();
+            throw e;
+        }
 
         try {
             stream.sequential().forEach(rowData -> {
@@ -673,13 +680,16 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
     }
 
-    /** Validates the columns, then creates the first sheet and writes its preamble, header and sheet options. */
-    private void startSheet(ExcelWriteOptions<T> options) {
+    /** Rejects missing or duplicate columns before any sheet (and its temp file) exists. */
+    private void validateColumns(ExcelWriteOptions<T> options) {
         if (options.columns().isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
         ExcelWriteSupport.validateUniqueColumnNames(options.columns());
+    }
 
+    /** Creates the first sheet and writes its preamble, header and sheet options. */
+    private void startSheet(ExcelWriteOptions<T> options) {
         if (headerFontName != null || headerFontSize != null) {
             this.headerStyle = rebuildHeaderStyle();
         }

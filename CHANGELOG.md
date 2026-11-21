@@ -19,6 +19,11 @@ All notable changes to this project will be documented in this file.
 - `kit` and `excel-kit-spring` jars declare `Automatic-Module-Name` (`io.github.dornol.excelkit`,
   `io.github.dornol.excelkit.spring`) so module-path users get stable module names.
 
+### Fixed
+- `ExcelWriter.write` releases the workbook's temp files when writing the first sheet's
+  preamble or header fails (for example a throwing `beforeHeader` callback); the original
+  exception is still thrown unchanged.
+
 ## [0.25.0] - 2026-11-20
 
 ### Added
