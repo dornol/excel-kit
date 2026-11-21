@@ -2,3 +2,6 @@
 # against it). Add exclusions here only for intentional removals, with a comment explaining each.
 # After a release is published: raise the baseline in .github/workflows/api-compatibility.yml to that
 # version and delete the exclusions below, which then describe changes the baseline already contains.
+# ExcelConditionalRule.dataBar(ExcelColor, ExcelColor) removed: it wrote a second <color> element, which the
+# OOXML schema does not allow, and Excel's data bars have no two-color gradient.
+io.github.dornol.excelkit.excel.ExcelConditionalRule#dataBar(io.github.dornol.excelkit.excel.ExcelColor,io.github.dornol.excelkit.excel.ExcelColor)

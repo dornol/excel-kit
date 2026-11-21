@@ -17,6 +17,9 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- **Breaking:** removed `ExcelConditionalRule.dataBar(minColor, maxColor)`. It wrote a second `<color>` element
+  into the data bar, which the OOXML schema does not allow (the worksheet failed schema validation), and Excel's
+  data bars have no two-color gradient. Use `dataBar(color)`.
 - **Breaking:** more writer arguments are rejected where they are passed (`NullPointerException` naming the
   argument) instead of failing later: `ExcelSummary` (`sum`, `average`, `min`, `max`, `count`, `label`),
   `ExcelConditionalRule` (every comparison, `dataBar`, `iconSet`), `ExcelChartConfig.type/barGrouping/barDirection`

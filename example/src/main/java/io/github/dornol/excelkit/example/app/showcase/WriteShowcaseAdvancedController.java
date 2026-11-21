@@ -393,7 +393,7 @@ public class WriteShowcaseAdvancedController {
         writer.column("Discount", ProductDto::discount, c -> c.type(ExcelDataType.DOUBLE_PERCENT));
         var handler = writer
                 .conditionalFormatting(cf -> cf.columns(1).dataBar(ExcelColor.BLUE))
-                .conditionalFormatting(cf -> cf.columns(2).dataBar(ExcelColor.RED, ExcelColor.GREEN))
+                .conditionalFormatting(cf -> cf.columns(2).dataBar(ExcelColor.GREEN))
                 .conditionalFormatting(cf -> cf.columns(3).iconSet(ExcelConditionalRule.IconSetType.ARROWS_3))
                 .write(sampleProducts().stream());
 

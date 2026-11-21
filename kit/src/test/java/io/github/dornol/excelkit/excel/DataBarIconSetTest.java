@@ -148,68 +148,6 @@ class DataBarIconSetTest {
     }
 
     // ============================================================
-    // 2-color gradient data bar
-    // ============================================================
-    @Test
-    void dataBar_twoColor_shouldSetGradientLengthsAndColor() throws IOException {
-        CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
-                .dataBar(ExcelColor.RED, ExcelColor.GREEN));
-
-        boolean found = false;
-        for (CTConditionalFormatting cf : ws.getConditionalFormattingList()) {
-            for (var rule : cf.getCfRuleList()) {
-                if (rule.getType() == STCfType.DATA_BAR) {
-                    found = true;
-                    var db = rule.getDataBar();
-
-                    // Color should be the minColor (RED)
-                    byte[] rgb = db.getColor().getRgb();
-                    assertEquals((byte) 0xFF, rgb[1], "Red component should be 255 for RED");
-                    assertEquals((byte) 0x00, rgb[2], "Green component should be 0 for RED");
-                    assertEquals((byte) 0x00, rgb[3], "Blue component should be 0 for RED");
-
-                    // Gradient: minLength=0, maxLength=100
-                    assertEquals(0, db.getMinLength(), "Gradient should set minLength=0");
-                    assertEquals(100, db.getMaxLength(), "Gradient should set maxLength=100");
-
-                    // 2 thresholds (min, max)
-                    assertEquals(2, db.sizeOfCfvoArray());
-                }
-            }
-        }
-        assertTrue(found, "Should have DATA_BAR rule");
-    }
-
-    @Test
-    void dataBar_singleColor_shouldNotOverrideLengths() throws IOException {
-        CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
-                .dataBar(ExcelColor.BLUE));
-
-        for (CTConditionalFormatting cf : ws.getConditionalFormattingList()) {
-            for (var rule : cf.getCfRuleList()) {
-                if (rule.getType() == STCfType.DATA_BAR) {
-                    var db = rule.getDataBar();
-                    // Single color should NOT set 0/100 (that's the gradient marker)
-                    assertFalse(db.getMinLength() == 0 && db.getMaxLength() == 100,
-                            "Single color should not have gradient lengths (0/100)");
-                }
-            }
-        }
-    }
-
-    @Test
-    void dataBar_twoColor_sameColor_shouldStillWork() throws IOException {
-        // Degenerate case: same color for min and max
-        CTWorksheet ws = writeAndGetWorksheet(cf -> cf.columns(1)
-                .dataBar(ExcelColor.BLUE, ExcelColor.BLUE));
-
-        boolean found = ws.getConditionalFormattingList().stream()
-                .flatMap(cf -> cf.getCfRuleList().stream())
-                .anyMatch(r -> r.getType() == STCfType.DATA_BAR);
-        assertTrue(found);
-    }
-
-    // ============================================================
     // Combined rules
     // ============================================================
     @Test

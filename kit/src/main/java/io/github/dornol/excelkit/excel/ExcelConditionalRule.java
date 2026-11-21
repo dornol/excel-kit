@@ -76,7 +76,6 @@ public class ExcelConditionalRule {
     private int @Nullable [] columnIndices;
     private int startRow = -1;
     private @Nullable ExcelColor dataBarColor;
-    private @Nullable ExcelColor dataBarMaxColor;
     private @Nullable IconSetType iconSetType;
 
     /**
@@ -230,25 +229,6 @@ public class ExcelConditionalRule {
     public ExcelConditionalRule dataBar(ExcelColor color) {
         java.util.Objects.requireNonNull(color, "color cannot be null");
         this.dataBarColor = color;
-        this.dataBarMaxColor = null;
-        return this;
-    }
-
-    /**
-     * Adds a 2-color gradient data bar conditional formatting.
-     * <p>
-     * The bar gradient transitions from {@code minColor} (lowest value) to {@code maxColor} (highest value).
-     *
-     * @param minColor the color for the minimum value end of the bar
-     * @param maxColor the color for the maximum value end of the bar
-     * @return this rule for chaining
-     * @since 0.9.2
-     */
-    public ExcelConditionalRule dataBar(ExcelColor minColor, ExcelColor maxColor) {
-        java.util.Objects.requireNonNull(minColor, "minColor cannot be null");
-        java.util.Objects.requireNonNull(maxColor, "maxColor cannot be null");
-        this.dataBarColor = minColor;
-        this.dataBarMaxColor = maxColor;
         return this;
     }
 
@@ -328,18 +308,6 @@ public class ExcelConditionalRule {
                     (byte) dataBarColor.getG(),
                     (byte) dataBarColor.getB()
             });
-
-            if (dataBarMaxColor != null) {
-                CTColor maxColorCt = dataBar.addNewColor();
-                maxColorCt.setRgb(new byte[]{
-                        (byte) 0xFF,
-                        (byte) dataBarMaxColor.getR(),
-                        (byte) dataBarMaxColor.getG(),
-                        (byte) dataBarMaxColor.getB()
-                });
-                dataBar.setMinLength(0L);
-                dataBar.setMaxLength(100L);
-            }
         } catch (RuntimeException e) {
             throw new ExcelWriteException("Failed to apply data bar conditional formatting", e);
         }

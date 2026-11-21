@@ -69,17 +69,6 @@ class ConditionalRuleDetailsTest {
         assertArrayEquals(new byte[]{(byte) 0xFF, 0, 0, (byte) 0xFF}, rule.getDataBar().getColor().getRgb());
     }
 
-    @Test
-    void aTwoColorDataBarAddsTheSecondColorAndTheFullLengthRange() throws Exception {
-        XSSFSheet sheet = write(3, rule -> rule.columns(2).dataBar(ExcelColor.RED, ExcelColor.GREEN));
-
-        CTCfRule rule = formattings(sheet).get(0).getCfRuleArray(0);
-        // the first color is the one a reader sees as the bar's color
-        assertArrayEquals(new byte[]{(byte) 0xFF, (byte) 0xFF, 0, 0}, rule.getDataBar().getColor().getRgb());
-        assertEquals(0, rule.getDataBar().getMinLength());
-        assertEquals(100, rule.getDataBar().getMaxLength());
-    }
-
     // ---- icon sets
 
     @Test
@@ -202,6 +191,5 @@ class ConditionalRuleDetailsTest {
                 .greaterThanOrEqual("8", ExcelColor.LIGHT_GREEN).lessThanOrEqual("9", ExcelColor.LIGHT_RED)), "comparisons");
         assertValid(write(3, rule -> rule.dataBar(ExcelColor.BLUE).iconSet(IconSetType.ARROWS_3)
                 .greaterThan("1", ExcelColor.LIGHT_GREEN)), "all of them together");
-        // dataBar(min, max) is left out on purpose: it writes a second <color> element, which the schema does not allow
     }
 }
