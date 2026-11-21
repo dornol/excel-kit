@@ -17,6 +17,9 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- `CsvQuoting.NON_NUMERIC` and the CSV injection defense now share one definition of a number (an optional
+  sign, ASCII digits with an optional fraction, an optional exponent). Before, `NON_NUMERIC` quoted `1e5`,
+  left a lone `.` unquoted and treated non-ASCII digits as numbers.
 - `CsvWriter` formats a row without per-field and per-row stream allocations: about 25–30% faster on the
   1M-row × 5-column benchmark (0.61s → 0.44s on the development machine). Output is unchanged.
 - A CSV write that fails now says where. A character the charset cannot encode throws

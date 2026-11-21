@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,7 +65,6 @@ public class CsvWriter<T> {
     }
 
     private static final Logger log = LoggerFactory.getLogger(CsvWriter.class);
-    private static final Pattern DECIMAL_NUMBER = Pattern.compile("[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[Ee][+-]?[0-9]+)?");
     private final List<CsvColumn<T>> columns = new ArrayList<>();
     private char delimiter = ',';
     private Charset charset = StandardCharsets.UTF_8;
@@ -553,7 +551,7 @@ public class CsvWriter<T> {
         if (options.csvInjectionDefense() && !value.isEmpty()) {
             char first = value.charAt(0);
             if (isFormulaCharacter(first)) {
-                if (!(input instanceof Number && DECIMAL_NUMBER.matcher(value).matches())) {
+                if (!(input instanceof Number && isDecimalNumber(value))) {
                     value = "'" + value;
                 }
             } else if (first == ' ') {
@@ -566,7 +564,7 @@ public class CsvWriter<T> {
             }
         }
         boolean quote = special || options.quoting() == CsvQuoting.ALL
-                || (options.quoting() == CsvQuoting.NON_NUMERIC && !isNumeric(value));
+                || (options.quoting() == CsvQuoting.NON_NUMERIC && !isDecimalNumber(value));
         if (!quote) return value;
         return "\"" + (hasQuote ? value.replace("\"", "\"\"") : value) + "\"";
     }
@@ -590,24 +588,35 @@ public class CsvWriter<T> {
             String lineSeparator
     ) {}
 
-    private static boolean isNumeric(String value) {
-        if (value.isEmpty()) return false;
-        int start = 0;
-        if (value.charAt(0) == '-' || value.charAt(0) == '+') {
-            if (value.length() == 1) return false;
-            start = 1;
+    /**
+     * Whether the value is a plain decimal number: an optional sign, ASCII digits with an optional
+     * fraction (at least one digit overall) and an optional exponent. Used both to leave a number
+     * unquoted under {@link CsvQuoting#NON_NUMERIC} and to exempt a negative {@link Number} from the
+     * injection prefix, so the two never disagree about what a number is.
+     */
+    private static boolean isDecimalNumber(String value) {
+        int length = value.length();
+        int i = 0;
+        if (i < length && (value.charAt(i) == '+' || value.charAt(i) == '-')) i++;
+        int digits = 0;
+        while (i < length && isAsciiDigit(value.charAt(i))) { i++; digits++; }
+        if (i < length && value.charAt(i) == '.') {
+            i++;
+            while (i < length && isAsciiDigit(value.charAt(i))) { i++; digits++; }
         }
-        boolean hasDecimal = false;
-        for (int i = start; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c == '.') {
-                if (hasDecimal) return false;
-                hasDecimal = true;
-            } else if (!Character.isDigit(c)) {
-                return false;
-            }
+        if (digits == 0) return false;
+        if (i < length && (value.charAt(i) == 'e' || value.charAt(i) == 'E')) {
+            i++;
+            if (i < length && (value.charAt(i) == '+' || value.charAt(i) == '-')) i++;
+            int exponentDigits = 0;
+            while (i < length && isAsciiDigit(value.charAt(i))) { i++; exponentDigits++; }
+            if (exponentDigits == 0) return false;
         }
-        return true;
+        return i == length;
+    }
+
+    private static boolean isAsciiDigit(char c) {
+        return c >= '0' && c <= '9';
     }
 
     private void validateUniqueColumnNames() {
