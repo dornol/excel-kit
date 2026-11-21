@@ -655,6 +655,26 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     public ExcelHandler write(Stream<T> stream, WriteRowCallback<T> consumer) {
         ExcelWriteOptions<T> options = snapshotOptions();
         this.execution = new ExcelWriteSession<>(options);
+        startSheet(options);
+
+        try {
+            stream.sequential().forEach(rowData -> {
+                this.handleRowData(rowData);
+                consumer.accept(rowData, cursor());
+            });
+            finishWorkbook(options);
+            return new ExcelHandler(this.wb, this.password);
+        } catch (ExcelWriteException e) {
+            closeWorkbookQuietly();
+            throw e;
+        } catch (RuntimeException e) {
+            closeWorkbookQuietly();
+            throw new ExcelWriteException("Failed to write excel", e);
+        }
+    }
+
+    /** Validates the columns, then creates the first sheet and writes its preamble, header and sheet options. */
+    private void startSheet(ExcelWriteOptions<T> options) {
         if (options.columns().isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
@@ -672,37 +692,28 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), headerStyle, wb, headerStyleCache,
                 options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
         applySheetOptions();
+    }
 
-        try {
-            stream.sequential().forEach(rowData -> {
-                this.handleRowData(rowData);
-                consumer.accept(rowData, cursor());
-            });
-
-            execution().dataEndRow(cursor().getRowOfSheet() - 1);
-            int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                    options.columns(), headerRowIndex(), options.sheetConfig());
-            if (this.afterAllWriter != null) {
-                this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
-            }
-
-            applyPostProcessingAllSheets();
-            ExcelWorkbookSupport.applyProtection(wb, workbookPassword);
-
-            // Apply chart on last sheet
-            if (options.sheetConfig().chartConfig != null) {
-                ExcelWriteSupport.applyChart(sheet(), options.sheetConfig().chartConfig, headerRowIndex(), cursor().getRowOfSheet() - 1, nextRow);
-            }
-            applyTables();
-
-            return new ExcelHandler(this.wb, this.password);
-        } catch (ExcelWriteException e) {
-            closeWorkbookQuietly();
-            throw e;
-        } catch (RuntimeException e) {
-            closeWorkbookQuietly();
-            throw new ExcelWriteException("Failed to write excel", e);
+    /**
+     * Runs everything that follows the last data row: after-data and summary rows, the
+     * {@code afterAll} callback, per-sheet post-processing, workbook protection, the chart and tables.
+     */
+    private void finishWorkbook(ExcelWriteOptions<T> options) {
+        execution().dataEndRow(cursor().getRowOfSheet() - 1);
+        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
+                options.columns(), headerRowIndex(), options.sheetConfig());
+        if (this.afterAllWriter != null) {
+            this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
         }
+
+        applyPostProcessingAllSheets();
+        ExcelWorkbookSupport.applyProtection(wb, workbookPassword);
+
+        // Apply chart on last sheet
+        if (options.sheetConfig().chartConfig != null) {
+            ExcelWriteSupport.applyChart(sheet(), options.sheetConfig().chartConfig, headerRowIndex(), cursor().getRowOfSheet() - 1, nextRow);
+        }
+        applyTables();
     }
 
     /**
@@ -833,11 +844,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
     }
 
-    /**
-     * Returns the underlying streaming workbook instance.
-     *
-     * @return SXSSFWorkbook instance
-     */
     private void closeWorkbookQuietly() {
         try {
             wb.close();
@@ -846,6 +852,11 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
     }
 
+    /**
+     * Returns the underlying streaming workbook instance.
+     *
+     * @return SXSSFWorkbook instance
+     */
     SXSSFWorkbook getWb() {
         return wb;
     }
