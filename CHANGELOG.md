@@ -17,6 +17,10 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- A list written into a template (`ExcelTemplateWriter.list(...)`) keeps the column widths the template set, instead of
+  overwriting every list column's width with one fitted to its content. A column given `width(n)` still uses that width,
+  and a column the template left at the default width is still fitted to its content. A template without custom
+  widths behaves as before.
 - **Breaking:** removed `ExcelConditionalRule.dataBar(minColor, maxColor)`. It wrote a second `<color>` element
   into the data bar, which the OOXML schema does not allow (the worksheet failed schema validation), and Excel's
   data bars have no two-color gradient. Use `dataBar(color)`.

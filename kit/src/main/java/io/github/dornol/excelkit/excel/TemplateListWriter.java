@@ -320,7 +320,7 @@ public class TemplateListWriter<T> {
             }
         }
 
-        ExcelSheetPostProcessor.applyColumnWidths(sheet, columns);
+        ExcelSheetPostProcessor.applyTemplateColumnWidths(sheet, columns);
 
         parent.updateLastWrittenRow(sheetIndex, nextRow - 1);
         return parent;

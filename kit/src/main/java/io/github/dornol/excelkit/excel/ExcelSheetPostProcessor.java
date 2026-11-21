@@ -32,6 +32,31 @@ final class ExcelSheetPostProcessor {
         ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, sheetIndex);
     }
 
+    /**
+     * The widths of a list written into a template. A template is somebody's layout, so a column width it sets
+     * stays; only a column given {@code width(n)}, or one the template left at the default width, is set here.
+     */
+    static <T> void applyTemplateColumnWidths(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
+        var templateColumns = SXSSFSheetHelper.getXSSFSheet(sheet).getCTWorksheet().getColsArray();
+        for (int i = 0; i < columns.size(); i++) {
+            ExcelColumn<T> column = columns.get(i);
+            if (column.isFixedWidth() || !templateSetsWidth(templateColumns, i)) {
+                sheet.setColumnWidth(i, column.getColumnWidth());
+            }
+        }
+    }
+
+    /** Whether the template gave the column (0-based) a width of its own: a {@code <col>} with customWidth. */
+    private static boolean templateSetsWidth(
+            org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCols[] groups, int column) {
+        for (var group : groups) {
+            for (var col : group.getColArray()) {
+                if (col.getCustomWidth() && col.getMin() <= column + 1 && column + 1 <= col.getMax()) return true;
+            }
+        }
+        return false;
+    }
+
     static <T> void applyColumnWidths(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {
         for (int i = 0; i < columns.size(); i++) sheet.setColumnWidth(i, columns.get(i).getColumnWidth());
     }

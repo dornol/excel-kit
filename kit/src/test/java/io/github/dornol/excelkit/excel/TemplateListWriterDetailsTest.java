@@ -169,6 +169,80 @@ class TemplateListWriterDetailsTest {
         assertTrue(sheet.getColumnWidth(2) >= 30 * 256 - 256, "the fixed width stays: " + sheet.getColumnWidth(2));
     }
 
+    // ---- the template's column widths
+
+    /** A template whose header is on row 2, with whatever widths {@code widths} gives its sheet. */
+    private static XSSFSheet writeWithTemplateWidths(Consumer<XSSFSheet> widths, Consumer<TemplateListWriter<Item>> columns) throws Exception {
+        byte[] template;
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
+            XSSFSheet sheet = workbook.createSheet("S");
+            sheet.createRow(2).createCell(0).setCellValue("name");
+            widths.accept(sheet);
+            workbook.write(bytes);
+            template = bytes.toByteArray();
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ExcelTemplateWriter writer = new ExcelTemplateWriter(new ByteArrayInputStream(template))) {
+            TemplateListWriter<Item> list = writer.<Item>list(3);
+            columns.accept(list);
+            list.write(List.of(new Item("a-name-that-is-fairly-long-indeed", 1)));
+            writer.finish().writeTo(out);
+        }
+        return new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray())).getSheetAt(0);
+    }
+
+    @Test
+    void aWidthTheTemplateSetsIsKeptAndTheRestIsFittedToTheContent() throws Exception {
+        XSSFSheet sheet = writeWithTemplateWidths(s -> {
+            s.setColumnWidth(0, 6000);
+            s.setColumnWidth(2, 7000);
+        }, list -> list.column("name", Item::name).column("fitted", Item::name).column("template", Item::name));
+
+        assertEquals(6000, sheet.getColumnWidth(0), "the template's width stays");
+        assertTrue(sheet.getColumnWidth(1) > 3000 && sheet.getColumnWidth(1) != 6000, "no width in the template: " + sheet.getColumnWidth(1));
+        assertEquals(7000, sheet.getColumnWidth(2), "the template's width stays");
+    }
+
+    @Test
+    void aWidthSetOnTheColumnBeatsTheTemplate() throws Exception {
+        XSSFSheet sheet = writeWithTemplateWidths(s -> {
+            s.setColumnWidth(0, 6000);
+            s.setColumnWidth(1, 7000);
+        }, list -> list.column("name", Item::name, c -> c.width(3000)).column("kept", Item::name));
+
+        assertEquals(3000, sheet.getColumnWidth(0), "width(n) is the caller's say");
+        assertEquals(7000, sheet.getColumnWidth(1));
+    }
+
+    @Test
+    void aWidthTheTemplateSetsForSeveralColumnsAtOnceIsKeptForEach() throws Exception {
+        XSSFSheet sheet = writeWithTemplateWidths(s -> {
+            s.setColumnWidth(0, 6000);
+            s.getCTWorksheet().getColsArray(0).getColArray(0).setMax(3); // <col min=1 max=3 customWidth>
+        }, list -> list.column("a", Item::name).column("b", Item::name).column("c", Item::name).column("d", Item::name));
+
+        for (int column = 0; column < 3; column++) assertEquals(6000, sheet.getColumnWidth(column), "column " + column);
+        assertTrue(sheet.getColumnWidth(3) != 6000, "the fourth is not in the range: " + sheet.getColumnWidth(3));
+    }
+
+    @Test
+    void aColEntryWithoutACustomWidthIsNotAWidthTheTemplateSet() throws Exception {
+        // Excel writes such entries for a column's default style; the width in them is not a decision
+        XSSFSheet sheet = writeWithTemplateWidths(s -> {
+            s.setColumnWidth(0, 6000);
+            s.getCTWorksheet().getColsArray(0).getColArray(0).setCustomWidth(false);
+        }, list -> list.column("name", Item::name));
+
+        assertTrue(sheet.getColumnWidth(0) != 6000, "fitted to the content instead: " + sheet.getColumnWidth(0));
+    }
+
+    @Test
+    void aTemplateWithoutWidthsGetsFittedColumnsAsBefore() throws Exception {
+        XSSFSheet sheet = writeWithTemplateWidths(s -> { },
+                list -> list.column("name", Item::name).column("short", item -> "x"));
+        assertTrue(sheet.getColumnWidth(0) > sheet.getColumnWidth(1), sheet.getColumnWidth(0) + " vs " + sheet.getColumnWidth(1));
+    }
+
     // ---- settings that must make sense
 
     @Test

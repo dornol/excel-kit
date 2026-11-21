@@ -282,6 +282,11 @@ public class ExcelColumn<T> {
         return style;
     }
 
+    /** Whether the column's width was set with {@code width(n)} rather than fitted to its content. */
+    boolean isFixedWidth() {
+        return fixedWidth;
+    }
+
     int getColumnWidth() {
         int w = columnWidth;
         if (maxWidth > 0) w = Math.min(w, maxWidth);

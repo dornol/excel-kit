@@ -36,6 +36,8 @@ import java.util.Map;
  * For the same reason a list must start <b>below the last row the template has</b> on its sheet (a footer or an
  * empty formatted row further down is in the way): move that content out of the template and write it with
  * {@link #cell(String, Object)} after the list.
+ * <p>A list keeps the column widths the template set (a column it gave a width of its own) and fits the others to the
+ * content; a column given {@code width(n)} on the list uses that width.
  * <p>A cell keeps the number format its template gave it. A date or time written to a cell that has none (any cell
  * below the template) gets {@code yyyy-mm-dd}, {@code yyyy-mm-dd hh:mm:ss} or {@code hh:mm:ss}.
  *
