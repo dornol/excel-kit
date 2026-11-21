@@ -37,7 +37,7 @@ final class ExcelRowWriter {
                 cell.setCellStyle(ExcelWriteSupport.resolveColorStyle(baseStyle, color, styleCache, workbook));
             else cell.setCellStyle(baseStyle);
 
-            if (config.autoWidthSampleRows > 0 && cursor.getRowOfSheet() < config.autoWidthSampleRows)
+            if (config.autoWidthSampleRows > 0 && cursor.getCurrentTotal() <= config.autoWidthSampleRows)
                 column.fitColumnWidthByValue(value);
             addComment(cell, column, row, workbook);
         }

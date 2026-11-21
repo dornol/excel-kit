@@ -21,6 +21,10 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- `autoWidthSampleRows(n)` samples the first `n` data rows. It counted sheet rows instead, so rows written
+  by `beforeHeader` (and the header) used up the sample: with a long enough preamble no data row was
+  sampled and the column kept the header's width. The sample is also taken once from the start of the write,
+  not again on every rollover sheet.
 - `rowStyle(...)` no longer drops the column's RGB font color and underline (and charset, type offset and
   font family) when it changes only some font attributes such as `bold`. It copied the font name, size,
   bold, italic, strikeout and indexed color only, so a red underlined column turned plain after a row

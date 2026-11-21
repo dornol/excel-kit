@@ -244,7 +244,7 @@ text placeholder such as `"-"` is written as text instead of failing the export.
 Column widths are auto-calculated from the first N data rows:
 
 ```java
-writer.autoWidthSampleRows(200)  // sample 200 rows (default: 100)
+writer.autoWidthSampleRows(200)  // sample the first 200 data rows (default: 100)
 writer.autoWidthSampleRows(0)    // disable auto-width
 ```
 

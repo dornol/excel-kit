@@ -167,7 +167,9 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
     // ── Width ──
 
     /**
-     * Sets the number of rows sampled for auto column width calculation.
+     * Sets the number of data rows sampled for auto column width calculation. Rows written before the
+     * header (see {@link #beforeHeader}) and the header itself do not count, and the sample is taken
+     * from the first rows of the whole write, not of each rollover sheet.
      * Defaults to 100. Set to 0 to disable.
      */
     public SELF autoWidthSampleRows(int rows) {
