@@ -76,6 +76,7 @@ public class CsvWriter<T> {
     private boolean csvInjectionDefense = true;
     private boolean failOnColumnError = true;
     private CsvQuoting quoting = CsvQuoting.MINIMAL;
+    private String lineSeparator = "\n";
 
     /**
      * Creates a CsvWriter pre-configured to write rows of {@code Map<String, Object>},
@@ -305,6 +306,26 @@ public class CsvWriter<T> {
     }
 
     /**
+     * Sets the line terminator written after every row, including lines an
+     * {@link CsvAfterDataWriter} prints with {@code println}. Defaults to {@code "\n"}, so the
+     * output does not depend on the operating system the application runs on.
+     * Use {@code "\r\n"} for strict RFC 4180 output.
+     *
+     * @param lineSeparator one of {@code "\n"}, {@code "\r\n"} or {@code "\r"}
+     * @return This writer instance (for chaining)
+     * @throws IllegalArgumentException if the value is none of the allowed terminators
+     * @since 0.27.0
+     */
+    public CsvWriter<T> lineSeparator(String lineSeparator) {
+        Objects.requireNonNull(lineSeparator, "lineSeparator cannot be null");
+        if (!lineSeparator.equals("\n") && !lineSeparator.equals("\r\n") && !lineSeparator.equals("\r")) {
+            throw new IllegalArgumentException("lineSeparator must be \"\\n\", \"\\r\\n\" or \"\\r\"");
+        }
+        this.lineSeparator = lineSeparator;
+        return this;
+    }
+
+    /**
      * Controls whether extraction errors abort writing. Defaults to {@code true}.
      * When disabled, failed fields are written as empty fields.
      *
@@ -382,7 +403,13 @@ public class CsvWriter<T> {
         var encoder = options.charset().newEncoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);
-        var writer = new PrintWriter(new OutputStreamWriter(outputStream, encoder));
+        String terminator = options.lineSeparator();
+        var writer = new PrintWriter(new OutputStreamWriter(outputStream, encoder)) {
+            @Override
+            public void println() {
+                write(terminator);
+            }
+        };
         try (writer) {
             Cursor cursor = new Cursor();
             cursor.initRow();
@@ -473,7 +500,7 @@ public class CsvWriter<T> {
 
     private CsvWriteOptions<T> snapshotOptions() {
         return new CsvWriteOptions<>(List.copyOf(columns), delimiter, charset, bom, afterDataWriter,
-                progressCallback, progressInterval, csvInjectionDefense, failOnColumnError, quoting);
+                progressCallback, progressInterval, csvInjectionDefense, failOnColumnError, quoting, lineSeparator);
     }
 
     private record CsvWriteOptions<T>(
@@ -486,7 +513,8 @@ public class CsvWriter<T> {
             int progressInterval,
             boolean csvInjectionDefense,
             boolean failOnColumnError,
-            CsvQuoting quoting
+            CsvQuoting quoting,
+            String lineSeparator
     ) {}
 
     private static boolean isNumeric(String value) {

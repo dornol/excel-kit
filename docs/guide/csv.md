@@ -57,6 +57,15 @@ Enabled by default. Prefixes dangerous characters with `'`:
 CsvWriter.create().csvInjectionDefense(false);  // disable for trusted data
 ```
 
+## Line Separator
+
+Rows end with `"\n"` on every operating system. Use `lineSeparator` for strict RFC 4180 output
+(it also applies to lines an `afterData` callback prints with `println`):
+
+```java
+CsvWriter.create().lineSeparator("\r\n");  // "\n" (default), "\r\n" or "\r"
+```
+
 ## CSV Reading
 
 ```java
