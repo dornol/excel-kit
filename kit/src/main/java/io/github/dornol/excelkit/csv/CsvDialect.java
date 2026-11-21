@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
  * Predefined CSV dialect configurations for common formats.
  * <p>
  * Use with {@link CsvWriter#dialect(CsvDialect)} or {@link CsvReader#dialect(CsvDialect)}
- * to quickly configure delimiter, charset, and BOM settings.
+ * to quickly configure delimiter, charset, BOM and line separator settings.
  *
  * <pre>{@code
  * // Tab-separated values
@@ -29,30 +29,33 @@ import java.nio.charset.StandardCharsets;
 public enum CsvDialect {
 
     /**
-     * RFC 4180 standard: comma delimiter, UTF-8, no BOM.
+     * RFC 4180 standard: comma delimiter, UTF-8, no BOM, CRLF line ends.
      */
-    RFC4180(',', StandardCharsets.UTF_8, false),
+    RFC4180(',', StandardCharsets.UTF_8, false, "\r\n"),
 
     /**
-     * Excel-compatible: comma delimiter, UTF-8 with BOM for proper Korean/CJK display.
+     * Excel-compatible: comma delimiter, UTF-8 with BOM for proper Korean/CJK display, CRLF line ends.
      */
-    EXCEL(',', StandardCharsets.UTF_8, true),
+    EXCEL(',', StandardCharsets.UTF_8, true, "\r\n"),
 
     /**
-     * Tab-separated values: tab delimiter, UTF-8, no BOM.
+     * Tab-separated values: tab delimiter, UTF-8, no BOM, LF line ends
+     * (TSV has no single standard, and Unix tools expect LF).
      */
-    TSV('\t', StandardCharsets.UTF_8, false),
+    TSV('\t', StandardCharsets.UTF_8, false, "\n"),
 
     /**
-     * Pipe-separated values: pipe delimiter, UTF-8, no BOM.
+     * Pipe-separated values: pipe delimiter, UTF-8, no BOM, LF line ends.
      */
-    PIPE('|', StandardCharsets.UTF_8, false);
+    PIPE('|', StandardCharsets.UTF_8, false, "\n");
 
     private final char delimiter;
     private final Charset charset;
     private final boolean bom;
+    private final String lineSeparator;
 
-    CsvDialect(char delimiter, Charset charset, boolean bom) {
+    CsvDialect(char delimiter, Charset charset, boolean bom, String lineSeparator) {
+        this.lineSeparator = lineSeparator;
         this.delimiter = delimiter;
         this.charset = charset;
         this.bom = bom;
@@ -83,5 +86,15 @@ public enum CsvDialect {
      */
     public boolean isBom() {
         return bom;
+    }
+
+    /**
+     * Returns the line terminator a {@link CsvWriter} writes after every row.
+     *
+     * @return {@code "\r\n"} or {@code "\n"}
+     * @since 0.27.0
+     */
+    public String getLineSeparator() {
+        return lineSeparator;
     }
 }

@@ -18,13 +18,27 @@ class CsvLineSeparatorTest {
     }
 
     @Test
-    void defaultsToLineFeed() {
-        assertEquals("a\nx\ny\n", write(CsvWriter.<String>create()));
+    void defaultsToCrlfLikeRfc4180() {
+        assertEquals("a\r\nx\r\ny\r\n", write(CsvWriter.<String>create()));
+    }
+
+    @Test
+    void dialectsCarryTheirOwnSeparator() {
+        assertEquals("a\r\nx\r\ny\r\n", write(CsvWriter.<String>create().dialect(CsvDialect.RFC4180)));
+        assertEquals("a\r\nx\r\ny\r\n", write(CsvWriter.<String>create().dialect(CsvDialect.EXCEL)));
+        assertEquals("a\nx\ny\n", write(CsvWriter.<String>create().dialect(CsvDialect.TSV)));
+        assertEquals("a\nx\ny\n", write(CsvWriter.<String>create().dialect(CsvDialect.PIPE)));
+    }
+
+    @Test
+    void separatorSetAfterTheDialectWins() {
+        assertEquals("a\nx\ny\n",
+                write(CsvWriter.<String>create().dialect(CsvDialect.EXCEL).lineSeparator("\n")));
     }
 
     @Test
     void usesTheConfiguredSeparatorForEveryRow() {
-        assertEquals("a\r\nx\r\ny\r\n", write(CsvWriter.<String>create().lineSeparator("\r\n")));
+        assertEquals("a\nx\ny\n", write(CsvWriter.<String>create().lineSeparator("\n")));
         assertEquals("a\rx\ry\r", write(CsvWriter.<String>create().lineSeparator("\r")));
     }
 

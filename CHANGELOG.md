@@ -5,11 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- `CsvWriter.lineSeparator(String)` sets the row terminator (`"\n"`, `"\r\n"` or `"\r"`).
+- `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
-- `CsvWriter` always ends rows with `"\n"` unless `lineSeparator` says otherwise. It used the operating
-  system's line separator, so the same export was CRLF on Windows and LF elsewhere.
+- **Breaking:** `CsvWriter` ends rows with CRLF as RFC 4180 requires, on every operating system. It used
+  the operating system's line separator, so the same export was CRLF on Windows and LF elsewhere.
+  `CsvDialect` now carries a line separator (`getLineSeparator()`): `RFC4180` and `EXCEL` use CRLF,
+  `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
 - `reader.options(ReaderOptions)` no longer drops the Bean Validation provider given to

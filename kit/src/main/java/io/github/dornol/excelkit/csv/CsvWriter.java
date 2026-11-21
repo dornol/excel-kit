@@ -76,7 +76,7 @@ public class CsvWriter<T> {
     private boolean csvInjectionDefense = true;
     private boolean failOnColumnError = true;
     private CsvQuoting quoting = CsvQuoting.MINIMAL;
-    private String lineSeparator = "\n";
+    private String lineSeparator = "\r\n";
 
     /**
      * Creates a CsvWriter pre-configured to write rows of {@code Map<String, Object>},
@@ -110,7 +110,7 @@ public class CsvWriter<T> {
     /**
      * Applies a predefined CSV dialect configuration.
      * <p>
-     * Sets the delimiter, charset, and BOM settings in one call.
+     * Sets the delimiter, charset, BOM and line separator settings in one call.
      * Individual settings can be overridden after calling this method.
      *
      * @param dialect the dialect to apply
@@ -121,6 +121,7 @@ public class CsvWriter<T> {
         this.delimiter = dialect.getDelimiter();
         this.charset = dialect.getCharset();
         this.bom = dialect.isBom();
+        this.lineSeparator = dialect.getLineSeparator();
         return this;
     }
 
@@ -307,9 +308,9 @@ public class CsvWriter<T> {
 
     /**
      * Sets the line terminator written after every row, including lines an
-     * {@link CsvAfterDataWriter} prints with {@code println}. Defaults to {@code "\n"}, so the
-     * output does not depend on the operating system the application runs on.
-     * Use {@code "\r\n"} for strict RFC 4180 output.
+     * {@link CsvAfterDataWriter} prints with {@code println}. Defaults to {@code "\r\n"} as RFC 4180
+     * requires, so the output does not depend on the operating system the application runs on.
+     * Use {@code "\n"} for Unix-style output.
      *
      * @param lineSeparator one of {@code "\n"}, {@code "\r\n"} or {@code "\r"}
      * @return This writer instance (for chaining)

@@ -59,11 +59,12 @@ CsvWriter.create().csvInjectionDefense(false);  // disable for trusted data
 
 ## Line Separator
 
-Rows end with `"\n"` on every operating system. Use `lineSeparator` for strict RFC 4180 output
-(it also applies to lines an `afterData` callback prints with `println`):
+Rows end with CRLF as RFC 4180 requires, on every operating system. `CsvDialect.TSV` and `PIPE` use LF.
+Use `lineSeparator` to choose explicitly (it also applies to lines an `afterData` callback prints with
+`println`, and wins over a dialect applied before it):
 
 ```java
-CsvWriter.create().lineSeparator("\r\n");  // "\n" (default), "\r\n" or "\r"
+CsvWriter.create().lineSeparator("\n");  // "\r\n" (default), "\n" or "\r"
 ```
 
 ## CSV Reading

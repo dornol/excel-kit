@@ -23,7 +23,7 @@ CsvWriter.<Product>create()
     .bom(true)                                    // UTF-8 BOM for Excel (default: true)
     .quoting(CsvWriter.QuotingStrategy.ALL)       // MINIMAL (default), ALL, NON_NUMERIC
     .csvInjectionDefense(false)                   // disable formula prefixing (default: true)
-    .lineSeparator("\r\n")                        // "\n" (default), "\r\n" or "\r" — same on every OS
+    .lineSeparator("\n")                          // "\r\n" (default, RFC 4180), "\n" or "\r" — same on every OS
     .column("Name", Product::name)
     .write(stream);
 ```
