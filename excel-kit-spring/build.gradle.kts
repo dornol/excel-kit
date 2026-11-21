@@ -74,10 +74,12 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
+    // Measured: instructions 84%.
     violationRules {
         rule {
             limit {
-                minimum = "0.75".toBigDecimal()
+                counter = "INSTRUCTION"
+                minimum = "0.80".toBigDecimal()
             }
         }
     }

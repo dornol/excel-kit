@@ -130,10 +130,19 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
+    // Measured: instructions 91%, branches 85%. The limits sit a few points below so ordinary changes
+    // pass while a real drop in coverage fails the build.
     violationRules {
         rule {
             limit {
-                minimum = "0.70".toBigDecimal()
+                counter = "INSTRUCTION"
+                minimum = "0.88".toBigDecimal()
+            }
+        }
+        rule {
+            limit {
+                counter = "BRANCH"
+                minimum = "0.80".toBigDecimal()
             }
         }
     }
