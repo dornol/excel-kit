@@ -767,6 +767,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         ExcelWriteOptions<T> options = executionOptions();
         cursor().plusTotal();
         if (isOverMaxRows()) {
+            StructuredTableWriter.requireRolloverAllowed(tableOptions);
             execution().dataEndRow(cursor().getRowOfSheet() - 1);
             ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(), options.columns(), headerRowIndex(), options.sheetConfig());
             turnOverSheet();
@@ -846,9 +847,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private void applyTables() {
         if (tableOptions == null) return;
         int sheets = wb.getNumberOfSheets();
-        if (sheets > 1 && !tableOptions.perRolloverSheet()) {
-            throw new ExcelWriteException("Structured table spans multiple rollover sheets; enable perRolloverSheet");
-        }
         List<String> headers = executionOptions().columns().stream().map(ExcelColumn::getName).toList();
         for (int i = 0; i < sheets; i++) {
             SXSSFSheet target = wb.getSheetAt(i);

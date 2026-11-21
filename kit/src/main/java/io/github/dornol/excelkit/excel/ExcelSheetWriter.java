@@ -245,6 +245,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 cursor.plusTotal();
                 if (cursor.getCurrentTotal() > maxRows
                         && (cursor.getCurrentTotal() - 1) % maxRows == 0) {
+                    StructuredTableWriter.requireRolloverAllowed(tableOptions);
                     dataEndRows.add(cursor.getRowOfSheet() - 1);
                     ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
                     activeSheet = createRolloverSheet(allSheets.size());
@@ -270,9 +271,6 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             ExcelSheetPostProcessor.apply(allSheets.get(i), columns, headerRowIndex, dataEndRows.get(i), cfg);
         }
         if (tableOptions != null) {
-            if (allSheets.size() > 1 && !tableOptions.perRolloverSheet()) {
-                throw new ExcelWriteException("Structured table spans multiple rollover sheets; enable perRolloverSheet");
-            }
             for (int i = 0; i < allSheets.size(); i++) {
                 SXSSFSheet target = allSheets.get(i);
                 if (target.getLastRowNum() <= headerRowIndex) continue;

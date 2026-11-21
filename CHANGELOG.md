@@ -27,6 +27,8 @@ All notable changes to this project will be documented in this file.
   `TSV` and `PIPE` use LF. Call `lineSeparator("\n")` for LF output.
 
 ### Fixed
+- A structured table with `perRolloverSheet` off now fails when the first rollover is due, with a message that
+  names the table, instead of after the rest of the stream has been written.
 - A sheet that runs out of rows (`maxRows` set too high for the rows `beforeHeader`, the header, `afterData`
   or a summary also use) now fails with `ExcelWriteException: Sheet 'S' is full: Excel sheets hold at most
   1048576 rows. Lower maxRows(...) …` instead of POI's bare `Invalid row number` (or a generic

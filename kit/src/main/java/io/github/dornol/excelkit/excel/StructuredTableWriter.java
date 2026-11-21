@@ -12,6 +12,17 @@ import java.util.List;
 final class StructuredTableWriter {
     private StructuredTableWriter() {}
 
+    /**
+     * Called when a write is about to roll over to another sheet: a table that cannot continue on the next
+     * sheet has to fail now, not after the rest of the stream has been written.
+     */
+    static void requireRolloverAllowed(@org.jspecify.annotations.Nullable TableOptions options) {
+        if (options != null && !options.perRolloverSheet()) {
+            throw new ExcelWriteException("Structured table '" + options.name()
+                    + "' spans multiple rollover sheets; enable perRolloverSheet");
+        }
+    }
+
     static void validateName(String name) {
         if (name == null || !name.matches("[A-Za-z_][A-Za-z0-9_.]*"))
             throw new IllegalArgumentException("Invalid Excel table name: " + name);
