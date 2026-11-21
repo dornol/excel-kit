@@ -17,6 +17,11 @@ All notable changes to this project will be documented in this file.
 - `CsvWriter.lineSeparator(String)` sets the row terminator (`"\r\n"`, `"\n"` or `"\r"`).
 
 ### Changed
+- When a write rolls over to further sheets, a configured chart is drawn on every sheet over that sheet's own rows
+  (it used to appear only on the last sheet and plot just the remainder).
+- **Breaking:** `ExcelChartConfig.position(...)` refuses a negative or backwards column pair and two given rows that run
+  upwards (`IllegalArgumentException`); a chart whose category or value column is not among the sheet's columns fails
+  with `ExcelWriteException` instead of plotting an empty range.
 - **Breaking:** download responses send `Cache-Control: private, max-age=N` instead of `max-age=N`, so a shared cache
   (proxy, CDN) does not keep a generated file and hand it to another user within the max-age.
 - `ExcelKitMultipartFile.requireExcelOrCsvContent` checks the real signatures: an `.xlsx`/`.xlsm` upload must start with

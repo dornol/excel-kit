@@ -733,7 +733,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
         // Apply chart on last sheet
         if (options.sheetConfig().chartConfig != null) {
-            ExcelWriteSupport.applyChart(sheet(), options.sheetConfig().chartConfig, headerRowIndex(), cursor().getRowOfSheet() - 1, nextRow);
+            ExcelWriteSupport.applyChart(sheet(), options.sheetConfig().chartConfig, headerRowIndex(), cursor().getRowOfSheet() - 1, nextRow, options.columns().size());
         }
         applyTables();
     }

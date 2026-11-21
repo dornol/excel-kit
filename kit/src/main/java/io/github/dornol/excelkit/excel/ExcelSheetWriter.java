@@ -285,10 +285,14 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             }
         }
 
-        // Apply chart on last sheet
+        // One chart per sheet over that sheet's own rows: a chart of only the last sheet would plot just the remainder.
         if (cfg.chartConfig != null) {
-            SXSSFSheet lastSheet = allSheets.get(allSheets.size() - 1);
-            ExcelWriteSupport.applyChart(lastSheet, cfg.chartConfig, headerRowIndex, cursor.getRowOfSheet() - 1, nextFreeRow);
+            for (int i = 0; i < allSheets.size(); i++) {
+                boolean last = i == allSheets.size() - 1;
+                int dataEnd = dataEndRows.get(i);
+                ExcelWriteSupport.applyChart(allSheets.get(i), cfg.chartConfig, headerRowIndex, dataEnd,
+                        last ? nextFreeRow : dataEnd + 1, columns.size());
+            }
         }
     }
 

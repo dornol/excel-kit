@@ -187,6 +187,13 @@ public class ExcelChartConfig {
      * @return this config for chaining
      */
     public ExcelChartConfig position(int col1, int row1, int col2, int row2) {
+        if (col1 < 0 || col2 < col1) {
+            throw new IllegalArgumentException("position needs 0 <= col1 <= col2: " + col1 + ", " + col2);
+        }
+        // A negative row means "below the data"; two given rows must run downwards.
+        if (row1 >= 0 && row2 >= 0 && row2 < row1) {
+            throw new IllegalArgumentException("position needs row1 <= row2: " + row1 + ", " + row2);
+        }
         this.anchorCol1 = col1;
         this.anchorRow1 = row1;
         this.anchorCol2 = col2;
@@ -283,7 +290,17 @@ public class ExcelChartConfig {
      * @param headerRow    the header row index (0-based)
      * @param nextFreeRow  the first row after the data, summary rows and {@code afterData} content
      */
-    void apply(SXSSFSheet sheet, int headerRow, int dataEndRow, int nextFreeRow) {
+    void apply(SXSSFSheet sheet, int headerRow, int dataEndRow, int nextFreeRow, int columnCount) {
+        if (categoryColumnIndex >= columnCount) {
+            throw new ExcelWriteException("Chart category column " + categoryColumnIndex + " does not exist: the sheet has "
+                    + columnCount + " columns");
+        }
+        for (ValueSeries vs : valueSeries) {
+            if (vs.columnIndex >= columnCount) {
+                throw new ExcelWriteException("Chart value column " + vs.columnIndex + " ('" + vs.title
+                        + "') does not exist: the sheet has " + columnCount + " columns");
+            }
+        }
         if (valueSeries.isEmpty()) return;
         // Without data rows there is nothing to plot, and the range would be reversed.
         if (dataEndRow <= headerRow) return;

@@ -369,9 +369,9 @@ class ExcelWriteSupport {
     }
 
     static void applyChart(SXSSFSheet sheet, @Nullable ExcelChartConfig chartConfig,
-                            int headerRow, int dataEndRow, int nextFreeRow) {
+                            int headerRow, int dataEndRow, int nextFreeRow, int columnCount) {
         if (chartConfig != null) {
-            chartConfig.apply(sheet, headerRow, dataEndRow, nextFreeRow);
+            chartConfig.apply(sheet, headerRow, dataEndRow, nextFreeRow, columnCount);
         }
     }
 
