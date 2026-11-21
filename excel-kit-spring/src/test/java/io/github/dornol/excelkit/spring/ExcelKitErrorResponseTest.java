@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.spring;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
@@ -31,7 +32,7 @@ class ExcelKitErrorResponseTest {
     }
 
     @Test
-    void csv_setsDownloadHeaders() {
+    void csv_setsDownloadHeaders() throws IOException {
         UploadResult<Object> result = new UploadResult<>("CSV", 0, 1, List.of(),
                 List.of(new UploadError(1, 2,
                         io.github.dornol.excelkit.core.RowError.Type.VALIDATION,
@@ -41,10 +42,13 @@ class ExcelKitErrorResponseTest {
 
         assertEquals("text/csv; charset=UTF-8", response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE));
         assertTrue(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION).contains("errors.csv"));
+        String text = StreamedBody.text(response);
+        assertTrue(text.lines().findFirst().orElseThrow().contains("rowNum"), text);
+        assertTrue(text.contains("required"), text);
     }
 
     @Test
-    void errorReports_allowCustomCacheMaxAge() {
+    void errorReports_allowCustomCacheMaxAge() throws IOException {
         var errors = List.of(new UploadError(1, 2,
                 io.github.dornol.excelkit.core.RowError.Type.VALIDATION,
                 List.of("required"), List.of()));
@@ -54,5 +58,9 @@ class ExcelKitErrorResponseTest {
 
         assertEquals("max-age=60", csv.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
         assertEquals("max-age=60", excel.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL));
+        assertTrue(StreamedBody.text(csv).contains("required"));
+        try (var workbook = StreamedBody.workbook(excel)) {
+            assertEquals("Read Errors", workbook.getSheetAt(0).getSheetName());
+        }
     }
 }

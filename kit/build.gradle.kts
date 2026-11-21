@@ -30,6 +30,12 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
+// Test helpers shared with the other modules (TempFileLeakGuard and its registration).
+sourceSets.test {
+    java.srcDir("../test-support/java")
+    resources.srcDir("../test-support/resources")
+}
+
 tasks.test {
     useJUnitPlatform {
         excludeTags("benchmark")

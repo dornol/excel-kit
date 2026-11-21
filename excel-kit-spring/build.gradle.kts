@@ -42,8 +42,22 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
+// Test helpers shared with the other modules (TempFileLeakGuard and its registration).
+sourceSets.test {
+    java.srcDir("../test-support/java")
+    resources.srcDir("../test-support/resources")
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
+    // A private, freshly emptied temp dir per test task, so TempFileLeakGuard counts exactly.
+    val testTemp = layout.buildDirectory.dir("tmp/test-tmp/$name")
+    systemProperty("java.io.tmpdir", testTemp.get().asFile.absolutePath)
+    doFirst {
+        val directory = testTemp.get().asFile
+        check(!directory.exists() || directory.deleteRecursively()) { "Cannot reset test temp directory" }
+        check(directory.mkdirs()) { "Cannot create test temp directory" }
+    }
 }
 
 tasks.test {

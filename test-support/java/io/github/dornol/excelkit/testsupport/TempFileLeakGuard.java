@@ -19,6 +19,9 @@ import java.io.IOException;
  * directly under {@code java.io.tmpdir}; {@code CsvHandler.writeTo} removes it. Those directories
  * are counted too. JUnit's own {@code @TempDir} folders do not match the UUID pattern.
  * <p>
+ * The sources live in {@code test-support/} and are added to the test source set of the {@code kit} and
+ * {@code excel-kit-spring} modules.
+ * <p>
  * Registered through {@code META-INF/services} (auto-detection is enabled in
  * {@code junit-platform.properties}). The Gradle build gives every test JVM its own
  * {@code java.io.tmpdir}, so the count is not affected by other processes. Tests are not run in
