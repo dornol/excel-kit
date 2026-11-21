@@ -187,6 +187,28 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+    // ── Styles ──
+
+    /**
+     * Limits the distinct cell styles this write may create for {@code cellColor}, {@code rowColor} and
+     * {@code rowStyle} results, so that a function returning too many distinct colors fails fast with an
+     * {@link ExcelWriteException} instead of spending minutes creating styles (the time grows with the
+     * square of their number). Defaults to 64,000, the most an .xlsx workbook holds; the count includes the
+     * styles the workbook already has.
+     *
+     * @param maxCellStyles the limit, between 1 and 64,000
+     * @return this writer for chaining
+     * @since 0.27.0
+     */
+    public SELF maxCellStyles(int maxCellStyles) {
+        if (maxCellStyles < 1 || maxCellStyles > ExcelWriteSupport.MAX_CELL_STYLES) {
+            throw new IllegalArgumentException("maxCellStyles must be between 1 and "
+                    + ExcelWriteSupport.MAX_CELL_STYLES + ", got " + maxCellStyles);
+        }
+        cfg.maxCellStyles = maxCellStyles;
+        return self();
+    }
+
     // ── Protection ──
 
     /**

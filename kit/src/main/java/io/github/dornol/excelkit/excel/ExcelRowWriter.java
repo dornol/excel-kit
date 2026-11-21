@@ -38,9 +38,10 @@ final class ExcelRowWriter {
             ExcelColor color = effectiveColor(column, value, row, rowStyle, rowColor);
             if (rowStyle != null && rowStyle.hasAnyStyle())
                 cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(baseStyle, color, rowStyle,
-                        styleCache, workbook));
+                        styleCache, workbook, config.maxCellStyles));
             else if (color != null)
-                cell.setCellStyle(ExcelWriteSupport.resolveColorStyle(baseStyle, color, styleCache, workbook));
+                cell.setCellStyle(ExcelWriteSupport.resolveColorStyle(baseStyle, color, styleCache, workbook,
+                        config.maxCellStyles));
             else cell.setCellStyle(baseStyle);
 
             if (config.autoWidthSampleRows > 0 && cursor.getCurrentTotal() <= config.autoWidthSampleRows)

@@ -162,6 +162,9 @@ writer.rowStyle(p -> p.price() > 10000,
 
 Priority: `cellColor` > `rowStyle` bg > `rowColor` > `backgroundColor`
 
+Each distinct color needs its own cell style, and the time grows with the square of their number (4,000 colors ≈ 10s).
+Return a small palette, and cap it with `writer.maxCellStyles(5_000)` (default 64,000) to fail fast.
+
 ## Header Color (Global)
 
 ```java

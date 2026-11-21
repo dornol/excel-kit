@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `maxCellStyles(int)` on `ExcelWriter` and `ExcelSheetWriter` caps the cell styles a write may create for
+  `cellColor`, `rowColor` and `rowStyle` colors (default 64,000, the .xlsx limit), so a function returning too many
+  distinct colors fails fast instead of spending minutes creating styles.
 - `ReadLimits.UPLOAD`, a preset for files from untrusted users (50 MiB, 50 sheets, 1,000 columns,
   32,767 characters per cell, 10 million cells). Readers still apply no limits unless given some; the
   javadoc and guides now say so.

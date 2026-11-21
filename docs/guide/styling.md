@@ -160,6 +160,14 @@ machine). An .xlsx workbook holds at most 64,000 styles; past that the write fai
 `ExcelWriteException`. Return a palette of a few colors (round values into buckets) instead of a continuous
 gradient.
 
+To fail fast instead of waiting, cap the styles a write may create with `maxCellStyles(n)` (default 64,000):
+
+```java
+ExcelWriter.<Reading>create()
+    .maxCellStyles(5_000)   // a color function returning more distinct colors fails right away
+    .column("Value", Reading::value, c -> c.cellColor((value, row) -> heat(value)));
+```
+
 ## Conditional Row Style
 
 For full row styling (bold, font size, font color, italic, etc.) — not just background color:

@@ -37,6 +37,7 @@ class SheetConfig<T> {
         progressCallback = source.progressCallback;
         progressInterval = source.progressInterval;
         autoWidthSampleRows = source.autoWidthSampleRows;
+        maxCellStyles = source.maxCellStyles;
         sheetPassword = source.sheetPassword;
         conditionalRules = source.conditionalRules == null ? null : List.copyOf(source.conditionalRules);
         chartConfig = source.chartConfig;
@@ -65,6 +66,7 @@ class SheetConfig<T> {
     @Nullable ProgressCallback progressCallback;
     int progressInterval;
     int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
+    int maxCellStyles = ExcelWriteSupport.MAX_CELL_STYLES;
     @Nullable String sheetPassword;
     @Nullable List<ExcelConditionalRule> conditionalRules;
     @Nullable ExcelChartConfig chartConfig;

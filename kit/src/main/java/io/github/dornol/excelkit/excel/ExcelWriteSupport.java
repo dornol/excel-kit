@@ -44,17 +44,18 @@ class ExcelWriteSupport {
      */
     static final int MAX_CELL_STYLES = org.apache.poi.ss.SpreadsheetVersion.EXCEL2007.getMaxCellStyles();
 
-    /** Creates a style for a color or row style, or says why the workbook cannot take another one. */
-    private static CellStyle createDerivedStyle(SXSSFWorkbook wb) {
-        return createDerivedStyle(wb, MAX_CELL_STYLES);
-    }
-
+    /**
+     * Creates a style for a color or row style, or says why the workbook cannot take another one:
+     * {@code maxStyles} is either the .xlsx limit or a lower one the caller asked for.
+     */
     static CellStyle createDerivedStyle(SXSSFWorkbook wb, int maxStyles) {
         if (wb.getNumCellStyles() >= maxStyles) {
-            throw new ExcelWriteException("Too many distinct cell styles: an .xlsx workbook holds at most "
-                    + maxStyles + ". Each distinct color returned by cellColor, rowColor or rowStyle "
-                    + "needs its own style; return fewer distinct colors, for example by rounding values "
-                    + "into a small palette.");
+            String limit = maxStyles >= MAX_CELL_STYLES
+                    ? "an .xlsx workbook holds at most " + MAX_CELL_STYLES
+                    : "maxCellStyles(" + maxStyles + ") allows at most " + maxStyles;
+            throw new ExcelWriteException("Too many distinct cell styles: " + limit
+                    + ". Each distinct color returned by cellColor, rowColor or rowStyle needs its own style; "
+                    + "return fewer distinct colors, for example by rounding values into a small palette.");
         }
         return wb.createCellStyle();
     }
@@ -373,10 +374,10 @@ class ExcelWriteSupport {
     }
 
     static CellStyle resolveColorStyle(CellStyle baseStyle, ExcelColor color,
-                                        Map<String, CellStyle> cache, SXSSFWorkbook wb) {
+                                        Map<String, CellStyle> cache, SXSSFWorkbook wb, int maxStyles) {
         String key = baseStyle.getIndex() + "_" + color.getR() + "_" + color.getG() + "_" + color.getB();
         return cache.computeIfAbsent(key, k -> {
-            CellStyle style = createDerivedStyle(wb);
+            CellStyle style = createDerivedStyle(wb, maxStyles);
             style.cloneStyleFrom(baseStyle);
             style.setFillForegroundColor(new XSSFColor(new byte[]{
                     (byte) color.getR(), (byte) color.getG(), (byte) color.getB()}));
@@ -409,13 +410,13 @@ class ExcelWriteSupport {
 
     static CellStyle resolveRowStyle(CellStyle baseStyle, @Nullable ExcelColor bgColor,
                                       RowStyleConfig rowStyle, Map<String, CellStyle> cache,
-                                      SXSSFWorkbook wb) {
+                                      SXSSFWorkbook wb, int maxStyles) {
         String bgKey = bgColor != null
                 ? bgColor.getR() + "_" + bgColor.getG() + "_" + bgColor.getB()
                 : "none";
         String key = baseStyle.getIndex() + "_" + rowStyle.cacheKey() + "_bg" + bgKey;
         return cache.computeIfAbsent(key, k -> {
-            CellStyle style = createDerivedStyle(wb);
+            CellStyle style = createDerivedStyle(wb, maxStyles);
             style.cloneStyleFrom(baseStyle);
 
             // Background color
