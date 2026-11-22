@@ -46,7 +46,7 @@ tasks.compileJava {
 
 tasks.test {
     useJUnitPlatform {
-        excludeTags("benchmark", "scale")
+        excludeTags("benchmark", "scale", "huge")
     }
     // PackageDependencyTest reads the main sources: an import-only change leaves the compiled classes
     // identical, so without this input the test would be skipped as up to date.
@@ -93,7 +93,7 @@ val poiRuntimeTests = listOf("5.2.5", "5.5.1", "6.0.0").map { poiVersion ->
         testClassesDirs = sourceSets.test.get().output.classesDirs
         classpath = files(sourceSets.test.get().output, tasks.jar.flatMap { it.archiveFile }, runtime)
         useJUnitPlatform {
-            excludeTags("benchmark", "scale")
+            excludeTags("benchmark", "scale", "huge")
         }
     }
 }
@@ -125,6 +125,31 @@ tasks.register<Test>("scaleTest") {
         val directory = scratch.get().asFile
         check(!directory.exists() || directory.deleteRecursively()) { "Cannot reset scale temp directory" }
         check(directory.mkdirs()) { "Cannot create scale temp directory" }
+    }
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+// A worksheet above 4 GiB, the limit of a plain ZIP entry: the archive must stay valid (ZIP64). It writes several
+// gigabytes and takes minutes, so it is separate from `scaleTest`.
+tasks.register<Test>("hugeTest") {
+    group = "verification"
+    description = "Write a worksheet larger than 4 GiB and check the archive"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform {
+        includeTags("huge")
+    }
+    maxHeapSize = "256m"
+    maxParallelForks = 1
+    val scratch = layout.buildDirectory.dir("tmp/huge-tmp")
+    systemProperty("java.io.tmpdir", scratch.get().asFile.absolutePath)
+    providers.gradleProperty("hugeRows").orNull?.let { systemProperty("excelkit.huge.rows", it) }
+    doFirst {
+        val directory = scratch.get().asFile
+        check(!directory.exists() || directory.deleteRecursively()) { "Cannot reset huge temp directory" }
+        check(directory.mkdirs()) { "Cannot create huge temp directory" }
     }
     testLogging {
         showStandardStreams = true
