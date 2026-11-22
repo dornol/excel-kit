@@ -348,7 +348,7 @@ public class TemplateListWriter<T> {
             int lastDataRow = cursor.getRowOfSheet() - 1;
             if (lastDataRow > tableHeaderRow) {
                 StructuredTableWriter.apply(sheet, tableOptions.name(), tableHeaderRow, lastDataRow,
-                        tableHeaders, tableOptions.style(), tableOptions.showRowStripes());
+                        tableHeaders, tableOptions.style(), tableOptions.showRowStripes(), false);
             }
         }
 

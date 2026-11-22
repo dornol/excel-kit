@@ -660,13 +660,13 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     /**
-     * Applies optional sheet-level settings such as auto-filter and freeze panes.
+     * Applies the sheet-level settings that belong at the header, such as freeze panes.
      */
     private void applySheetOptions() {
         ExcelWriteOptions<T> options = executionOptions();
         int headerRowIdx = cursor().getRowOfSheet() - 1;
-        ExcelWriteSupport.applySheetOptions(sheet(), headerRowIdx, options.sheetConfig().autoFilter,
-                options.sheetConfig().freezePaneCols, options.sheetConfig().freezePaneRows, options.columns().size());
+        ExcelWriteSupport.applySheetOptions(sheet(), headerRowIdx,
+                options.sheetConfig().freezePaneCols, options.sheetConfig().freezePaneRows);
     }
 
     /**
@@ -770,7 +770,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             if (target.getLastRowNum() <= headerRowIndex) continue;
             String name = sheets == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
             StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), headers,
-                    tableOptions.style(), tableOptions.showRowStripes());
+                    tableOptions.style(), tableOptions.showRowStripes(), executionOptions().sheetConfig().autoFilter);
         }
     }
 

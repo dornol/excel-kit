@@ -25,6 +25,12 @@ final class ExcelSheetPostProcessor {
         applyDataValidations(sheet, columns, headerRowIndex);
         applyColumnOutline(sheet, columns);
         applyColumnHidden(sheet, columns);
+        // The filter covers the header and the data rows (not the summary below them), as Excel writes it. A table brings
+        // its own filter buttons: see StructuredTableWriter, where a sheet-level filter would overlap the table.
+        if (config.autoFilter && config.tableOptions == null) {
+            sheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(headerRowIndex,
+                    Math.max(headerRowIndex, dataEndRow), 0, columns.size() - 1));
+        }
         if (config.sheetPassword != null) sheet.protectSheet(config.sheetPassword);
         if (config.conditionalRules != null) for (ExcelConditionalRule rule : config.conditionalRules)
             rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow);

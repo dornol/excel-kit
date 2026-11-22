@@ -6,7 +6,7 @@
 
 ```java
 writer
-    .autoFilter(true)    // dropdown filter on header row
+    .autoFilter(true)    // dropdown filter over the header and the data rows
     .freezeRows(1)       // freeze 1 row below the header
     .column("Name", p -> p.name())
     .write(data);
@@ -25,6 +25,11 @@ writer.freezePane(2, 1);     // 2 columns + 1 row
 | `freezePane(c, r)` | c | r |
 
 All three available on `ExcelSheetWriter` too.
+
+The filter covers the header row (the row of the column names, below any group header) and every data row of the sheet,
+as Excel writes it. It stops above the summary rows and anything written by `afterData`, and with `maxRows()` each
+rolled-over sheet filters its own rows. A sheet with a `table(...)` gets its filter buttons from the table itself, since
+a second filter over the same cells would overlap it: `autoFilter(true)` turns them on, and without it the table has none.
 
 ## Column Outline (Grouping)
 

@@ -190,7 +190,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         int headerRowIdx = cursor.getRowOfSheet() - 1;
         // With group headers the column names sit below the group rows: that row is the header row.
         headerRowIndex = headerRowIdx;
-        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
+        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.freezePaneCols, cfg.freezePaneRows);
 
         SXSSFSheet activeSheet = this.sheet;
 
@@ -213,7 +213,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     ExcelHeaderWriter.write(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     headerRowIndex = hdrIdx;
-                    ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.autoFilter, cfg.freezePaneCols, cfg.freezePaneRows, columns.size());
+                    ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.freezePaneCols, cfg.freezePaneRows);
                 }
                 ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
@@ -235,7 +235,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 if (target.getLastRowNum() <= headerRowIndex) continue;
                 String name = allSheets.size() == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
                 StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columns.stream().map(ExcelColumn::getName).toList(),
-                        tableOptions.style(), tableOptions.showRowStripes());
+                        tableOptions.style(), tableOptions.showRowStripes(), cfg.autoFilter);
             }
         }
 

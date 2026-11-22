@@ -132,8 +132,16 @@ class WriterFeatureCombinationTest {
             Feature.writer("autoFilter",
                     w -> w.base().autoFilter(true),
                     (wb, sheets) -> sheets.forEach(s -> {
-                        String ref = s.sheet.getCTWorksheet().getAutoFilter().getRef();
+                        // A table has its own filter buttons and the sheet none, so that the two do not overlap
+                        boolean table = !s.sheet.getTables().isEmpty();
+                        String ref = table ? s.sheet.getTables().get(0).getCTTable().getAutoFilter().getRef()
+                                : s.sheet.getCTWorksheet().getAutoFilter().getRef();
                         assertTrue(ref.startsWith("A" + (s.header + 1) + ":"), "auto filter " + ref + " starts at header row " + (s.header + 1));
+                        if (!table) {
+                            assertTrue(ref.endsWith(String.valueOf(s.lastData() + 1)),
+                                    "auto filter " + ref + " ends at the last data row " + (s.lastData() + 1));
+                        }
+                        assertTrue(!table || s.sheet.getCTWorksheet().getAutoFilter() == null, "no sheet-level filter over a table");
                     })),
             Feature.writer("summary",
                     w -> w.base().summary(s -> s.sum("Score")),

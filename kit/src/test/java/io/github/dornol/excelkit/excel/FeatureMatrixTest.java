@@ -181,7 +181,17 @@ class FeatureMatrixTest {
             assertEquals(on(mask, Feature.TABLE) ? 1 : 0, pkg.select(part, OoxmlStructureTest.local("tablePart")).size(), at + " table in " + part);
             assertEquals(on(mask, Feature.PROTECT) ? 1 : 0, pkg.select(part, OoxmlStructureTest.local("sheetProtection")).size(), at + " protection in " + part);
             assertEquals(on(mask, Feature.CONDITIONAL) ? 1 : 0, pkg.select(part, OoxmlStructureTest.local("conditionalFormatting")).size(), at + " formatting in " + part);
-            assertEquals(on(mask, Feature.SHEET_OPTIONS) ? 1 : 0, pkg.select(part, OoxmlStructureTest.local("autoFilter")).size(), at + " filter in " + part);
+            // a table has the filter buttons itself, so that the sheet's filter does not overlap it
+            boolean table = on(mask, Feature.TABLE);
+            assertEquals(on(mask, Feature.SHEET_OPTIONS) && !table ? 1 : 0, pkg.select(part, OoxmlStructureTest.local("autoFilter")).size(), at + " filter in " + part);
+            if (on(mask, Feature.SHEET_OPTIONS) && !table) {
+                // the filter covers the header rows and the data rows of this sheet, not the summary below them
+                int sheetNumber = sheetParts.indexOf(part);
+                int dataRowsHere = Math.min(maxRows > 0 ? maxRows : ROWS, ROWS - sheetNumber * (maxRows > 0 ? maxRows : ROWS));
+                String ref = pkg.select(part, OoxmlStructureTest.local("autoFilter")).get(0).getAttribute("ref");
+                int headerRows = on(mask, Feature.GROUP) ? 2 : 1;
+                assertEquals("A" + headerRows + ":" + (on(mask, Feature.ROW_NUMBER) ? "C" : "B") + (headerRows + dataRowsHere), ref, at + " filter range in " + part);
+            }
             assertEquals(on(mask, Feature.SHEET_OPTIONS) ? 1 : 0, pkg.select(part, OoxmlStructureTest.local("pane")).size(), at + " pane in " + part);
             assertEquals(on(mask, Feature.CHART) ? 1 : 0, pkg.select(part, OoxmlStructureTest.local("drawing")).size(), at + " drawing in " + part);
         }

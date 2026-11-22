@@ -46,8 +46,12 @@ final class StructuredTableWriter {
         return List.copyOf(headers);
     }
 
+    /**
+     * @param filterButtons whether the table shows filter buttons in its header row; Excel keeps them in the table
+     *                      itself, so this is a table setting and not a filter of the sheet
+     */
     static void apply(SXSSFSheet sheet, String name, int headerRow, int lastRow, List<String> headers,
-                      String style, boolean rowStripes) {
+                      String style, boolean rowStripes, boolean filterButtons) {
         int columns = headers.size();
         if (columns == 0 || lastRow <= headerRow) return;
         XSSFSheet xssf = SXSSFSheetHelper.getXSSFSheet(sheet);
@@ -71,5 +75,6 @@ final class StructuredTableWriter {
                 ? table.getCTTable().getTableStyleInfo() : table.getCTTable().addNewTableStyleInfo();
         styleInfo.setName(style);
         styleInfo.setShowRowStripes(rowStripes);
+        if (filterButtons) table.getCTTable().addNewAutoFilter().setRef(area.formatAsString());
     }
 }

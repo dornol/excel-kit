@@ -324,9 +324,8 @@ class OoxmlStructureTest {
         assertEquals("frozen", pane.getAttribute("state"));
         assertEquals("C2", pane.getAttribute("topLeftCell"));
 
-        // The filter covers the header row only (the data is streamed, so the row count is not known when it is
-        // set); whether Excel/LibreOffice extend it over the data on filtering is not verified here.
-        assertEquals("A1:C1", pkg.select("xl/worksheets/sheet1.xml", local("autoFilter")).get(0).getAttribute("ref"));
+        // The filter covers the header and the 5 data rows, as Excel writes it
+        assertEquals("A1:C6", pkg.select("xl/worksheets/sheet1.xml", local("autoFilter")).get(0).getAttribute("ref"));
         String tab = pkg.select("xl/worksheets/sheet1.xml", local("tabColor")).get(0).getAttribute("rgb");
         assertTrue(tab.equals("FF0000") || tab.equals("FFFF0000"), "tab colour " + tab); // alpha is optional
         // autoFilter needs a hidden built-in name or Excel drops the filter on open

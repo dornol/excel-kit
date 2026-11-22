@@ -68,11 +68,8 @@ class ExcelWriteSupport {
         return row;
     }
 
-    static void applySheetOptions(SXSSFSheet sheet, int headerRowIdx,
-                                   boolean autoFilter, int freezePaneCols, int freezePaneRows, int columnCount) {
-        if (autoFilter) {
-            sheet.setAutoFilter(new CellRangeAddress(headerRowIdx, headerRowIdx, 0, columnCount - 1));
-        }
+    /** What a sheet needs as soon as its header is written. The filter waits for the data: see {@code ExcelSheetPostProcessor}. */
+    static void applySheetOptions(SXSSFSheet sheet, int headerRowIdx, int freezePaneCols, int freezePaneRows) {
         if (freezePaneCols > 0 || freezePaneRows > 0) {
             sheet.createFreezePane(freezePaneCols, headerRowIdx + freezePaneRows);
         }
