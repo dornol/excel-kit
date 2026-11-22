@@ -15,7 +15,7 @@ import java.util.UUID;
  * <p>
  * The content goes to a temporary sibling file first and replaces the target only after the
  * write succeeded. If the write fails (or the handler was already consumed), the target is left
- * untouched and no partial file remains. Targets that are not regular files (for example
+ * untouched and no partial file remains. An existing target keeps its permissions. Targets that are not regular files (for example
  * {@code /dev/stdout}) are written directly.
  *
  * @since 0.25.0
@@ -42,6 +42,7 @@ public final class AtomicFileWriter {
                     StandardOpenOption.WRITE)) {
                 writer.write(out);
             }
+            keepPermissions(destination, temp);
             try {
                 Files.move(temp, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (AtomicMoveNotSupportedException e) {
@@ -49,6 +50,16 @@ public final class AtomicFileWriter {
             }
         } finally {
             Files.deleteIfExists(temp);
+        }
+    }
+
+    /** Overwriting a file in place keeps its mode, so replacing it must too. */
+    private static void keepPermissions(Path existing, Path replacement) {
+        if (!Files.isRegularFile(existing)) return;
+        try {
+            Files.setPosixFilePermissions(replacement, Files.getPosixFilePermissions(existing));
+        } catch (UnsupportedOperationException | IOException e) {
+            // Not a POSIX file system, or the mode cannot be read or set: keep the default permissions.
         }
     }
 
