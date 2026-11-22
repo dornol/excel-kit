@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.excel.read;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
 import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.read.ReadLimits;
-import io.github.dornol.excelkit.core.io.TempResourceCreator;
+import io.github.dornol.excelkit.core.io.TempWorkspace;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.util.XMLHelper;
@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Looks at a workbook without reading its rows: which sheets it has and what a sheet's header row says.
@@ -249,23 +248,14 @@ public final class ExcelWorkbookInspector {
 
     /** Copies the stream to a temp file (within the byte limit), decrypts if needed, and runs the operation. */
     private <R> R withWorkbook(InputStream inputStream, String message, WorkbookOperation<R> operation) {
-        Path tempDir = null;
-        Path tempFile = null;
-        Path decrypted = null;
-        try {
-            tempDir = TempResourceCreator.createTempDirectory();
-            tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            ExcelInputCopy.copy(inputStream, tempFile, limits.maxInputBytes());
-            if (password == null) return operation.apply(tempFile);
-            decrypted = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            ExcelReadSupport.decrypt(tempFile, password, decrypted);
-            return operation.apply(decrypted);
+        try (TempWorkspace workspace = TempWorkspace.create()) {
+            Path copy = workspace.newFile("workbook-", ".xlsx");
+            ExcelInputCopy.copy(inputStream, copy, limits.maxInputBytes());
+            return operate(workspace, copy, message, operation);
         } catch (ExcelReadException | ReadLimitExceededException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException(message, e);
-        } finally {
-            cleanup(tempDir, decrypted, tempFile);
         }
     }
 
@@ -290,42 +280,25 @@ public final class ExcelWorkbookInspector {
                 throw new ExcelReadException(message, e);
             }
         }
-        Path tempDir = null;
-        Path decrypted = null;
-        try {
-            tempDir = TempResourceCreator.createTempDirectory();
-            decrypted = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            ExcelReadSupport.decrypt(path, password, decrypted);
-            return operation.apply(decrypted);
+        try (TempWorkspace workspace = TempWorkspace.create()) {
+            return operate(workspace, path, message, operation);
         } catch (ExcelReadException | ReadLimitExceededException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException(message, e);
-        } finally {
-            cleanup(tempDir, decrypted);
         }
+    }
+
+    /** Runs the operation on the workbook, decrypted into the workspace first when a password was set. */
+    private <R> R operate(TempWorkspace workspace, Path workbook, String message, WorkbookOperation<R> operation)
+            throws Exception {
+        return operation.apply(password == null ? workbook
+                : ExcelReadSupport.decryptInto(workspace, workbook, password));
     }
 
     private static void validateIndexes(int sheetIndex, int headerRowIndex) {
         if (sheetIndex < 0) throw new IllegalArgumentException("sheetIndex must be non-negative");
         if (headerRowIndex < 0) throw new IllegalArgumentException("headerRowIndex must be non-negative");
-    }
-
-    /** Deletes the files, then the directory that held them. */
-    private static void cleanup(Path tempDir, Path... files) {
-        for (Path file : files) {
-            if (file == null) continue;
-            try {
-                Files.deleteIfExists(file);
-            } catch (IOException e) {
-                file.toFile().deleteOnExit();
-            }
-        }
-        try {
-            if (tempDir != null) Files.deleteIfExists(tempDir);
-        } catch (IOException e) {
-            tempDir.toFile().deleteOnExit();
-        }
     }
 
     @FunctionalInterface

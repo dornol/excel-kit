@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel.read;
 
+import io.github.dornol.excelkit.core.io.TempWorkspace;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -43,6 +44,12 @@ class ExcelReadSupport {
      *
      * @throws ExcelReadException if the password is wrong
      */
+    static Path decryptInto(TempWorkspace workspace, Path encrypted, String password) throws Exception {
+        Path target = workspace.newFile("decrypted-", ".xlsx");
+        decrypt(encrypted, password, target);
+        return target;
+    }
+
     static void decrypt(Path encrypted, String password, Path target) throws Exception {
         try (POIFSFileSystem fs =
                      new POIFSFileSystem(encrypted.toFile(), true)) {

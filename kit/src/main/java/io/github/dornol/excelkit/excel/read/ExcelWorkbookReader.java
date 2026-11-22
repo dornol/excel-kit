@@ -2,8 +2,7 @@ package io.github.dornol.excelkit.excel.read;
 
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
-import io.github.dornol.excelkit.core.io.TempResourceCreator;
-import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.io.TempWorkspace;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.core.read.ReadSummary;
 import io.github.dornol.excelkit.core.read.RowError;
@@ -13,7 +12,6 @@ import org.apache.poi.openxml4j.opc.PackageAccess;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -111,16 +109,12 @@ public final class ExcelWorkbookReader {
      */
     public WorkbookReadReport read(InputStream input) {
         Objects.requireNonNull(input, "input cannot be null");
-        Path directory = null;
-        try {
-            directory = TempResourceCreator.createTempDirectory();
-            Path temp = TempResourceCreator.createTempFile(directory, "excel-kit-workbook-", ".xlsx");
-            ExcelInputCopy.copy(input, temp, inputByteLimit());
-            return read(temp);
+        try (TempWorkspace workspace = TempWorkspace.create()) {
+            Path copy = workspace.newFile("excel-kit-workbook-", ".xlsx");
+            ExcelInputCopy.copy(input, copy, inputByteLimit());
+            return read(copy);
         } catch (IOException e) {
             throw new ExcelKitException("Failed to prepare workbook input", e);
-        } finally {
-            deleteQuietly(directory);
         }
     }
 
@@ -136,16 +130,6 @@ public final class ExcelWorkbookReader {
             limit = Math.max(limit, maximum);
         }
         return plans.isEmpty() ? -1 : limit;
-    }
-
-    private static void deleteQuietly(@Nullable Path directory) {
-        if (directory == null) return;
-        try (var children = Files.list(directory)) {
-            for (Path child : (Iterable<Path>) children::iterator) Files.deleteIfExists(child);
-            Files.deleteIfExists(directory);
-        } catch (IOException ignored) {
-            // Nothing more can be done; the temp directory is under the system temp location.
-        }
     }
 
     /** Like {@link #read(InputStream)}, for a source whose stream is opened and closed here. */
@@ -166,7 +150,26 @@ public final class ExcelWorkbookReader {
      */
     public WorkbookReadReport read(Path path) {
         Objects.requireNonNull(path, "path cannot be null");
-        List<ExcelSheetInfo> sheets = sheetNames(path);
+        String password = sharedPassword();
+        if (password == null) return readPlain(path);
+        // An encrypted workbook is decrypted once here; every sheet then reads the same plain copy.
+        try (TempWorkspace workspace = TempWorkspace.create()) {
+            Path decrypted = ExcelReadSupport.decryptInto(workspace, path, password);
+            plans.forEach(plan -> plan.execution.decryptedInput(true));
+            try {
+                return readPlain(decrypted);
+            } finally {
+                plans.forEach(plan -> plan.execution.decryptedInput(false));
+            }
+        } catch (ExcelKitException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelKitException("Failed to open workbook", e);
+        }
+    }
+
+    private WorkbookReadReport readPlain(Path path) {
+        List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(path);
         List<SheetReadReport> reports = new ArrayList<>();
         boolean sharePackage = !plans.isEmpty() && plans.stream().allMatch(SheetPlan::canSharePackage);
         try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile(), PackageAccess.READ) : null) {
@@ -204,14 +207,10 @@ public final class ExcelWorkbookReader {
         return new WorkbookReadReport(reports);
     }
 
-    /**
-     * The sheets of the workbook. An encrypted workbook is listed with the password of the readers that were
-     * registered for it (all sheets of one file share one password).
-     */
-    private List<ExcelSheetInfo> sheetNames(Path path) {
-        String password = plans.stream().map(plan -> plan.execution.password()).filter(Objects::nonNull)
+    /** The password of the registered readers (all sheets of one file share one password), or {@code null}. */
+    private @Nullable String sharedPassword() {
+        return plans.stream().map(plan -> plan.execution.password()).filter(Objects::nonNull)
                 .findFirst().orElse(null);
-        return ExcelWorkbookInspector.create().password(password).sheetNames(path);
     }
 
     private @Nullable Integer findSheetIndex(@Nullable String name, List<ExcelSheetInfo> sheets) {
@@ -274,6 +273,9 @@ public final class ExcelWorkbookReader {
 
         default long maxInputBytes() { return -1; }
 
+        /** Tells the reader that the file it is given is already decrypted, so it must not decrypt it again. */
+        default void decryptedInput(boolean decrypted) { }
+
         default @Nullable String password() { return null; }
 
         default SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg) {
@@ -303,6 +305,11 @@ public final class ExcelWorkbookReader {
         @Override
         public long maxInputBytes() {
             return reader.maxInputBytes();
+        }
+
+        @Override
+        public void decryptedInput(boolean decrypted) {
+            reader.decryptedInput(decrypted);
         }
 
         @Override

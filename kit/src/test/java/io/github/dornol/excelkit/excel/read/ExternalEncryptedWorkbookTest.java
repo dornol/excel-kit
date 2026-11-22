@@ -4,9 +4,7 @@ import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.core.read.ReadSecurityException;
 import io.github.dornol.excelkit.core.read.ReadSecurityPolicy;
 import io.github.dornol.excelkit.core.read.RowData;
-import io.github.dornol.excelkit.core.io.TempResourceAccess;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
-import io.github.dornol.excelkit.core.io.TempResourceContainer;
 import io.github.dornol.excelkit.excel.read.ExcelReadException;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
@@ -34,16 +32,14 @@ class ExternalEncryptedWorkbookTest {
             var input = new TrackedInput(original);
             try (var session = inputKind == 0 ? reader.open(file)
                     : inputKind == 1 ? reader.open(input) : reader.open((InputStreamSource) () -> input)) {
-                var container = (TempResourceContainer) session;
-                var directory = new AtomicReference<Path>();
+                var copiesWhileReading = new AtomicReference<Long>();
                 session.read(row -> {
                     assertTrue(row.success());
-                    directory.set(TempResourceAccess.tempDir(container));
-                    assertTrue(Files.isDirectory(directory.get()));
+                    copiesWhileReading.set(decryptedCopies());
                     rows.add(row);
                 });
-                assertNotNull(directory.get());
-                assertFalse(Files.exists(directory.get()), "Decryption workspace must be removed");
+                assertEquals(1L, copiesWhileReading.get(), "The rows are read from one decrypted copy");
+                assertEquals(0L, decryptedCopies(), "Decryption workspace must be removed");
             }
             assertEquals(4, rows.size());
             assertEquals("This WB was created with Excel for Mac 2011", rows.get(2).data().get(1).asString());
@@ -67,11 +63,9 @@ class ExternalEncryptedWorkbookTest {
             var reader = ExcelReader.forMap().password(FIXTURE_PASSWORD)
                     .securityPolicy(new ReadSecurityPolicy(true, true, 1_000_000, 2_000_000, 100, 1));
             try (var session = pathInput ? reader.open(file) : reader.open(new ByteArrayInputStream(original))) {
-                var container = (TempResourceContainer) session;
                 var error = assertThrows(ReadSecurityException.class, () -> session.read(row -> fail("No rows before validation")));
                 assertEquals(ReadSecurityException.Reason.ZIP_ENTRIES, error.reason());
-                assertNotNull(TempResourceAccess.tempDir(container));
-                assertFalse(Files.exists(TempResourceAccess.tempDir(container)), "Rejected plaintext and its directory must be removed");
+                assertEquals(0L, decryptedCopies(), "Rejected plaintext and its directory must be removed");
             }
             assertArrayEquals(original, Files.readAllBytes(file));
         }
@@ -85,6 +79,15 @@ class ExternalEncryptedWorkbookTest {
                 .password("incorrect").read(file, row -> fail()));
         assertTrue(error.getMessage().contains("password"));
         assertArrayEquals(original, Files.readAllBytes(file));
+    }
+
+    /** The decrypted copies that exist right now under this test JVM's temp directory. */
+    private static long decryptedCopies() {
+        try (var paths = Files.walk(Path.of(System.getProperty("java.io.tmpdir")), 3)) {
+            return paths.filter(path -> path.getFileName().toString().startsWith("decrypted-")).count();
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
     }
 
     private static Path fixture() throws Exception {

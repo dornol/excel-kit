@@ -2,7 +2,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.io.TempResourceCreator;
+import io.github.dornol.excelkit.core.io.TempWorkspace;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,14 +21,12 @@ import java.nio.file.Path;
 import io.github.dornol.excelkit.core.ProgressCallback;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -371,43 +369,25 @@ public class CsvWriter<T> {
             throw new CsvWriteException("columns setting required");
         }
         validateUniqueColumnNames();
-        Path tempDir = TempResourceCreator.createTempDirectory();
-        Path tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".csv");
+        TempWorkspace workspace = TempWorkspace.create();
+        Path tempFile = workspace.newFile("csv-", ".csv");
 
         try (OutputStream os = Files.newOutputStream(tempFile)) {
             writeTempFile(stream, os, options);
         } catch (IOException | RuntimeException e) {
-            cleanup(tempDir);
+            workspace.close();
             if (e instanceof CsvWriteException writeException) throw writeException;
             throw new CsvWriteException("Failed to write CSV", e);
         }
 
-        return new CsvHandler(tempDir, tempFile);
+        // The handler owns the directory and the file from here on and removes them when it is closed.
+        return new CsvHandler(workspace.directory(), tempFile);
     }
 
     /** Writes rows from an Iterable without copying them. */
     public CsvHandler write(Iterable<T> rows) {
         Objects.requireNonNull(rows, "rows cannot be null");
         return write(StreamSupport.stream(rows.spliterator(), false));
-    }
-
-    private void cleanup(Path tempDir) {
-        try {
-            try (var files = Files.walk(tempDir)) {
-                files.sorted(Comparator.reverseOrder())
-                        .forEach(path -> {
-                            try {
-                                Files.deleteIfExists(path);
-                            } catch (IOException e) {
-                                log.warn("Failed to delete temp path: {}", path, e);
-                                path.toFile().deleteOnExit();
-                            }
-                        });
-            }
-        } catch (IOException e) {
-            log.warn("Failed to walk temp dir for cleanup: {}", tempDir, e);
-            tempDir.toFile().deleteOnExit();
-        }
     }
 
     /**

@@ -1,11 +1,7 @@
 package io.github.dornol.excelkit.core.io;
 
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -22,7 +18,6 @@ public class TempResourceContainer implements AutoCloseable {
     /** Creates a new empty temp resource container. */
     public TempResourceContainer() {}
 
-    private static final Logger log = LoggerFactory.getLogger(TempResourceContainer.class);
     private @Nullable Path tempDir;
     private @Nullable Path tempFile;
     private boolean ownsFile = true;
@@ -90,21 +85,7 @@ public class TempResourceContainer implements AutoCloseable {
      * @param dir  the directory to delete, or null
      */
     protected static void releaseQuietly(@Nullable Path file, @Nullable Path dir) {
-        if (file != null) {
-            try {
-                Files.deleteIfExists(file);
-            } catch (IOException e) {
-                log.warn("Failed to delete temp file: {}", file, e);
-                file.toFile().deleteOnExit();
-            }
-        }
-        if (dir != null) {
-            try {
-                Files.deleteIfExists(dir);
-            } catch (IOException e) {
-                log.warn("Failed to delete temp dir: {}", dir, e);
-                dir.toFile().deleteOnExit();
-            }
-        }
+        if (file != null) TempWorkspace.deleteQuietly(file);
+        if (dir != null) TempWorkspace.deleteQuietly(dir);
     }
 }

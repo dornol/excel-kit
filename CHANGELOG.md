@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - `ExcelWorkbookInspector` (`io.github.dornol.excelkit.excel.read`): sheet discovery with its settings on the object. `create().password(...).limits(...)` then `sheetNames(...)` / `headers(..., sheetIndex, headerRowIndex)` for an `InputStream`, a `Path` or an `InputStreamSource`. With `limits(...)` the copy of a stream stops at `maxInputBytes`, a file above it is refused before it is opened, and more sheets than `maxSheets` or a header row wider than `maxColumns` fails with `ReadLimitExceededException`. A `Path` is opened in place; it used to be copied to a temp file, and `ExcelWorkbookReader.read(Path)` copied the same file twice.
 
 ### Changed
+- `TempWorkspace` (`core.io`): a private temp directory that is removed with everything in it when it is closed. Every place that created a temp directory and cleaned it up by hand now uses it (encrypted writes, CSV writes, decrypting a workbook for reading, stream copies for `ExcelWorkbookReader` and `ExcelWorkbookInspector`), so the cleanup rules exist once.
 - The read, `readAll`, `readStrict`, `readWhile`, `readWithSummary`, `readReport` and `open` overloads for an `InputStream`, a `Path` and an `InputStreamSource` are implemented once in `AbstractReader` instead of twice (`ExcelReader` and `CsvReader` held identical copies). Their signatures and behaviour are unchanged. **Breaking for subclasses of `AbstractReader`:** it now has three abstract hooks, `createHandler(InputStream)`, `createHandler(Path)` and `openFailure(IOException)`. `AbstractReadHandler.wasStoppedEarly()` is public.
 - **Breaking:** `ExcelReader.getSheetNames(...)` and `getSheetHeaders(...)` (12 overloads) are removed; use `ExcelWorkbookInspector.create()[.password(...)].sheetNames(...)` / `.headers(...)`. Discovery is a question about the file, not about one sheet's mapping, so it no longer lives on the single-sheet reader.
 - **Breaking:** `io.github.dornol.excelkit.core` is split by purpose (change the imports; names are unchanged):
@@ -37,6 +38,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- `ExcelWorkbookReader.read(Path|InputStream)` of a password-protected workbook decrypts the file once and reads every sheet from that copy. It used to decrypt it again for the sheet list and for each sheet, which is a full decryption per sheet.
 - `ExcelWorkbookReader.read(InputStream)` now stops copying once the input exceeds the readers' `ReadLimits.maxInputBytes` (it used to copy the whole stream first) and keeps the copy in a restricted-permission temp directory.
 - A summary row's default label (`Min`, `Max`, ...) no longer depends on the JVM locale (it was `Mın` under a Turkish locale).
 - `ExcelWriter.write(Stream, ...)` now also releases the workbook's temp files when an `Error` such as `OutOfMemoryError` is thrown.

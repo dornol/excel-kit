@@ -13,7 +13,7 @@ import io.github.dornol.excelkit.core.read.ReadStoppedException;
 import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.read.ReadSecurityException;
 import io.github.dornol.excelkit.core.read.CellError;
-import io.github.dornol.excelkit.core.io.TempResourceCreator;
+import io.github.dornol.excelkit.core.io.TempWorkspace;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Comment;
@@ -31,13 +31,10 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.UUID;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -169,26 +166,19 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
-        Path fileToRead = getTempFile();
-        Path decryptedFile = null;
-        try {
-            if (password != null) {
-                decryptedFile = decryptFile(getTempFile(), password);
-                fileToRead = decryptedFile;
-            }
-            ExcelSecurityScanner.scan(fileToRead, readOptions.securityPolicy());
-            try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile(), PackageAccess.READ)) {
-                readPackage(pkg, consumer);
-            }
-        } finally {
-            if (decryptedFile != null) {
-                try {
-                    Files.deleteIfExists(decryptedFile);
-                } catch (IOException e) {
-                    log.warn("Failed to delete decrypted temp file: {}", decryptedFile, e);
-                    decryptedFile.toFile().deleteOnExit();
-                }
-            }
+        if (password == null) {
+            scanAndRead(getTempFile(), consumer);
+            return;
+        }
+        try (TempWorkspace workspace = TempWorkspace.create()) {
+            scanAndRead(ExcelReadSupport.decryptInto(workspace, getTempFile(), password), consumer);
+        }
+    }
+
+    private void scanAndRead(Path file, Consumer<ReadResult<T>> consumer) throws Exception {
+        ExcelSecurityScanner.scan(file, readOptions.securityPolicy());
+        try (OPCPackage pkg = OPCPackage.open(file.toFile(), PackageAccess.READ)) {
+            readPackage(pkg, consumer);
         }
     }
 
@@ -346,26 +336,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     }
 
-
-    private Path decryptFile(Path encryptedFile, String pwd) throws Exception {
-        Path decryptedFile = null;
-        try {
-            if (getTempDir() == null) setTempDir(TempResourceCreator.createTempDirectory());
-            decryptedFile = TempResourceCreator.createTempFile(
-                    getTempDir(), UUID.randomUUID().toString(), ".xlsx");
-            ExcelReadSupport.decrypt(encryptedFile, pwd, decryptedFile);
-            return decryptedFile;
-        } catch (Exception failure) {
-            if (decryptedFile != null) {
-                try { Files.deleteIfExists(decryptedFile); }
-                catch (IOException cleanup) {
-                    decryptedFile.toFile().deleteOnExit();
-                    failure.addSuppressed(cleanup);
-                }
-            }
-            throw failure;
-        }
-    }
 
     /**
      * Internal handler for row-by-row Excel parsing.

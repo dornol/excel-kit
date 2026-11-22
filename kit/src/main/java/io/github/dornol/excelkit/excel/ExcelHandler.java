@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.core.AtomicFileWriter;
 import io.github.dornol.excelkit.core.FileHandler;
 import io.github.dornol.excelkit.core.io.TempResourceCleaner;
-import io.github.dornol.excelkit.core.io.TempResourceCreator;
+import io.github.dornol.excelkit.core.io.TempWorkspace;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.crypt.EncryptionMode;
 import org.apache.poi.poifs.crypt.Encryptor;
@@ -359,9 +359,8 @@ public final class ExcelHandler implements FileHandler {
     private void encryptAndWrite(OutputStream outputStream, String password) throws IOException {
         markConsumed();
 
-        Path tempDir = TempResourceCreator.createTempDirectory();
-        Path tempFile = TempResourceCreator.createTempFile(tempDir, "excel-enc", ".tmp");
-        try {
+        try (TempWorkspace workspace = TempWorkspace.create()) {
+            Path tempFile = workspace.newFile("excel-enc", ".tmp");
             // Write workbook to temp file first to free SXSSFWorkbook memory
             try (OutputStream tempOut = Files.newOutputStream(tempFile)) {
                 wb.write(tempOut);
@@ -388,20 +387,6 @@ public final class ExcelHandler implements FileHandler {
                 }
 
                 fs.writeFilesystem(outputStream);
-            }
-        } finally {
-            // Clean up temp resources
-            try {
-                Files.deleteIfExists(tempFile);
-            } catch (IOException e) {
-                log.warn("Failed to delete temp file: {}", tempFile, e);
-                tempFile.toFile().deleteOnExit();
-            }
-            try {
-                Files.deleteIfExists(tempDir);
-            } catch (IOException e) {
-                log.warn("Failed to delete temp dir: {}", tempDir, e);
-                tempDir.toFile().deleteOnExit();
             }
         }
     }

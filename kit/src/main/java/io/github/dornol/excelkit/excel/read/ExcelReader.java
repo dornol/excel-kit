@@ -36,6 +36,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private int headerRows = 1;
     private boolean countRows = false;
     private @Nullable String password;
+    private boolean inputDecrypted;
 
     /**
      * Constructs an ExcelReader in setter mode with instance supplier and optional validator.
@@ -324,7 +325,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private ExcelReadSessionConfig<T> sessionConfig() {
         return new ExcelReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
                 instanceSupplier, rowMapper, configuredValidator(), sheetIndex, configuredHeaderRowIndex(), headerRows,
-                password, countRows,
+                inputDecrypted ? null : password, countRows,
                 configuredSelectedMapColumns(), snapshotReadOptions());
     }
 
@@ -334,7 +335,12 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     boolean canSharePackage() {
-        return password == null;
+        return password == null || inputDecrypted;
+    }
+
+    /** Set while a workbook reader hands this reader a file it has already decrypted. */
+    void decryptedInput(boolean decrypted) {
+        this.inputDecrypted = decrypted;
     }
 
     /** The password this reader opens an encrypted workbook with, or {@code null}. */

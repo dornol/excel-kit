@@ -68,6 +68,44 @@ class ExcelWorkbookReaderEncryptedTest {
     }
 
     @Test
+    void theWorkbookIsDecryptedOnceNoMatterHowManySheetsAreRead() throws IOException {
+        Path file = encryptedWorkbook();
+        var copies = new java.util.HashSet<Path>();
+
+        ExcelWorkbookReader.create()
+                .sheet("Numbers", reader("secret"), result -> copies.addAll(decryptedCopies()))
+                .sheet("Other", reader("secret"), result -> copies.addAll(decryptedCopies()))
+                .sheet(0, reader("secret"), result -> copies.addAll(decryptedCopies()))
+                .read(file);
+
+        assertEquals(1, copies.size(), "every sheet reads the same decrypted copy: " + copies);
+        assertEquals(List.of(), decryptedCopies(), "and it is gone afterwards");
+    }
+
+    @Test
+    void theReadersKeepTheirPasswordForTheNextRead() throws IOException {
+        Path file = encryptedWorkbook();
+        var reader = reader("secret");
+        var first = new ArrayList<Integer>();
+        var second = new ArrayList<Integer>();
+
+        ExcelWorkbookReader.create().sheet("Other", reader, r -> first.add(r.data().number)).read(file);
+        // The same reader, now used directly on the encrypted file: it must still decrypt it itself.
+        reader.sheetIndex(1).read(file, r -> second.add(r.data().number));
+
+        assertEquals(List.of(7, 8), first);
+        assertEquals(List.of(7, 8), second);
+    }
+
+    private static List<Path> decryptedCopies() {
+        try (var paths = Files.walk(Path.of(System.getProperty("java.io.tmpdir")), 3)) {
+            return paths.filter(path -> path.getFileName().toString().startsWith("decrypted-")).toList();
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
+    @Test
     void anInputStreamIsReadToo() throws IOException {
         Path file = encryptedWorkbook();
         List<Integer> other = new ArrayList<>();
