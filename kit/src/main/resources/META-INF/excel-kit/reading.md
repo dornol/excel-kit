@@ -209,8 +209,8 @@ List<String> headers = inspector.headers(inputStream, sheetIndex, headerRowIndex
 ```
 
 `InputStream`, `Path` and `InputStreamSource` overloads. Encrypted workbook: `.password("secret")` on the inspector.
-Untrusted upload: `.limits(ReadLimits.UPLOAD)` stops the copy at `maxInputBytes` and refuses too many sheets or columns
-with `ReadLimitExceededException`. `ExcelWorkbookReader` uses the password of the readers it is given.
+Untrusted upload: `.limits(ReadLimits.UPLOAD)` stops the copy at `maxInputBytes` and refuses more than `maxSheets` sheets
+or a header wider than `maxColumns` with `ReadLimitExceededException`. `ExcelWorkbookReader` uses the password of the readers it is given.
 
 ## Bean Validation
 

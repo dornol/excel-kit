@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -248,10 +249,75 @@ public final class ExcelHandler implements FileHandler {
 
     private void writePlain(OutputStream outputStream) throws IOException {
         markConsumed();
+        FirstFailureOutputStream recording = new FirstFailureOutputStream(outputStream);
         try {
-            wb.write(outputStream);
+            wb.write(recording);
+        } catch (IOException e) {
+            throw recording.reportedAs(e);
         } finally {
             closeConsumedWorkbook();
+        }
+    }
+
+    /**
+     * Remembers the first {@link IOException} of the stream it wraps. When that stream fails (a client that went
+     * away, a full disk) POI's ZIP writer reports a later, unrelated error while it cleans up ("This archive contains
+     * unclosed entries."); the caller needs the stream's own failure.
+     */
+    private static final class FirstFailureOutputStream extends FilterOutputStream {
+        private @Nullable IOException first;
+
+        FirstFailureOutputStream(OutputStream out) {
+            super(out);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            try {
+                out.write(b);
+            } catch (IOException e) {
+                throw remember(e);
+            }
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            try {
+                out.write(b, off, len);
+            } catch (IOException e) {
+                throw remember(e);
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            try {
+                out.flush();
+            } catch (IOException e) {
+                throw remember(e);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                out.close();
+            } catch (IOException e) {
+                throw remember(e);
+            }
+        }
+
+        private IOException remember(IOException e) {
+            if (first == null) first = e;
+            return e;
+        }
+
+        /** The stream's own failure when it had one, with the failure that was reported attached to it. */
+        IOException reportedAs(IOException reported) {
+            IOException own = first;
+            if (own == null || own == reported) return reported;
+            own.addSuppressed(reported);
+            return own;
         }
     }
 

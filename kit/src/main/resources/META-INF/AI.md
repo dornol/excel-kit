@@ -202,7 +202,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   1,000 columns, 32,767 characters per cell, 10 million cells) and, for Excel, `securityPolicy(ReadSecurityPolicy.STRICT)`.
 - **Sheet discovery** — `ExcelWorkbookInspector.create().sheetNames(input)` / `.headers(input, sheetIndex, headerRowIndex)`
   (`InputStream`, `Path`, `InputStreamSource`). `.password(...)` opens an encrypted workbook; `.limits(ReadLimits.UPLOAD)`
-  caps an upload (input bytes, sheets, header columns) and fails with `ReadLimitExceededException`.
+  caps an upload (`maxInputBytes`, `maxSheets`, `maxColumns`) and fails with `ReadLimitExceededException`.
 - **Style cap** — `maxCellStyles(int)` on `ExcelWriter` / `ExcelSheetWriter` limits the cell styles that `cellColor`,
   `rowColor` and `rowStyle` colors may create (default 64,000); a function returning more distinct colors fails fast.
 - **CSV** — `CsvWriter.lineSeparator("\r\n"|"\n"|"\r")`. `CsvReader` refuses a delimiter, quote and escape character

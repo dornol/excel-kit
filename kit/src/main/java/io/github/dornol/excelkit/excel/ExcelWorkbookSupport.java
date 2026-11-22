@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jspecify.annotations.Nullable;
@@ -23,13 +24,25 @@ final class ExcelWorkbookSupport {
         SXSSFWorkbook workbook = new SXSSFWorkbook(null, streaming.rowAccessWindowSize(),
                 streaming.compressTempFiles(), streaming.useSharedStrings());
         if (streaming.useSharedStrings()) SHARED_STRINGS.put(workbook, Boolean.TRUE);
+        readableByStreamingZipReaders(workbook);
         return workbook;
+    }
+
+    /**
+     * POI writes every entry of a streamed workbook with an 8-byte (ZIP64) data descriptor by default. Readers that
+     * go through the archive from the front, such as {@code java.util.zip.ZipInputStream} and LibreOffice, then reject
+     * the file. {@code AlwaysWithCompatibility} keeps ZIP64 for entries beyond 4 GB and writes what those readers
+     * understand for the rest.
+     */
+    private static void readableByStreamingZipReaders(SXSSFWorkbook workbook) {
+        workbook.setZip64Mode(Zip64Mode.AlwaysWithCompatibility);
     }
 
     /** Creates the streaming workbook of a template writer: it wraps the template and keeps shared strings. */
     static SXSSFWorkbook templateStreamingWorkbook(XSSFWorkbook template, int rowAccessWindowSize) {
         SXSSFWorkbook workbook = new SXSSFWorkbook(template, rowAccessWindowSize, false, true);
         SHARED_STRINGS.put(workbook, Boolean.TRUE);
+        readableByStreamingZipReaders(workbook);
         return workbook;
     }
 
