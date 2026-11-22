@@ -29,9 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Reads CSV files and maps rows to Java objects.
@@ -171,25 +169,6 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     boolean wasStoppedEarly() { return stoppedEarly; }
-
-    @Override
-    public void readWhile(Predicate<ReadResult<T>> predicate) {
-        Objects.requireNonNull(predicate, "predicate cannot be null");
-        AtomicReference<RuntimeException> failure = new AtomicReference<>();
-        read(result -> {
-            boolean proceed;
-            try {
-                proceed = predicate.test(result);
-            } catch (RuntimeException e) {
-                failure.set(e);
-                throw new ReadStoppedException();
-            }
-            if (!proceed) {
-                throw new ReadStoppedException();
-            }
-        });
-        if (failure.get() != null) throw failure.get();
-    }
 
     private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum, List<String> rawValues) {
         validateColumnCount(line.length);

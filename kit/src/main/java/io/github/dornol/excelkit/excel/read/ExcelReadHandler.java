@@ -43,8 +43,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,67 +131,36 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
         markConsumed();
-        try {
-            readInternal(guardedConsumer(consumer));
-        } catch (ReadStoppedException ignored) {
-            stoppedEarly = true;
-        } catch (ReadLimitExceededException | ReadSecurityException e) {
-            throw e;
-        } catch (ExcelReadException | ReadAbortException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
-        } finally {
-            notifyReadCompletion(sheetIndex, -1);
-            close();
-        }
-    }
-
-    @Override
-    public void readWhile(Predicate<ReadResult<T>> predicate) {
-        Objects.requireNonNull(predicate, "predicate cannot be null");
-        markConsumed();
-        AtomicReference<RuntimeException> failure = new AtomicReference<>();
-        try {
-            Consumer<ReadResult<T>> guarded = guardedConsumer(result -> {
-                boolean proceed;
-                try {
-                    proceed = predicate.test(result);
-                } catch (RuntimeException e) {
-                    failure.set(e);
-                    throw new ReadStoppedException();
-                }
-                if (!proceed) throw new ReadStoppedException();
-            });
-            readInternal(guarded);
-        } catch (ReadStoppedException ignored) {
-            // Normal early completion requested by the caller.
-            stoppedEarly = true;
-        } catch (ReadLimitExceededException | ReadSecurityException e) {
-            throw e;
-        } catch (ExcelReadException | ReadAbortException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
-        } finally {
-            notifyReadCompletion(sheetIndex, -1);
-            close();
-        }
-        if (failure.get() != null) throw failure.get();
+        run(() -> readInternal(guardedConsumer(consumer)));
     }
 
     boolean wasStoppedEarly() { return stoppedEarly; }
 
     void readSharedPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
         markConsumed();
-        try {
+        run(() -> {
             ExcelSecurityScanner.scan(getTempFile(), readOptions.securityPolicy());
             readPackage(pkg, guardedConsumer(consumer));
+        });
+    }
+
+    /** What one read does between marking the handler consumed and releasing it. */
+    @FunctionalInterface
+    private interface ReadBody {
+        void run() throws Exception;
+    }
+
+    /**
+     * Runs a read and gives every outcome the same shape: an early stop is a normal end, the
+     * library's own failures pass through unchanged, and anything else becomes an
+     * {@link ExcelReadException}. The handler is always completed and closed.
+     */
+    private void run(ReadBody body) {
+        try {
+            body.run();
         } catch (ReadStoppedException ignored) {
             stoppedEarly = true;
-        } catch (ReadLimitExceededException | ReadSecurityException e) {
-            throw e;
-        } catch (ExcelReadException | ReadAbortException e) {
+        } catch (ReadLimitExceededException | ReadSecurityException | ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);

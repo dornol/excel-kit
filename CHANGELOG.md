@@ -35,6 +35,7 @@ All notable changes to this project will be documented in this file.
 - `ExcelWorkbookReader.read(InputStream)` now stops copying once the input exceeds the readers' `ReadLimits.maxInputBytes` (it used to copy the whole stream first) and keeps the copy in a restricted-permission temp directory.
 - A summary row's default label (`Min`, `Max`, ...) no longer depends on the JVM locale (it was `Mın` under a Turkish locale).
 - `ExcelWriter.write(Stream, ...)` now also releases the workbook's temp files when an `Error` such as `OutOfMemoryError` is thrown.
+- Internal: `readWhile` now lives once in `AbstractReadHandler` (the CSV and Excel handlers each had a copy), and `ExcelReadHandler` shares one error-translation path across `read`, `readWhile` and shared-package reads. Behaviour is unchanged.
 
 
 ## [0.27.0] - 2026-11-21

@@ -211,8 +211,26 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
      */
     public abstract void read(Consumer<ReadResult<T>> consumer);
 
-    /** Reads until the callback returns false. Returning false is normal completion. */
-    public abstract void readWhile(Predicate<ReadResult<T>> predicate);
+    /**
+     * Reads until the callback returns false. Returning false is normal completion; a predicate that
+     * throws stops the read and its exception is rethrown once the handler is closed.
+     */
+    public void readWhile(Predicate<ReadResult<T>> predicate) {
+        Objects.requireNonNull(predicate, "predicate cannot be null");
+        java.util.concurrent.atomic.AtomicReference<RuntimeException> failure =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        read(result -> {
+            boolean proceed;
+            try {
+                proceed = predicate.test(result);
+            } catch (RuntimeException e) {
+                failure.set(e);
+                throw new ReadStoppedException();
+            }
+            if (!proceed) throw new ReadStoppedException();
+        });
+        if (failure.get() != null) throw failure.get();
+    }
 
     /** Validates input against the immutable configuration snapshot for this session. */
     protected final void validateReadOptions() {
