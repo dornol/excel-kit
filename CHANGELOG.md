@@ -39,6 +39,7 @@ All notable changes to this project will be documented in this file.
   `csv`/`excel.read`/`excel` (+ `excel.style`, `excel.feature`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
 - `ExcelWriter.write(...)` called a second time on the same writer now throws `ExcelWriteException` instead of reusing column state bound to the first workbook; create a new `ExcelWriter` for another file. `ExcelSheetWriter` already behaved this way.
 - The lenient write-failure logs (`ExcelWriteErrorPolicy.LENIENT`) no longer contain the row object or the cell value, which may hold personal data; they name the column, the row number and the value's type.
+- Auto column width counts an emoji (a surrogate pair) as one wide character, two units, instead of two wide characters, four units; the width was too generous for emoji-heavy text.
 
 ### Removed
 - `AbstractReader.requireHeaders()` (an alias of `strictHeaders()`) and the `@Deprecated` `ExcelKitUpload.validateExcel` / `validateCsv` (aliases of `excel` / `csv`).

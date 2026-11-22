@@ -272,13 +272,21 @@ public class ExcelColumn<T> {
     }
 
     /**
-     * Calculates the display width for the column based on character content.
-     * Treats non-ASCII as double width.
+     * Calculates the display width for the column based on character content: an ASCII character counts as
+     * one, any other character (CJK and the like) as two, and a surrogate pair (an emoji, for example) as the
+     * two of one wide character.
      */
     private int getLogicalLength(String input) {
         int logicalLength = 0;
-        for (char ch : input.toCharArray()) {
-            logicalLength += (ch <= 0x7F) ? 1 : 2; // ASCII: 1, CJK etc: 2
+        int length = input.length();
+        for (int i = 0; i < length; i++) {
+            char ch = input.charAt(i);
+            if (Character.isHighSurrogate(ch) && i + 1 < length && Character.isLowSurrogate(input.charAt(i + 1))) {
+                i++;
+                logicalLength += 2;
+            } else {
+                logicalLength += (ch <= 0x7F) ? 1 : 2;
+            }
         }
         return Math.min(MAX_COLUMN_WIDTH, logicalLength * WIDTH_PER_CHAR + WIDTH_BASE_PADDING);
     }
