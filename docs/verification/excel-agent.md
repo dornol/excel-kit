@@ -80,7 +80,7 @@ Excel 이 보는 것을 직접 읽어 판정한다. 화면은 필요한 경우�
 | 종류 | Excel 에서 확인하는 방법 |
 |---|---|
 | `autoFilter sheet range` | 시트의 `AutoFilterMode` 가 True 이고 `AutoFilter.Range.Address($false,$false)` 가 `range` 와 같다. `range` 가 없으면(`none`) `AutoFilterMode` 가 False. |
-| `filterRows … criteria expectVisibleDataRows` | 필터 범위의 `column` 번째 열에 `Range.AutoFilter(column, criteria)` 를 적용한 뒤, 데이터 행(헤더 제외, 요약 행 제외) 중 `SpecialCells(xlCellTypeVisible=12)` 로 보이는 행 수를 센다. 필터 범위 아래의 요약 행은 숨겨지면 안 된다. 확인 후 `ShowAllData` 로 되돌린다. |
+| `filterRows … criteria expectVisibleDataRows` | 필터 범위의 `column` 번째 열에 `Range.AutoFilter(column, criteria)` 를 적용한 뒤, 데이터 행(헤더 제외, 요약 행 제외) 중 `SpecialCells(xlCellTypeVisible=12)` 로 보이는 행 수를 센다. 요약 행이 보여야 하는지 숨겨져야 하는지는 **manifest 항목의 문구를 따른다**(Excel 이 필터를 바로 아래 행까지 넓히므로 01 번은 숨겨지는 것이 기대값이고, 17 번은 보이는 것이 기대값이다). 확인 후 `ShowAllData` 로 되돌린다. |
 | `table sheet name range showAutoFilter` | `ListObjects(name)` 의 `Range.Address($false,$false)` 와 `ShowAutoFilter`(True/False). |
 | `cell … value=` / `cell … text=` | 먼저 `Application.Calculate()`. `Value2` 가 값과 같은가. `text=` 는 `.Text`(화면에 보이는 문자열). |
 | `cellText … text=` | `.Text` 가 정확히 같은가(표시 형식 확인). |

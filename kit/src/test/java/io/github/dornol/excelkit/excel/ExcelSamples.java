@@ -111,11 +111,11 @@ public final class ExcelSamples {
         // 1. a filter over header and data, summary rows outside it
         save("01-autofilter-plain.xlsx", report().autoFilter(true).summary(s -> s.sum("Qty").average("Qty")).write(items(7)));
         add("01-autofilter-plain.xlsx", "autoFilter over the data",
-                "Filter buttons on the header row (A1:B1). Filter Name = \"item 3\": ONE data row stays, the rows below the data (Sum, Average) are not hidden.",
+                "Filter buttons on the header row (A1:B1). The file's filter is A1:B8, but Excel extends a filter over the rows that directly follow it, so Excel's own range is A1:B10 and Filter Name = \"item 3\" leaves ONE data row and hides Sum and Average too. This is the known Excel behaviour that sample 17 avoids; the checks below expect it.",
                 "opens: no repair prompt",
                 "headerVisible sheet=Report range=A1:B1",
-                "autoFilter sheet=Report range=A1:B8 (the range in the file; Excel is known to report A1:B10 here, see sample 17: report the range Excel shows right after opening, before any filter call)",
-                "filterRows sheet=Report column=1 criteria=\"item 3\" expectVisibleDataRows=1 (data range A2:A8); Excel is known to hide Sum and Average as well, which is what sample 17 is about",
+                "autoFilter sheet=Report range=A1:B10 (Excel's range right after opening, before any filter call; the file itself holds A1:B8)",
+                "filterRows sheet=Report column=1 criteria=\"item 3\" expectVisibleDataRows=1 (data range A2:A8) and rows 9 and 10 (Sum, Average) hidden: Excel's range includes them",
                 "cell sheet=Report cell=A9 text=Sum; cell sheet=Report cell=B9 value=21; cell sheet=Report cell=A10 text=Average; cell sheet=Report cell=B10 value=3");
 
         // 2. grouped header: the filter starts at the row of the column names
