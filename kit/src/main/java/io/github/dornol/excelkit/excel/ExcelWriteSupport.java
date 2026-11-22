@@ -450,13 +450,6 @@ class ExcelWriteSupport {
         }
     }
 
-    private static final int MAX_SHEET_NAME_LENGTH = 31;
-
-    /**
-     * Name of the {@code index}-th sheet (0-based) of a rolled-over write: the first keeps the base
-     * name, later ones get a " (n)" suffix. Excel limits sheet names to 31 characters, so the base is
-     * shortened to keep the suffix and the names unique.
-     */
     /**
      * Builds a column from a function and an optional configuration: applies the sheet's default style, resolves
      * the data format and the cell style (shared through {@code cellStyleCache}) and picks the setter of the data
@@ -507,6 +500,13 @@ class ExcelWriteSupport {
         return name;
     }
 
+    private static final int MAX_SHEET_NAME_LENGTH = 31;
+
+    /**
+     * Name of the {@code index}-th sheet (0-based) of a rolled-over write: the first keeps the base
+     * name, later ones get a " (n)" suffix. Excel limits sheet names to 31 characters, so the base is
+     * shortened to keep the suffix and the names unique.
+     */
     static String rolloverSheetName(String baseName, int index) {
         if (index == 0) return baseName;
         String suffix = " (" + (index + 1) + ")";
