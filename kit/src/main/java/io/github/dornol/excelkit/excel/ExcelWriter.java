@@ -308,9 +308,12 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      *
      * @param name the base sheet name
      * @return Current ExcelWriter instance for chaining
+     * @throws IllegalArgumentException if the name is empty, contains one of {@code \ / ? * [ ] :}, or
+     *                                  begins or ends with an apostrophe
      */
     public ExcelWriter<T> sheetName(String name) {
         Objects.requireNonNull(name, "name cannot be null");
+        ExcelWriteSupport.requireValidSheetName(name);
         this.cfg.sheetNameFunction = index -> ExcelWriteSupport.rolloverSheetName(name, index);
         return this;
     }

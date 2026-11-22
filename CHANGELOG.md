@@ -36,6 +36,7 @@ All notable changes to this project will be documented in this file.
 - A summary row's default label (`Min`, `Max`, ...) no longer depends on the JVM locale (it was `Mın` under a Turkish locale).
 - `ExcelWriter.write(Stream, ...)` now also releases the workbook's temp files when an `Error` such as `OutOfMemoryError` is thrown.
 - Writing to a path that already holds a file (`writeTo(Path)`) now keeps that file's permissions; the atomic replace used to give it the default ones (`rw-rw-r--` became `rw-------` under a 077 umask).
+- `ExcelWriter.sheetName(String)` now rejects a name Excel cannot hold (empty, or containing `\ / ? * [ ] :`, or starting or ending with an apostrophe) with an `IllegalArgumentException` when it is given; it used to surface only when the first sheet was created.
 - Internal: `readWhile` now lives once in `AbstractReadHandler` (the CSV and Excel handlers each had a copy), and `ExcelReadHandler` shares one error-translation path across `read`, `readWhile` and shared-package reads. Behaviour is unchanged.
 
 

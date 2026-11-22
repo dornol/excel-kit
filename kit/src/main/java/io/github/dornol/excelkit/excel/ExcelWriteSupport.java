@@ -447,6 +447,28 @@ class ExcelWriteSupport {
      * name, later ones get a " (n)" suffix. Excel limits sheet names to 31 characters, so the base is
      * shortened to keep the suffix and the names unique.
      */
+    /**
+     * Rejects a sheet name Excel cannot hold, so a mistake surfaces where the name is given instead of
+     * when the first sheet is created. The length is not checked here: a long base name is shortened for
+     * the sheets that roll over.
+     */
+    static String requireValidSheetName(String name) {
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Sheet name must not be empty");
+        }
+        for (int i = 0; i < name.length(); i++) {
+            if ("\\/?*[]:".indexOf(name.charAt(i)) >= 0) {
+                throw new IllegalArgumentException("Invalid char (" + name.charAt(i) + ") found at index (" + i
+                        + ") in sheet name '" + name + "'");
+            }
+        }
+        if (name.charAt(0) == '\'' || name.charAt(name.length() - 1) == '\'') {
+            throw new IllegalArgumentException("Invalid sheet name '" + name
+                    + "'. Sheet names must not begin or end with (').");
+        }
+        return name;
+    }
+
     static String rolloverSheetName(String baseName, int index) {
         if (index == 0) return baseName;
         String suffix = " (" + (index + 1) + ")";
