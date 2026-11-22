@@ -139,7 +139,8 @@ public class ExcelColumn<T> {
             if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
                 throw new ExcelWriteException("Failed to extract value for column '" + name + "'", e);
             }
-            log.error("applyFunction exception caught for column '{}': row={}, cursor={}", name, rowData, cursor, e);
+            // The row itself is not logged: it may hold personal data, and a failing column repeats this per row.
+            log.error("applyFunction exception caught for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
             return null;
         }
     }
@@ -222,7 +223,8 @@ public class ExcelColumn<T> {
                         + (columnData == null ? "null" : "of type " + columnData.getClass().getSimpleName())
                         + (dataType == null ? "" : ", column type " + dataType) + "): " + e.getMessage(), e);
             }
-            log.warn("Writing value as text after a cell write failure for column '{}' (value={})", name, columnData, e);
+            log.warn("Writing value as text after a cell write failure for column '{}' (value of type {})",
+                    name, columnData.getClass().getSimpleName(), e);
             ExcelCellText.write(cell, ExcelCellText.textOf(columnData));
             return style;
         }
