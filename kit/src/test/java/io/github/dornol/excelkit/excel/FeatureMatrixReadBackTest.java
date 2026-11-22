@@ -43,8 +43,9 @@ class FeatureMatrixReadBackTest {
     private static List<Seen> readSheet(byte[] xlsx, int sheet, int headerRows, boolean rowNumbers, boolean encrypted,
                                         ReadSecurityPolicy policy) {
         List<Seen> seen = new ArrayList<>();
-        ExcelReader<Seen> reader = ExcelReader.<Seen>mapping(row -> new Seen(row.get("Name").asString(), row.get("Qty").asString(),
-                rowNumbers ? row.get("No.").asString() : "")).sheetIndex(sheet).headerRowIndex(headerRows - 1).headerRows(headerRows);
+        // Numbers are read as numbers: their display text uses the digits of the default locale (٠١٢ under ar-EG)
+        ExcelReader<Seen> reader = ExcelReader.<Seen>mapping(row -> new Seen(row.get("Name").asString(),
+                String.valueOf(row.get("Qty").asInt()), rowNumbers ? String.valueOf(row.get("No.").asInt()) : "")).sheetIndex(sheet).headerRowIndex(headerRows - 1).headerRows(headerRows);
         if (encrypted) reader.password("pw");
         if (policy != null) reader.securityPolicy(policy);
         reader.read(new ByteArrayInputStream(xlsx), (ReadResult<Seen> r) -> {
