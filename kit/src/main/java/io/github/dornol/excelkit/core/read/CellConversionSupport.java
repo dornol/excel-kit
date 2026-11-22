@@ -69,7 +69,9 @@ final class CellConversionSupport {
 
     private static @Nullable Number number(String value, Locale locale, boolean exact) throws ParseException {
         if (value.isBlank()) return null;
-        NumberFormat format = NumberFormat.getNumberInstance(locale);
+        Number plain = plainInteger(value, exact);
+        if (plain != null) return plain;
+        NumberFormat format = numberFormat(locale);
         if (exact && format instanceof DecimalFormat decimalFormat) decimalFormat.setParseBigDecimal(true);
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(locale);
         String cleaned = cleanNumber(value, symbols, format);
@@ -87,6 +89,32 @@ final class CellConversionSupport {
             if (parsed != null && position.getIndex() == scientific.length()) return parsed;
         }
         throw new ParseException("Invalid number: " + value, position.getIndex());
+    }
+
+    private static final java.util.concurrent.ConcurrentHashMap<Locale, NumberFormat> NUMBER_FORMATS =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * A number written as plain ASCII digits only means the same in every locale (no sign, separator or
+     * affix), so it skips the locale machinery. Returns what the number format would: a {@code Long}, or a
+     * {@code BigDecimal} when exact parsing is asked for. Anything else, and anything too long for a
+     * {@code long}, returns {@code null} and takes the general path.
+     */
+    private static @Nullable Number plainInteger(String value, boolean exact) {
+        int length = value.length();
+        if (length > 18) return null;
+        long result = 0;
+        for (int i = 0; i < length; i++) {
+            char c = value.charAt(i);
+            if (c < '0' || c > '9') return null;
+            result = result * 10 + (c - '0');
+        }
+        return exact ? BigDecimal.valueOf(result) : Long.valueOf(result);
+    }
+
+    /** A private copy of the locale's number format: building one from its pattern is the costly part. */
+    private static NumberFormat numberFormat(Locale locale) {
+        return (NumberFormat) NUMBER_FORMATS.computeIfAbsent(locale, NumberFormat::getNumberInstance).clone();
     }
 
     static String decimalText(String value, Locale locale) {
@@ -131,11 +159,24 @@ final class CellConversionSupport {
                 : LocalTime.parse(value, DateTimeFormatter.ofPattern(pattern).withResolverStyle(ResolverStyle.STRICT));
     }
 
+    /** Only a currency sign or a percent sign can be a number's prefix or suffix; most numbers have none. */
+    private static boolean hasAffixCharacter(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            switch (text.charAt(i)) {
+                case '$', '\u20A9', '\u20AC', '%', '\uC6D0' -> { return true; }
+                default -> { }
+            }
+        }
+        return false;
+    }
+
     private static String cleanNumber(String value, DecimalFormatSymbols symbols, NumberFormat format) {
         String cleaned = value.replace('\u00A0', ' ').replace('\u202F', ' ').strip();
-        Matcher leadingCurrency = LEADING_CURRENCY.matcher(cleaned);
-        cleaned = leadingCurrency.find() ? leadingCurrency.replaceFirst("$1")
-                : TRAILING_NUMBER_AFFIX.matcher(cleaned).replaceFirst("");
+        if (hasAffixCharacter(cleaned)) {
+            Matcher leadingCurrency = LEADING_CURRENCY.matcher(cleaned);
+            cleaned = leadingCurrency.find() ? leadingCurrency.replaceFirst("$1")
+                    : TRAILING_NUMBER_AFFIX.matcher(cleaned).replaceFirst("");
+        }
         char groupingSeparator = symbols.getGroupingSeparator();
         if (Character.isSpaceChar(groupingSeparator)) cleaned = cleaned.replace(' ', groupingSeparator);
         int firstSeparator = cleaned.indexOf(groupingSeparator);

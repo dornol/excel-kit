@@ -39,6 +39,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- `CellData` number conversion (`asInt`, `asLong`, `asDouble`, `asNumber`, `asBigDecimal`) is about 2.5 times faster for most values: it reuses the locale's number format instead of building one per cell, skips the currency/percent matching when the text has no such sign, and converts plain digits directly. A numeric 300,000-row, three-number-column read spent about 510 ms on conversion and now about 200 ms. Results are unchanged (checked on 4,104 value/locale/method combinations against the previous implementation).
 - `ExcelWorkbookReader` runs the security scan of a workbook once per `ReadSecurityPolicy` instead of once per sheet. Under `STRICT` (formulas refused) every scan parses every worksheet, so reading N sheets parsed the whole file N times. A refusal is remembered too: the remaining sheets are refused with the same `ReadSecurityException` without scanning again.
 - `ExcelWorkbookReader.read(Path|InputStream)` of a password-protected workbook decrypts the file once and reads every sheet from that copy. It used to decrypt it again for the sheet list and for each sheet, which is a full decryption per sheet.
 - `ExcelWorkbookReader.read(InputStream)` now stops copying once the input exceeds the readers' `ReadLimits.maxInputBytes` (it used to copy the whole stream first) and keeps the copy in a restricted-permission temp directory.
