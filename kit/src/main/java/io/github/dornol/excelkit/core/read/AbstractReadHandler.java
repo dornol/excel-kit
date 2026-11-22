@@ -212,6 +212,17 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     public abstract void read(Consumer<ReadResult<T>> consumer);
 
     /**
+     * Tells whether the read ended because a {@link #readWhile} predicate said so rather than because the
+     * input was exhausted. It is only meaningful after a read has finished.
+     *
+     * @return {@code true} if the read stopped early
+     * @since 0.28.0
+     */
+    public final boolean wasStoppedEarly() {
+        return stoppedEarly;
+    }
+
+    /**
      * Reads until the callback returns false. Returning false is normal completion; a predicate that
      * throws stops the read and its exception is rethrown once the handler is closed.
      */

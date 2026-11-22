@@ -267,6 +267,15 @@ class ReaderByteLimitTest {
 
     private static final class ProbeReader extends AbstractReader<String, ProbeReader> {
         ProbeReader() { super((Function<RowData, String>) row -> "", null); }
+        @Override protected AbstractReadHandler<String> createHandler(InputStream inputStream) {
+            throw new UnsupportedOperationException("only the limit wrapper is probed");
+        }
+        @Override protected AbstractReadHandler<String> createHandler(java.nio.file.Path path) {
+            throw new UnsupportedOperationException("only the limit wrapper is probed");
+        }
+        @Override protected RuntimeException openFailure(java.io.IOException cause) {
+            return new IllegalStateException(cause);
+        }
     }
 
     private static final class ProbeHandler extends AbstractReadHandler<String> {

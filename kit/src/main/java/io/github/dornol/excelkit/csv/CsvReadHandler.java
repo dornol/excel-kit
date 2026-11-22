@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.Arrays;
@@ -168,7 +167,6 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         return readFailureMessage("Failed to read CSV", cause);
     }
 
-    boolean wasStoppedEarly() { return stoppedEarly; }
 
     private ReadResult<T> processRow(String[] line, int[] resolvedIndices, long fileRowNum, List<String> rawValues) {
         validateColumnCount(line.length);

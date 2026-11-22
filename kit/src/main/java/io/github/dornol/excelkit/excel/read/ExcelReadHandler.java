@@ -40,7 +40,6 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
@@ -134,7 +133,6 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         run(() -> readInternal(guardedConsumer(consumer)));
     }
 
-    boolean wasStoppedEarly() { return stoppedEarly; }
 
     void readSharedPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
         markConsumed();
