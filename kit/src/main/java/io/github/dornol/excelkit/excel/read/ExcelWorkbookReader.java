@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Reads multiple workbook sheets with independent readers and result aggregation.
@@ -227,33 +228,30 @@ public final class ExcelWorkbookReader {
 
     private static <T> SheetReadReport execute(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer,
                                                 Path path, int index, int maximumErrors) {
-        reader.sheetIndex(index);
-        List<RowError> errors = new ArrayList<>();
-        boolean[] errorsTruncated = {false};
-        long[] rowOrdinal = {0};
-        ReadSummary summary = reader.readWithSummary(path, result -> {
-            rowOrdinal[0]++;
-            consumer.accept(result);
-            if (!result.success()) {
-                if (errors.size() < maximumErrors) {
-                    errors.add(new RowError(rowOrdinal[0], result.fileRowNum(), result.errorType(), result.messages(),
-                            result.cause(), result.cellErrors(), result.rawValues()));
-                } else {
-                    errorsTruncated[0] = true;
-                }
-            }
-        });
-        return new SheetReadReport("#" + index, index, summary, errors, errorsTruncated[0], null);
+        return collect(reader, consumer, index, maximumErrors, rows -> reader.readWithSummary(path, rows));
     }
 
     private static <T> SheetReadReport executeShared(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer,
                                                       Path path, int index, int maximumErrors, OPCPackage pkg,
                                                       SecurityScanCache scans) {
+        return collect(reader, consumer, index, maximumErrors,
+                rows -> reader.readSharedPackage(path, pkg, scans, rows));
+    }
+
+    /**
+     * Reads one sheet through {@code read}, handing every row's result on to the caller's consumer and keeping the
+     * first {@code maximumErrors} failed rows for the report.
+     *
+     * @param read starts the read of the sheet and delivers each row to the callback it is given
+     */
+    private static <T> SheetReadReport collect(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer, int index,
+                                               int maximumErrors,
+                                               Function<Consumer<ReadResult<T>>, ReadSummary> read) {
         reader.sheetIndex(index);
         List<RowError> errors = new ArrayList<>();
         boolean[] errorsTruncated = {false};
         long[] rowOrdinal = {0};
-        ReadSummary summary = reader.readSharedPackage(path, pkg, scans, result -> {
+        ReadSummary summary = read.apply(result -> {
             rowOrdinal[0]++;
             consumer.accept(result);
             if (!result.success()) {
