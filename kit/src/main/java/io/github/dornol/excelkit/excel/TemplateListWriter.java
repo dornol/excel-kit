@@ -355,23 +355,8 @@ public class TemplateListWriter<T> {
     }
 
     private ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
-                                        @Nullable ColumnConfig<T> config) {
-        Objects.requireNonNull(function, "function cannot be null");
-        ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
-        if (cfg.defaultStyleConfig != null) {
-            c.applyDefaults(cfg.defaultStyleConfig);
-        }
-        ExcelDataType dataType = c.dataType != null ? c.dataType : ExcelDataType.STRING;
-        String dataFormat = c.dataFormat != null ? c.dataFormat : dataType.getDefaultFormat();
-
-        CellStyleParams params = new CellStyleParams(c.alignment, dataFormat,
-                c.backgroundColor, c.bold, c.fontSize, c.borderStyle, c.locked,
-                c.rotation, c.borderTop, c.borderBottom, c.borderLeft, c.borderRight,
-                c.fontColor, c.strikethrough, c.underline,
-                c.verticalAlignment, c.wrapText, c.fontName, c.indentation);
-        CellStyle style = ExcelStyleSupporter.cellStyle(wb, params, cellStyleCache);
-
-        return new ExcelColumn<>(name, function, style, dataType.getSetter(), c);
+                                       @Nullable ColumnConfig<T> config) {
+        return ExcelWriteSupport.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
     }
 
 }

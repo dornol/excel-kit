@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
+import io.github.dornol.excelkit.core.read.RowFunction;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
@@ -447,6 +448,34 @@ class ExcelWriteSupport {
      * name, later ones get a " (n)" suffix. Excel limits sheet names to 31 characters, so the base is
      * shortened to keep the suffix and the names unique.
      */
+    /**
+     * Builds a column from a function and an optional configuration: applies the sheet's default style, resolves
+     * the data format and the cell style (shared through {@code cellStyleCache}) and picks the setter of the data
+     * type, which is plain text when none was given.
+     */
+    static <T> ExcelColumn<T> buildColumn(SXSSFWorkbook wb, Map<String, CellStyle> cellStyleCache,
+                                          ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyle, String name,
+                                          RowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
+        Objects.requireNonNull(function, "function cannot be null");
+        ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
+        if (defaultStyle != null) {
+            c.applyDefaults(defaultStyle);
+        }
+        ExcelDataType dataType = c.dataType;
+        String dataFormat = c.dataFormat != null ? c.dataFormat
+                : (dataType != null ? dataType.getDefaultFormat() : null);
+
+        CellStyleParams params = new CellStyleParams(c.alignment, dataFormat,
+                c.backgroundColor, c.bold, c.fontSize, c.borderStyle, c.locked,
+                c.rotation, c.borderTop, c.borderBottom, c.borderLeft, c.borderRight,
+                c.fontColor, c.strikethrough, c.underline,
+                c.verticalAlignment, c.wrapText, c.fontName, c.indentation);
+        CellStyle style = ExcelStyleSupporter.cellStyle(wb, params, cellStyleCache);
+
+        return new ExcelColumn<>(name, function, style,
+                dataType != null ? dataType.getSetter() : ExcelDataType.STRING.getSetter(), c);
+    }
+
     /**
      * Rejects a sheet name Excel cannot hold, so a mistake surfaces where the name is given instead of
      * when the first sheet is created. The length is not checked here: a long base name is shortened for
