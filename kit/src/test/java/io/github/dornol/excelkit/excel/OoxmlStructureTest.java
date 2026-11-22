@@ -52,7 +52,7 @@ class OoxmlStructureTest {
 
     // ---- a minimal view of the package ------------------------------------------------------------------
 
-    private static final class Pkg {
+    static final class Pkg {
         final Map<String, byte[]> parts = new java.util.LinkedHashMap<>();
         final Map<String, Document> xml = new HashMap<>();
 
@@ -114,7 +114,7 @@ class OoxmlStructureTest {
 
     private static final String MAIN = "//*[local-name()='%s']";
 
-    private static String local(String name) {
+    static String local(String name) {
         return String.format(MAIN, name);
     }
 
@@ -126,7 +126,7 @@ class OoxmlStructureTest {
 
     // ---- invariants that hold for every workbook the library writes ---------------------------------------
 
-    private static void assertValidPackage(Pkg pkg) {
+    static void assertValidPackage(Pkg pkg) {
         assertTrue(pkg.parts.containsKey("[Content_Types].xml"), "no [Content_Types].xml");
         assertTrue(pkg.parts.containsKey("_rels/.rels"), "no root relationships");
 
