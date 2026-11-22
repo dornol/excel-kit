@@ -50,13 +50,9 @@ class FeatureMatrixTest {
         return "mask=" + mask + " " + enabled;
     }
 
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("masks")
-    void featuresCombineWithoutBreakingEachOther(int mask) throws Exception {
-        String at = describe(mask);
+    /** The writer for one combination of features; not yet written. */
+    static ExcelWriter<Item> buildWriter(int mask) {
         int maxRows = on(mask, Feature.ROLLOVER) ? 4 : 0;
-        int sheets = maxRows > 0 ? (int) Math.ceil(ROWS / (double) maxRows) : 1;
-
         ExcelWriter<Item> writer = ExcelWriter.create();
         if (maxRows > 0) writer.maxRows(maxRows);
         if (on(mask, Feature.ENCRYPT)) writer.password("pw");
@@ -81,6 +77,17 @@ class FeatureMatrixTest {
             writer.chart(ch -> ch.type(ExcelChartConfig.ChartType.BAR).title("Qty")
                     .categoryColumn(0).valueColumn(1, "Qty").position(4, 0, 12, 20));
         }
+        return writer;
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("masks")
+    void featuresCombineWithoutBreakingEachOther(int mask) throws Exception {
+        String at = describe(mask);
+        int maxRows = on(mask, Feature.ROLLOVER) ? 4 : 0;
+        int sheets = maxRows > 0 ? (int) Math.ceil(ROWS / (double) maxRows) : 1;
+
+        ExcelWriter<Item> writer = buildWriter(mask);
 
         List<Item> items = IntStream.range(0, ROWS).mapToObj(i -> new Item("item " + i, i)).toList();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
