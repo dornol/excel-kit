@@ -56,7 +56,6 @@ public class TemplateListWriter<T> {
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
     private final SheetConfig<T> cfg = new SheetConfig<>();
-    private @Nullable TableOptions tableOptions;
 
     TemplateListWriter(ExcelTemplateWriter parent, SXSSFWorkbook wb, SXSSFSheet sheet,
                        int startRow, Map<String, CellStyle> cellStyleCache, int sheetIndex) {
@@ -236,7 +235,7 @@ public class TemplateListWriter<T> {
      */
     public TemplateListWriter<T> table(TableOptions options) {
         StructuredTableWriter.validateName(Objects.requireNonNull(options, "options cannot be null").name());
-        this.tableOptions = options;
+        this.cfg.tableOptions = options;
         return this;
     }
 
@@ -318,6 +317,8 @@ public class TemplateListWriter<T> {
         // and afterData start counting from it: taking startRow for it left out the first data row of a summary.
         int headerRowIndex = writeHeaders ? startRow : startRow - 1;
 
+        // Read once: a change made while the rows are being written does not apply to this write.
+        TableOptions tableOptions = cfg.tableOptions;
         List<String> tableHeaders = tableOptions == null ? List.of() : columns.stream().map(ExcelColumn::getName).toList();
         if (tableOptions != null && !writeHeaders) {
             if (startRow == 0) throw new ExcelWriteException("Template table requires a header row before startRow");
