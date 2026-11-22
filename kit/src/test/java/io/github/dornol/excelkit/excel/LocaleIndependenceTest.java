@@ -178,4 +178,45 @@ class LocaleIndependenceTest {
             });
         }
     }
+
+    @Test
+    void numbersThatAreTextReadTheSameUnderEveryDefaultLocale() throws Exception {
+        for (Locale locale : all()) {
+            under(locale, () -> {
+                // CellData without a configuration: the default conversion locale is the root locale, not the machine's
+                assertEquals(2.718, new CellData(0, "2.718").asDouble(), locale.toLanguageTag());
+                assertEquals(1234.5, new CellData(0, "1,234.5").asDouble(), locale.toLanguageTag());
+                assertEquals(-5, new CellData(0, "-5").asInt(), locale.toLanguageTag());
+                assertEquals(new java.math.BigDecimal("1234567.89"), new CellData(0, "1,234,567.89").asBigDecimal(), locale.toLanguageTag());
+            });
+        }
+    }
+
+    @Test
+    void aReaderOfLocalizedFilesStillSaysSo() {
+        io.github.dornol.excelkit.core.read.CellConversionConfig german = io.github.dornol.excelkit.core.read.CellConversionConfig
+                .builder().locale(Locale.GERMANY).build();
+
+        assertEquals(2718.0, new CellData(0, "2.718", german).asDouble());
+        assertEquals(2.718, new CellData(0, "2,718", german).asDouble());
+    }
+
+    @Test
+    void monthNamesAreEnglishWhateverTheDefaultLocale() throws Exception {
+        for (Locale locale : all()) {
+            under(locale, () -> {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                ExcelWriter.<Object>create().column("Day", x -> LocalDate.of(2024, 1, 5), c -> c.format("d-mmm-yy"))
+                        .write(List.of(new Object())).writeTo(out);
+
+                List<String> shown = new ArrayList<>();
+                ExcelReader.mapping(row -> row.get("Day")).read(new ByteArrayInputStream(out.toByteArray()),
+                        r -> shown.add(((CellData) r.data()).formattedValue()));
+
+                // Calendars that are not Gregorian show the ISO date instead (see the guide)
+                boolean gregorian = "gregory".equals(java.util.Calendar.getInstance(locale).getCalendarType());
+                assertEquals(List.of(gregorian ? "5-Jan-24" : "2024-01-05"), shown, locale.toLanguageTag());
+            });
+        }
+    }
 }

@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.core.read;
 
-import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -162,7 +161,6 @@ class RowDataTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void cellDataConversions_shouldWorkThroughRowData() {
         RowData row = createRowData(
                 new String[]{"Name", "Age", "Active", "Score", "Date"},

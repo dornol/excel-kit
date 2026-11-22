@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.core.read.CellConversionConfig;
 import io.github.dornol.excelkit.core.read.CellData;
 import org.junit.jupiter.api.Nested;
@@ -96,7 +95,6 @@ class CellDataTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void asNumber_shouldParseNumberWithCommas() {
         // Arrange
         CellData cellData = new CellData(0, "1,234,567");
@@ -109,7 +107,6 @@ class CellDataTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void asNumber_shouldParseNumberWithCurrencySymbols() {
         // Arrange
         CellData cellData = new CellData(0, "$1234.56");
@@ -134,7 +131,6 @@ class CellDataTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void asNumber_shouldParseNumberWithPercentSign() {
         // Arrange
         CellData cellData = new CellData(0, "12.34%");
@@ -415,7 +411,6 @@ class CellDataTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void asDouble_shouldConvertNumberToDouble() {
         // Arrange
         CellData cellData = new CellData(0, "123.456");
@@ -441,7 +436,6 @@ class CellDataTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void asFloat_shouldConvertNumberToFloat() {
         // Arrange
         CellData cellData = new CellData(0, "123.456");
@@ -467,7 +461,6 @@ class CellDataTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void asBigDecimal_shouldConvertNumberToBigDecimal() {
         // Arrange
         CellData cellData = new CellData(0, "123.456");
@@ -652,8 +645,8 @@ class CellDataTest {
     class LocaleTests {
 
         @Test
-        void defaults_useJvmDefaultLocale() {
-            assertEquals(Locale.getDefault(), CellConversionConfig.defaults().locale());
+        void defaults_useTheRootLocaleNotTheMachines() {
+            assertEquals(Locale.ROOT, CellConversionConfig.defaults().locale());
         }
 
         @Test

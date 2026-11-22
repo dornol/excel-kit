@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.core.read;
 
-import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import org.junit.jupiter.api.Nested;
@@ -231,7 +230,6 @@ class CellDataConversionTest {
         }
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void asInt_worksWithFormattedNumbers() {
             // asNumber() strips commas before parsing
             assertEquals(1234, cell("1,234").asInt(0));
@@ -243,7 +241,6 @@ class CellDataConversionTest {
         }
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void asInt_negativeValue() {
             assertEquals(-5, cell("-5").asInt(0));
         }
@@ -276,7 +273,6 @@ class CellDataConversionTest {
         }
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void asLong_worksWithFormattedNumbers() {
             assertEquals(1234567L, cell("1,234,567").asLong(0L));
         }
@@ -306,7 +302,6 @@ class CellDataConversionTest {
         }
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void asLong_negativeValue() {
             assertEquals(-100L, cell("-100").asLong(0L));
         }
@@ -324,7 +319,6 @@ class CellDataConversionTest {
     class AsDoubleWithDefault {
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void asDouble_returnsValueWhenPresent() {
             assertEquals(3.14, cell("3.14").asDouble(0.0), 0.001);
         }
@@ -340,7 +334,6 @@ class CellDataConversionTest {
         }
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void asDouble_worksWithDecimalValues() {
             assertEquals(0.001, cell("0.001").asDouble(0.0), 0.0001);
         }
@@ -351,7 +344,6 @@ class CellDataConversionTest {
         }
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void asDouble_negativeValue() {
             assertEquals(-9.99, cell("-9.99").asDouble(0.0), 0.001);
         }

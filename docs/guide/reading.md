@@ -452,7 +452,7 @@ int qty = cell.asInt(0);  // 0 if blank
 **Number parsing locale and custom date formats:**
 
 Conversion settings are scoped to a reader. `CellData` without an explicit config uses
-`CellConversionConfig.defaults()` (the JVM default locale and the built-in date patterns).
+`CellConversionConfig.defaults()` (the root locale and the built-in date patterns).
 
 Excel readers use the same locale for cell display formatting and numeric
 conversion. Configure the locale and extra date patterns per reader:
@@ -467,14 +467,15 @@ CsvReader.<Order>mapping(row -> new Order(
     .read(inputStream, result -> { ... });
 ```
 
-> **The default locale decides how text is read.** Where a number is text (a CSV field, an Excel text cell) the
-> default conversion locale is the JVM's, so the same file reads differently on another machine: under `de-DE`,
-> `"2.718"` is 2718, not 2.718 (the dot is the grouping separator), and under `ar-EG` a leading `-` is not the locale's
-> minus sign. A reader for files of one known format should say so with `.cellConversion(c -> c.locale(Locale.US))`
-> instead of relying on the machine. Numeric Excel cells are read from the stored number and are not affected.
+> **Text numbers are read in the root locale by default, not in the machine's.** Where a number is text (a CSV field, an
+> Excel text cell), `"1,234.5"` is 1234.5 and `"2.718"` is 2.718 on every machine: a period is the decimal separator and a
+> comma the grouping separator. A file written in another convention says so on the reader, for example German
+> `1.234,5` with `.cellConversion(c -> c.locale(Locale.GERMANY))`; without it `"2,718"` is read as 2718. Excel readers use
+> the same locale for the text of numeric cells and for month names, so by default these are English (`Jan`).
+> Numeric Excel cells are read from the stored number and do not depend on the locale.
 >
-> Dates do not depend on the locale: a date cell shows its digits as 0-9 and its year in the Gregorian calendar, also
-> where the JVM default locale writes its own digits (Arabic, Persian, Bengali, ...) or counts years differently
+> A date cell shows its digits as 0-9 and its year in the Gregorian calendar, also where the JVM default locale writes
+> its own digits (Arabic, Persian, Bengali, ...) or counts years differently
 > (`th-TH`, `ja-JP-u-ca-japanese`). Under such a calendar the text of a date cell is the ISO date, `2024-01-05` or
 > `2024-01-05 13:45:06`, whatever format the cell has.
 

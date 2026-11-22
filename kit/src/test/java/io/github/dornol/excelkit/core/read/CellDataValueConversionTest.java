@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.core.read;
 
-import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.excel.*;
 import org.apache.poi.ss.usermodel.*;
 import org.junit.jupiter.api.Test;
@@ -109,7 +108,6 @@ class CellDataValueConversionTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void cellData_asFloat() {
         CellData cell = new CellData(0, "3.14");
         Float result = cell.asFloat();
@@ -158,7 +156,6 @@ class CellDataValueConversionTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void cellData_asDouble() {
         CellData cell = new CellData(0, "2.718");
         Double result = cell.asDouble();
@@ -172,7 +169,6 @@ class CellDataValueConversionTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void cellData_asBigDecimal() {
         CellData cell = new CellData(0, "12345.67");
         BigDecimal result = cell.asBigDecimal();

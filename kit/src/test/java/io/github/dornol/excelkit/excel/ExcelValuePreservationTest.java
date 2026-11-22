@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.core.read.CellData;
@@ -51,7 +50,6 @@ class ExcelValuePreservationTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void readResultsAndErrorsIncludeStoredNumericTokensInsteadOfDisplayValues() {
         var output = new ByteArrayOutputStream();
         ExcelWriter.<Long>create().column("Id", value -> value, c -> c.format("General"))
@@ -296,7 +294,6 @@ class ExcelValuePreservationTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void numericConversionsUseTheStoredValueInsteadOfTheDisplayFormat() {
         var output = new ByteArrayOutputStream();
         ExcelWriter.<Double>create()
@@ -315,7 +312,6 @@ class ExcelValuePreservationTest {
     }
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void forMapRawReturnsStoredNumbersWhileForMapReturnsDisplayedText() {
         var output = new ByteArrayOutputStream();
         ExcelWriter.<Double>create()

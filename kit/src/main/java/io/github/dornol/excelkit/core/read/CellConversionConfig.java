@@ -44,7 +44,7 @@ public final class CellConversionConfig {
             dateTimePattern("M/d/yy"),
             DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     private static final CellConversionConfig DEFAULTS = new CellConversionConfig(
-            Locale.getDefault(), BUILT_IN_DATE_FORMATS, BUILT_IN_DATE_TIME_FORMATS);
+            Locale.ROOT, BUILT_IN_DATE_FORMATS, BUILT_IN_DATE_TIME_FORMATS);
 
     private static DateTimeFormatter dateTimePattern(String date) {
         return new DateTimeFormatterBuilder().append(CellConversionSupport.strictDatePattern(date))
@@ -56,8 +56,10 @@ public final class CellConversionConfig {
     }
 
     /**
-     * Returns the built-in settings: the JVM default locale at class initialization and the
-     * built-in date and date-time patterns. The returned instance is immutable.
+     * Returns the built-in settings: the {@linkplain Locale#ROOT root locale} (a period is the decimal separator
+     * and a comma the grouping separator, whatever machine the code runs on) and the built-in date and date-time
+     * patterns. The returned instance is immutable. A reader of files in another number format sets its locale
+     * with {@link Builder#locale(Locale)}.
      */
     public static CellConversionConfig defaults() {
         return DEFAULTS;

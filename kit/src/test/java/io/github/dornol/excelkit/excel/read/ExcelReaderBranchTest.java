@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.excel.read;
 
-import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.core.read.ReadAbortException;
@@ -43,7 +42,6 @@ class ExcelReaderBranchTest {
     Path tempDir;
 
     @Test
-    @DefaultLocaleShowsEnglishNumbers
     void numericCellsExposeStoredValuesAlongsideFormattedText() throws IOException {
         Path file = tempDir.resolve("numeric-precision.xlsx");
         try (var workbook = new XSSFWorkbook(); var out = Files.newOutputStream(file)) {
@@ -238,7 +236,6 @@ class ExcelReaderBranchTest {
         }
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void columnAt_explicitIndex_shouldMapCorrectly() throws IOException {
             byte[] excel = writeSimpleExcel();
 

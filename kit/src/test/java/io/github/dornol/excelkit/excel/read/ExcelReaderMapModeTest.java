@@ -1,6 +1,5 @@
 package io.github.dornol.excelkit.excel.read;
 
-import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import io.github.dornol.excelkit.excel.ExcelWorkbook;
 import io.github.dornol.excelkit.core.read.ReadResult;
@@ -65,7 +64,6 @@ class ExcelReaderMapModeTest {
     class HeaderAutoDiscover {
 
         @Test
-        @DefaultLocaleShowsEnglishNumbers
         void forMap_readsAllColumnsFromHeaderRow() throws IOException {
             byte[] data = writeSampleExcel();
             List<Map<String, String>> results = new ArrayList<>();

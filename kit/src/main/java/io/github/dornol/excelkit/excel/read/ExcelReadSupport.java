@@ -77,9 +77,12 @@ class ExcelReadSupport {
     private ExcelReadSupport() {
     }
 
-    /** Uses the workbook's date system for numeric cells and cached formula results. */
+    /**
+     * Uses the workbook's date system for numeric cells and cached formula results, and the default conversion locale
+     * (the root locale), not the machine's.
+     */
     static DataFormatter dataFormatter(XSSFReader reader) throws Exception {
-        return dataFormatter(reader, LocaleUtil.getUserLocale());
+        return dataFormatter(reader, io.github.dornol.excelkit.core.read.CellConversionConfig.defaults().locale());
     }
 
     static DataFormatter dataFormatter(XSSFReader reader, Locale locale) throws Exception {
