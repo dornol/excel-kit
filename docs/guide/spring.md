@@ -132,7 +132,7 @@ public ResponseEntity<StreamingResponseBody> csvTemplate() {
 
 ### Late-Binding Password
 
-When the service layer builds the handler but the password is only known
+To encrypt when the response is written, with the service layer building the handler and the password only known
 at the presentation layer:
 
 ```java
@@ -143,8 +143,12 @@ public ExcelHandler buildReport() {
 
 // Controller
 ExcelHandler handler = service.buildReport();
-handler.writeTo(outputStream, "P@ssw0rd!");
+return ExcelKitResponse.excel(handler, "report", "P@ssw0rd!");   // encrypts while streaming
 ```
+
+The helper rejects a blank password, and a handler whose writer already set one (`handler.isPasswordSet()`), before
+the response is built, and discards the handler. Outside a response, `handler.writeTo(outputStream, "P@ssw0rd!")`
+does the same.
 
 ## Spring WebFlux manual integration
 

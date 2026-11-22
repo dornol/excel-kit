@@ -66,6 +66,21 @@ class ExcelKitResponseTest {
     }
 
     @Test
+    void encryptedExcel_rejectsAHandlerThatAlreadyHasAPasswordBeforeBuildingTheResponse() {
+        var handler = io.github.dornol.excelkit.excel.ExcelWriter.<String>create()
+                .password("writer-level").column("A", value -> value)
+                .write(java.util.List.of("x"));
+
+        var error = assertThrows(IllegalStateException.class,
+                () -> ExcelKitResponse.excel(handler, "report", "another"));
+
+        assertTrue(error.getMessage().contains("excel(handler, filename)"), error.getMessage());
+        // Rejected like a blank password: the handler released its workbook.
+        assertThrows(io.github.dornol.excelkit.excel.ExcelWriteException.class,
+                () -> handler.writeTo(java.io.OutputStream.nullOutputStream()));
+    }
+
+    @Test
     void encryptedExcel_withPasswordStillStreamsLater() throws Exception {
         var handler = handler();
 

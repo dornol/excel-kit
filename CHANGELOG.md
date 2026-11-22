@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `ExcelHandler.isPasswordSet()` tells whether the writer already set a password (`ExcelWriter.password(...)` or `ExcelWorkbook.password(...)`), so a caller that encrypts when the response is written can find the conflict with `writeTo(.., password)` before the response begins.
 - `ExcelWorkbookInspector` (`io.github.dornol.excelkit.excel.read`): sheet discovery with its settings on the object. `create().password(...).limits(...)` then `sheetNames(...)` / `headers(..., sheetIndex, headerRowIndex)` for an `InputStream`, a `Path` or an `InputStreamSource`. With `limits(...)` the copy of a stream stops at `maxInputBytes`, a file above it is refused before it is opened, and more sheets than `maxSheets` or a header row wider than `maxColumns` fails with `ReadLimitExceededException`. A `Path` is opened in place; it used to be copied to a temp file, and `ExcelWorkbookReader.read(Path)` copied the same file twice.
 
 ### Changed
+- `ExcelKitResponse.excel(handler, filename, password)` throws `IllegalStateException` before the response is built, and discards the handler, when the handler already has a password from its writer. It used to fail inside the streaming body, after the response had begun.
 - Internal: `ExcelWriter` and `ExcelWorkbook` keep their shared workbook settings (document properties, header color, font and style, file password, structure protection) in one `WorkbookSettings` instead of two copies. The header style is now built once when it is first needed, so a series of header setters creates one cell style instead of one per setter. Behaviour is otherwise unchanged.
 - Internal: `ExcelSheetWriter` and `TemplateListWriter` build their columns through one `ExcelWriteSupport.buildColumn` instead of two copies. Behaviour is unchanged.
 - `TempWorkspace` (`core.io`): a private temp directory that is removed with everything in it when it is closed. Every place that created a temp directory and cleaned it up by hand now uses it (encrypted writes, CSV writes, decrypting a workbook for reading, stream copies for `ExcelWorkbookReader` and `ExcelWorkbookInspector`), so the cleanup rules exist once.

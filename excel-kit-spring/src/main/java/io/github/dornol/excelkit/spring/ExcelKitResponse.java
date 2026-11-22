@@ -42,12 +42,21 @@ public final class ExcelKitResponse {
      * @param password the password to encrypt the file with
      * @return the streaming response
      * @throws IllegalArgumentException if the password is null or blank
+     * @throws IllegalStateException    if the handler already has a password from the writer; use
+     *                                  {@link #excel(ExcelHandler, String)} to stream it encrypted with that one. The
+     *                                  handler is discarded here too, so a rejection does not leave its workbook open
      */
     public static ResponseEntity<StreamingResponseBody> excel(
             ExcelHandler handler, String filename, String password) {
         if (password == null || password.isBlank()) {
             handler.discard();
             throw new IllegalArgumentException("Password cannot be null or blank");
+        }
+        if (handler.isPasswordSet()) {
+            // Found here, before the response exists, instead of inside the streaming body once it has begun.
+            handler.discard();
+            throw new IllegalStateException("The handler already has a password from ExcelWriter.password() or "
+                    + "ExcelWorkbook.password(); use excel(handler, filename) to stream it encrypted with that one");
         }
         return excel(filename).body(out -> handler.writeTo(out, password));
     }

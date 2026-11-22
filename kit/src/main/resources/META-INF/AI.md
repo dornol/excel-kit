@@ -112,7 +112,9 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   - `freezePane(int cols, int rows)` — freeze both
 - Encrypted output:
   - `.password("pw")` on writer → `handler.writeTo(out)` auto-encrypts
-  - `handler.writeTo(out, "pw")` / `handler.writeTo(path, "pw")` — late-binding encryption
+  - `handler.writeTo(out, "pw")` / `handler.writeTo(path, "pw")` — late-binding encryption (when the response is written);
+    `handler.isPasswordSet()` — whether the writer already set one (both at once throws `IllegalStateException`);
+    Spring: `ExcelKitResponse.excel(handler, filename, password)` rejects that before the response is built
 - Writers use static factory `create()`: `ExcelWriter.<T>create()`, `ExcelWorkbook.create()`,
   `CsvWriter.<T>create()` (no public constructors)
 - `required()` on reader columns — blank cells produce validation errors

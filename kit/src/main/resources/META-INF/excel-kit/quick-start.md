@@ -113,7 +113,7 @@ new CsvReader<>(Product::new, null)
 - `write(out)` — stream directly to OutputStream
 - `writeTo(path)` — write to file; atomic via `AtomicFileWriter` (a failed write keeps the existing file)
 - `password("pw")` on writer — automatic encryption
-- `writeTo(out, "pw")` — late-binding encryption
+- `writeTo(out, "pw")` — late-binding encryption; `handler.isPasswordSet()` tells whether the writer already set a password
 
 Output is consume-once via `ExcelHandler` / `CsvHandler`. A handler that will not be written
 (cancelled export, error after creating it) must be released with `handler.discard()`; it is a no-op

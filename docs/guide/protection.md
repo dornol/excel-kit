@@ -54,7 +54,8 @@ try (var wb = ExcelWorkbook.create()) {
 
 ### Late-Binding — Password at Output Time
 
-When the service layer builds the handler but the password is only known at the presentation layer:
+For encrypting when the response is written: the service layer builds the handler, and the password is only known
+where the file is sent, such as a controller.
 
 ```java
 // Service
@@ -65,7 +66,14 @@ handler.writeTo(outputStream, "P@ssw0rd!");   // OutputStream
 handler.writeTo(path, "P@ssw0rd!");           // File path
 ```
 
+With Spring, `ExcelKitResponse.excel(handler, "report", password)` does this for a download.
+
+A file has one password, so choose where it is set. `handler.isPasswordSet()` tells whether the writer already set one
+(`.password()` on `ExcelWriter` or `ExcelWorkbook`); a handler that has one encrypts with it on `writeTo(out)`.
+
 > Using both `.password()` and `writeTo(out, password)` on the same handler throws `IllegalStateException`.
+> `ExcelKitResponse.excel(handler, filename, password)` throws it before the response is built, not while it streams,
+> and discards the handler.
 > A null or blank password throws `IllegalArgumentException` and consumes the handler: its workbook is
 > closed and it cannot be written afterwards. The `IllegalStateException` above leaves the handler usable.
 

@@ -205,6 +205,7 @@ ExcelWriter.create().password("secret").column(...).write(data).writeTo(out);
 ExcelHandler h = ExcelWriter.create().column(...).write(data);
 h.writeTo(out, "secret");                 // OutputStream
 h.writeTo(path, "secret");                // Path
+h.isPasswordSet();                        // true if the writer already set one; then writeTo(.., "pw") throws
 ```
 
 ## Charts

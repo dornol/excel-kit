@@ -121,6 +121,22 @@ public final class ExcelHandler implements FileHandler {
     }
 
     /**
+     * Tells whether a password was already set on the writer, with {@link ExcelWriter#password(String)} or
+     * {@link ExcelWorkbook#password(String)}.
+     * <p>
+     * If so, {@link #writeTo(OutputStream)} encrypts with it and the {@code writeTo} overloads that take a password
+     * throw {@link IllegalStateException}: a file has one password. A caller that receives a handler from elsewhere
+     * and wants to encrypt it when the response is written can check this first, and fail before the response begins
+     * instead of while it streams.
+     *
+     * @return {@code true} if the writer set a password
+     * @since 0.28.0
+     */
+    public boolean isPasswordSet() {
+        return password != null;
+    }
+
+    /**
      * Writes the workbook to the given OutputStream.
      * <p>
      * If a password was set via {@link ExcelWriter#password(String)} or {@link ExcelWorkbook#password(String)},
