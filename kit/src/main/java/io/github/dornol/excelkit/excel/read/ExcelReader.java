@@ -334,10 +334,6 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         return snapshotReadOptions().limits().maxInputBytes();
     }
 
-    boolean canSharePackage() {
-        return password == null || inputDecrypted;
-    }
-
     /** Set while a workbook reader hands this reader a file it has already decrypted. */
     void decryptedInput(boolean decrypted) {
         this.inputDecrypted = decrypted;

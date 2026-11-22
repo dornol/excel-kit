@@ -28,7 +28,7 @@ import java.util.function.Function;
 public final class ExcelWorkbookReader {
     private static final int DEFAULT_MAX_ERRORS_PER_SHEET = 100;
 
-    private final List<SheetPlan> plans = new ArrayList<>();
+    private final List<SheetPlan<?>> plans = new ArrayList<>();
     private SheetFailurePolicy failurePolicy = SheetFailurePolicy.CONTINUE;
     private int maxErrorsPerSheet = DEFAULT_MAX_ERRORS_PER_SHEET;
 
@@ -79,7 +79,7 @@ public final class ExcelWorkbookReader {
         Objects.requireNonNull(name, "name cannot be null");
         Objects.requireNonNull(reader, "reader cannot be null");
         Objects.requireNonNull(consumer, "consumer cannot be null");
-        plans.add(new SheetPlan(name, null, new ReaderSheetExecution<>(reader, consumer)));
+        plans.add(new SheetPlan<>(name, null, reader, consumer));
         return this;
     }
 
@@ -97,7 +97,7 @@ public final class ExcelWorkbookReader {
         if (index < 0) throw new IllegalArgumentException("index must be non-negative");
         Objects.requireNonNull(reader, "reader cannot be null");
         Objects.requireNonNull(consumer, "consumer cannot be null");
-        plans.add(new SheetPlan(null, index, new ReaderSheetExecution<>(reader, consumer)));
+        plans.add(new SheetPlan<>(null, index, reader, consumer));
         return this;
     }
 
@@ -125,8 +125,8 @@ public final class ExcelWorkbookReader {
      */
     private long inputByteLimit() {
         long limit = 0;
-        for (SheetPlan plan : plans) {
-            long maximum = plan.execution.maxInputBytes();
+        for (SheetPlan<?> plan : plans) {
+            long maximum = plan.reader.maxInputBytes();
             if (maximum < 0) return -1;
             limit = Math.max(limit, maximum);
         }
@@ -156,11 +156,11 @@ public final class ExcelWorkbookReader {
         // An encrypted workbook is decrypted once here; every sheet then reads the same plain copy.
         try (TempWorkspace workspace = TempWorkspace.create()) {
             Path decrypted = ExcelReadSupport.decryptInto(workspace, path, password);
-            plans.forEach(plan -> plan.execution.decryptedInput(true));
+            plans.forEach(plan -> plan.reader.decryptedInput(true));
             try {
                 return readPlain(decrypted);
             } finally {
-                plans.forEach(plan -> plan.execution.decryptedInput(false));
+                plans.forEach(plan -> plan.reader.decryptedInput(false));
             }
         } catch (ExcelKitException e) {
             throw e;
@@ -172,11 +172,12 @@ public final class ExcelWorkbookReader {
     private WorkbookReadReport readPlain(Path path) {
         List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(path);
         List<SheetReadReport> reports = new ArrayList<>();
+        if (plans.isEmpty()) return new WorkbookReadReport(reports);
         // One security scan per policy for the whole file, however many sheets are read from it.
         SecurityScanCache scans = new SecurityScanCache();
-        boolean sharePackage = !plans.isEmpty() && plans.stream().allMatch(SheetPlan::canSharePackage);
-        try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile(), PackageAccess.READ) : null) {
-            for (SheetPlan plan : plans) {
+        // Every sheet reads from the one opened package: a password has been dealt with by now (see read(Path)).
+        try (OPCPackage pkg = OPCPackage.open(path.toFile(), PackageAccess.READ)) {
+            for (SheetPlan<?> plan : plans) {
                 Integer resolved = plan.index != null ? plan.index : findSheetIndex(plan.name, sheets);
                 if (resolved == null) {
                     // A missing named sheet is a per-sheet failure, like a missing index.
@@ -196,9 +197,7 @@ public final class ExcelWorkbookReader {
                     continue;
                 }
                 try {
-                    reports.add(sharePackage
-                            ? plan.readShared(path, index, name, maxErrorsPerSheet, pkg, scans)
-                            : plan.read(path, index, name, maxErrorsPerSheet));
+                    reports.add(plan.read(path, index, name, maxErrorsPerSheet, pkg, scans));
                 } catch (RuntimeException e) {
                     reports.add(failure(name, index, e));
                     if (failurePolicy == SheetFailurePolicy.STOP) break;
@@ -212,7 +211,7 @@ public final class ExcelWorkbookReader {
 
     /** The password of the registered readers (all sheets of one file share one password), or {@code null}. */
     private @Nullable String sharedPassword() {
-        return plans.stream().map(plan -> plan.execution.password()).filter(Objects::nonNull)
+        return plans.stream().map(plan -> plan.reader.password()).filter(Objects::nonNull)
                 .findFirst().orElse(null);
     }
 
@@ -224,18 +223,6 @@ public final class ExcelWorkbookReader {
     private SheetReadReport failure(String name, int index, RuntimeException failure) {
         return new SheetReadReport(name, index, new ReadSummary(0, 0, 0, false, Duration.ZERO),
                 List.of(), false, failure);
-    }
-
-    private static <T> SheetReadReport execute(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer,
-                                                Path path, int index, int maximumErrors) {
-        return collect(reader, consumer, index, maximumErrors, rows -> reader.readWithSummary(path, rows));
-    }
-
-    private static <T> SheetReadReport executeShared(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer,
-                                                      Path path, int index, int maximumErrors, OPCPackage pkg,
-                                                      SecurityScanCache scans) {
-        return collect(reader, consumer, index, maximumErrors,
-                rows -> reader.readSharedPackage(path, pkg, scans, rows));
     }
 
     /**
@@ -266,88 +253,25 @@ public final class ExcelWorkbookReader {
         return new SheetReadReport("#" + index, index, summary, errors, errorsTruncated[0], null);
     }
 
-    @FunctionalInterface
-    private interface SheetExecution {
-        SheetReadReport read(Path path, int index, int maximumErrors);
-
-        default boolean canSharePackage() { return false; }
-
-        default long maxInputBytes() { return -1; }
-
-        /** Tells the reader that the file it is given is already decrypted, so it must not decrypt it again. */
-        default void decryptedInput(boolean decrypted) { }
-
-        default @Nullable String password() { return null; }
-
-        default SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg,
-                                             SecurityScanCache scans) {
-            return read(path, index, maximumErrors);
-        }
-    }
-
-    private static final class ReaderSheetExecution<T> implements SheetExecution {
+    /** One registered sheet: where it is, the reader that maps its rows and who receives them. */
+    private static final class SheetPlan<T> {
+        private final @Nullable String name;
+        private final @Nullable Integer index;
         private final ExcelReader<T> reader;
         private final Consumer<ReadResult<T>> consumer;
 
-        private ReaderSheetExecution(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer) {
+        private SheetPlan(@Nullable String name, @Nullable Integer index, ExcelReader<T> reader,
+                          Consumer<ReadResult<T>> consumer) {
+            this.name = name;
+            this.index = index;
             this.reader = reader;
             this.consumer = consumer;
         }
 
-        @Override
-        public SheetReadReport read(Path path, int index, int maximumErrors) {
-            return execute(reader, consumer, path, index, maximumErrors);
-        }
-
-        @Override
-        public boolean canSharePackage() {
-            return reader.canSharePackage();
-        }
-
-        @Override
-        public long maxInputBytes() {
-            return reader.maxInputBytes();
-        }
-
-        @Override
-        public void decryptedInput(boolean decrypted) {
-            reader.decryptedInput(decrypted);
-        }
-
-        @Override
-        public @Nullable String password() {
-            return reader.password();
-        }
-
-        @Override
-        public SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg,
-                                          SecurityScanCache scans) {
-            return executeShared(reader, consumer, path, index, maximumErrors, pkg, scans);
-        }
-    }
-
-    private static final class SheetPlan {
-        private final @Nullable String name;
-        private final @Nullable Integer index;
-        private final SheetExecution execution;
-
-        private SheetPlan(@Nullable String name, @Nullable Integer index, SheetExecution execution) {
-            this.name = name;
-            this.index = index;
-            this.execution = execution;
-        }
-
-        private SheetReadReport read(Path path, int index, String name, int maximumErrors) {
-            SheetReadReport result = execution.read(path, index, maximumErrors);
-            return new SheetReadReport(name, index, result.summary(), result.errors(),
-                    result.errorsTruncated(), result.failure());
-        }
-
-        private boolean canSharePackage() { return execution.canSharePackage(); }
-
-        private SheetReadReport readShared(Path path, int index, String name, int maximumErrors, OPCPackage pkg,
-                                           SecurityScanCache scans) {
-            SheetReadReport result = execution.readShared(path, index, maximumErrors, pkg, scans);
+        private SheetReadReport read(Path path, int index, String name, int maximumErrors, OPCPackage pkg,
+                                     SecurityScanCache scans) {
+            SheetReadReport result = collect(reader, consumer, index, maximumErrors,
+                    rows -> reader.readSharedPackage(path, pkg, scans, rows));
             return new SheetReadReport(name, index, result.summary(), result.errors(),
                     result.errorsTruncated(), result.failure());
         }
