@@ -171,6 +171,8 @@ public final class ExcelWorkbookReader {
     private WorkbookReadReport readPlain(Path path) {
         List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(path);
         List<SheetReadReport> reports = new ArrayList<>();
+        // One security scan per policy for the whole file, however many sheets are read from it.
+        SecurityScanCache scans = new SecurityScanCache();
         boolean sharePackage = !plans.isEmpty() && plans.stream().allMatch(SheetPlan::canSharePackage);
         try (OPCPackage pkg = sharePackage ? OPCPackage.open(path.toFile(), PackageAccess.READ) : null) {
             for (SheetPlan plan : plans) {
@@ -194,7 +196,7 @@ public final class ExcelWorkbookReader {
                 }
                 try {
                     reports.add(sharePackage
-                            ? plan.readShared(path, index, name, maxErrorsPerSheet, pkg)
+                            ? plan.readShared(path, index, name, maxErrorsPerSheet, pkg, scans)
                             : plan.read(path, index, name, maxErrorsPerSheet));
                 } catch (RuntimeException e) {
                     reports.add(failure(name, index, e));
@@ -245,12 +247,13 @@ public final class ExcelWorkbookReader {
     }
 
     private static <T> SheetReadReport executeShared(ExcelReader<T> reader, Consumer<ReadResult<T>> consumer,
-                                                      Path path, int index, int maximumErrors, OPCPackage pkg) {
+                                                      Path path, int index, int maximumErrors, OPCPackage pkg,
+                                                      SecurityScanCache scans) {
         reader.sheetIndex(index);
         List<RowError> errors = new ArrayList<>();
         boolean[] errorsTruncated = {false};
         long[] rowOrdinal = {0};
-        ReadSummary summary = reader.readSharedPackage(path, pkg, result -> {
+        ReadSummary summary = reader.readSharedPackage(path, pkg, scans, result -> {
             rowOrdinal[0]++;
             consumer.accept(result);
             if (!result.success()) {
@@ -278,7 +281,8 @@ public final class ExcelWorkbookReader {
 
         default @Nullable String password() { return null; }
 
-        default SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg) {
+        default SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg,
+                                             SecurityScanCache scans) {
             return read(path, index, maximumErrors);
         }
     }
@@ -318,8 +322,9 @@ public final class ExcelWorkbookReader {
         }
 
         @Override
-        public SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg) {
-            return executeShared(reader, consumer, path, index, maximumErrors, pkg);
+        public SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg,
+                                          SecurityScanCache scans) {
+            return executeShared(reader, consumer, path, index, maximumErrors, pkg, scans);
         }
     }
 
@@ -342,8 +347,9 @@ public final class ExcelWorkbookReader {
 
         private boolean canSharePackage() { return execution.canSharePackage(); }
 
-        private SheetReadReport readShared(Path path, int index, String name, int maximumErrors, OPCPackage pkg) {
-            SheetReadReport result = execution.readShared(path, index, maximumErrors, pkg);
+        private SheetReadReport readShared(Path path, int index, String name, int maximumErrors, OPCPackage pkg,
+                                           SecurityScanCache scans) {
+            SheetReadReport result = execution.readShared(path, index, maximumErrors, pkg, scans);
             return new SheetReadReport(name, index, result.summary(), result.errors(),
                     result.errorsTruncated(), result.failure());
         }

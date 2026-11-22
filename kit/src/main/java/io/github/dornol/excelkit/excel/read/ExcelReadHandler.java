@@ -131,10 +131,11 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
 
-    void readSharedPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
+    /** Reads from a package that is already open; {@code scans} spares the file a scan another sheet has done. */
+    void readSharedPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer, SecurityScanCache scans) {
         markConsumed();
         run(() -> {
-            ExcelSecurityScanner.scan(getTempFile(), readOptions.securityPolicy());
+            scans.scan(getTempFile(), readOptions.securityPolicy());
             readPackage(pkg, guardedConsumer(consumer));
         });
     }

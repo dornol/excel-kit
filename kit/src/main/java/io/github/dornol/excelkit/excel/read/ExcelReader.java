@@ -348,9 +348,9 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         return password;
     }
 
-    ReadSummary readSharedPackage(Path path, OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
+    ReadSummary readSharedPackage(Path path, OPCPackage pkg, SecurityScanCache scans, Consumer<ReadResult<T>> consumer) {
         ExcelReadHandler<T> handler = createHandler(path);
-        return summarizeRead(callback -> handler.readSharedPackage(pkg, callback), handler::wasStoppedEarly, consumer);
+        return summarizeRead(callback -> handler.readSharedPackage(pkg, callback, scans), handler::wasStoppedEarly, consumer);
     }
 
     @Override
