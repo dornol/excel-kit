@@ -96,6 +96,10 @@ and reading encrypted files does not trigger it. To silence it, start the JVM wi
 `--sun-misc-unsafe-memory-access=allow`. Fixing it is up to POI; it should disappear with a POI release that no
 longer uses `Unsafe` for this.
 
+Starting the JVM with `--sun-misc-unsafe-memory-access=deny` does not make encryption fail: POI then skips releasing
+the mapping and the write completes (tested on JDK 25 on macOS; on Windows a mapped temporary file may then stay
+locked until the JVM ends, which was not tested).
+
 ## Security Notes
 
 ### Reading Untrusted Files

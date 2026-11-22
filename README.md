@@ -299,7 +299,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 | Validation | Dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
 | Content | Formulas, hyperlinks, rich text, images (byte[] or URL, custom size), cell comments |
 | Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |
-| Protection | Sheet/workbook protection, per-column lock, password encryption (AES-256) |
+| Protection | Sheet/workbook protection, per-column lock, password encryption (AES-256), `ExcelHandler.isPasswordSet()` to tell whether the writer already set one |
 | Multi-sheet | `ExcelWorkbook` for typed multi-sheet (each sheet an `ExcelSheetWriter`), auto-rollover via `maxRows()`; a chart is drawn on every rolled-over sheet |
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |
 | Null handling | `nullValue()` default for null cells, `defaultStyle()` for writer-level defaults |
@@ -317,7 +317,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values (`rawValues()`) |
 | Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |
-| Discovery | `ExcelWorkbookInspector` — `sheetNames()`, `headers()`; `password(...)` reads encrypted workbooks, `limits(...)` bounds an upload |
+| Discovery | `ExcelWorkbookInspector` — `sheetNames()`, `headers()`; `password(...)` reads encrypted workbooks, `limits(...)` bounds an upload (`maxInputBytes`, `maxSheets`, `maxColumns`; over a limit: `ReadLimitExceededException`) |
 | Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files, `limits(ReadLimits.UPLOAD)` preset for untrusted uploads (readers have no limits by default) |
 
 Reader configurations are reusable. Each `read()`, `readWhile()`, or `readStrict()` call creates
