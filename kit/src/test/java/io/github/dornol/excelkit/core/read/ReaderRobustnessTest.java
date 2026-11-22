@@ -56,4 +56,48 @@ class ReaderRobustnessTest {
         assertTrue(error.reason() == ReadSecurityException.Reason.COMPRESSION_RATIO
                 || error.reason() == ReadSecurityException.Reason.ENTRY_SIZE);
     }
+
+    private static byte[] zipWithEntry(String name, int zeroBytes) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(output)) {
+            zip.putNextEntry(new ZipEntry(name));
+            zip.write(new byte[zeroBytes]);
+            zip.closeEntry();
+        }
+        return output.toByteArray();
+    }
+
+    @Test void theDefaultPolicyAlsoRejectsAZipBombInAPartItDoesNotScan() throws Exception {
+        // Not a worksheet and no formula or link scan is on: only the ratio check can notice it.
+        byte[] bomb = zipWithEntry("xl/media/image1.bin", 20_000_000);
+
+        ReadSecurityException error = assertThrows(ReadSecurityException.class, () ->
+                ExcelReader.forMap().read(new ByteArrayInputStream(bomb), result -> {}));
+
+        assertEquals(ReadSecurityException.Reason.COMPRESSION_RATIO, error.reason());
+        assertTrue(error.getMessage().contains("xl/media/image1.bin"), error.getMessage());
+    }
+
+    @Test void aHigherRatioLimitLetsTheSameEntryThroughTheScan() throws Exception {
+        byte[] bomb = zipWithEntry("xl/media/image1.bin", 20_000_000);
+        ReadSecurityPolicy lenient = new ReadSecurityPolicy(true, true,
+                ReadSecurityPolicy.DEFAULT.maxScannedEntryBytes(), ReadSecurityPolicy.DEFAULT.maxTotalScannedBytes(),
+                1_000_000.0);
+
+        // The scan lets it pass; what follows is POI failing on a package that is no workbook, not a security error.
+        Exception error = assertThrows(Exception.class, () ->
+                ExcelReader.forMap().securityPolicy(lenient).read(new ByteArrayInputStream(bomb), result -> {}));
+
+        assertFalse(error instanceof ReadSecurityException, String.valueOf(error));
+    }
+
+    @Test void aWorkbookThisLibraryWritesIsNotMistakenForAZipBomb() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        io.github.dornol.excelkit.excel.ExcelWriter.<Integer>create().column("A", n -> null).column("B", n -> n)
+                .write(java.util.stream.IntStream.range(0, 200_000).boxed().toList()).writeTo(out);
+
+        long rows = ExcelReader.forMap().readAll(new ByteArrayInputStream(out.toByteArray())).size();
+
+        assertEquals(200_000, rows);
+    }
 }

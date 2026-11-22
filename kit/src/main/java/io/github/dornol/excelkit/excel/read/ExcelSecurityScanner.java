@@ -41,6 +41,9 @@ final class ExcelSecurityScanner {
                     throw security(ReadSecurityException.Reason.ZIP_ENTRIES,
                             "Workbook exceeds ZIP entry limit: " + policy.maxZipEntries());
                 }
+                // Whatever the policy allows, an entry that expands far beyond its stored size is a ZIP bomb. The
+                // sizes come from the ZIP directory, so this costs nothing and nothing is decompressed.
+                validateCompressionRatio(entry, policy);
                 // OPC part names are case-insensitive and a worksheet part may live at any path.
                 String name = entry.getName().toLowerCase(Locale.ROOT);
                 if (!policy.allowExternalLinks()) {
@@ -73,12 +76,18 @@ final class ExcelSecurityScanner {
     }
 
     private static void validateEntry(ZipEntry entry, ReadSecurityPolicy policy) {
-        long size = entry.getSize(), compressed = entry.getCompressedSize();
+        long size = entry.getSize();
         if (size > policy.maxScannedEntryBytes()) throw security(ReadSecurityException.Reason.ENTRY_SIZE,
                 "Worksheet XML exceeds security scan entry limit: " + size);
+        validateCompressionRatio(entry, policy);
+    }
+
+    /** Rejects an entry whose declared size is more than the allowed multiple of its stored size. */
+    private static void validateCompressionRatio(ZipEntry entry, ReadSecurityPolicy policy) {
+        long size = entry.getSize(), compressed = entry.getCompressedSize();
         if (size > 0 && compressed > 0 && (double) size / compressed > policy.maxCompressionRatio())
             throw security(ReadSecurityException.Reason.COMPRESSION_RATIO,
-                    "Worksheet XML exceeds compression ratio limit");
+                    "ZIP entry '" + entry.getName() + "' exceeds compression ratio limit");
     }
 
     /**

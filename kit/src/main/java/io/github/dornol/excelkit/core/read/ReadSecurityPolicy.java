@@ -7,6 +7,11 @@ package io.github.dornol.excelkit.core.read;
  * default ZIP entry limit of 50,000. Use the six-argument constructor when a
  * stricter entry-count limit is required.</p>
  *
+ * <p>Which limits apply when: {@code maxZipEntries} and {@code maxCompressionRatio} are checked for every entry
+ * of every workbook, from the ZIP directory and without decompressing anything. {@code maxScannedEntryBytes} and
+ * {@code maxTotalScannedBytes} bound what the scanner inspects, so they apply only to the parts it scans: the
+ * worksheets when formulas are refused and the relationship parts when external links are refused.</p>
+ *
  * @param allowFormulas whether formulas are permitted
  * @param allowExternalLinks whether external workbook links are permitted
  * @param maxScannedEntryBytes maximum decompressed size of a scanned entry
