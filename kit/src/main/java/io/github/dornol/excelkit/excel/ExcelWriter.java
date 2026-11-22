@@ -42,6 +42,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private @Nullable ExcelWriteSession<T> execution;
+    private boolean written;
 
 
 
@@ -562,9 +563,15 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     public ExcelHandler write(Stream<T> stream, WriteRowCallback<T> consumer) {
         Objects.requireNonNull(stream, "stream cannot be null");
         Objects.requireNonNull(consumer, "consumer cannot be null");
+        if (written) {
+            throw new ExcelWriteException("write() has already been called on this writer; "
+                    + "a writer builds one workbook, so create a new ExcelWriter for another file");
+        }
         ExcelWriteOptions<T> options = snapshotOptions();
-        this.execution = new ExcelWriteSession<>(options);
         validateColumns(options);
+        // From here the workbook (and its temp files) is in use; columns also keep per-workbook state.
+        written = true;
+        this.execution = new ExcelWriteSession<>(options);
         try {
             startSheet(options);
         } catch (RuntimeException e) {
