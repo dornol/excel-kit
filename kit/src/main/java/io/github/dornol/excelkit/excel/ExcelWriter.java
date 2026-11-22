@@ -39,7 +39,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private @Nullable AfterDataWriter afterAllWriter;
-    private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
+    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private @Nullable ExcelWriteSession<T> execution;
     private boolean written;

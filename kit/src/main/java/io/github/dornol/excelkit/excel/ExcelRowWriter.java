@@ -17,7 +17,7 @@ final class ExcelRowWriter {
     private ExcelRowWriter() { }
 
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
-                          SheetConfig<T> config, Map<String, CellStyle> styleCache, SXSSFWorkbook workbook) {
+                          SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook) {
         if (cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY) {
             throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: Excel sheets hold at most "
                     + ExcelLimits.SHEET_ROW_CAPACITY + " rows. Lower maxRows(...) so the writer rolls over to a "

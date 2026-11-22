@@ -345,9 +345,20 @@ class ExcelWriteSupport {
         }
     }
 
+    /**
+     * Identifies a style derived from a column's base style: the base style, the background color
+     * ({@code -1} for none) and, for a row style, its {@link RowStyleConfig#cacheKey()}. A record keeps the
+     * per-cell lookup free of string building.
+     */
+    record DerivedStyleKey(int baseIndex, int rgb, @Nullable String rule) {
+        static int rgb(@Nullable ExcelColor color) {
+            return color == null ? -1 : (color.getR() << 16) | (color.getG() << 8) | color.getB();
+        }
+    }
+
     static CellStyle resolveColorStyle(CellStyle baseStyle, ExcelColor color,
-                                        Map<String, CellStyle> cache, SXSSFWorkbook wb, int maxStyles) {
-        String key = baseStyle.getIndex() + "_" + color.getR() + "_" + color.getG() + "_" + color.getB();
+                                        Map<DerivedStyleKey, CellStyle> cache, SXSSFWorkbook wb, int maxStyles) {
+        DerivedStyleKey key = new DerivedStyleKey(baseStyle.getIndex(), DerivedStyleKey.rgb(color), null);
         return cache.computeIfAbsent(key, k -> {
             CellStyle style = createDerivedStyle(wb, maxStyles);
             style.cloneStyleFrom(baseStyle);
@@ -381,12 +392,10 @@ class ExcelWriteSupport {
     }
 
     static CellStyle resolveRowStyle(CellStyle baseStyle, @Nullable ExcelColor bgColor,
-                                      RowStyleConfig rowStyle, Map<String, CellStyle> cache,
+                                      RowStyleConfig rowStyle, Map<DerivedStyleKey, CellStyle> cache,
                                       SXSSFWorkbook wb, int maxStyles) {
-        String bgKey = bgColor != null
-                ? bgColor.getR() + "_" + bgColor.getG() + "_" + bgColor.getB()
-                : "none";
-        String key = baseStyle.getIndex() + "_" + rowStyle.cacheKey() + "_bg" + bgKey;
+        DerivedStyleKey key = new DerivedStyleKey(baseStyle.getIndex(), DerivedStyleKey.rgb(bgColor),
+                rowStyle.cacheKey());
         return cache.computeIfAbsent(key, k -> {
             CellStyle style = createDerivedStyle(wb, maxStyles);
             style.cloneStyleFrom(baseStyle);

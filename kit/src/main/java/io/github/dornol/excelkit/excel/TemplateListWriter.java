@@ -54,7 +54,7 @@ public class TemplateListWriter<T> {
     private final int sheetIndex;
 
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
+    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
     private final SheetConfig<T> cfg = new SheetConfig<>();
     private @Nullable TableOptions tableOptions;
 

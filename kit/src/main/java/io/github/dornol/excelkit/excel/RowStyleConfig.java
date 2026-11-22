@@ -28,12 +28,14 @@ public class RowStyleConfig {
     @Nullable ExcelColor backgroundColor;
     @Nullable Boolean italic;
     @Nullable Boolean strikethrough;
+    private @Nullable String cacheKey;
 
     /**
      * Sets bold font for the row.
      */
     public RowStyleConfig bold(boolean bold) {
         this.bold = bold;
+        cacheKey = null;
         return this;
     }
 
@@ -42,6 +44,7 @@ public class RowStyleConfig {
      */
     public RowStyleConfig fontSize(float fontSize) {
         this.fontSize = fontSize;
+        cacheKey = null;
         return this;
     }
 
@@ -50,6 +53,7 @@ public class RowStyleConfig {
      */
     public RowStyleConfig fontColor(@Nullable ExcelColor color) {
         this.fontColor = color;
+        cacheKey = null;
         return this;
     }
 
@@ -58,6 +62,7 @@ public class RowStyleConfig {
      */
     public RowStyleConfig fontColor(int r, int g, int b) {
         this.fontColor = ExcelColor.of(r, g, b);
+        cacheKey = null;
         return this;
     }
 
@@ -66,6 +71,7 @@ public class RowStyleConfig {
      */
     public RowStyleConfig backgroundColor(@Nullable ExcelColor color) {
         this.backgroundColor = color;
+        cacheKey = null;
         return this;
     }
 
@@ -74,6 +80,7 @@ public class RowStyleConfig {
      */
     public RowStyleConfig backgroundColor(int r, int g, int b) {
         this.backgroundColor = ExcelColor.of(r, g, b);
+        cacheKey = null;
         return this;
     }
 
@@ -82,6 +89,7 @@ public class RowStyleConfig {
      */
     public RowStyleConfig italic(boolean italic) {
         this.italic = italic;
+        cacheKey = null;
         return this;
     }
 
@@ -90,6 +98,7 @@ public class RowStyleConfig {
      */
     public RowStyleConfig strikethrough(boolean strikethrough) {
         this.strikethrough = strikethrough;
+        cacheKey = null;
         return this;
     }
 
@@ -99,9 +108,19 @@ public class RowStyleConfig {
     }
 
     /**
-     * Builds a cache key fragment representing this style configuration.
+     * A cache key fragment representing this style configuration. Built once and reused, because the
+     * writers ask for it on every cell; any setter drops the remembered value.
      */
     String cacheKey() {
+        String key = cacheKey;
+        if (key == null) {
+            key = buildCacheKey();
+            cacheKey = key;
+        }
+        return key;
+    }
+
+    private String buildCacheKey() {
         StringBuilder sb = new StringBuilder("rs_");
         if (bold != null) sb.append("b").append(bold ? "1" : "0");
         if (fontSize != null) sb.append("f").append(fontSize.intValue());

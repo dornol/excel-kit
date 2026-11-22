@@ -48,7 +48,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
     // Per-sheet settings
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
+    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
     private boolean written = false;
 
