@@ -36,6 +36,8 @@ dependencies {
     testImplementation("org.springframework:spring-webmvc")
     testImplementation("org.springframework:spring-test")
     testImplementation("jakarta.servlet:jakarta.servlet-api")
+    // A real servlet container for the tests that need an actual socket (client disconnects, multipart)
+    testImplementation("org.apache.tomcat.embed:tomcat-embed-core")
     testImplementation("org.hamcrest:hamcrest")
     testImplementation("com.jayway.jsonpath:json-path")
     testImplementation("com.fasterxml.jackson.core:jackson-databind")
