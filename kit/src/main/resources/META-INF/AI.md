@@ -193,7 +193,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - **Header style config** — `headerStyle(cfg -> cfg.alignment(...).border(...).bold(...).wrapText(...))`
   on `ExcelWriter` / `ExcelWorkbook`. Overrides default header alignment/bold/border/wrap.
 
-## Key API Notes (v0.27.0+)
+## Key API Notes (v0.28.0+)
 
 - **Schema package** — `ExcelKitSchema` lives in `io.github.dornol.excelkit.schema` (it moved from `core`, which no
   longer depends on `excel`/`csv`). Register a schema reader in a workbook reader with

@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-23
+
 ### Added
 - `ExcelWorkbookInspector.headers(input, sheetIndex, headerRowIndex, headerRows)` (`InputStream`, `Path`, `InputStreamSource`) names the columns of a sheet whose header spans several rows, such as a workbook written with `group(...)`, which had no single row with every name: a column without a group has its name in the first header row, merged downwards. The block ends at `headerRowIndex`; for each column the lowest non-blank cell is its name, as for `ExcelReader.headerRows(...)`. The three-argument `headers(...)` is unchanged.
 - `ExcelHandler.isPasswordSet()` tells whether the writer already set a password (`ExcelWriter.password(...)` or `ExcelWorkbook.password(...)`), so a caller that encrypts when the response is written can find the conflict with `writeTo(.., password)` before the response begins.
@@ -54,6 +56,15 @@ All notable changes to this project will be documented in this file.
 - A `null` cell value is now written as an empty (blank) cell with the column's style instead of a cell holding an empty string, so Excel's `ISBLANK`, `COUNTA`, `COUNTBLANK` and "Go To Special > Blanks" treat it as empty, and a sparse column makes a smaller file. A `nullValue(...)` placeholder is unchanged.
 - The ZIP compression ratio limit of `ReadSecurityPolicy` (100 times for `DEFAULT`, 50 for `STRICT`) is now checked for every entry of every workbook, from the ZIP directory and without decompressing anything. It used to be checked only for the worksheets and relationship parts the scanner inspected, which with `DEFAULT` (formulas and external links allowed) meant not at all, so a ZIP bomb stored in another part passed the scan. A workbook this library writes stays below about 20 times, so it is not affected; a file above the limit is rejected with `ReadSecurityException` (`COMPRESSION_RATIO`), and a larger `maxCompressionRatio` lifts it. The size limits are unchanged: they bound what the scanner inspects, so they still apply only to the parts it scans.
 - `ReadSecurityPolicy.STRICT` allows a worksheet of up to 256 MB and 512 MB in all (decompressed) instead of 16 MB and 64 MB, so a workbook of ordinary size (about 40,000 rows of six columns was the old ceiling; a million rows fit now) is no longer refused outright. These limits bound what the scan inspects, about 200 MB of XML per second, so a scan stays within a few seconds. The compression ratio (50) and the ZIP entry count (10,000) are unchanged.
+- `CellData` number conversion (`asInt`, `asLong`, `asDouble`, `asNumber`, `asBigDecimal`) is about 2.5 times faster for most values: it reuses the locale's number format instead of building one per cell, skips the currency/percent matching when the text has no such sign, and converts plain digits directly. A numeric 300,000-row, three-number-column read spent about 510 ms on conversion and now about 200 ms. Results are unchanged (checked on 4,104 value/locale/method combinations against the previous implementation).
+- `ExcelWorkbookReader` runs the security scan of a workbook once per `ReadSecurityPolicy` instead of once per sheet. Under `STRICT` (formulas refused) every scan parses every worksheet, so reading N sheets parsed the whole file N times. A refusal is remembered too: the remaining sheets are refused with the same `ReadSecurityException` without scanning again.
+- `ExcelWorkbookReader.read(Path|InputStream)` of a password-protected workbook decrypts the file once and reads every sheet from that copy. It used to decrypt it again for the sheet list and for each sheet, which is a full decryption per sheet.
+- `ExcelWorkbookReader.read(InputStream)` now stops copying once the input exceeds the readers' `ReadLimits.maxInputBytes` (it used to copy the whole stream first) and keeps the copy in a restricted-permission temp directory.
+- A summary row's default label (`Min`, `Max`, ...) no longer depends on the JVM locale (it was `Mın` under a Turkish locale).
+- `ExcelWriter.write(Stream, ...)` now also releases the workbook's temp files when an `Error` such as `OutOfMemoryError` is thrown.
+- Writing to a path that already holds a file (`writeTo(Path)`) now keeps that file's permissions; the atomic replace used to give it the default ones (`rw-rw-r--` became `rw-------` under a 077 umask).
+- `ExcelWriter.sheetName(String)` now rejects a name Excel cannot hold (empty, or containing `\ / ? * [ ] :`, or starting or ending with an apostrophe) with an `IllegalArgumentException` when it is given; it used to surface only when the first sheet was created.
+- Internal: `readWhile` now lives once in `AbstractReadHandler` (the CSV and Excel handlers each had a copy), and `ExcelReadHandler` shares one error-translation path across `read`, `readWhile` and shared-package reads. Behaviour is unchanged.
 
 ### Removed
 - `AbstractReader.requireHeaders()` (an alias of `strictHeaders()`) and the `@Deprecated` `ExcelKitUpload.validateExcel` / `validateCsv` (aliases of `excel` / `csv`).
@@ -70,17 +81,6 @@ All notable changes to this project will be documented in this file.
 - `ExcelWriter` with `maxRows()` drew a configured chart only on the last sheet, which plots just the remainder of the rows and leaves the other sheets without one, although the guides and `ExcelSheetWriter` give every sheet its own chart. Every sheet now gets a chart over its own rows, below its summary rows.
 - `ExcelWriter.column(..., c -> c.type(ExcelDataType.DATETIME))` showed values with fractional seconds in the whole-second format, while the same column on an `ExcelWorkbook` sheet showed milliseconds. Both now show milliseconds.
 - `ExcelWriter.maxRows(1)` never rolled over to a new sheet, so all rows landed on one sheet. `ExcelSheetWriter` was not affected.
-
-- `CellData` number conversion (`asInt`, `asLong`, `asDouble`, `asNumber`, `asBigDecimal`) is about 2.5 times faster for most values: it reuses the locale's number format instead of building one per cell, skips the currency/percent matching when the text has no such sign, and converts plain digits directly. A numeric 300,000-row, three-number-column read spent about 510 ms on conversion and now about 200 ms. Results are unchanged (checked on 4,104 value/locale/method combinations against the previous implementation).
-- `ExcelWorkbookReader` runs the security scan of a workbook once per `ReadSecurityPolicy` instead of once per sheet. Under `STRICT` (formulas refused) every scan parses every worksheet, so reading N sheets parsed the whole file N times. A refusal is remembered too: the remaining sheets are refused with the same `ReadSecurityException` without scanning again.
-- `ExcelWorkbookReader.read(Path|InputStream)` of a password-protected workbook decrypts the file once and reads every sheet from that copy. It used to decrypt it again for the sheet list and for each sheet, which is a full decryption per sheet.
-- `ExcelWorkbookReader.read(InputStream)` now stops copying once the input exceeds the readers' `ReadLimits.maxInputBytes` (it used to copy the whole stream first) and keeps the copy in a restricted-permission temp directory.
-- A summary row's default label (`Min`, `Max`, ...) no longer depends on the JVM locale (it was `Mın` under a Turkish locale).
-- `ExcelWriter.write(Stream, ...)` now also releases the workbook's temp files when an `Error` such as `OutOfMemoryError` is thrown.
-- Writing to a path that already holds a file (`writeTo(Path)`) now keeps that file's permissions; the atomic replace used to give it the default ones (`rw-rw-r--` became `rw-------` under a 077 umask).
-- `ExcelWriter.sheetName(String)` now rejects a name Excel cannot hold (empty, or containing `\ / ? * [ ] :`, or starting or ending with an apostrophe) with an `IllegalArgumentException` when it is given; it used to surface only when the first sheet was created.
-- Internal: `readWhile` now lives once in `AbstractReadHandler` (the CSV and Excel handlers each had a copy), and `ExcelReadHandler` shares one error-translation path across `read`, `readWhile` and shared-package reads. Behaviour is unchanged.
-
 
 ## [0.27.0] - 2026-11-21
 
