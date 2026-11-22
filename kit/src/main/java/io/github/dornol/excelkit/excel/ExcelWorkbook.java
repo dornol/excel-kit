@@ -3,8 +3,6 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFColor;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +10,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -49,16 +46,10 @@ public class ExcelWorkbook implements AutoCloseable {
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
     private final SXSSFWorkbook wb;
-    private CellStyle headerStyle;
-    private XSSFColor headerColor;
+    private final WorkbookSettings settings;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private final Set<String> usedSheetNames = new HashSet<>();
     private boolean finished = false;
-    private char @Nullable [] password;
-    private @Nullable String workbookPassword;
-    private @Nullable String headerFontName;
-    private @Nullable Integer headerFontSize;
-    private @Nullable HeaderStyleConfig headerStyleConfig;
 
     /**
      * Creates a new ExcelWorkbook with default initialization (white header, 1000 row window).
@@ -94,17 +85,7 @@ public class ExcelWorkbook implements AutoCloseable {
     private ExcelWorkbook(InitOptions opts) {
         StreamingOptions streaming = opts.state.options();
         this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
-        ExcelColor defaultColor = ExcelColor.WHITE;
-        this.headerColor = new XSSFColor(new byte[]{
-                (byte) defaultColor.getR(),
-                (byte) defaultColor.getG(),
-                (byte) defaultColor.getB()
-        });
-        this.headerStyle = rebuildHeaderStyle();
-    }
-
-    private CellStyle rebuildHeaderStyle() {
-        return ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize, headerStyleConfig);
+        this.settings = new WorkbookSettings(wb);
     }
 
     /**
@@ -155,8 +136,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook documentProperty(String key, String value) {
-        Objects.requireNonNull(value, "value cannot be null");
-        ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
+        settings.documentProperty(key, value);
         return this;
     }
 
@@ -169,13 +149,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook headerColor(ExcelColor color) {
-        if (color == null) throw new IllegalArgumentException("color must not be null");
-        this.headerColor = new XSSFColor(new byte[]{
-                (byte) color.getR(),
-                (byte) color.getG(),
-                (byte) color.getB()
-        });
-        this.headerStyle = rebuildHeaderStyle();
+        settings.headerColor(color);
         return this;
     }
 
@@ -188,10 +162,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      */
     public ExcelWorkbook protectWorkbook(String password) {
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
-        }
-        this.workbookPassword = password;
+        settings.protectWorkbook(password);
         return this;
     }
 
@@ -206,10 +177,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      */
     public ExcelWorkbook password(String password) {
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
-        }
-        this.password = password.toCharArray();
+        settings.password(password);
         return this;
     }
 
@@ -223,20 +191,8 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook password(char[] password) {
-        if (password == null || password.length == 0 || isBlank(password)) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
-        }
-        this.password = password.clone();
+        settings.password(password);
         return this;
-    }
-
-    private static boolean isBlank(char[] chars) {
-        for (char c : chars) {
-            if (!Character.isWhitespace(c)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -246,8 +202,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      */
     public ExcelWorkbook headerFontName(String fontName) {
-        this.headerFontName = Objects.requireNonNull(fontName, "fontName cannot be null");
-        this.headerStyle = rebuildHeaderStyle();
+        settings.headerFontName(fontName);
         return this;
     }
 
@@ -258,11 +213,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @return this workbook for chaining
      */
     public ExcelWorkbook headerFontSize(int fontSize) {
-        if (fontSize <= 0) {
-            throw new IllegalArgumentException("fontSize must be positive");
-        }
-        this.headerFontSize = fontSize;
-        this.headerStyle = rebuildHeaderStyle();
+        settings.headerFontSize(fontSize);
         return this;
     }
 
@@ -274,10 +225,7 @@ public class ExcelWorkbook implements AutoCloseable {
      * @since 0.17.0
      */
     public ExcelWorkbook headerStyle(Consumer<HeaderStyleConfig> configurer) {
-        HeaderStyleConfig config = new HeaderStyleConfig();
-        configurer.accept(config);
-        this.headerStyleConfig = config;
-        this.headerStyle = rebuildHeaderStyle();
+        settings.headerStyle(configurer);
         return this;
     }
 
@@ -296,7 +244,7 @@ public class ExcelWorkbook implements AutoCloseable {
         if (!usedSheetNames.add(name)) {
             throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
         }
-        return new ExcelSheetWriter<>(wb, wb.createSheet(name), name, headerStyle, cellStyleCache, usedSheetNames);
+        return new ExcelSheetWriter<>(wb, wb.createSheet(name), name, settings.headerStyle(), cellStyleCache, usedSheetNames);
     }
 
     /**
@@ -311,8 +259,8 @@ public class ExcelWorkbook implements AutoCloseable {
             throw new ExcelWriteException("Workbook is already finished");
         }
         finished = true;
-        ExcelWorkbookSupport.applyProtection(wb, workbookPassword);
-        return new ExcelHandler(wb, password);
+        ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
+        return new ExcelHandler(wb, settings.password());
     }
 
     /**

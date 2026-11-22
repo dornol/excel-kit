@@ -6,7 +6,6 @@ import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,18 +35,12 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
     private final SXSSFWorkbook wb;
+    private final WorkbookSettings settings;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private CellStyle headerStyle;
-    private XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
     private @Nullable AfterDataWriter afterAllWriter;
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
-    private char @Nullable [] password;
-    private @Nullable String workbookPassword;
-    private @Nullable String headerFontName;
-    private @Nullable Integer headerFontSize;
-    private @Nullable HeaderStyleConfig headerStyleConfig;
     private @Nullable ExcelWriteSession<T> execution;
 
 
@@ -186,17 +179,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private ExcelWriter(InitOptions opts) {
         StreamingOptions streaming = opts.state.options();
         this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
-        ExcelColor defaultColor = ExcelColor.WHITE;
-        this.headerColor = new XSSFColor(new byte[]{
-                (byte) defaultColor.getR(),
-                (byte) defaultColor.getG(),
-                (byte) defaultColor.getB()
-        });
-        this.headerStyle = rebuildHeaderStyle();
-    }
-
-    private CellStyle rebuildHeaderStyle() {
-        return ExcelStyleSupporter.headerStyle(wb, headerColor, headerFontName, headerFontSize, headerStyleConfig);
+        this.settings = new WorkbookSettings(wb);
     }
 
     /**
@@ -248,8 +231,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @since 0.17.0
      */
     public ExcelWriter<T> documentProperty(String key, String value) {
-        Objects.requireNonNull(value, "value cannot be null");
-        ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
+        settings.documentProperty(key, value);
         return this;
     }
     /**
@@ -263,15 +245,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @since 0.17.0
      */
     public ExcelWriter<T> headerColor(ExcelColor color) {
-        if (color == null) {
-            throw new IllegalArgumentException("color must not be null");
-        }
-        this.headerColor = new XSSFColor(new byte[]{
-                (byte) color.getR(),
-                (byte) color.getG(),
-                (byte) color.getB()
-        });
-        this.headerStyle = rebuildHeaderStyle();
+        settings.headerColor(color);
         return this;
     }
 
@@ -327,10 +301,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> protectWorkbook(String password) {
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
-        }
-        this.workbookPassword = password;
+        settings.protectWorkbook(password);
         return this;
     }
 
@@ -345,10 +316,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> password(String password) {
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
-        }
-        this.password = password.toCharArray();
+        settings.password(password);
         return this;
     }
 
@@ -364,20 +332,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @since 0.17.0
      */
     public ExcelWriter<T> password(char[] password) {
-        if (password == null || password.length == 0 || isBlank(password)) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
-        }
-        this.password = password.clone();
+        settings.password(password);
         return this;
-    }
-
-    private static boolean isBlank(char[] chars) {
-        for (char c : chars) {
-            if (!Character.isWhitespace(c)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -387,7 +343,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> headerFontName(String fontName) {
-        this.headerFontName = Objects.requireNonNull(fontName, "fontName cannot be null");
+        settings.headerFontName(fontName);
         return this;
     }
 
@@ -398,10 +354,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return Current ExcelWriter instance for chaining
      */
     public ExcelWriter<T> headerFontSize(int fontSize) {
-        if (fontSize <= 0) {
-            throw new IllegalArgumentException("fontSize must be positive");
-        }
-        this.headerFontSize = fontSize;
+        settings.headerFontSize(fontSize);
         return this;
     }
 
@@ -424,10 +377,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @since 0.17.0
      */
     public ExcelWriter<T> headerStyle(Consumer<HeaderStyleConfig> configurer) {
-        HeaderStyleConfig config = new HeaderStyleConfig();
-        configurer.accept(config);
-        this.headerStyleConfig = config;
-        this.headerStyle = rebuildHeaderStyle();
+        settings.headerStyle(configurer);
         return this;
     }
 
@@ -629,7 +579,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
                 consumer.accept(rowData, cursor());
             });
             finishWorkbook(options);
-            return new ExcelHandler(this.wb, this.password);
+            return new ExcelHandler(this.wb, settings.password());
         } catch (ExcelWriteException e) {
             closeWorkbookQuietly();
             throw e;
@@ -653,16 +603,12 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
     /** Creates the first sheet and writes its preamble, header and sheet options. */
     private void startSheet(ExcelWriteOptions<T> options) {
-        if (headerFontName != null || headerFontSize != null) {
-            this.headerStyle = rebuildHeaderStyle();
-        }
-
         execution().sheet(createNamedSheet());
         int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
         execution().cursor(new Cursor(headerStartRow));
         execution().headerRow(headerStartRow);
 
-        ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), headerStyle, wb, headerStyleCache,
+        ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
                 options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
         // With group headers the column names sit below the group rows: that row is the header row.
         execution().headerRow(cursor().getRowOfSheet() - 1);
@@ -682,7 +628,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
 
         applyPostProcessingAllSheets();
-        ExcelWorkbookSupport.applyProtection(wb, workbookPassword);
+        ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
 
         // Apply chart on last sheet
         if (options.sheetConfig().chartConfig != null) {
@@ -736,7 +682,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             turnOverSheet();
             int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
             cursor().setRowOfSheet(preambleRow);
-            ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), headerStyle, wb, headerStyleCache,
+            ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
                     options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
             execution().headerRow(cursor().getRowOfSheet() - 1);
             applySheetOptions();
