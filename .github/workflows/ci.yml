@@ -102,6 +102,42 @@ jobs:
       - name: Test the same JAR with POI 5 and 6
         run: ./gradlew :kit:poiCompatibilityTest --no-daemon
 
+  locale-compatibility:
+    # The library must behave the same under any default locale and time zone: numbers written with native digits
+    # (Arabic), a comma as the decimal separator (German), the dotless i (Turkish), a non-Gregorian calendar (Thai),
+    # and time zones with daylight saving or a half-hour offset.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - locale: ar-EG
+            time-zone: Africa/Cairo
+          - locale: de-DE
+            time-zone: Europe/Berlin
+          - locale: tr-TR
+            time-zone: Europe/Istanbul
+          - locale: th-TH
+            time-zone: Asia/Bangkok
+          - locale: en-US
+            time-zone: America/New_York
+          - locale: hi-IN
+            time-zone: Asia/Kolkata
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Test under ${{ matrix.locale }} / ${{ matrix.time-zone }}
+        run: >-
+          ./gradlew :kit:test :excel-kit-spring:test --no-daemon
+          -PtestLocale=${{ matrix.locale }}
+          -PtestTimeZone=${{ matrix.time-zone }}
+
   libreoffice-interop:
     # Opens what the writers produce in a real spreadsheet application. A file POI and the structure checks accept
     # can still be one an application refuses (POI 6 writes ZIP64 data descriptors that LibreOffice cannot read).

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
+import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.excel.*;
 import org.junit.jupiter.api.*;
 
@@ -36,6 +37,7 @@ class CellDataRegexTest {
     }
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void asNumber_shouldStripCommasAndCurrency() {
         assertEquals(1234567, new CellData(0, "$1,234,567").asInt());
     }
@@ -46,6 +48,7 @@ class CellDataRegexTest {
     }
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void asNumber_shouldHandleMixedCurrencySymbols() {
         assertEquals(1234, new CellData(0, "₩1,234").asInt());
     }

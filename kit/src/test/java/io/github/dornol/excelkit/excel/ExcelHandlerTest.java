@@ -190,7 +190,7 @@ class ExcelHandlerTest {
                 ExcelReader.mapping(row -> row)
                         .password("wrong")
                         .read(Files.newInputStream(excelFile), r -> {}));
-        assertTrue(ex.getMessage().toLowerCase().contains("invalid password"),
+        assertTrue(ex.getMessage().toLowerCase(java.util.Locale.ROOT).contains("invalid password"),
                 "Expected 'invalid password' in message: " + ex.getMessage());
     }
 

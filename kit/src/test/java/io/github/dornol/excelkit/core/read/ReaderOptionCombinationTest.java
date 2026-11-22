@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
+import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -453,6 +454,7 @@ class ReaderOptionCombinationTest {
     // ---- the tests
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void everyOptionAgreesAcrossFormatsModesAndWaysOfReading() throws Exception {
         List<String> problems = new ArrayList<>();
         int combinations = 0;

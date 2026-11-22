@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
+import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +43,7 @@ class CellDataDefaultValueTest {
         }
 
         @Test
+        @DefaultLocaleShowsEnglishNumbers
         void asDouble_nonBlankCell_parsesValue() {
             assertEquals(2.5, new CellData(0, "2.5").asDouble(0.0), 0.001);
         }
@@ -100,6 +102,7 @@ class CellDataDefaultValueTest {
         }
 
         @Test
+        @DefaultLocaleShowsEnglishNumbers
         void asInt_minValue_succeeds() {
             assertEquals(Integer.MIN_VALUE,
                     new CellData(0, String.valueOf(Integer.MIN_VALUE)).asInt());

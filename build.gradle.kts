@@ -24,10 +24,19 @@ allprojects {
         val testVersion = providers.gradleProperty("testJavaVersion")
             .map(String::toInt).orElse(JavaVersion.current().majorVersion.toInt())
         val toolchains = extensions.getByType<JavaToolchainService>()
+        // -PtestLocale=ar-EG -PtestTimeZone=Africa/Cairo runs the tests with another default locale and time zone
+        val testLocale = providers.gradleProperty("testLocale")
+        val testTimeZone = providers.gradleProperty("testTimeZone")
         tasks.withType<Test>().configureEach {
             javaLauncher.set(toolchains.launcherFor {
                 languageVersion.set(testVersion.map(JavaLanguageVersion::of))
             })
+            testLocale.orNull?.let { tag ->
+                val locale = java.util.Locale.forLanguageTag(tag)
+                systemProperty("user.language", locale.language)
+                systemProperty("user.country", locale.country)
+            }
+            testTimeZone.orNull?.let { systemProperty("user.timezone", it) }
             doFirst {
                 logger.lifecycle("$path test JVM: ${javaLauncher.get().metadata.languageVersion} " +
                     "(${javaLauncher.get().executablePath})")

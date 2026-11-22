@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel.read;
 
+import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import io.github.dornol.excelkit.excel.read.ExcelReadSupport;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.read.ExcelSheetInfo;
@@ -48,6 +49,7 @@ class ExternalWorkbookFixtureTest {
     }
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void excelSharedStringsSparseRowsAndSheetMetadataAreReadWithoutRewriting() throws Exception {
         Path file = fixture("WithVariousData.xlsx");
         assertEquals(List.of("Sheet1", "Sheet2", "Sheet3"), ExcelWorkbookInspector.create().sheetNames(file).stream().map(ExcelSheetInfo::name).toList());
@@ -99,6 +101,7 @@ class ExternalWorkbookFixtureTest {
     }
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void libreOfficeMergedTextAndFormattedNumbersSurviveTheStreamingReader() throws Exception {
         var rows = read(fixture("60384.xlsx"), 0, null);
         assertEquals(6, rows.size());
@@ -109,6 +112,7 @@ class ExternalWorkbookFixtureTest {
     }
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void libreOfficeCachedNumericFormulasWorkThroughSharedPackageReads() throws Exception {
         var first = new ArrayList<ReadResult<RowData>>();
         var second = new ArrayList<ReadResult<RowData>>();
@@ -131,6 +135,7 @@ class ExternalWorkbookFixtureTest {
     }
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void modernLibreOfficeArrayFormulaCachesAreReadWithoutRecalculation() throws Exception {
         var rows = read(fixture("70005-countifs.xlsx"), 0, null);
         assertEquals(List.of(3L, 4L), rows.stream().map(ReadResult::fileRowNum).toList());

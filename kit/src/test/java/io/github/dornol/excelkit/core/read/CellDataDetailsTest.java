@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
+import io.github.dornol.excelkit.testsupport.DefaultLocaleShowsEnglishNumbers;
 import org.junit.jupiter.api.Test;
 
 import java.time.DateTimeException;
@@ -23,6 +24,7 @@ class CellDataDetailsTest {
     }
 
     @Test
+    @DefaultLocaleShowsEnglishNumbers
     void optionalAccessorsAreEmptyForBlankCellsAndFullOtherwise() {
         assertEquals(OptionalLong.of(42), cell("42").asOptionalLong());
         assertEquals(OptionalLong.empty(), cell("").asOptionalLong());
