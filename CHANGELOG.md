@@ -42,6 +42,7 @@ All notable changes to this project will be documented in this file.
 - Auto column width counts an emoji (a surrogate pair) as one wide character, two units, instead of two wide characters, four units; the width was too generous for emoji-heavy text.
 - Encrypting a workbook larger than 64 MB (plain size) now logs a warning, because Apache POI encrypts in memory and holds about that much in heap.
 - The `write(Stream)` javadoc of `ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter` and `CsvWriter` says that rows are written on the calling thread in encounter order and a parallel stream is read sequentially.
+- A `null` cell value is now written as an empty (blank) cell with the column's style instead of a cell holding an empty string, so Excel's `ISBLANK`, `COUNTA`, `COUNTBLANK` and "Go To Special > Blanks" treat it as empty, and a sparse column makes a smaller file. A `nullValue(...)` placeholder is unchanged.
 
 ### Removed
 - `AbstractReader.requireHeaders()` (an alias of `strictHeaders()`) and the `@Deprecated` `ExcelKitUpload.validateExcel` / `validateCsv` (aliases of `excel` / `csv`).

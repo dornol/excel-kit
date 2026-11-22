@@ -188,7 +188,7 @@ public class ExcelColumn<T> {
                 columnData = nullValue;
                 placeholder = true;
             } else {
-                cell.setCellValue("");
+                cell.setBlank();
                 return style;
             }
         }

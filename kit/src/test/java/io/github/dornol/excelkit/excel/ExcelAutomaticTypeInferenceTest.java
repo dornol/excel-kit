@@ -144,22 +144,22 @@ class ExcelAutomaticTypeInferenceTest {
         ExcelHandler handler = writer.write(List.of(0, 7));
         try (XSSFWorkbook workbook = read(handler)) {
             var sheet = workbook.getSheetAt(0);
-            assertCellType(sheet.getRow(1).getCell(0), CellType.STRING);
+            assertCellType(sheet.getRow(1).getCell(0), CellType.BLANK);
             assertCellType(sheet.getRow(2).getCell(0), CellType.NUMERIC);
             assertEquals(7L, (long) sheet.getRow(2).getCell(0).getNumericCellValue());
         }
     }
 
     @Test
-    void excelWriter_shouldKeepStringWhenEveryValueIsNull() throws IOException {
+    void excelWriter_shouldWriteBlankCellsWhenEveryValueIsNull() throws IOException {
         ExcelWriter<Object> writer = ExcelWriter.<Object>create().column("Value", value -> null);
 
         ExcelHandler handler = writer.write(List.of(new Object(), new Object()));
         try (XSSFWorkbook workbook = read(handler)) {
             var sheet = workbook.getSheetAt(0);
-            assertCellType(sheet.getRow(1).getCell(0), CellType.STRING);
+            assertCellType(sheet.getRow(1).getCell(0), CellType.BLANK);
             assertEquals("", sheet.getRow(1).getCell(0).getStringCellValue());
-            assertCellType(sheet.getRow(2).getCell(0), CellType.STRING);
+            assertCellType(sheet.getRow(2).getCell(0), CellType.BLANK);
         }
     }
 
