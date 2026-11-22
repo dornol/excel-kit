@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.style.ExcelColor;
 import org.jspecify.annotations.Nullable;
 
 /**

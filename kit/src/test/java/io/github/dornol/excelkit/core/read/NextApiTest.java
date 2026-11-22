@@ -6,7 +6,7 @@ import io.github.dornol.excelkit.core.detect.TabularFileType;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

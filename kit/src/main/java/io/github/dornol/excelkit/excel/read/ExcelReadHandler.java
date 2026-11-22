@@ -1,0 +1,643 @@
+package io.github.dornol.excelkit.excel.read;
+
+import io.github.dornol.excelkit.core.read.AbstractReadHandler;
+import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.read.ReadColumn;
+import io.github.dornol.excelkit.core.read.CellData;
+import io.github.dornol.excelkit.core.read.CellConversionConfig;
+import io.github.dornol.excelkit.core.read.ReadAbortException;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.RowError;
+import io.github.dornol.excelkit.core.read.RowData;
+import io.github.dornol.excelkit.core.read.ReadStoppedException;
+import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.read.ReadSecurityException;
+import io.github.dornol.excelkit.core.read.CellError;
+import io.github.dornol.excelkit.core.io.TempResourceCreator;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.util.XMLHelper;
+import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
+import org.apache.poi.xssf.model.SharedStrings;
+import org.apache.poi.xssf.model.StylesTable;
+import org.apache.poi.xssf.usermodel.XSSFComment;
+import org.jspecify.annotations.Nullable;
+import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.UUID;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Reads Excel (.xlsx) files using Apache POI's event-based streaming API.
+ * <p>
+ * This handler parses sheet data row by row, maps values to Java objects, and performs optional validation.
+ * It is optimized for large files and avoids loading the entire workbook into memory.
+ *
+ * <h2>Resource management</h2>
+ * On construction, the handler copies the input stream to a temporary file on disk so that
+ * the underlying POI API can read it. These temp resources (and, if applicable, the decrypted
+ * copy of an encrypted file) are released when {@link #read(Consumer)},
+ * {@link #readWhile(java.util.function.Predicate)}, or {@link #readStrict(Consumer)} returns or throws.
+ *
+ * <h2>Large file tuning</h2>
+ * For large or complex Excel files, you may need to adjust POI's internal limits via
+ * {@link io.github.dornol.excelkit.excel.ExcelKitConfig#configureLargeFileSupport()} before reading. This adjusts:
+ * <ul>
+ *     <li>{@code ZipSecureFile.setMaxFileCount} — maximum number of internal zip entries</li>
+ *     <li>{@code IOUtils.setByteArrayMaxOverride} — maximum in-memory byte array size</li>
+ * </ul>
+ *
+ * @param <T> The target row data type to map each row into
+ * @author dhkim
+ * @since 2025-07-19
+ */
+final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
+    private static final Logger log = LoggerFactory.getLogger(ExcelReadHandler.class);
+
+    ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config) {
+        this(input, config, false, null);
+    }
+
+    ExcelReadHandler(Path path, ExcelReadSessionConfig<T> config) {
+        this(InputStream.nullInputStream(), config, true, path);
+    }
+
+    private ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config,
+                             boolean externalPath, @Nullable Path path) {
+        super(input, config.supplier(), config.mapper(), config.validator(), ".xlsx",
+                config.selectedColumns(), config.options());
+        validateOrClose(() -> {
+            if (config.columns() != null) validateColumns(config.columns());
+            validateSheetIndex(config.sheetIndex());
+            validateHeaderRowIndex(config.headerRowIndex());
+            validateHeaderRows(config.headerRows());
+        });
+        this.columns = config.columns();
+        this.sheetIndex = config.sheetIndex();
+        this.headerRowIndex = config.headerRowIndex();
+        this.headerRows = config.headerRows();
+        this.password = config.password();
+        this.countRows = config.countRows();
+        if (externalPath) useExternalInput(path);
+        validateOrClose(this::validateReadOptions);
+    }
+
+    private final @Nullable List<ReadColumn<T>> columns;
+    private final int sheetIndex;
+    private final int headerRowIndex;
+    private final int headerRows;
+    private final @Nullable String password;
+    private final boolean countRows;
+
+    private static void validateHeaderRows(int headerRows) {
+        if (headerRows < 1) {
+            throw new IllegalArgumentException("headerRows must be >= 1");
+        }
+    }
+
+    private static void validateSheetIndex(int sheetIndex) {
+        if (sheetIndex < 0) {
+            throw new IllegalArgumentException("sheetIndex must be non-negative");
+        }
+    }
+
+    /**
+     * Starts parsing the Excel file and invokes the given consumer for each row result.
+     * <p>
+     * Each row is converted into a target object via the configured column setters.
+     * Validation (if enabled) is performed after mapping.
+     *
+     * @param consumer Callback to receive parsed and validated row results
+     */
+    @Override
+    public void read(Consumer<ReadResult<T>> consumer) {
+        markConsumed();
+        try {
+            readInternal(guardedConsumer(consumer));
+        } catch (ReadStoppedException ignored) {
+            stoppedEarly = true;
+        } catch (ReadLimitExceededException | ReadSecurityException e) {
+            throw e;
+        } catch (ExcelReadException | ReadAbortException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
+        } finally {
+            notifyReadCompletion(sheetIndex, -1);
+            close();
+        }
+    }
+
+    @Override
+    public void readWhile(Predicate<ReadResult<T>> predicate) {
+        Objects.requireNonNull(predicate, "predicate cannot be null");
+        markConsumed();
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
+        try {
+            Consumer<ReadResult<T>> guarded = guardedConsumer(result -> {
+                boolean proceed;
+                try {
+                    proceed = predicate.test(result);
+                } catch (RuntimeException e) {
+                    failure.set(e);
+                    throw new ReadStoppedException();
+                }
+                if (!proceed) throw new ReadStoppedException();
+            });
+            readInternal(guarded);
+        } catch (ReadStoppedException ignored) {
+            // Normal early completion requested by the caller.
+            stoppedEarly = true;
+        } catch (ReadLimitExceededException | ReadSecurityException e) {
+            throw e;
+        } catch (ExcelReadException | ReadAbortException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
+        } finally {
+            notifyReadCompletion(sheetIndex, -1);
+            close();
+        }
+        if (failure.get() != null) throw failure.get();
+    }
+
+    boolean wasStoppedEarly() { return stoppedEarly; }
+
+    void readSharedPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer) {
+        markConsumed();
+        try {
+            ExcelSecurityScanner.scan(getTempFile(), readOptions.securityPolicy());
+            readPackage(pkg, guardedConsumer(consumer));
+        } catch (ReadStoppedException ignored) {
+            stoppedEarly = true;
+        } catch (ReadLimitExceededException | ReadSecurityException e) {
+            throw e;
+        } catch (ExcelReadException | ReadAbortException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
+        } finally {
+            notifyReadCompletion(sheetIndex, -1);
+            close();
+        }
+    }
+
+    private void readInternal(Consumer<ReadResult<T>> consumer) throws Exception {
+        Path fileToRead = getTempFile();
+        Path decryptedFile = null;
+        try {
+            if (password != null) {
+                decryptedFile = decryptFile(getTempFile(), password);
+                fileToRead = decryptedFile;
+            }
+            ExcelSecurityScanner.scan(fileToRead, readOptions.securityPolicy());
+            try (OPCPackage pkg = OPCPackage.open(fileToRead.toFile(), PackageAccess.READ)) {
+                readPackage(pkg, consumer);
+            }
+        } finally {
+            if (decryptedFile != null) {
+                try {
+                    Files.deleteIfExists(decryptedFile);
+                } catch (IOException e) {
+                    log.warn("Failed to delete decrypted temp file: {}", decryptedFile, e);
+                    decryptedFile.toFile().deleteOnExit();
+                }
+            }
+        }
+    }
+
+    private void readPackage(OPCPackage pkg, Consumer<ReadResult<T>> consumer) throws Exception {
+            long totalRows = -1;
+            if (countRows) {
+                totalRows = preScanRowCount(pkg);
+            }
+
+            XSSFReader reader = new XSSFReader(pkg);
+            ExcelSheetNavigator.enforceLimit(reader, readOptions.limits().maxSheets());
+
+            SharedStrings ss = reader.getSharedStringsTable();
+            StylesTable styles = reader.getStylesTable();
+
+            XMLReader parser = XMLHelper.newXMLReader();
+            SheetHandler sheetHandler = new SheetHandler(consumer, totalRows);
+            CellConversionConfig conversionConfig = readOptions.cellConversionConfig();
+            Locale locale = (conversionConfig != null ? conversionConfig : CellConversionConfig.defaults()).locale();
+            XSSFSheetXMLHandler sheetParser = new NumericSheetXmlHandler(styles, ss, sheetHandler,
+                    ExcelReadSupport.dataFormatter(reader, locale));
+            parser.setContentHandler(sheetParser);
+
+            ExcelSheetNavigator.consume(reader, sheetIndex, sheet -> {
+                try { parser.parse(new InputSource(sheet)); }
+                catch (StopReadingException ignored) { /* configured row stop */ }
+            });
+    }
+
+    /**
+     * Captures the stored number before POI emits a formatted cell from the closing value element.
+     */
+    private class NumericSheetXmlHandler extends ExcelReadSupport.SheetXmlHandler {
+        private final SheetHandler sheetHandler;
+        private final StringBuilder numericValue = new StringBuilder();
+        private boolean numericCell;
+        private boolean readingNumericValue;
+        private boolean formula;
+        private boolean hasCachedValue;
+
+        NumericSheetXmlHandler(@Nullable StylesTable styles, SharedStrings strings,
+                               SheetHandler sheetHandler, DataFormatter formatter) {
+            super(styles, strings, sheetHandler, formatter);
+            this.sheetHandler = sheetHandler;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes attributes)
+                throws SAXException {
+            if (SPREADSHEET_NAMESPACE.equals(uri)) {
+                if ("c".equals(localName)) {
+                    String type = attributes.getValue("t");
+                    numericCell = type == null || "n".equals(type);
+                    formula = false;
+                    hasCachedValue = false;
+                } else if ("f".equals(localName)) {
+                    formula = true;
+                } else if ("v".equals(localName)) {
+                    hasCachedValue = true;
+                    if (numericCell) {
+                        readingNumericValue = true;
+                        numericValue.setLength(0);
+                    }
+                }
+            }
+            super.startElement(uri, localName, qName, attributes);
+        }
+
+        @Override
+        public void characters(char[] chars, int start, int length) throws SAXException {
+            if (readingNumericValue) numericValue.append(chars, start, length);
+            super.characters(chars, start, length);
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (SPREADSHEET_NAMESPACE.equals(uri)) {
+                if (readingNumericValue && "v".equals(localName)) {
+                    readingNumericValue = false;
+                    String value = numericValue.toString();
+                    sheetHandler.rawNumericValue = value.isBlank() ? null : value;
+                    try {
+                        super.endElement(uri, localName, qName);
+                    } finally {
+                        sheetHandler.rawNumericValue = null;
+                    }
+                    return;
+                }
+                if ("c".equals(localName)) {
+                    numericCell = false;
+                    String cellReference = cellReference();
+                    if (formula && !hasCachedValue && cellReference != null) {
+                        sheetHandler.addCell(cellReference, "");
+                    }
+                }
+            }
+            super.endElement(uri, localName, qName);
+        }
+    }
+
+    /**
+     * Performs a lightweight SAX pre-scan to count data rows (excluding header rows).
+     */
+    private long preScanRowCount(OPCPackage pkg) throws Exception {
+        XSSFReader reader = new XSSFReader(pkg);
+        Iterator<InputStream> sheetsData = reader.getSheetsData();
+        int currentIndex = 0;
+        while (sheetsData.hasNext()) {
+            try (InputStream sheet = sheetsData.next()) {
+                if (currentIndex == sheetIndex) {
+                    XMLReader xmlReader = XMLHelper.newXMLReader();
+                    RowCountHandler counter = new RowCountHandler(headerRowIndex);
+                    xmlReader.setContentHandler(counter);
+                    xmlReader.parse(new InputSource(sheet));
+                    return counter.getDataRowCount();
+                }
+            }
+            currentIndex++;
+        }
+        return -1;
+    }
+
+    /**
+     * Lightweight SAX handler that counts only data rows (after the header row).
+     */
+    private static class RowCountHandler extends DefaultHandler {
+        private final int headerRowIndex;
+        private long dataRowCount;
+        private int currentRow = -1;
+
+        RowCountHandler(int headerRowIndex) {
+            this.headerRowIndex = headerRowIndex;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName,
+                                 Attributes attributes) {
+            if ("row".equals(qName) || "row".equals(localName)) {
+                // Rows without cells are omitted from the XML, so the row's own number is authoritative.
+                String reference = attributes.getValue("r");
+                currentRow = reference == null ? currentRow + 1 : Integer.parseInt(reference) - 1;
+                if (currentRow > headerRowIndex) {
+                    dataRowCount++;
+                }
+            }
+        }
+
+        long getDataRowCount() {
+            return dataRowCount;
+        }
+    }
+
+    private static final class StopReadingException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+    }
+
+
+    private Path decryptFile(Path encryptedFile, String pwd) throws Exception {
+        Path decryptedFile = null;
+        try {
+            if (getTempDir() == null) setTempDir(TempResourceCreator.createTempDirectory());
+            decryptedFile = TempResourceCreator.createTempFile(
+                    getTempDir(), UUID.randomUUID().toString(), ".xlsx");
+            ExcelReadSupport.decrypt(encryptedFile, pwd, decryptedFile);
+            return decryptedFile;
+        } catch (Exception failure) {
+            if (decryptedFile != null) {
+                try { Files.deleteIfExists(decryptedFile); }
+                catch (IOException cleanup) {
+                    decryptedFile.toFile().deleteOnExit();
+                    failure.addSuppressed(cleanup);
+                }
+            }
+            throw failure;
+        }
+    }
+
+    /**
+     * Internal handler for row-by-row Excel parsing.
+     */
+    private class SheetHandler extends DefaultHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
+        private @Nullable T currentInstance;
+        private @Nullable String rawNumericValue;
+        private final List<CellData> currentRow = new ArrayList<>();
+        private final List<String> headerNames = new ArrayList<>();
+        /** Accumulates bottom-most non-blank header value per column across multi-row headers. */
+        private final List<@Nullable String> headerAccumulator = new ArrayList<>();
+        private final Consumer<ReadResult<T>> consumer;
+        private @Nullable List<String> messages;
+        private @Nullable List<CellError> cellErrors;
+        private boolean mappingFailure;
+        private int @Nullable [] resolvedIndices;
+        private @Nullable Map<String, Integer> headerIndexMap;
+        private long dataRowCount;
+        private final @Nullable Cursor cursor;
+
+        public SheetHandler(Consumer<ReadResult<T>> consumer, long totalRows) {
+            this.consumer = consumer;
+            if (readOptions.progressCallback() != null) {
+                this.cursor = new Cursor();
+                if (totalRows >= 0) {
+                    this.cursor.setTotalRows(totalRows);
+                }
+            } else {
+                this.cursor = null;
+            }
+        }
+
+        /**
+         * Called at the start of each row. Resets the instance and message buffer.
+         */
+        @Override
+        public void startRow(int rowNum) {
+            if (readOptions.cancellationToken().isCancellationRequested()) {
+                throw new ReadStoppedException();
+            }
+            if (instanceSupplier != null) {
+                currentInstance = instanceSupplier.get();
+            }
+            currentRow.clear();
+            messages = null;
+            cellErrors = null;
+            mappingFailure = false;
+        }
+
+        /**
+         * Called at the end of each row.
+         * <p>
+         * - Row at headerRowIndex is treated as the header.
+         * - Later rows are mapped to the target object, validated (if applicable), and passed to consumer.
+         */
+        @Override
+        public void endRow(int rowNum) {
+            int firstHeaderRow = headerRowIndex - headerRows + 1;
+            if (rowNum < firstHeaderRow) {
+                return;
+            }
+            if (rowNum >= firstHeaderRow && rowNum <= headerRowIndex) {
+                accumulateHeaderRow();
+                if (rowNum == headerRowIndex) {
+                    finalizeHeaderNames();
+                    if (rowMapper != null) {
+                        buildHeaderIndex();
+                    } else {
+                        resolveColumnIndices();
+                    }
+                }
+                return;
+            }
+
+            List<String> rawValues = rawValues(currentRow);
+            int rowDecision = evaluateRow(rawValues);
+            if (rowDecision == STOP_READING) {
+                throw new StopReadingException();
+            }
+            if (rowDecision == SKIP_ROW) {
+                return;
+            }
+
+            ReadResult<T> result;
+            if (rowMapper != null) {
+            RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap,
+                    readOptions.headerNormalizer());
+                result = mapWithRowMapper(rowData, rowNum + 1L, rawValues);
+            } else {
+                boolean mappingSuccess = mapValuesToInstance();
+                boolean validationSuccess = mappingSuccess && validateIfNeeded(currentInstance, getOrCreateMessages());
+                long fileRowNum = rowNum + 1L;
+                List<CellError> errors = cellErrors == null ? List.of() : cellErrors;
+                result = validationSuccess
+                        ? ReadResult.success(currentInstance, fileRowNum, errors, rawValues)
+                        : ReadResult.failure(currentInstance,
+                        mappingFailure ? RowError.Type.MAPPING : RowError.Type.VALIDATION,
+                        messages, null, fileRowNum, errors, rawValues);
+            }
+
+            consumer.accept(result);
+
+            dataRowCount++;
+            recordEmittedRow();
+            notifyLegacyProgress(dataRowCount, cursor);
+            if (readOptions.readProgressInterval() > 0
+                    && dataRowCount % readOptions.readProgressInterval() == 0) {
+                notifyReadProgress(dataRowCount, sheetIndex, cursor == null ? -1 : cursor.getTotalRows());
+            }
+        }
+
+        /**
+         * Called for each cell in the current row.
+         */
+        // Deprecated in newer POI, but it is the callback POI 5 runtimes invoke.
+        @SuppressWarnings("deprecation")
+        @Override
+        public void cell(String cellReference, String formattedValue, XSSFComment comment) {
+            cell(cellReference, formattedValue, (Comment) comment);
+        }
+
+        // POI 6 callback; keep the XSSFComment overload for POI 5 runtimes.
+        // No @Override so this source also compiles against POI 5.
+        public void cell(String cellReference, String formattedValue, Comment comment) {
+            addCell(cellReference, formattedValue);
+        }
+
+        private void addCell(String cellReference, String formattedValue) {
+            int colIndex = getColumnIndex(cellReference);
+            while (currentRow.size() < colIndex) {
+                currentRow.add(cellData(currentRow.size(), null));
+            }
+            currentRow.add(cellData(colIndex, formattedValue, rawNumericValue));
+        }
+
+        /**
+         * Merges the current header row's cells into {@link #headerAccumulator}, keeping
+         * the bottom-most non-blank value per column (so a row below overrides a row above
+         * only when it carries a value — preserving group labels whose column header cell
+         * is blank due to a vertical merge in the source file).
+         */
+        private void accumulateHeaderRow() {
+            for (CellData cell : currentRow) {
+                int idx = cell.columnIndex();
+                while (headerAccumulator.size() <= idx) {
+                    headerAccumulator.add(null);
+                }
+                String v = cell.formattedValue();
+                if (headerRows == 1) {
+                    // Single-row: preserve legacy behavior — record every value (including "").
+                    if (v != null) {
+                        headerAccumulator.set(idx, v);
+                    }
+                } else if (v != null && !v.isEmpty()) {
+                    // Multi-row: non-blank overrides only, so vertically merged group labels
+                    // survive when the column header cell below is emitted as blank.
+                    headerAccumulator.set(idx, v);
+                }
+            }
+        }
+
+        /**
+         * Finalizes the accumulated header names.
+         */
+        private void finalizeHeaderNames() {
+            headerNames.addAll(headerAccumulator);
+        }
+
+        /**
+         * Resolves named columns to their actual indices based on header names (setter mode).
+         */
+        private void resolveColumnIndices() {
+            if (columns == null) {
+                throw new IllegalStateException("columns must not be null in setter mode");
+            }
+            resolvedIndices = ExcelReadHandler.this.resolveColumnIndices(
+                    columns.size(),
+                    i -> columns.get(i).headerAliases(),
+                    i -> columns.get(i).columnIndex(),
+                    headerNames, "sheet"
+            );
+        }
+
+        /**
+         * Builds header name to index map (mapping mode).
+         */
+        private void buildHeaderIndex() {
+            headerIndexMap = buildHeaderIndexMap(headerNames, "sheet");
+            validateSelectedMapColumns(headerIndexMap, headerNames, "sheet");
+        }
+
+        /**
+         * Applies all column setters to the current row data (setter mode).
+         *
+         * @return true if all setters succeeded, false if any failed
+         */
+        private boolean mapValuesToInstance() {
+            if (columns == null || resolvedIndices == null) {
+                throw new IllegalStateException("columns and resolvedIndices must not be null in setter mode");
+            }
+            boolean success = true;
+
+            for (int i = 0; i < columns.size(); i++) {
+                int actualIndex = resolvedIndices[i];
+                // A cell missing from the row is handed to the setter as an empty cell, like a blank one
+                // and like CSV, so defaults such as asString("N/A") apply consistently.
+                CellData cell = actualIndex < currentRow.size()
+                        ? currentRow.get(actualIndex) : cellData(actualIndex, null);
+                if (!mapColumn(columns.get(i), currentInstance, cell,
+                        actualIndex, headerNames, getOrCreateMessages(), getOrCreateCellErrors())) {
+                    success = false;
+                    if (!(columns.get(i).isRequired() && cell.isEmpty())) {
+                        mappingFailure = true;
+                    }
+                }
+            }
+
+            return success;
+        }
+
+        private List<String> getOrCreateMessages() {
+            if (messages == null) {
+                messages = new ArrayList<>();
+            }
+            return messages;
+        }
+
+        private List<CellError> getOrCreateCellErrors() {
+            if (cellErrors == null) {
+                cellErrors = new ArrayList<>();
+            }
+            return cellErrors;
+        }
+
+        private int getColumnIndex(String cellReference) {
+            return ExcelReadSupport.getColumnIndex(cellReference);
+        }
+
+    }
+}

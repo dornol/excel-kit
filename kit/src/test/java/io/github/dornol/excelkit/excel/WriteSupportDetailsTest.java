@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.csv.CsvWriteException;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import org.apache.poi.ss.usermodel.CellStyle;

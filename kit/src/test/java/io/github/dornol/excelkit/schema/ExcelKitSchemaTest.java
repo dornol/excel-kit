@@ -5,7 +5,7 @@ import io.github.dornol.excelkit.csv.CsvHandler;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelHandler;
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

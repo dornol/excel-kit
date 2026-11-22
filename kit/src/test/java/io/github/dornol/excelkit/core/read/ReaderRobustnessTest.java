@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.core.read;
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.detect.TabularFileDetector;
 import io.github.dornol.excelkit.csv.CsvReader;
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;

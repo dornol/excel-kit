@@ -2,14 +2,14 @@ package io.github.dornol.excelkit.benchmark;
 
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.excel.ExcelColor;
+import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.excel.ExcelHandler;
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWorkbook;
 import io.github.dornol.excelkit.excel.ExcelWriter;
-import io.github.dornol.excelkit.excel.ExcelWorkbookReader;
-import io.github.dornol.excelkit.excel.WorkbookReadReport;
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookReader;
+import io.github.dornol.excelkit.excel.read.WorkbookReadReport;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

@@ -2,6 +2,8 @@ package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.example.app.dto.TypeTestDto;
 import io.github.dornol.excelkit.excel.*;
+import io.github.dornol.excelkit.excel.style.ExcelColor;
+import io.github.dornol.excelkit.excel.style.ExcelDataFormat;
 import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.stream.Stream;

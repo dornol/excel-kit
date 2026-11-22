@@ -1,5 +1,10 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelReadException;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelSheetInfo;
+import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
+import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -46,7 +51,7 @@ class V06FeaturesTest {
 
                 try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                     var cellStyle = wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
-                    assertEquals(style.toPoiBorderStyle(), cellStyle.getBorderTop(),
+                    assertEquals(ExcelStyleSupporter.toPoiBorderStyle(style), cellStyle.getBorderTop(),
                             "Border style " + style + " should be applied");
                 }
             }

@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.core.read;
 
 import io.github.dornol.excelkit.csv.CsvReader;
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import jakarta.validation.Validator;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;

@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.core.read;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
 import io.github.dornol.excelkit.csv.CsvReader;
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import jakarta.validation.Validation;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import org.junit.jupiter.api.Nested;

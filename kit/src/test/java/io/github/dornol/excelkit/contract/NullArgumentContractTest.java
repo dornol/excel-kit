@@ -8,7 +8,7 @@ import io.github.dornol.excelkit.excel.ExcelChartConfig;
 import io.github.dornol.excelkit.excel.ExcelConditionalRule;
 import io.github.dornol.excelkit.excel.ExcelHandler;
 import io.github.dornol.excelkit.excel.ExcelPrintSetup;
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelSummary;
 import io.github.dornol.excelkit.excel.ExcelWorkbook;
 import io.github.dornol.excelkit.excel.ExcelWriter;

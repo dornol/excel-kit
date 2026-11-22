@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
-import io.github.dornol.excelkit.excel.ExcelReader;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

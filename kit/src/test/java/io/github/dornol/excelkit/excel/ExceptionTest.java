@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelReadException;
 import io.github.dornol.excelkit.csv.CsvReadException;
 import io.github.dornol.excelkit.csv.CsvWriteException;
 import io.github.dornol.excelkit.core.ExcelKitException;

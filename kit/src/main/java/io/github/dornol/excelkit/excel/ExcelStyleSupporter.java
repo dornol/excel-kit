@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -58,7 +59,7 @@ class ExcelStyleSupporter {
         HorizontalAlignment hAlign = (hdrCfg != null && hdrCfg.alignment != null) ? hdrCfg.alignment : HorizontalAlignment.CENTER;
         VerticalAlignment vAlign = (hdrCfg != null && hdrCfg.verticalAlignment != null) ? hdrCfg.verticalAlignment : VerticalAlignment.CENTER;
         boolean bold = (hdrCfg != null && hdrCfg.bold != null) ? hdrCfg.bold : true;
-        BorderStyle border = (hdrCfg != null && hdrCfg.borderStyle != null) ? hdrCfg.borderStyle.toPoiBorderStyle() : BorderStyle.THIN;
+        BorderStyle border = (hdrCfg != null && hdrCfg.borderStyle != null) ? toPoiBorderStyle(hdrCfg.borderStyle) : BorderStyle.THIN;
 
         headerStyle.setAlignment(hAlign);
         headerStyle.setVerticalAlignment(vAlign);
@@ -198,11 +199,11 @@ class ExcelStyleSupporter {
 
         // Borders: per-side > uniform borderStyle > default THIN
         BorderStyle defaultBorder = (params.borderStyle() != null)
-                ? params.borderStyle().toPoiBorderStyle() : BorderStyle.THIN;
-        nowStyle.setBorderTop(params.borderTop() != null ? params.borderTop().toPoiBorderStyle() : defaultBorder);
-        nowStyle.setBorderBottom(params.borderBottom() != null ? params.borderBottom().toPoiBorderStyle() : defaultBorder);
-        nowStyle.setBorderLeft(params.borderLeft() != null ? params.borderLeft().toPoiBorderStyle() : defaultBorder);
-        nowStyle.setBorderRight(params.borderRight() != null ? params.borderRight().toPoiBorderStyle() : defaultBorder);
+                ? toPoiBorderStyle(params.borderStyle()) : BorderStyle.THIN;
+        nowStyle.setBorderTop(params.borderTop() != null ? toPoiBorderStyle(params.borderTop()) : defaultBorder);
+        nowStyle.setBorderBottom(params.borderBottom() != null ? toPoiBorderStyle(params.borderBottom()) : defaultBorder);
+        nowStyle.setBorderLeft(params.borderLeft() != null ? toPoiBorderStyle(params.borderLeft()) : defaultBorder);
+        nowStyle.setBorderRight(params.borderRight() != null ? toPoiBorderStyle(params.borderRight()) : defaultBorder);
 
         if (params.locked() != null) {
             nowStyle.setLocked(params.locked());
@@ -220,4 +221,11 @@ class ExcelStyleSupporter {
     }
 
 
+
+    /**
+     * Maps an {@link ExcelBorderStyle} to the Apache POI border style of the same name.
+     */
+    static BorderStyle toPoiBorderStyle(ExcelBorderStyle style) {
+        return BorderStyle.valueOf(style.name());
+    }
 }

@@ -11,8 +11,12 @@ All notable changes to this project will be documented in this file.
   `TempResource*` types to `core.io`; `TabularFileDetector`, `TabularFileType`, `TabularDetectionResult` and
   `DetectionConfidence` to `core.detect`. `ExcelKitException`, `FileHandler`, `ProgressCallback`, `Cursor`,
   `AtomicFileWriter` and `RuntimeDependencyGuard` stay in `core`. The empty `core.internal` package is removed.
-- `PackageDependencyTest` pins the package layering (`core` <- `core.io` <- `core.read`/`core.detect` <- `csv`/`excel`
-  <- `schema`), so `core` cannot depend on `excel` or `csv` again.
+- **Breaking:** `io.github.dornol.excelkit.excel` is split (change the imports; names are unchanged): `ExcelReader`,
+  `ExcelWorkbookReader`, `ExcelReadException`, `ExcelSheetInfo`, `SheetReadReport`, `WorkbookReadReport` and
+  `SheetFailurePolicy` moved to `excel.read`; `ExcelColor`, `ExcelBorderStyle`, `ExcelDataFormat` and
+  `CellColorFunction` to `excel.style`.
+- `PackageDependencyTest` pins the package layering (`core` <- `core.io` <- `core.read`/`core.detect` <-
+  `csv`/`excel.read`/`excel` (+ `excel.style`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
 
 ## [0.27.0] - 2026-11-21
 

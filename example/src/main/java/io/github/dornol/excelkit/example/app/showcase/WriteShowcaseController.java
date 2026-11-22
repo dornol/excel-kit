@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.example.app.showcase;
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.excel.*;
+import io.github.dornol.excelkit.excel.style.ExcelColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;

@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * back a package cycle (core depending on excel and csv, excel and csv depending on each other, ...).
  *
  * <pre>
- * core  &lt;-  core.io  &lt;-  core.detect, core.read  &lt;-  csv, excel  &lt;-  schema
+ * core  &lt;-  core.io  &lt;-  core.detect, core.read  &lt;-  csv, excel.read, excel (+ excel.style)  &lt;-  schema
  * </pre>
  */
 class PackageDependencyTest {
@@ -36,12 +36,14 @@ class PackageDependencyTest {
             "core.detect", Set.of("core", "core.io"),
             "core.read", Set.of("core", "core.io"),
             "csv", Set.of("core", "core.io", "core.detect", "core.read"),
-            "excel", Set.of("core", "core.io", "core.detect", "core.read"),
-            "schema", Set.of("core", "core.io", "core.detect", "core.read", "csv", "excel")
+            "excel.style", Set.of(),
+            "excel.read", Set.of("core", "core.io", "core.detect", "core.read"),
+            "excel", Set.of("core", "core.io", "core.detect", "core.read", "excel.style"),
+            "schema", Set.of("core", "core.io", "core.detect", "core.read", "csv", "excel", "excel.read", "excel.style")
     );
 
     private static final Pattern REFERENCE = Pattern.compile(
-            "\\bio\\.github\\.dornol\\.excelkit\\.(core\\.(?:io|detect|read)|core|csv|excel|schema)\\.[A-Za-z]");
+            "\\bio\\.github\\.dornol\\.excelkit\\.(core\\.(?:io|detect|read)|core|csv|excel\\.(?:read|style)|excel|schema)\\.[A-Za-z]");
 
     @Test
     void packagesOnlyDependOnLowerLayers() throws IOException {
@@ -71,7 +73,9 @@ class PackageDependencyTest {
         return dir.toString().replace('/', '.').replace('\\', '.');
     }
 
+    /** Drops comments and the package declaration, so only references to other types are scanned. */
     private static String withoutComments(String source) {
-        return source.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("//[^\\n]*", "");
+        return source.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("//[^\\n]*", "")
+                .replaceAll("(?m)^package [^;]+;", "");
     }
 }

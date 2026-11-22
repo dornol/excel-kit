@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.core;
 
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.excel.ExcelColor;
+import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.excel.ExcelHandler;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import io.github.dornol.excelkit.csv.CsvHandler;

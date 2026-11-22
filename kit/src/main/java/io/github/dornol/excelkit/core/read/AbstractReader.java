@@ -24,7 +24,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
- * Shared reader configuration for {@link io.github.dornol.excelkit.excel.ExcelReader}
+ * Shared reader configuration for {@link io.github.dornol.excelkit.excel.read.ExcelReader}
  * and {@link io.github.dornol.excelkit.csv.CsvReader}.
  * <p>
  * Contains column registration, progress, validation, and skip logic.

@@ -97,7 +97,7 @@ public class Cursor {
     /**
      * Returns the total number of rows if known in advance, or {@code -1} if unknown.
      * <p>
-     * For Excel reads, this is populated when {@link io.github.dornol.excelkit.excel.ExcelReader#countRows()}
+     * For Excel reads, this is populated when {@link io.github.dornol.excelkit.excel.read.ExcelReader#countRows()}
      * is enabled. For writes, this is typically unknown ({@code -1}).
      *
      * @return Total row count, or -1 if unknown

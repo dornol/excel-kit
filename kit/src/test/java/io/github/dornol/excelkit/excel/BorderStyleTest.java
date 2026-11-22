@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
@@ -105,7 +106,7 @@ class BorderStyleTest {
     @Test
     void excelBorderStyleEnum_shouldCoverAllValues() {
         for (ExcelBorderStyle style : ExcelBorderStyle.values()) {
-            assertNotNull(style.toPoiBorderStyle());
+            assertNotNull(ExcelStyleSupporter.toPoiBorderStyle(style));
         }
     }
 }
