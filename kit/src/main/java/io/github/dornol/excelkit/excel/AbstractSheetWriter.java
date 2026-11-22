@@ -1,7 +1,9 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.excel.style.ExcelColor;
+import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
+import io.github.dornol.excelkit.core.read.RowFunction;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
@@ -28,8 +30,99 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
 
     final SheetConfig<T> cfg = new SheetConfig<>();
 
+    int maxRows = ExcelWriteSupport.DEFAULT_MAX_ROWS;
+    @Nullable TableOptions tableOptions;
+
     private SELF self() {
         return (SELF) this;
+    }
+
+    // ── Columns shared by every sheet writer ──
+
+    /**
+     * Adds a column using a simple function.
+     *
+     * @param name     the column header
+     * @param function function to extract the cell value
+     * @return this writer for chaining
+     */
+    public abstract SELF column(String name, Function<T, @Nullable Object> function);
+
+    /**
+     * Adds a column whose function also receives the row's {@link Cursor}.
+     *
+     * @param name     the column header
+     * @param function function to extract the cell value
+     * @return this writer for chaining
+     */
+    public abstract SELF column(String name, RowFunction<T, @Nullable Object> function);
+
+    /**
+     * Conditionally adds a column using a simple function. If {@code condition} is false, nothing is added.
+     *
+     * @param name      the column header
+     * @param condition whether to include this column
+     * @param function  function to extract the cell value
+     * @return this writer for chaining
+     */
+    public SELF columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
+        if (condition) {
+            column(name, function);
+        }
+        return self();
+    }
+
+    /**
+     * Adds a column with a constant value for all rows.
+     *
+     * @param name  the column header
+     * @param value the constant value written in every row
+     * @return this writer for chaining
+     */
+    public SELF constColumn(String name, @Nullable Object value) {
+        return column(name, (RowFunction<T, @Nullable Object>) (r, c) -> value);
+    }
+
+    // ── Rows per sheet and structured table ──
+
+    /**
+     * Sets the maximum number of data rows per sheet before a new sheet is created. Must be called before
+     * writing. Defaults to 1,000,000. Rows written before the data (such as {@code beforeHeader} and the
+     * header) and after it ({@code afterData}, summary) count towards Excel's limit of 1,048,576 rows per
+     * sheet, so leave room for them. Use {@link #sheetName(Function)} to control rollover sheet naming.
+     *
+     * @param maxRows maximum data rows per sheet (positive, at most 1,048,575)
+     * @return this writer for chaining
+     * @since 0.17.0
+     */
+    public SELF maxRows(int maxRows) {
+        this.maxRows = ExcelWriteSupport.requireMaxRows(maxRows);
+        return self();
+    }
+
+    /**
+     * Turns the written range (header and data) into an Excel structured table with default options.
+     *
+     * @param name the table name (letters, digits and underscores; must not look like a cell reference)
+     * @return this writer for chaining
+     * @see TableOptions
+     */
+    public SELF table(String name) {
+        return table(TableOptions.defaults(name));
+    }
+
+    /**
+     * Turns the written range (header and data) into an Excel structured table.
+     *
+     * @param options the table name and style
+     * @return this writer for chaining
+     * @see TableOptions
+     */
+    public SELF table(TableOptions options) {
+        Objects.requireNonNull(options, "options cannot be null");
+        StructuredTableWriter.validateName(options.name());
+        this.tableOptions = options;
+        return self();
     }
 
     // ── Layout ──

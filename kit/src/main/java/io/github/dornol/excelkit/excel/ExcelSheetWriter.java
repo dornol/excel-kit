@@ -49,9 +49,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<String, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
-    private int maxRows = ExcelWriteSupport.DEFAULT_MAX_ROWS;
     private boolean written = false;
-    private @Nullable TableOptions tableOptions;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
@@ -121,18 +119,6 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     /**
-     * Adds a column with a constant value for all rows.
-     *
-     * @param name the column header
-     * @param value the constant value
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> constColumn(String name, @Nullable Object value) {
-        columns.add(buildColumn(name, (r, c) -> value, null));
-        return this;
-    }
-
-    /**
      * Enables auto-filter on the header row (no-arg convenience).
      *
      * @return this writer for chaining
@@ -152,21 +138,6 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     /**
-     * Conditionally adds a column using a simple function.
-     *
-     * @param name      Column header name
-     * @param condition Whether to include this column
-     * @param function  Function to extract cell value from row
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
-        if (condition) {
-            column(name, function);
-        }
-        return this;
-    }
-
-    /**
      * Conditionally adds a column with additional configuration.
      *
      * @param name      Column header name
@@ -180,36 +151,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             column(name, function, cfg);
         }
         return this;
-    }
-
-    /**
-     * Sets the maximum number of data rows per sheet before auto-rollover. Defaults to 1,000,000.
-     * <p>
-     * The writer automatically creates additional sheets within the workbook
-     * when the row limit is reached. Use {@link #sheetName(Function)} to control
-     * rollover sheet naming. Rows written before the data (such as {@code beforeHeader} and the header)
-     * and after it ({@code afterData}, summary) count towards Excel's limit of 1,048,576 rows per sheet,
-     * so leave room for them.
-     *
-     * @param maxRows maximum data rows per sheet (positive, at most 1,048,575)
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> maxRows(int maxRows) {
-        this.maxRows = ExcelWriteSupport.requireMaxRows(maxRows);
-        return this;
-    }
-
-    public ExcelSheetWriter<T> table(String name) {
-        return table(TableOptions.defaults(name));
-    }
-
-    public ExcelSheetWriter<T> table(TableOptions options) {
-        StructuredTableWriter.validateName(Objects.requireNonNull(options, "options cannot be null").name());
-        this.tableOptions = options;
-        return this;
-    }
-
-    /**
+    }    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      *
      * <p>

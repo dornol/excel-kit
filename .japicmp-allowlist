@@ -121,6 +121,18 @@ io.github.dornol.excelkit.schema.ExcelKitSchema#excelReader(java.util.function.S
 io.github.dornol.excelkit.schema.ExcelKitSchema#excelReader(java.util.function.Supplier,jakarta.validation.Validator)
 io.github.dornol.excelkit.schema.ExcelKitSchema$Builder#cellConversion(io.github.dornol.excelkit.core.CellConversionConfig)
 io.github.dornol.excelkit.schema.ExcelKitSchema$Builder#duplicateHeaderPolicy(io.github.dornol.excelkit.core.DuplicateHeaderPolicy)
+# ExcelWriter and ExcelSheetWriter: constColumn, columnIf, maxRows and table now live in AbstractSheetWriter and return
+# the concrete writer type (same chaining, now inherited).
+io.github.dornol.excelkit.excel.ExcelWriter#constColumn(java.lang.String,java.lang.Object)
+io.github.dornol.excelkit.excel.ExcelWriter#columnIf(java.lang.String,boolean,java.util.function.Function)
+io.github.dornol.excelkit.excel.ExcelWriter#maxRows(int)
+io.github.dornol.excelkit.excel.ExcelWriter#table(java.lang.String)
+io.github.dornol.excelkit.excel.ExcelWriter#table(io.github.dornol.excelkit.excel.TableOptions)
+io.github.dornol.excelkit.excel.ExcelSheetWriter#constColumn(java.lang.String,java.lang.Object)
+io.github.dornol.excelkit.excel.ExcelSheetWriter#columnIf(java.lang.String,boolean,java.util.function.Function)
+io.github.dornol.excelkit.excel.ExcelSheetWriter#maxRows(int)
+io.github.dornol.excelkit.excel.ExcelSheetWriter#table(java.lang.String)
+io.github.dornol.excelkit.excel.ExcelSheetWriter#table(io.github.dornol.excelkit.excel.TableOptions)
 # excel-kit-spring: signatures that mention a moved type.
 io.github.dornol.excelkit.spring.CellErrorResponse#from(io.github.dornol.excelkit.core.CellError)
 io.github.dornol.excelkit.spring.ExcelKitUpload#csv(org.springframework.web.multipart.MultipartFile,io.github.dornol.excelkit.schema.ExcelKitSchema,java.util.function.Supplier,jakarta.validation.Validator,io.github.dornol.excelkit.core.ReadLimits)

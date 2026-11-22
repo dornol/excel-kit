@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file.
   `ExcelWorkbookReader`, `ExcelReadException`, `ExcelSheetInfo`, `SheetReadReport`, `WorkbookReadReport` and
   `SheetFailurePolicy` moved to `excel.read`; `ExcelColor`, `ExcelBorderStyle`, `ExcelDataFormat` and
   `CellColorFunction` to `excel.style`.
+- `constColumn(name, value)`, `columnIf(name, condition, function)`, `maxRows(int)` and `table(...)` are declared once in the
+  shared sheet-writer base instead of separately on `ExcelWriter` and `ExcelSheetWriter`. Calls compile unchanged;
+  recompile code built against an earlier version.
 - `PackageDependencyTest` pins the package layering (`core` <- `core.io` <- `core.read`/`core.detect` <-
   `csv`/`excel.read`/`excel` (+ `excel.style`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
 

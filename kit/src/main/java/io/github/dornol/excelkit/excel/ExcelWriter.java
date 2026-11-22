@@ -37,7 +37,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
 
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private int maxRows = ExcelWriteSupport.DEFAULT_MAX_ROWS;
     private CellStyle headerStyle;
     private XSSFColor headerColor;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
@@ -50,7 +49,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private @Nullable Integer headerFontSize;
     private @Nullable HeaderStyleConfig headerStyleConfig;
     private @Nullable ExcelWriteSession<T> execution;
-    private @Nullable TableOptions tableOptions;
 
 
 
@@ -254,19 +252,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         ExcelWorkbookSupport.applyDocumentProperty(wb, key, value);
         return this;
     }
-
-    /** Creates an Excel structured table over the header and all written data rows. */
-    public ExcelWriter<T> table(String name) {
-        return table(TableOptions.defaults(name));
-    }
-
-    public ExcelWriter<T> table(TableOptions options) {
-        Objects.requireNonNull(options, "options cannot be null");
-        StructuredTableWriter.validateName(options.name());
-        this.tableOptions = options;
-        return this;
-    }
-
     /**
      * Sets the header background color. Must be called before {@link #write(Stream)}.
      * <p>
@@ -287,21 +272,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
                 (byte) color.getB()
         });
         this.headerStyle = rebuildHeaderStyle();
-        return this;
-    }
-
-    /**
-     * Sets the maximum number of rows per sheet before a new sheet is created.
-     * Must be called before {@link #write(Stream)}. Defaults to 1,000,000. Rows written before the data
-     * (such as {@code beforeHeader} and the header) and after it ({@code afterData}, summary) count towards
-     * Excel's limit of 1,048,576 rows per sheet, so leave room for them.
-     *
-     * @param maxRows maximum data rows per sheet (positive, at most 1,048,575)
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.17.0
-     */
-    public ExcelWriter<T> maxRows(int maxRows) {
-        this.maxRows = ExcelWriteSupport.requireMaxRows(maxRows);
         return this;
     }
 
@@ -545,22 +515,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     /**
-     * Conditionally adds a column with default STRING type using a simple Function.
-     * If condition is false, the column is not added.
-     *
-     * @param name      Column header name
-     * @param condition Whether to include this column
-     * @param function  Function to extract cell value from row
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
-        if (condition) {
-            column(name, function);
-        }
-        return this;
-    }
-
-    /**
      * Conditionally adds a column with additional configuration.
      * If condition is false, the column is not added.
      *
@@ -610,17 +564,6 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             column(name, function, configurer);
         }
         return this;
-    }
-
-    /**
-     * Adds a column with a constant value for all rows.
-     *
-     * @param name  Column header name
-     * @param value Constant value to be used in all rows
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> constColumn(String name, @Nullable Object value) {
-        return column(name, (RowFunction<T, Object>) (r, c) -> value);
     }
 
     /**
