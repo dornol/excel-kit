@@ -47,8 +47,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ExcelHandler implements FileHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
 
-    /** An encrypted export larger than this (plain size, in bytes) is held in heap while it is encrypted. */
-    static final long ENCRYPTION_HEAP_WARNING_BYTES = 64L * 1024 * 1024;
     private final SXSSFWorkbook wb;
     private final @Nullable String password;
 
@@ -153,10 +151,9 @@ public final class ExcelHandler implements FileHandler {
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
      * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(OutputStream)} instead.
      *
-     * <p><b>Memory note:</b> POI's encryption API does not support file-backed buffering
-     * for the OLE container — the encrypted payload is held in heap (≈ size of the
-     * resulting XLSX) before being streamed out. For very large exports (hundreds of MB)
-     * plan heap accordingly, or prefer the plain {@link #writeTo(OutputStream)} path.
+     * <p><b>Resources:</b> the encrypted container is built in a temporary file, not in heap, so memory use does
+     * not grow with the size of the workbook. The disk does: for a moment the plain and the encrypted copy
+     * exist side by side (about twice the size of the file); both are deleted when the write ends.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
@@ -255,51 +252,39 @@ public final class ExcelHandler implements FileHandler {
         }
     }
 
-    /** POI encrypts into an in-memory container, so a big workbook needs about its size in heap. */
-    static boolean isTooLargeToEncryptInMemory(long plainBytes) {
-        return plainBytes > ENCRYPTION_HEAP_WARNING_BYTES;
-    }
-
-    private static void warnIfTooLargeToEncryptInMemory(long plainBytes) {
-        if (isTooLargeToEncryptInMemory(plainBytes)) {
-            log.warn("Encrypting a {} MB workbook holds about that much in heap, because Apache POI encrypts in memory; "
-                    + "make sure the heap is large enough, or write the file without a password", plainBytes >> 20);
-        }
-    }
-
     private void encryptAndWrite(OutputStream outputStream, String password) throws IOException {
         markConsumed();
 
         try (TempWorkspace workspace = TempWorkspace.create()) {
-            Path tempFile = workspace.newFile("excel-enc", ".tmp");
-            // Write workbook to temp file first to free SXSSFWorkbook memory
-            try (OutputStream tempOut = Files.newOutputStream(tempFile)) {
-                wb.write(tempOut);
+            Path plainFile = workspace.newFile("excel-plain", ".tmp");
+            // Write the workbook to a temp file first, so the SXSSF window is released before encrypting.
+            try (OutputStream plainOut = Files.newOutputStream(plainFile)) {
+                wb.write(plainOut);
             } finally {
                 closeConsumedWorkbook();
             }
 
-            warnIfTooLargeToEncryptInMemory(Files.size(tempFile));
-
-            // Encrypt the plain temp file into an in-memory POIFS, then stream it out.
-            // POI's encryption API buffers the OLE container in heap — there is no
-            // file-backed variant. The two-step design (temp file first, then close
-            // the SXSSF workbook, THEN encrypt) prevents the SXSSF window memory
-            // and the encryption buffer from coexisting as peak memory.
-            try (POIFSFileSystem fs = new POIFSFileSystem()) {
+            // The encrypted OLE container is built in a file, not in heap: a POIFSFileSystem created over a file
+            // keeps its blocks there, and the cipher works through the plain file in small chunks. Memory use
+            // therefore does not grow with the size of the workbook.
+            Path encryptedFile = workspace.newFile("excel-encrypted", ".tmp");
+            try (POIFSFileSystem fs = POIFSFileSystem.create(encryptedFile.toFile())) {
                 EncryptionInfo info = new EncryptionInfo(EncryptionMode.agile);
                 Encryptor enc = info.getEncryptor();
                 enc.confirmPassword(password);
 
-                try (OutputStream encOut = enc.getDataStream(fs)) {
-                    try (InputStream tempIn = Files.newInputStream(tempFile)) {
-                        tempIn.transferTo(encOut);
-                    }
+                try (OutputStream encOut = enc.getDataStream(fs);
+                     InputStream plainIn = Files.newInputStream(plainFile)) {
+                    plainIn.transferTo(encOut);
                 } catch (GeneralSecurityException e) {
                     throw new ExcelWriteException("Failed to encrypt Excel file", e);
                 }
+                fs.writeFilesystem();
+            }
+            Files.delete(plainFile);   // free the disk before the encrypted copy is streamed out
 
-                fs.writeFilesystem(outputStream);
+            try (InputStream encryptedIn = Files.newInputStream(encryptedFile)) {
+                encryptedIn.transferTo(outputStream);
             }
         }
     }

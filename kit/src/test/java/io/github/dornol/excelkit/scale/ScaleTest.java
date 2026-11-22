@@ -197,4 +197,43 @@ class ScaleTest {
         assertEquals(CSV_ROWS * (CSV_ROWS - 1) / 2, checksum.get(), "the ids add up");
         reading.verify();
     }
+
+    /** A cell value that does not compress well, so the file is as big as the row count suggests. */
+    private static String noise(long n) {
+        long x = n * 0x9E3779B97F4A7C15L;
+        x ^= x >>> 29;
+        x *= 0xBF58476D1CE4E5B9L;
+        x ^= x >>> 32;
+        return Long.toHexString(x) + Long.toHexString(x * 31);
+    }
+
+    /**
+     * An encrypted workbook of well over 100 MB is written and read back within the 256 MB heap. POI used to
+     * build the encrypted container in heap, which needed about twice the size of the file.
+     */
+    @Test
+    void encryptingABigWorkbookDoesNotNeedItsSizeInHeap() throws IOException {
+        long rows = 1_000_000L;
+        Path file = dir.resolve("encrypted.xlsx");
+        ExcelWriter<Long> writer = ExcelWriter.<Long>create().password("secret");
+        for (int c = 0; c < 6; c++) {
+            int column = c;
+            writer.column("C" + c, n -> noise(n * 8 + column));
+        }
+        writer.write(LongStream.range(0, rows).boxed().toList()).writeTo(file);
+
+        assertTrue(Files.size(file) > 100L * 1024 * 1024, "the test needs a file bigger than the heap allows in memory");
+        AtomicLong count = new AtomicLong();
+        AtomicLong mismatches = new AtomicLong();
+        ExcelReader.forMap().password("secret").read(file, result -> {
+            long id = count.getAndIncrement();
+            if (!result.success() || !noise(id * 8).equals(result.data().get("C0"))
+                    || !noise(id * 8 + 5).equals(result.data().get("C5"))) {
+                mismatches.incrementAndGet();
+            }
+        });
+
+        assertEquals(rows, count.get());
+        assertEquals(0, mismatches.get());
+    }
 }
