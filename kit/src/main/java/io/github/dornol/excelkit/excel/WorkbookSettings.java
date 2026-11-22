@@ -24,7 +24,7 @@ final class WorkbookSettings {
     private @Nullable Integer headerFontSize;
     private @Nullable HeaderStyleConfig headerStyleConfig;
     private @Nullable CellStyle headerStyle;
-    private char @Nullable [] password;
+    private @Nullable String password;
     private @Nullable String workbookPassword;
 
     WorkbookSettings(SXSSFWorkbook wb) {
@@ -90,27 +90,11 @@ final class WorkbookSettings {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be null or blank");
         }
-        this.password = password.toCharArray();
-    }
-
-    void password(char[] password) {
-        if (password == null || password.length == 0 || isBlank(password)) {
-            throw new IllegalArgumentException("Password cannot be null or blank");
-        }
-        this.password = password.clone();
-    }
-
-    private static boolean isBlank(char[] chars) {
-        for (char c : chars) {
-            if (!Character.isWhitespace(c)) {
-                return false;
-            }
-        }
-        return true;
+        this.password = password;
     }
 
     /** The file encryption password, or {@code null} when the file is not encrypted. */
-    char @Nullable [] password() {
+    @Nullable String password() {
         return password;
     }
 

@@ -99,7 +99,7 @@ class AtomicFileWriteTest {
         assertArrayEquals(first, Files.readAllBytes(file));
 
         Path chars = dir.resolve("secret2.xlsx");
-        ExcelWriter.<String>create().column("v", s -> s).write(List.of("y")).writeTo(chars, "pw2".toCharArray());
+        ExcelWriter.<String>create().column("v", s -> s).write(List.of("y")).writeTo(chars, "pw2");
         assertEquals("y", ExcelReader.forMap().password("pw2").readAll(chars).get(0).get("v"));
         assertEquals(List.of("secret.xlsx", "secret2.xlsx"), names());
     }

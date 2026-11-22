@@ -21,7 +21,6 @@ import java.lang.ref.Cleaner;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -48,7 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ExcelHandler implements FileHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
     private final SXSSFWorkbook wb;
-    private final char @Nullable [] password;
+    private final @Nullable String password;
 
     /**
      * What must be released. It references the workbook but never the handler, so the handler can be
@@ -102,22 +101,7 @@ public final class ExcelHandler implements FileHandler {
      */
     ExcelHandler(SXSSFWorkbook wb, @Nullable String password) {
         this.wb = wb;
-        this.password = password != null ? password.toCharArray() : null;
-        this.release = new WorkbookRelease(wb);
-        this.cleanable = TempResourceCleaner.register(this, release);
-    }
-
-    /**
-     * Constructs an ExcelHandler wrapping the given workbook with a char[] encryption password.
-     * <p>
-     * The array is copied internally; the caller may zero the original after this call.
-     *
-     * @param wb       The SXSSFWorkbook to be written
-     * @param password The password as a char array (copied internally), or null for no encryption
-     */
-    ExcelHandler(SXSSFWorkbook wb, char @Nullable [] password) {
-        this.wb = wb;
-        this.password = password != null ? password.clone() : null;
+        this.password = password;
         this.release = new WorkbookRelease(wb);
         this.cleanable = TempResourceCleaner.register(this, release);
     }
@@ -150,11 +134,7 @@ public final class ExcelHandler implements FileHandler {
     public void writeTo(OutputStream outputStream) {
         try {
             if (password != null) {
-                try {
-                    encryptAndWrite(outputStream, new String(password));
-                } finally {
-                    Arrays.fill(password, '\0');
-                }
+                encryptAndWrite(outputStream, password);
             } else {
                 writePlain(outputStream);
             }
@@ -195,43 +175,6 @@ public final class ExcelHandler implements FileHandler {
     }
 
     /**
-     * Writes the workbook to the given OutputStream with Excel-compatible password encryption.
-     * <p>
-     * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
-     * The array is zeroed out after encryption completes (or on failure).
-     * <p>
-     * The encryption API of Apache POI takes a {@code String}, so the password is converted to one when the file
-     * is encrypted and lives on the heap until it is garbage collected. A {@code char[]} only spares you from
-     * holding it in a long-lived {@code String} of your own and lets you clear your copy; it does not keep the
-     * password out of the heap.
-     * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
-     * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(OutputStream)} instead.
-     *
-     * <p><b>Memory note:</b> same as {@link #writeTo(OutputStream, String)} — POI buffers
-     * the encrypted OLE container in heap.
-     *
-     * @param outputStream The OutputStream to write the encrypted Excel file to
-     * @param password     The password as a char array (will be zeroed after use)
-     * @throws ExcelWriteException If an I/O or encryption error occurs during writing
-     * @throws IllegalArgumentException If the password is null or blank; the handler is then consumed and its workbook closed
-     * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
-     * @since 0.16.5
-     */
-    public void writeTo(OutputStream outputStream, char[] password) {
-        if (password == null || password.length == 0 || isBlank(password)) {
-            throw rejectBlankPassword();
-        }
-        try {
-            rejectIfPasswordAlreadySet();
-            encryptAndWrite(outputStream, new String(password));
-        } catch (IOException e) {
-            throw new ExcelWriteException("Failed to write encrypted Excel", e);
-        } finally {
-            Arrays.fill(password, '\0');
-        }
-    }
-
-    /**
      * Writes the workbook directly to a file path with Excel-compatible password encryption.
      * <p>
      * Convenience overload that opens a buffered {@link OutputStream} to the given path
@@ -258,56 +201,8 @@ public final class ExcelHandler implements FileHandler {
         }
     }
 
-    /**
-     * Writes the workbook directly to a file path with Excel-compatible password encryption.
-     * <p>
-     * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
-     * The array is zeroed out after encryption completes (or on failure).
-     * <p>
-     * The encryption API of Apache POI takes a {@code String}, so the password is converted to one when the file
-     * is encrypted and lives on the heap until it is garbage collected. A {@code char[]} only spares you from
-     * holding it in a long-lived {@code String} of your own and lets you clear your copy; it does not keep the
-     * password out of the heap.
-     * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
-     * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(Path)} instead.
-     *
-     * @param path     The destination file path
-     * @param password The password as a char array (will be zeroed after use)
-     * @throws ExcelWriteException If an I/O or encryption error occurs during writing
-     * @throws IllegalArgumentException If the password is null or blank; the handler is then consumed and its workbook closed
-     * @throws IllegalStateException If a password was already set at the writer level, or if already consumed
-     * @since 0.16.6
-     */
-    public void writeTo(Path path, char[] password) {
-        if (password == null || password.length == 0 || isBlank(password)) {
-            throw rejectBlankPassword();
-        }
-        try {
-            rejectIfPasswordAlreadySet();
-            try {
-                AtomicFileWriter.write(path, out -> writeBuffered(out, password));
-            } catch (IOException e) {
-                throw new ExcelWriteException("Failed to write encrypted Excel to: " + path, e);
-            }
-        } finally {
-            // writeTo(OutputStream, char[]) zeroes the array on its own path;
-            // zero again here to cover the case where we threw before reaching it
-            // (e.g., rejectIfPasswordAlreadySet or Files.newOutputStream failure).
-            // Second zero on already-zeroed array is harmless.
-            Arrays.fill(password, '\0');
-        }
-    }
-
     private void writeBuffered(OutputStream out, String password) {
         // Closing the buffer flushes it; closing the underlying stream again is harmless.
-        try (OutputStream buffered = new BufferedOutputStream(out)) {
-            writeTo(buffered, password);
-        } catch (IOException e) {
-            throw new ExcelWriteException("Failed to write encrypted Excel", e);
-        }
-    }
-
-    private void writeBuffered(OutputStream out, char[] password) {
         try (OutputStream buffered = new BufferedOutputStream(out)) {
             writeTo(buffered, password);
         } catch (IOException e) {
@@ -331,15 +226,6 @@ public final class ExcelHandler implements FileHandler {
                     "Password is already set via ExcelWriter.password() or ExcelWorkbook.password(). "
                             + "Use writeTo(OutputStream) instead, or remove the password() call to pass the password to writeTo(OutputStream, ...).");
         }
-    }
-
-    private static boolean isBlank(char[] chars) {
-        for (char c : chars) {
-            if (!Character.isWhitespace(c)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void writePlain(OutputStream outputStream) throws IOException {

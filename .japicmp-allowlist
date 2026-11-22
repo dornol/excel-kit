@@ -148,3 +148,8 @@ io.github.dornol.excelkit.spring.UploadError#UploadError(long,long,io.github.dor
 io.github.dornol.excelkit.spring.UploadError#UploadError(long,long,io.github.dornol.excelkit.core.RowError$Type,java.util.List,java.util.List,java.util.List)
 io.github.dornol.excelkit.spring.UploadError#from(io.github.dornol.excelkit.core.RowError)
 io.github.dornol.excelkit.spring.UploadError#type()
+# char[] password overloads removed: POI encrypts with a String, so they gave no protection (use the String overloads).
+io.github.dornol.excelkit.excel.ExcelWriter#password(char[])
+io.github.dornol.excelkit.excel.ExcelWorkbook#password(char[])
+io.github.dornol.excelkit.excel.ExcelHandler#writeTo(java.io.OutputStream,char[])
+io.github.dornol.excelkit.excel.ExcelHandler#writeTo(java.nio.file.Path,char[])

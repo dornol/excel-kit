@@ -43,12 +43,6 @@ ExcelHandler handler = ExcelWriter.<Product>create()
 handler.writeTo(outputStream);
 ```
 
-**char[] overload** (v0.16.14+) — password is copied internally and zeroed after encryption:
-```java
-char[] pw = getPasswordFromUser();
-writer.password(pw);  // array copied; caller may zero original
-```
-
 Works the same with `ExcelWorkbook`:
 ```java
 try (var wb = ExcelWorkbook.create()) {
@@ -69,13 +63,8 @@ ExcelHandler handler = writer.column(...).write(dataStream);
 // Presentation
 handler.writeTo(outputStream, "P@ssw0rd!");   // OutputStream
 handler.writeTo(path, "P@ssw0rd!");           // File path
-handler.writeTo(outputStream, pwChars);       // char[] (your array is zeroed after use)
-handler.writeTo(path, pwChars);               // Path + char[] (your array is zeroed after use)
 ```
 
-> A `char[]` password lets you clear your own copy, but Apache POI's encryption API takes a `String`, so the password
-> is converted to one while the file is encrypted and stays on the heap until garbage collection.
->
 > Using both `.password()` and `writeTo(out, password)` on the same handler throws `IllegalStateException`.
 > A null or blank password throws `IllegalArgumentException` and consumes the handler: its workbook is
 > closed and it cannot be written afterwards. The `IllegalStateException` above leaves the handler usable.

@@ -31,10 +31,6 @@ class WorkbookSettingsTest {
                 w -> assertThrows(NullPointerException.class, () -> w.headerFontName(null)));
         both(w -> assertThrows(IllegalArgumentException.class, () -> w.password("  ")),
                 w -> assertThrows(IllegalArgumentException.class, () -> w.password("  ")));
-        both(w -> assertThrows(IllegalArgumentException.class, () -> w.password(new char[0])),
-                w -> assertThrows(IllegalArgumentException.class, () -> w.password(new char[0])));
-        both(w -> assertThrows(IllegalArgumentException.class, () -> w.password(new char[]{' ', '\t'})),
-                w -> assertThrows(IllegalArgumentException.class, () -> w.password(new char[]{' ', '\t'})));
         both(w -> assertThrows(IllegalArgumentException.class, () -> w.protectWorkbook("")),
                 w -> assertThrows(IllegalArgumentException.class, () -> w.protectWorkbook("")));
     }

@@ -205,8 +205,6 @@ ExcelWriter.create().password("secret").column(...).write(data).writeTo(out);
 ExcelHandler h = ExcelWriter.create().column(...).write(data);
 h.writeTo(out, "secret");                 // OutputStream
 h.writeTo(path, "secret");                // Path
-h.writeTo(out, pwChars);                  // char[] (your array is zeroed; POI still builds a String internally)
-h.writeTo(path, pwChars);                 // Path + char[]
 ```
 
 ## Charts

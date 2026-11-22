@@ -113,7 +113,6 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - Encrypted output:
   - `.password("pw")` on writer → `handler.writeTo(out)` auto-encrypts
   - `handler.writeTo(out, "pw")` / `handler.writeTo(path, "pw")` — late-binding encryption
-  - `char[]` overloads zero the array after use
 - Writers use static factory `create()`: `ExcelWriter.<T>create()`, `ExcelWorkbook.create()`,
   `CsvWriter.<T>create()` (no public constructors)
 - `required()` on reader columns — blank cells produce validation errors
@@ -191,8 +190,6 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   range covering all data rows in the given column. Replaces manual `afterData` callback usage.
 - **Header style config** — `headerStyle(cfg -> cfg.alignment(...).border(...).bold(...).wrapText(...))`
   on `ExcelWriter` / `ExcelWorkbook`. Overrides default header alignment/bold/border/wrap.
-- **`password(char[])`** — char-array overload on `ExcelWriter` / `ExcelWorkbook`. Array is copied
-  internally and zeroed after encryption.
 
 ## Key API Notes (v0.27.0+)
 

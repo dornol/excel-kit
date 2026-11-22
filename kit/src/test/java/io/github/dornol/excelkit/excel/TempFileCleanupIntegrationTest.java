@@ -55,25 +55,6 @@ class TempFileCleanupIntegrationTest {
     }
 
     @Test
-    void encryptedWrite_withCharArrayPassword_shouldCleanUpAndZeroPassword() throws IOException {
-        SXSSFWorkbook wb = new SXSSFWorkbook();
-        wb.createSheet("Test").createRow(0).createCell(0).setCellValue("Data");
-        ExcelHandler handler = new ExcelHandler(wb);
-
-        char[] password = "secret".toCharArray();
-        Path output = tempDir.resolve("encrypted-char.xlsx");
-        try (FileOutputStream fos = new FileOutputStream(output.toFile())) {
-            handler.writeTo(fos, password);
-        }
-
-        assertTrue(Files.exists(output));
-        // Password should be zeroed
-        for (char c : password) {
-            assertEquals('\0', c, "Password array must be zeroed after use");
-        }
-    }
-
-    @Test
     void encryptedWrite_alreadyConsumed_shouldThrow() throws IOException {
         SXSSFWorkbook wb = new SXSSFWorkbook();
         ExcelHandler handler = new ExcelHandler(wb);

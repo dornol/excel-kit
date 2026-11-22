@@ -94,25 +94,4 @@ class HeaderStyleDetailsTest {
     @org.junit.jupiter.api.io.TempDir
     Path tempDir;
 
-    @Test
-    void thePathOverloadZeroesThePasswordEvenWhenTheWriterAlreadyHasOne() {
-        ExcelHandler handler = ExcelWriter.<String>create().password("writer-level").column("v", s -> s).write(List.of("x"));
-        char[] password = "other".toCharArray();
-
-        assertThrows(IllegalStateException.class, () -> handler.writeTo(tempDir.resolve("x.xlsx"), password));
-
-        assertArrayEquals(new char[5], password, "the rejected password is not left in memory");
-        handler.writeTo(OutputStream.nullOutputStream()); // the handler is still usable with its own password
-    }
-
-    @Test
-    void theStreamOverloadZeroesThePasswordEvenWhenTheWriterAlreadyHasOne() {
-        ExcelHandler handler = ExcelWriter.<String>create().password("writer-level").column("v", s -> s).write(List.of("x"));
-        char[] password = "other".toCharArray();
-
-        assertThrows(IllegalStateException.class, () -> handler.writeTo(OutputStream.nullOutputStream(), password));
-
-        assertArrayEquals(new char[5], password);
-        handler.writeTo(OutputStream.nullOutputStream());
-    }
 }

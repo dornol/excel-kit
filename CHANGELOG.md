@@ -39,7 +39,9 @@ All notable changes to this project will be documented in this file.
   `csv`/`excel.read`/`excel` (+ `excel.style`, `excel.feature`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
 - `ExcelWriter.write(...)` called a second time on the same writer now throws `ExcelWriteException` instead of reusing column state bound to the first workbook; create a new `ExcelWriter` for another file. `ExcelSheetWriter` already behaved this way.
 - The lenient write-failure logs (`ExcelWriteErrorPolicy.LENIENT`) no longer contain the row object or the cell value, which may hold personal data; they name the column, the row number and the value's type.
-- Documentation: a `char[]` password lets you clear your own copy, but Apache POI's encryption API takes a `String`, so the password still lives on the heap until garbage collection while the file is encrypted.
+
+### Removed
+- The `char[]` password overloads: `ExcelWriter.password(char[])`, `ExcelWorkbook.password(char[])`, `ExcelHandler.writeTo(OutputStream, char[])` and `ExcelHandler.writeTo(Path, char[])`. Apache POI's encryption API takes a `String`, so they never kept the password out of the heap, and `writeTo` zeroed the caller's array as a side effect. Use the `String` overloads.
 
 ### Fixed
 - `ExcelWriter.maxRows(1)` never rolled over to a new sheet, so all rows landed on one sheet. `ExcelSheetWriter` was not affected.

@@ -76,24 +76,6 @@ class ExcelEdgeCaseTest {
                     "Exception should mention password");
         }
 
-        static Stream<Object[]> invalidCharPasswords() {
-            return Stream.of(
-                    new Object[]{null, "null"},
-                    new Object[]{new char[0], "empty"}
-            );
-        }
-
-        @ParameterizedTest(name = "char[] password={1}")
-        @MethodSource("invalidCharPasswords")
-        void writeToWithPassword_invalidCharArray_throws(char[] password, String label) throws IOException {
-            ExcelHandler handler = ExcelWriter.<Item>create()
-                    .column("Name", Item::name)
-                    .write(Stream.of(new Item("A", 1)));
-            var ex = assertThrows(IllegalArgumentException.class,
-                    () -> handler.writeTo(new ByteArrayOutputStream(), password));
-            assertTrue(ex.getMessage().toLowerCase().contains("password"),
-                    "Exception should mention password");
-        }
     }
 
     // ============================================================
@@ -358,44 +340,6 @@ class ExcelEdgeCaseTest {
             handler.writeTo(java.io.OutputStream.nullOutputStream());
         }
 
-        @Test
-        void passwordSet_thenConsumeWithCharArrayPassword_shouldThrowAndZeroPassword() throws IOException {
-            ExcelHandler handler = ExcelWriter.<Item>create()
-                    .password("first")
-                    .column("Name", Item::name)
-                    .write(Stream.of(new Item("A", 1)));
-
-            char[] charPassword = "second".toCharArray();
-            var ex = assertThrows(IllegalStateException.class,
-                    () -> handler.writeTo(new ByteArrayOutputStream(), charPassword));
-            assertTrue(ex.getMessage().contains("already set"),
-                    "Should indicate password conflict");
-
-            // char[] must be zeroed even when conflict exception is thrown
-            for (char c : charPassword) {
-                assertEquals('\0', c, "Password char array should be zeroed even on conflict exception");
-            }
-            handler.writeTo(java.io.OutputStream.nullOutputStream());
-        }
-    }
-
-    // ============================================================
-    // char[] password blank validation
-    // ============================================================
-    @Nested
-    class CharArrayPasswordBlankTests {
-
-        @Test
-        void writeToWithPassword_blankCharArray_throws() throws IOException {
-            ExcelHandler handler = ExcelWriter.<Item>create()
-                    .column("Name", Item::name)
-                    .write(Stream.of(new Item("A", 1)));
-            char[] blankPassword = {' ', '\t', ' '};
-            var ex = assertThrows(IllegalArgumentException.class,
-                    () -> handler.writeTo(new ByteArrayOutputStream(), blankPassword));
-            assertTrue(ex.getMessage().toLowerCase().contains("password"),
-                    "Exception should mention password");
-        }
     }
 
     // ============================================================

@@ -57,23 +57,8 @@ class ExcelHandlerRejectedPasswordTest {
     }
 
     @Test
-    void blankCharPasswordToStream() throws IOException {
-        assertRejectedPasswordReleasesTheWorkbook(h -> h.writeTo(new ByteArrayOutputStream(), new char[]{' '}));
-    }
-
-    @Test
-    void emptyCharPasswordToStream() throws IOException {
-        assertRejectedPasswordReleasesTheWorkbook(h -> h.writeTo(new ByteArrayOutputStream(), new char[0]));
-    }
-
-    @Test
     void blankStringPasswordToPath() throws IOException {
         assertRejectedPasswordReleasesTheWorkbook(h -> h.writeTo(dir.resolve("a.xlsx"), ""));
-    }
-
-    @Test
-    void blankCharPasswordToPath() throws IOException {
-        assertRejectedPasswordReleasesTheWorkbook(h -> h.writeTo(dir.resolve("b.xlsx"), new char[]{' ', ' '}));
     }
 
     @Test

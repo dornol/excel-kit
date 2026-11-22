@@ -113,43 +113,6 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void writeToWithPassword_shouldThrowExceptionWithNullCharArrayPassword() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            handler.writeTo(outputStream, (char[]) null);
-        }, "writeToWithPassword should throw IllegalArgumentException with null char[] password");
-    }
-
-    @Test
-    void writeToWithPassword_shouldThrowExceptionWithEmptyCharArrayPassword() {
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            handler.writeTo(outputStream, new char[0]);
-        }, "writeToWithPassword should throw IllegalArgumentException with empty char[] password");
-    }
-
-    @Test
-    void writeToWithPassword_charArray_shouldWriteEncryptedWorkbook() throws IOException {
-        // Arrange
-        createSampleWorkbookContent();
-        Path excelFile = tempDir.resolve("encrypted-char.xlsx");
-        char[] password = "test123".toCharArray();
-
-        // Act
-        try (FileOutputStream fos = new FileOutputStream(excelFile.toFile())) {
-            handler.writeTo(fos, password);
-        }
-
-        // Assert
-        assertTrue(Files.exists(excelFile), "Encrypted Excel file should be created");
-        assertTrue(Files.size(excelFile) > 0, "Encrypted Excel file should have content");
-        // Password should be zeroed out after use
-        for (char c : password) {
-            assertEquals('\0', c, "Password char array should be zeroed after use");
-        }
-    }
-
-    @Test
     void write_withPassword_shouldProduceOLE2Format() throws IOException {
         // Arrange
         SXSSFWorkbook pwWorkbook = new SXSSFWorkbook();
@@ -178,17 +141,6 @@ class ExcelHandlerTest {
         byte[] bytes = outputStream.toByteArray();
         assertEquals((byte) 0x50, bytes[0], "Should be ZIP/OOXML format");
         assertEquals((byte) 0x4B, bytes[1], "Should be ZIP/OOXML format");
-    }
-
-    @Test
-    void writeToWithPassword_charArray_blankPassword_shouldThrow() {
-        // Arrange
-        char[] blankPassword = {' ', ' ', ' '};
-
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            handler.writeTo(outputStream, blankPassword);
-        }, "writeToWithPassword should throw for blank char[] password");
     }
 
     @Test
@@ -261,32 +213,11 @@ class ExcelHandlerTest {
     }
 
     @Test
-    void writeToPathWithCharArrayPassword_shouldWriteEncryptedAndZero() throws IOException {
-        // Arrange
-        createSampleWorkbookContent();
-        Path excelFile = tempDir.resolve("path-encrypted-char.xlsx");
-        char[] password = "test123".toCharArray();
-
-        // Act
-        handler.writeTo(excelFile, password);
-
-        // Assert
-        assertTrue(Files.exists(excelFile));
-        assertTrue(Files.size(excelFile) > 0);
-        for (char c : password) {
-            assertEquals('\0', c, "password char[] must be zeroed");
-        }
-    }
-
-    @Test
     void writeToPathWithPassword_nullOrBlank_throws() {
         Path target = tempDir.resolve("x.xlsx");
         assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, (String) null));
         assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, ""));
         assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, "   "));
-        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, (char[]) null));
-        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, new char[0]));
-        assertThrows(IllegalArgumentException.class, () -> handler.writeTo(target, new char[]{' ', ' '}));
     }
 
     @Test
