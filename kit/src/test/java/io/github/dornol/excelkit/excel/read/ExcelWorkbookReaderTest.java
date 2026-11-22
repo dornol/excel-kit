@@ -86,6 +86,23 @@ class ExcelWorkbookReaderTest {
         assertNotNull(report.sheets().get(0).failure());
     }
 
+    @Test
+    void aStreamAboveTheInputLimitIsRefusedWhileItIsCopied() {
+        var reader = ExcelReader.<String>mapping(row -> row.get("Name").asString())
+                .limits(new io.github.dornol.excelkit.core.read.ReadLimits(1_000, -1, -1, -1));
+        long[] served = {0};
+        java.io.InputStream endless = new java.io.InputStream() {
+            @Override public int read() { served[0]++; return 0; }
+            @Override public int read(byte[] b, int off, int len) { served[0] += len; return len; }
+        };
+
+        var thrown = assertThrows(io.github.dornol.excelkit.core.read.ReadLimitExceededException.class,
+                () -> ExcelWorkbookReader.create().sheet(0, reader, result -> {}).read(endless));
+
+        assertEquals(io.github.dornol.excelkit.core.read.ReadLimitExceededException.Limit.INPUT_BYTES, thrown.limit());
+        assertTrue(served[0] < 100_000, "the copy stops at the limit instead of draining the stream: " + served[0]);
+    }
+
     private static byte[] workbook() {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ExcelWorkbook workbook = ExcelWorkbook.create()) {

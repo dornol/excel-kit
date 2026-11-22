@@ -4,6 +4,7 @@ import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -165,8 +166,8 @@ public class ExcelSummary {
                     labelIdx = idx;
                 }
                 String text = entries.size() > 1
-                        ? op.name().substring(0, 1) + op.name().substring(1).toLowerCase()
-                        : (labelText != null ? labelText : op.name().substring(0, 1) + op.name().substring(1).toLowerCase());
+                        ? op.name().substring(0, 1) + op.name().substring(1).toLowerCase(Locale.ROOT)
+                        : (labelText != null ? labelText : op.name().substring(0, 1) + op.name().substring(1).toLowerCase(Locale.ROOT));
                 ExcelCellText.write(summaryRow.createCell(labelIdx), text);
 
                 // Formulas

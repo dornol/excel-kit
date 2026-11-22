@@ -30,6 +30,13 @@ All notable changes to this project will be documented in this file.
 - `PackageDependencyTest` pins the package layering (`core` <- `core.io` <- `core.read`/`core.detect` <-
   `csv`/`excel.read`/`excel` (+ `excel.style`, `excel.feature`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
 
+### Fixed
+
+- `ExcelWorkbookReader.read(InputStream)` now stops copying once the input exceeds the readers' `ReadLimits.maxInputBytes` (it used to copy the whole stream first) and keeps the copy in a restricted-permission temp directory.
+- A summary row's default label (`Min`, `Max`, ...) no longer depends on the JVM locale (it was `Mın` under a Turkish locale).
+- `ExcelWriter.write(Stream, ...)` now also releases the workbook's temp files when an `Error` such as `OutOfMemoryError` is thrown.
+
+
 ## [0.27.0] - 2026-11-21
 
 ### Added

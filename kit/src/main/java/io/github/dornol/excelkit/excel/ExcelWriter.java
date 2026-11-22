@@ -598,11 +598,11 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     /**
      * Writes the stream of row data into an Excel file using custom row-level callback.
      *
-     * @param stream   The data stream
      * <p>
      * The stream is read but <b>not closed</b>: whoever opened it (a JPA or JDBC stream, for example)
      * closes it, typically with try-with-resources around this call.
      *
+     * @param stream   The data stream
      * @param consumer Custom consumer for post-processing row with cursor
      * @return ExcelHandler wrapping the workbook
      */
@@ -633,6 +633,10 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         } catch (RuntimeException e) {
             closeWorkbookQuietly();
             throw new ExcelWriteException("Failed to write excel", e);
+        } catch (Error e) {
+            // An OutOfMemoryError or the like still must not leave the workbook's temp files behind.
+            closeWorkbookQuietly();
+            throw e;
         }
     }
 

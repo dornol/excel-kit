@@ -421,6 +421,11 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
                 handler::read, handler::wasStoppedEarly, consumer);
     }
 
+    /** The input size this reader accepts, or -1 when it has no limit. */
+    long maxInputBytes() {
+        return snapshotReadOptions().limits().maxInputBytes();
+    }
+
     boolean canSharePackage() {
         return password == null;
     }

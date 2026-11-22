@@ -2,6 +2,8 @@ package io.github.dornol.excelkit.excel.read;
 
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
+import io.github.dornol.excelkit.core.io.TempResourceCreator;
+import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.core.read.ReadSummary;
 import io.github.dornol.excelkit.core.read.RowError;
@@ -11,9 +13,9 @@ import org.apache.poi.openxml4j.opc.PackageAccess;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -110,16 +112,56 @@ public final class ExcelWorkbookReader {
      */
     public WorkbookReadReport read(InputStream input) {
         Objects.requireNonNull(input, "input cannot be null");
+        Path directory = null;
         try {
-            Path temp = Files.createTempFile("excel-kit-workbook-", ".xlsx");
-            try {
-                Files.copy(input, temp, StandardCopyOption.REPLACE_EXISTING);
-                return read(temp);
-            } finally {
-                Files.deleteIfExists(temp);
-            }
+            directory = TempResourceCreator.createTempDirectory();
+            Path temp = TempResourceCreator.createTempFile(directory, "excel-kit-workbook-", ".xlsx");
+            copyWithinLimit(input, temp, inputByteLimit());
+            return read(temp);
         } catch (IOException e) {
             throw new ExcelKitException("Failed to prepare workbook input", e);
+        } finally {
+            deleteQuietly(directory);
+        }
+    }
+
+    /**
+     * The most input bytes any registered reader accepts, or -1 when one of them is unlimited. A file
+     * above it would be refused by every sheet anyway, so the copy stops there instead of filling the disk.
+     */
+    private long inputByteLimit() {
+        long limit = 0;
+        for (SheetPlan plan : plans) {
+            long maximum = plan.execution.maxInputBytes();
+            if (maximum < 0) return -1;
+            limit = Math.max(limit, maximum);
+        }
+        return plans.isEmpty() ? -1 : limit;
+    }
+
+    private static void copyWithinLimit(InputStream input, Path target, long limit) throws IOException {
+        try (OutputStream out = Files.newOutputStream(target)) {
+            byte[] buffer = new byte[8192];
+            long total = 0;
+            int read;
+            while ((read = input.read(buffer)) >= 0) {
+                if (limit >= 0 && read > limit - total) {
+                    long observed = total > Long.MAX_VALUE - read ? Long.MAX_VALUE : total + read;
+                    throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES, limit, observed);
+                }
+                out.write(buffer, 0, read);
+                total += read;
+            }
+        }
+    }
+
+    private static void deleteQuietly(@Nullable Path directory) {
+        if (directory == null) return;
+        try (var children = Files.list(directory)) {
+            for (Path child : (Iterable<Path>) children::iterator) Files.deleteIfExists(child);
+            Files.deleteIfExists(directory);
+        } catch (IOException ignored) {
+            // Nothing more can be done; the temp directory is under the system temp location.
         }
     }
 
@@ -247,6 +289,8 @@ public final class ExcelWorkbookReader {
 
         default boolean canSharePackage() { return false; }
 
+        default long maxInputBytes() { return -1; }
+
         default @Nullable String password() { return null; }
 
         default SheetReadReport readShared(Path path, int index, int maximumErrors, OPCPackage pkg) {
@@ -271,6 +315,11 @@ public final class ExcelWorkbookReader {
         @Override
         public boolean canSharePackage() {
             return reader.canSharePackage();
+        }
+
+        @Override
+        public long maxInputBytes() {
+            return reader.maxInputBytes();
         }
 
         @Override
