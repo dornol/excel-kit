@@ -19,6 +19,7 @@ import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -91,8 +92,7 @@ final class CellConversionSupport {
         throw new ParseException("Invalid number: " + value, position.getIndex());
     }
 
-    private static final java.util.concurrent.ConcurrentHashMap<Locale, NumberFormat> NUMBER_FORMATS =
-            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Locale, NumberFormat> NUMBER_FORMATS = new ConcurrentHashMap<>();
 
     /**
      * A number written as plain ASCII digits only means the same in every locale (no sign, separator or

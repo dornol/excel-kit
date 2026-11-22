@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel.read;
 
+import io.github.dornol.excelkit.core.read.CellConversionConfig;
 import io.github.dornol.excelkit.core.io.TempWorkspace;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
@@ -82,7 +83,7 @@ class ExcelReadSupport {
      * (the root locale), not the machine's.
      */
     static DataFormatter dataFormatter(XSSFReader reader) throws Exception {
-        return dataFormatter(reader, io.github.dornol.excelkit.core.read.CellConversionConfig.defaults().locale());
+        return dataFormatter(reader, CellConversionConfig.defaults().locale());
     }
 
     static DataFormatter dataFormatter(XSSFReader reader, Locale locale) throws Exception {

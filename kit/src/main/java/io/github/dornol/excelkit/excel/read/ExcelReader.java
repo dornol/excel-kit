@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.core.read.ReadSummary;
-import io.github.dornol.excelkit.core.read.ReadSession;
 import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 

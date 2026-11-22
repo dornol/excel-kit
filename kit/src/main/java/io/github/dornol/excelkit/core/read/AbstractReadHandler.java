@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -228,8 +229,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
      */
     public void readWhile(Predicate<ReadResult<T>> predicate) {
         Objects.requireNonNull(predicate, "predicate cannot be null");
-        java.util.concurrent.atomic.AtomicReference<RuntimeException> failure =
-                new java.util.concurrent.atomic.AtomicReference<>();
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
         read(result -> {
             boolean proceed;
             try {

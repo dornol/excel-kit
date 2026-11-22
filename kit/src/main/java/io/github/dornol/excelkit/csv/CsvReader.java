@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.core.read.ReadSummary;
-import io.github.dornol.excelkit.core.read.ReadSession;
 import io.github.dornol.excelkit.core.detect.TabularFileDetector;
 import io.github.dornol.excelkit.core.detect.TabularFileType;
 import io.github.dornol.excelkit.core.RuntimeDependencyGuard;

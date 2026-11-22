@@ -373,7 +373,14 @@ public class CsvWriter<T> {
         }
         validateUniqueColumnNames();
         TempWorkspace workspace = TempWorkspace.create();
-        Path tempFile = workspace.newFile("csv-", ".csv");
+        Path tempFile;
+        try {
+            tempFile = workspace.newFile("csv-", ".csv");
+        } catch (RuntimeException e) {
+            // The file could not be created (a full disk, a quota): the directory made for it must not stay behind.
+            workspace.close();
+            throw e;
+        }
 
         try (OutputStream os = Files.newOutputStream(tempFile)) {
             writeTempFile(stream, os, options);

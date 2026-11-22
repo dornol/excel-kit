@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.ss.usermodel.DataValidation;
 import org.apache.poi.ss.usermodel.DataValidationConstraint;
@@ -28,7 +29,7 @@ final class ExcelSheetPostProcessor {
         // The filter covers the header and the data rows (not the summary below them), as Excel writes it. A table brings
         // its own filter buttons: see StructuredTableWriter, where a sheet-level filter would overlap the table.
         if (config.autoFilter && config.tableOptions == null) {
-            sheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(headerRowIndex,
+            sheet.setAutoFilter(new CellRangeAddress(headerRowIndex,
                     Math.max(headerRowIndex, dataEndRow), 0, columns.size() - 1));
         }
         if (config.sheetPassword != null) sheet.protectSheet(config.sheetPassword);
