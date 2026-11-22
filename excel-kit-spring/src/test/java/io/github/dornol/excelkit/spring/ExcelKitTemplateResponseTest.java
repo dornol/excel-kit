@@ -80,6 +80,54 @@ class ExcelKitTemplateResponseTest {
         assertTrue(text.contains("Notebook") && text.contains("1200"), text);
     }
 
+    // ---- the guidance row of a template ----
+
+    private static String guidanceRow(ExcelKitSchema<Product> schema, java.util.Collection<Product> samples) throws IOException {
+        try (var workbook = StreamedBody.workbook(ExcelKitTemplateResponse.excelWithGuidance(schema, "guided", samples))) {
+            return workbook.getSheet("Template").getRow(0).getCell(0).getStringCellValue();
+        }
+    }
+
+    @Test
+    void guidanceListsTheRequiredColumnsAndTheAliasesTheyAreReadUnder() throws IOException {
+        var schema = ExcelKitSchema.<Product>builder()
+                .requiredColumn("Name", java.util.List.of("Full Name", "Title"), p -> p.name, (p, cell) -> p.name = cell.asString())
+                .requiredColumn("Price", p -> p.price, (p, cell) -> p.price = cell.asInt())
+                .column("Note", p -> p.name, (p, cell) -> { })
+                .build();
+
+        assertEquals("Required columns: Name (aliases: Full Name, Title), Price", guidanceRow(schema, List.of()));
+    }
+
+    @Test
+    void guidanceSaysSoWhenNoColumnIsRequired() throws IOException {
+        assertEquals("Required columns: (none)", guidanceRow(SCHEMA, List.of(new Product("a", 1))));
+    }
+
+    @Test
+    void guidanceOverASingleColumnMergesNothing() throws IOException {
+        var single = ExcelKitSchema.<Product>builder()
+                .requiredColumn("Name", p -> p.name, (p, cell) -> p.name = cell.asString()).build();
+
+        try (var workbook = StreamedBody.workbook(ExcelKitTemplateResponse.excelWithGuidance(single, "guided", List.<Product>of()))) {
+            var sheet = workbook.getSheet("Template");
+            assertEquals("Required columns: Name", sheet.getRow(0).getCell(0).getStringCellValue());
+            assertEquals(0, sheet.getNumMergedRegions());
+            assertEquals("Name", sheet.getRow(1).getCell(0).getStringCellValue(), "the header follows the guidance row");
+        }
+    }
+
+    @Test
+    void guidanceOverSeveralColumnsIsOneMergedRowAboveTheHeader() throws IOException {
+        try (var workbook = StreamedBody.workbook(ExcelKitTemplateResponse.excelWithGuidance(SCHEMA, "guided", List.of(new Product("a", 1))))) {
+            var sheet = workbook.getSheet("Template");
+            assertEquals(1, sheet.getNumMergedRegions());
+            assertEquals("A1:B1", sheet.getMergedRegion(0).formatAsString());
+            assertEquals("Name", sheet.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("a", sheet.getRow(2).getCell(0).getStringCellValue());
+        }
+    }
+
     static class Product {
         String name;
         Integer price;
