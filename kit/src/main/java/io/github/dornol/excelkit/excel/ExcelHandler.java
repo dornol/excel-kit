@@ -199,6 +199,11 @@ public final class ExcelHandler implements FileHandler {
      * <p>
      * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
      * The array is zeroed out after encryption completes (or on failure).
+     * <p>
+     * The encryption API of Apache POI takes a {@code String}, so the password is converted to one when the file
+     * is encrypted and lives on the heap until it is garbage collected. A {@code char[]} only spares you from
+     * holding it in a long-lived {@code String} of your own and lets you clear your copy; it does not keep the
+     * password out of the heap.
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
      * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(OutputStream)} instead.
      *
@@ -258,6 +263,11 @@ public final class ExcelHandler implements FileHandler {
      * <p>
      * This overload accepts a {@code char[]} to allow callers to clear the password from memory after use.
      * The array is zeroed out after encryption completes (or on failure).
+     * <p>
+     * The encryption API of Apache POI takes a {@code String}, so the password is converted to one when the file
+     * is encrypted and lives on the heap until it is garbage collected. A {@code char[]} only spares you from
+     * holding it in a long-lived {@code String} of your own and lets you clear your copy; it does not keep the
+     * password out of the heap.
      * Cannot be used when a password was already set via {@link ExcelWriter#password(String)}
      * or {@link ExcelWorkbook#password(String)} — use {@link #writeTo(Path)} instead.
      *

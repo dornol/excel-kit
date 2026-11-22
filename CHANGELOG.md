@@ -37,8 +37,12 @@ All notable changes to this project will be documented in this file.
   keeps the rule.
 - `PackageDependencyTest` pins the package layering (`core` <- `core.io` <- `core.read`/`core.detect` <-
   `csv`/`excel.read`/`excel` (+ `excel.style`, `excel.feature`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
+- `ExcelWriter.write(...)` called a second time on the same writer now throws `ExcelWriteException` instead of reusing column state bound to the first workbook; create a new `ExcelWriter` for another file. `ExcelSheetWriter` already behaved this way.
+- The lenient write-failure logs (`ExcelWriteErrorPolicy.LENIENT`) no longer contain the row object or the cell value, which may hold personal data; they name the column, the row number and the value's type.
+- Documentation: a `char[]` password lets you clear your own copy, but Apache POI's encryption API takes a `String`, so the password still lives on the heap until garbage collection while the file is encrypted.
 
 ### Fixed
+- `ExcelWriter.maxRows(1)` never rolled over to a new sheet, so all rows landed on one sheet. `ExcelSheetWriter` was not affected.
 
 - `CellData` number conversion (`asInt`, `asLong`, `asDouble`, `asNumber`, `asBigDecimal`) is about 2.5 times faster for most values: it reuses the locale's number format instead of building one per cell, skips the currency/percent matching when the text has no such sign, and converts plain digits directly. A numeric 300,000-row, three-number-column read spent about 510 ms on conversion and now about 200 ms. Results are unchanged (checked on 4,104 value/locale/method combinations against the previous implementation).
 - `ExcelWorkbookReader` runs the security scan of a workbook once per `ReadSecurityPolicy` instead of once per sheet. Under `STRICT` (formulas refused) every scan parses every worksheet, so reading N sheets parsed the whole file N times. A refusal is remembered too: the remaining sheets are refused with the same `ReadSecurityException` without scanning again.

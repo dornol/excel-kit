@@ -185,6 +185,11 @@ public class ExcelWorkbook implements AutoCloseable {
      * Sets the file encryption password using a char array.
      * <p>
      * The array is copied internally; the caller may zero the original after this call.
+     * <p>
+     * The encryption API of Apache POI takes a {@code String}, so the password is converted to one when the file
+     * is encrypted and lives on the heap until it is garbage collected. A {@code char[]} only spares you from
+     * holding it in a long-lived {@code String} of your own and lets you clear your copy; it does not keep the
+     * password out of the heap.
      *
      * @param password the encryption password (copied internally; must not be null or empty)
      * @return this workbook for chaining
