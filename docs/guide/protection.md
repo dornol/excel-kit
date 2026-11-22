@@ -69,6 +69,25 @@ handler.writeTo(path, "P@ssw0rd!");           // File path
 > A null or blank password throws `IllegalArgumentException` and consumes the handler: its workbook is
 > closed and it cannot be written afterwards. The `IllegalStateException` above leaves the handler usable.
 
+### Resources and a JDK 24+ Warning
+
+Encrypting does not need the file's size in heap: the encrypted container is built in a temporary file, so a
+workbook of hundreds of megabytes encrypts within a small heap. The disk is used instead: for a moment the plain and
+the encrypted copy exist side by side (about twice the size of the file), and both are deleted when the write ends.
+
+On **JDK 24 and later** the first encryption in a JVM may print this to stderr:
+
+```
+WARNING: sun.misc.Unsafe::invokeCleaner has been called by org.apache.poi.poifs.nio.CleanerUtil
+WARNING: sun.misc.Unsafe::invokeCleaner will be removed in a future release
+```
+
+It comes from Apache POI, not from excel-kit. POI memory-maps the temporary file and releases the mapping through
+`sun.misc.Unsafe`, which [JEP 498](https://openjdk.org/jeps/498) warns about on first use. The output is not affected,
+and reading encrypted files does not trigger it. To silence it, start the JVM with
+`--sun-misc-unsafe-memory-access=allow`. Fixing it is up to POI; it should disappear with a POI release that no
+longer uses `Unsafe` for this.
+
 ## Security Notes
 
 ### Reading Untrusted Files

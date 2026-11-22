@@ -154,6 +154,8 @@ public final class ExcelHandler implements FileHandler {
      * <p><b>Resources:</b> the encrypted container is built in a temporary file, not in heap, so memory use does
      * not grow with the size of the workbook. The disk does: for a moment the plain and the encrypted copy
      * exist side by side (about twice the size of the file); both are deleted when the write ends.
+     * On JDK 24 and later Apache POI may print a one-time JVM warning about {@code sun.misc.Unsafe} while it
+     * releases the memory-mapped temporary file; it is harmless and comes from POI, see the protection guide.
      *
      * @param outputStream The OutputStream to write the encrypted Excel file to
      * @param password     The password to protect the Excel file with
