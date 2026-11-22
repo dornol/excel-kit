@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
+import io.github.dornol.excelkit.core.read.ReadLimits;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.core.read.RowError;
 import io.github.dornol.excelkit.core.read.ReadSummary;
@@ -590,6 +591,9 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     /**
      * Returns the list of sheet names and indices from an Excel file.
+     * <p>
+     * The whole stream is copied to a temporary file without any limit; for a file from an untrusted source use
+     * {@link #getSheetNames(InputStream, ReadLimits)}.
      *
      * @param inputStream The input stream of the Excel file (will be consumed)
      * @return A list of {@link ExcelSheetInfo} records containing sheet names and indices
@@ -638,6 +642,9 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
 
     /**
      * Returns the header names from a specific sheet.
+     * <p>
+     * The whole stream is copied to a temporary file without any limit; for a file from an untrusted source use
+     * {@link #getSheetHeaders(InputStream, int, int, ReadLimits)}.
      *
      * @param inputStream    The input stream of the Excel file (will be consumed)
      * @param sheetIndex     The 0-based sheet index
@@ -694,6 +701,84 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
         Objects.requireNonNull(source, "source cannot be null");
         return ExcelMetadataReader.headers(source, sheetIndex, headerRowIndex,
                 Objects.requireNonNull(password, "password cannot be null"));
+    }
+
+    /**
+     * Returns the sheet names and indices of an Excel file that comes from an untrusted source, such as an
+     * upload.
+     * <p>
+     * The stream is copied to a temporary file first. The copy stops once it passes
+     * {@link ReadLimits#maxInputBytes()}, and a workbook with more sheets than {@link ReadLimits#maxSheets()}
+     * is refused. The other limits do not apply to this call.
+     *
+     * @param inputStream the input stream of the file (will be consumed)
+     * @param limits      the limits to enforce, for example {@link ReadLimits#UPLOAD}
+     * @return the sheets
+     * @throws io.github.dornol.excelkit.core.read.ReadLimitExceededException if the input or the number of sheets passes a limit
+     * @since 0.28.0
+     */
+    public static List<ExcelSheetInfo> getSheetNames(InputStream inputStream, ReadLimits limits) {
+        return ExcelMetadataReader.sheetNames(inputStream, null,
+                Objects.requireNonNull(limits, "limits cannot be null"));
+    }
+
+    /**
+     * Like {@link #getSheetNames(InputStream, ReadLimits)}, for a password-protected file.
+     *
+     * @param inputStream the input stream of the file (will be consumed)
+     * @param password    the file's password
+     * @param limits      the limits to enforce, for example {@link ReadLimits#UPLOAD}
+     * @return the sheets
+     * @throws io.github.dornol.excelkit.core.read.ReadLimitExceededException if the input or the number of sheets passes a limit
+     * @throws ExcelReadException         if the password is wrong, or the file is not an encrypted workbook
+     * @since 0.28.0
+     */
+    public static List<ExcelSheetInfo> getSheetNames(InputStream inputStream, String password, ReadLimits limits) {
+        return ExcelMetadataReader.sheetNames(inputStream,
+                Objects.requireNonNull(password, "password cannot be null"),
+                Objects.requireNonNull(limits, "limits cannot be null"));
+    }
+
+    /**
+     * Returns the header names of a sheet of an Excel file that comes from an untrusted source, such as an
+     * upload.
+     * <p>
+     * The stream is copied to a temporary file first. The copy stops once it passes
+     * {@link ReadLimits#maxInputBytes()}, and a header row with more cells than
+     * {@link ReadLimits#maxColumns()} is refused. The other limits do not apply to this call.
+     *
+     * @param inputStream    the input stream of the file (will be consumed)
+     * @param sheetIndex     the 0-based sheet index
+     * @param headerRowIndex the 0-based header row index
+     * @param limits         the limits to enforce, for example {@link ReadLimits#UPLOAD}
+     * @return the header names
+     * @throws io.github.dornol.excelkit.core.read.ReadLimitExceededException if the input or the header row passes a limit
+     * @since 0.28.0
+     */
+    public static List<String> getSheetHeaders(InputStream inputStream, int sheetIndex, int headerRowIndex,
+                                               ReadLimits limits) {
+        return ExcelMetadataReader.headers(inputStream, sheetIndex, headerRowIndex, null,
+                Objects.requireNonNull(limits, "limits cannot be null"));
+    }
+
+    /**
+     * Like {@link #getSheetHeaders(InputStream, int, int, ReadLimits)}, for a password-protected file.
+     *
+     * @param inputStream    the input stream of the file (will be consumed)
+     * @param sheetIndex     the 0-based sheet index
+     * @param headerRowIndex the 0-based header row index
+     * @param password       the file's password
+     * @param limits         the limits to enforce, for example {@link ReadLimits#UPLOAD}
+     * @return the header names
+     * @throws io.github.dornol.excelkit.core.read.ReadLimitExceededException if the input or the header row passes a limit
+     * @throws ExcelReadException         if the password is wrong, or the file is not an encrypted workbook
+     * @since 0.28.0
+     */
+    public static List<String> getSheetHeaders(InputStream inputStream, int sheetIndex, int headerRowIndex,
+                                               String password, ReadLimits limits) {
+        return ExcelMetadataReader.headers(inputStream, sheetIndex, headerRowIndex,
+                Objects.requireNonNull(password, "password cannot be null"),
+                Objects.requireNonNull(limits, "limits cannot be null"));
     }
 
 }

@@ -213,6 +213,10 @@ Encrypted workbooks: pass the password last — `getSheetNames(path, "secret")`,
 `getSheetHeaders(path, sheetIndex, headerRowIndex, "secret")` (`InputStream`, `Path` and `InputStreamSource` overloads).
 `ExcelWorkbookReader` uses the password of the readers it is given.
 
+Untrusted input: `getSheetNames(inputStream, ReadLimits.UPLOAD)` and
+`getSheetHeaders(inputStream, sheetIndex, headerRowIndex, ReadLimits.UPLOAD)` (password before the limits) stop the
+copy at `maxInputBytes` and refuse too many sheets or columns with `ReadLimitExceededException`.
+
 ## Bean Validation
 
 ```java

@@ -381,6 +381,16 @@ List<String> headers = ExcelReader.getSheetHeaders(path, 0, 0, "secret");
 
 `ExcelWorkbookReader` does this on its own when the readers it was given have a `password(...)`.
 
+These calls copy the whole stream to a temporary file. For a file from an untrusted source (an upload), pass
+`ReadLimits` as the last argument, after the password if there is one: the copy stops at `maxInputBytes`, and a
+workbook with more sheets than `maxSheets` (or a header row wider than `maxColumns`) is refused with
+`ReadLimitExceededException`.
+
+```java
+List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(upload, ReadLimits.UPLOAD);
+List<String> headers = ExcelReader.getSheetHeaders(upload, 0, 0, ReadLimits.UPLOAD);
+```
+
 ## CellData Conversion Methods
 
 | Method | Return Type |

@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `ExcelReader.getSheetNames(InputStream, [password,] ReadLimits)` and `getSheetHeaders(InputStream, int, int, [password,] ReadLimits)`: sheet discovery for an untrusted upload. The copy to the temp file stops at `maxInputBytes`, and more sheets than `maxSheets` or a header row wider than `maxColumns` is refused. The overloads without limits copy the whole stream, as before.
+
 ### Changed
 - **Breaking:** `io.github.dornol.excelkit.core` is split by purpose (change the imports; names are unchanged):
   reading infrastructure (`AbstractReader`, `ReaderOptions`, `ReadLimits`, `CellData`, `RowData`, `ReadResult`,

@@ -1,6 +1,8 @@
 package io.github.dornol.excelkit.excel.read;
 
 import io.github.dornol.excelkit.core.io.InputStreamSource;
+import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.read.ReadLimits;
 import io.github.dornol.excelkit.core.io.TempResourceCreator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -20,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -38,7 +39,17 @@ final class ExcelMetadataReader {
 
     /** @param password the password of an encrypted workbook, or {@code null} for a plain one */
     static List<ExcelSheetInfo> sheetNames(InputStream inputStream, @Nullable String password) {
-        return withTempWorkbook(inputStream, "Failed to read sheet names", password, ExcelMetadataReader::readSheetNames);
+        return sheetNames(inputStream, password, ReadLimits.UNLIMITED);
+    }
+
+    static List<ExcelSheetInfo> sheetNames(InputStream inputStream, @Nullable String password, ReadLimits limits) {
+        List<ExcelSheetInfo> sheets = withTempWorkbook(inputStream, "Failed to read sheet names", password,
+                limits, ExcelMetadataReader::readSheetNames);
+        if (limits.maxSheets() >= 0 && sheets.size() > limits.maxSheets()) {
+            throw new ReadLimitExceededException(ReadLimitExceededException.Limit.SHEETS,
+                    limits.maxSheets(), sheets.size());
+        }
+        return sheets;
     }
 
     static List<ExcelSheetInfo> sheetNames(InputStreamSource source) {
@@ -60,9 +71,19 @@ final class ExcelMetadataReader {
 
     static List<String> headers(InputStream inputStream, int sheetIndex, int headerRowIndex,
                                 @Nullable String password) {
+        return headers(inputStream, sheetIndex, headerRowIndex, password, ReadLimits.UNLIMITED);
+    }
+
+    static List<String> headers(InputStream inputStream, int sheetIndex, int headerRowIndex,
+                                @Nullable String password, ReadLimits limits) {
         validateIndexes(sheetIndex, headerRowIndex);
-        return withTempWorkbook(inputStream, "Failed to read sheet headers", password,
+        List<String> headers = withTempWorkbook(inputStream, "Failed to read sheet headers", password, limits,
                 path -> readHeaders(path, sheetIndex, headerRowIndex));
+        if (limits.maxColumns() >= 0 && headers.size() > limits.maxColumns()) {
+            throw new ReadLimitExceededException(ReadLimitExceededException.Limit.COLUMNS,
+                    limits.maxColumns(), headers.size());
+        }
+        return headers;
     }
 
     static List<String> headers(InputStreamSource source, int sheetIndex, int headerRowIndex) {
@@ -130,7 +151,7 @@ final class ExcelMetadataReader {
     }
 
     private static <R> R withTempWorkbook(InputStream inputStream, String message, @Nullable String password,
-                                          WorkbookOperation<R> operation) {
+                                          ReadLimits limits, WorkbookOperation<R> operation) {
         Objects.requireNonNull(inputStream, "inputStream cannot be null");
         Path tempDir = null;
         Path tempFile = null;
@@ -138,12 +159,12 @@ final class ExcelMetadataReader {
         try {
             tempDir = TempResourceCreator.createTempDirectory();
             tempFile = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
-            Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            ExcelInputCopy.copy(inputStream, tempFile, limits.maxInputBytes());
             if (password == null) return operation.apply(tempFile);
             decrypted = TempResourceCreator.createTempFile(tempDir, UUID.randomUUID().toString(), ".xlsx");
             ExcelReadSupport.decrypt(tempFile, password, decrypted);
             return operation.apply(decrypted);
-        } catch (ExcelReadException e) {
+        } catch (ExcelReadException | ReadLimitExceededException e) {
             throw e;
         } catch (Exception e) {
             throw new ExcelReadException(message, e);

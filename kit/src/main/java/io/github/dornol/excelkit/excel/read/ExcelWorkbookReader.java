@@ -13,7 +13,6 @@ import org.apache.poi.openxml4j.opc.PackageAccess;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -116,7 +115,7 @@ public final class ExcelWorkbookReader {
         try {
             directory = TempResourceCreator.createTempDirectory();
             Path temp = TempResourceCreator.createTempFile(directory, "excel-kit-workbook-", ".xlsx");
-            copyWithinLimit(input, temp, inputByteLimit());
+            ExcelInputCopy.copy(input, temp, inputByteLimit());
             return read(temp);
         } catch (IOException e) {
             throw new ExcelKitException("Failed to prepare workbook input", e);
@@ -137,22 +136,6 @@ public final class ExcelWorkbookReader {
             limit = Math.max(limit, maximum);
         }
         return plans.isEmpty() ? -1 : limit;
-    }
-
-    private static void copyWithinLimit(InputStream input, Path target, long limit) throws IOException {
-        try (OutputStream out = Files.newOutputStream(target)) {
-            byte[] buffer = new byte[8192];
-            long total = 0;
-            int read;
-            while ((read = input.read(buffer)) >= 0) {
-                if (limit >= 0 && read > limit - total) {
-                    long observed = total > Long.MAX_VALUE - read ? Long.MAX_VALUE : total + read;
-                    throw new ReadLimitExceededException(ReadLimitExceededException.Limit.INPUT_BYTES, limit, observed);
-                }
-                out.write(buffer, 0, read);
-                total += read;
-            }
-        }
     }
 
     private static void deleteQuietly(@Nullable Path directory) {
