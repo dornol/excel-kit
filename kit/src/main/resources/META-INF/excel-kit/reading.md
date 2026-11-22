@@ -206,6 +206,9 @@ excel-kit supports reading the detected format. Caller-provided streams remain c
 ExcelWorkbookInspector inspector = ExcelWorkbookInspector.create();
 List<ExcelSheetInfo> sheets = inspector.sheetNames(inputStream);   // ExcelSheetInfo: index(), name()
 List<String> headers = inspector.headers(inputStream, sheetIndex, headerRowIndex);
+// A header of several rows (written with group(...)): the block ends at headerRowIndex and is headerRows high;
+// the lowest non-blank cell of each column is its name, as for ExcelReader.headerRows(...).
+List<String> names = inspector.headers(inputStream, sheetIndex, headerRowIndex, headerRows);
 ```
 
 `InputStream`, `Path` and `InputStreamSource` overloads. Encrypted workbook: `.password("secret")` on the inspector.

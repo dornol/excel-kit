@@ -317,7 +317,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values (`rawValues()`) |
 | Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |
-| Discovery | `ExcelWorkbookInspector` — `sheetNames()`, `headers()`; `password(...)` reads encrypted workbooks, `limits(...)` bounds an upload (`maxInputBytes`, `maxSheets`, `maxColumns`; over a limit: `ReadLimitExceededException`) |
+| Discovery | `ExcelWorkbookInspector` — `sheetNames()`, `headers()` (also for a multi-row group header); `password(...)` reads encrypted workbooks, `limits(...)` bounds an upload (`maxInputBytes`, `maxSheets`, `maxColumns`; over a limit: `ReadLimitExceededException`) |
 | Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files, `limits(ReadLimits.UPLOAD)` preset for untrusted uploads (readers have no limits by default) |
 
 Reader configurations are reusable. Each `read()`, `readWhile()`, or `readStrict()` call creates

@@ -92,11 +92,9 @@ class FeatureMatrixReadBackTest {
         var inspector = ExcelWorkbookInspector.create();
         if (encrypted) inspector.password("pw");
         assertEquals(sheets, inspector.sheetNames(new ByteArrayInputStream(xlsx)).size(), at + " sheets");
-        List<String> headers = inspector.headers(new ByteArrayInputStream(xlsx), 0, headerRows - 1);
+        List<String> headers = inspector.headers(new ByteArrayInputStream(xlsx), 0, headerRows - 1, headerRows);
         List<String> expectedHeaders = new ArrayList<>(List.of("Name", "Qty"));
-        // With group headers the name of a column without a group sits in the first header row (the cell is merged
-        // down), which the inspector, reading one row, does not see; see inspectorReadsOneRowOfAGroupedHeader.
-        if (rowNumbers && !group) expectedHeaders.add("No.");
+        if (rowNumbers) expectedHeaders.add("No.");
         assertEquals(expectedHeaders, headers, at + " headers");
 
         // ---- the strict policy refuses formulas, and nothing else here ----
@@ -113,12 +111,13 @@ class FeatureMatrixReadBackTest {
     }
 
     /**
-     * Pins what {@link ExcelWorkbookInspector#headers} does with a grouped header today: it returns the one row it is
-     * asked for. The reader combines the rows of the header block ({@code headerRows}); the inspector has no such option,
-     * so for a workbook written with {@code group(...)} no single row holds every column name.
+     * {@code headers(input, sheetIndex, headerRowIndex)} returns the one row it is asked for: with a grouped header
+     * the name of a column without a group sits in the first row (the cell is merged down), so no single row has every
+     * name. {@code headers(input, sheetIndex, headerRowIndex, headerRows)} combines the rows of the header block as the
+     * reader does; {@code ExcelWorkbookInspectorHeaderRowsTest} covers it in detail.
      */
     @org.junit.jupiter.api.Test
-    void inspectorReadsOneRowOfAGroupedHeader() {
+    void headersOfOneRowAndOfAHeaderBlockOfAGroupedHeader() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<Wide>create().column("First", Wide::a).column("Grouped1", Wide::b, c -> c.group("G"))
                 .column("Grouped2", Wide::c, c -> c.group("G")).rowNumberColumn("No.")
@@ -128,7 +127,9 @@ class FeatureMatrixReadBackTest {
         assertEquals(List.of("First", "G", "G", "No."), inspector.headers(new ByteArrayInputStream(out.toByteArray()), 0, 0));
         assertEquals(List.of("", "Grouped1", "Grouped2"), inspector.headers(new ByteArrayInputStream(out.toByteArray()), 0, 1));
 
-        // the reader, given the header block, does know every name
+        // the header block gives every name, as it does for the reader
+        assertEquals(List.of("First", "Grouped1", "Grouped2", "No."),
+                inspector.headers(new ByteArrayInputStream(out.toByteArray()), 0, 1, 2));
         List<String> names = new ArrayList<>();
         ExcelReader.forMap().headerRowIndex(1).headerRows(2).read(new ByteArrayInputStream(out.toByteArray()),
                 r -> names.addAll(r.data().keySet()));

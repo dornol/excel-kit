@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `ExcelWorkbookInspector.headers(input, sheetIndex, headerRowIndex, headerRows)` (`InputStream`, `Path`, `InputStreamSource`) names the columns of a sheet whose header spans several rows, such as a workbook written with `group(...)`, which had no single row with every name: a column without a group has its name in the first header row, merged downwards. The block ends at `headerRowIndex`; for each column the lowest non-blank cell is its name, as for `ExcelReader.headerRows(...)`. The three-argument `headers(...)` is unchanged.
 - `ExcelHandler.isPasswordSet()` tells whether the writer already set a password (`ExcelWriter.password(...)` or `ExcelWorkbook.password(...)`), so a caller that encrypts when the response is written can find the conflict with `writeTo(.., password)` before the response begins.
 - `ExcelWorkbookInspector` (`io.github.dornol.excelkit.excel.read`): sheet discovery with its settings on the object. `create().password(...).limits(...)` then `sheetNames(...)` / `headers(..., sheetIndex, headerRowIndex)` for an `InputStream`, a `Path` or an `InputStreamSource`. With `limits(...)` the copy of a stream stops at `maxInputBytes`, a file above it is refused before it is opened, and more sheets than `maxSheets` or a header row wider than `maxColumns` fails with `ReadLimitExceededException`. A `Path` is opened in place; it used to be copied to a temp file, and `ExcelWorkbookReader.read(Path)` copied the same file twice.
 

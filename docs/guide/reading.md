@@ -375,6 +375,15 @@ sheets.forEach(s -> log.info("{}: {}", s.index(), s.name()));
 List<String> headers = inspector.headers(inputStream, 0, 0);   // sheet index, header row index
 ```
 
+A header that spans several rows, as written by `group(...)`, has no single row with every column name: the name of a
+column without a group sits in the first row, in a cell merged downwards. Give the size of the header block, as for
+`ExcelReader.headerRows(...)`. It ends at `headerRowIndex`, and for each column the lowest non-blank cell is its name:
+
+```java
+// First | (G: Grouped1, Grouped2) | No.   ->  [First, Grouped1, Grouped2, No.]
+List<String> names = inspector.headers(inputStream, 0, 1, 2);   // sheet index, last header row index, header rows
+```
+
 `sheetNames` and `headers` each take an `InputStream` (copied to a temporary file, not closed), a `Path` (opened in
 place) or an `InputStreamSource` (opened and closed here). Settings go on the inspector, so they do not multiply the
 overloads, and one inspector can be used for any number of files.

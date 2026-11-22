@@ -139,10 +139,35 @@ public final class ExcelWorkbookInspector {
      * @throws io.github.dornol.excelkit.core.read.ReadLimitExceededException if the input or the header row passes a limit
      */
     public List<String> headers(InputStream inputStream, int sheetIndex, int headerRowIndex) {
+        return headers(inputStream, sheetIndex, headerRowIndex, 1);
+    }
+
+    /**
+     * Returns the header names of one sheet whose header spans several rows, such as a workbook written with
+     * {@code group(...)}.
+     * <p>
+     * The header block ends at {@code headerRowIndex} and is {@code headerRows} rows high, as for
+     * {@link ExcelReader#headerRows(int)}. For each column the lowest non-blank cell of the block is its name, so a
+     * column without a group, whose name sits in the first row of a cell merged downwards, is named too. With one
+     * row every cell is returned as it is, blank ones included.
+     * <p>
+     * A block that starts above the first row is cut at the first row.
+     *
+     * @param inputStream    the workbook; it is consumed but not closed
+     * @param sheetIndex     the 0-based sheet index
+     * @param headerRowIndex the 0-based index of the last row of the header block
+     * @param headerRows     how many rows the header block has, at least 1
+     * @return the header names
+     * @throws IllegalArgumentException if an index is negative or {@code headerRows} is less than 1
+     * @throws ExcelReadException         if the workbook or the sheet cannot be read, or the password is wrong
+     * @throws io.github.dornol.excelkit.core.read.ReadLimitExceededException if the input or the header passes a limit
+     * @since 0.28.0
+     */
+    public List<String> headers(InputStream inputStream, int sheetIndex, int headerRowIndex, int headerRows) {
         Objects.requireNonNull(inputStream, "inputStream cannot be null");
-        validateIndexes(sheetIndex, headerRowIndex);
+        validateHeaderBlock(sheetIndex, headerRowIndex, headerRows);
         return checkColumns(withWorkbook(inputStream, "Failed to read sheet headers",
-                path -> readHeaders(path, sheetIndex, headerRowIndex)));
+                path -> readHeaders(path, sheetIndex, headerRowIndex, headerRows)));
     }
 
     /**
@@ -156,10 +181,24 @@ public final class ExcelWorkbookInspector {
      * @throws io.github.dornol.excelkit.core.read.ReadLimitExceededException if the file or the header row passes a limit
      */
     public List<String> headers(Path path, int sheetIndex, int headerRowIndex) {
+        return headers(path, sheetIndex, headerRowIndex, 1);
+    }
+
+    /**
+     * Like {@link #headers(InputStream, int, int, int)}, for a workbook file.
+     *
+     * @param path           the workbook
+     * @param sheetIndex     the 0-based sheet index
+     * @param headerRowIndex the 0-based index of the last row of the header block
+     * @param headerRows     how many rows the header block has, at least 1
+     * @return the header names
+     * @since 0.28.0
+     */
+    public List<String> headers(Path path, int sheetIndex, int headerRowIndex, int headerRows) {
         Objects.requireNonNull(path, "path cannot be null");
-        validateIndexes(sheetIndex, headerRowIndex);
+        validateHeaderBlock(sheetIndex, headerRowIndex, headerRows);
         return checkColumns(withWorkbook(path, "Failed to read sheet headers",
-                file -> readHeaders(file, sheetIndex, headerRowIndex)));
+                file -> readHeaders(file, sheetIndex, headerRowIndex, headerRows)));
     }
 
     /**
@@ -171,10 +210,24 @@ public final class ExcelWorkbookInspector {
      * @return the header names
      */
     public List<String> headers(InputStreamSource source, int sheetIndex, int headerRowIndex) {
+        return headers(source, sheetIndex, headerRowIndex, 1);
+    }
+
+    /**
+     * Like {@link #headers(InputStream, int, int, int)}, for a source whose stream is opened and closed here.
+     *
+     * @param source         the workbook
+     * @param sheetIndex     the 0-based sheet index
+     * @param headerRowIndex the 0-based index of the last row of the header block
+     * @param headerRows     how many rows the header block has, at least 1
+     * @return the header names
+     * @since 0.28.0
+     */
+    public List<String> headers(InputStreamSource source, int sheetIndex, int headerRowIndex, int headerRows) {
         Objects.requireNonNull(source, "source cannot be null");
-        validateIndexes(sheetIndex, headerRowIndex);
+        validateHeaderBlock(sheetIndex, headerRowIndex, headerRows);
         try (InputStream input = source.openStream()) {
-            return headers(input, sheetIndex, headerRowIndex);
+            return headers(input, sheetIndex, headerRowIndex, headerRows);
         } catch (IOException e) {
             throw new ExcelReadException("Failed to open Excel input", e);
         }
@@ -216,13 +269,13 @@ public final class ExcelWorkbookInspector {
         }
     }
 
-    private static List<String> readHeaders(Path path, int sheetIndex, int headerRowIndex) {
+    private static List<String> readHeaders(Path path, int sheetIndex, int headerRowIndex, int headerRows) {
         try (OPCPackage pkg = OPCPackage.open(path.toFile(), PackageAccess.READ)) {
             XSSFReader reader = new XSSFReader(pkg);
             SharedStrings sharedStrings = reader.getSharedStringsTable();
             StylesTable styles = reader.getStylesTable();
             XMLReader parser = XMLHelper.newXMLReader();
-            HeaderExtractor extractor = new HeaderExtractor(headerRowIndex);
+            HeaderExtractor extractor = new HeaderExtractor(headerRowIndex, headerRows);
             parser.setContentHandler(new ExcelReadSupport.SheetXmlHandler(styles, sharedStrings, extractor,
                     ExcelReadSupport.dataFormatter(reader)));
 
@@ -296,6 +349,11 @@ public final class ExcelWorkbookInspector {
                 : ExcelReadSupport.decryptInto(workspace, workbook, password));
     }
 
+    private static void validateHeaderBlock(int sheetIndex, int headerRowIndex, int headerRows) {
+        validateIndexes(sheetIndex, headerRowIndex);
+        if (headerRows < 1) throw new IllegalArgumentException("headerRows must be >= 1");
+    }
+
     private static void validateIndexes(int sheetIndex, int headerRowIndex) {
         if (sheetIndex < 0) throw new IllegalArgumentException("sheetIndex must be non-negative");
         if (headerRowIndex < 0) throw new IllegalArgumentException("headerRowIndex must be non-negative");
@@ -309,12 +367,14 @@ public final class ExcelWorkbookInspector {
     private static final class HeaderExtractor extends DefaultHandler
             implements XSSFSheetXMLHandler.SheetContentsHandler {
         private final int headerRowIndex;
+        private final int headerRows;
         private final List<String> headers = new ArrayList<>();
         private final List<String> currentRow = new ArrayList<>();
         private boolean done;
 
-        private HeaderExtractor(int headerRowIndex) {
+        private HeaderExtractor(int headerRowIndex, int headerRows) {
             this.headerRowIndex = headerRowIndex;
+            this.headerRows = headerRows;
         }
 
         @Override
@@ -324,10 +384,18 @@ public final class ExcelWorkbookInspector {
 
         @Override
         public void endRow(int rowNum) {
-            if (rowNum == headerRowIndex) {
+            if (done || rowNum > headerRowIndex || rowNum < headerRowIndex - headerRows + 1) return;
+            if (headerRows == 1) {
                 headers.addAll(currentRow);
-                done = true;
+            } else {
+                // the lowest non-blank cell of the block names the column, as in the reader
+                for (int column = 0; column < currentRow.size(); column++) {
+                    while (headers.size() <= column) headers.add("");
+                    String value = currentRow.get(column);
+                    if (!value.isEmpty()) headers.set(column, value);
+                }
             }
+            if (rowNum == headerRowIndex) done = true;
         }
 
         // Deprecated in newer POI, but it is the callback POI 5 runtimes invoke.
