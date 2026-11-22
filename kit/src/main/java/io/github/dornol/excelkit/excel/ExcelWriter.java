@@ -539,6 +539,9 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * <p>
      * The stream is read but <b>not closed</b>: whoever opened it (a JPA or JDBC stream, for example)
      * closes it, typically with try-with-resources around this call.
+     * <p>
+     * Rows are written one at a time on the calling thread, in the stream's encounter order: a parallel
+     * stream is read sequentially, so {@code parallel()} brings no speed-up here.
      *
      * @param stream   The data stream
      * @param consumer Custom consumer for post-processing row with cursor
@@ -634,6 +637,9 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * <p>
      * The stream is read but <b>not closed</b>: whoever opened it (a JPA or JDBC stream, for example)
      * closes it, typically with try-with-resources around this call.
+     * <p>
+     * Rows are written one at a time on the calling thread, in the stream's encounter order: a parallel
+     * stream is read sequentially, so {@code parallel()} brings no speed-up here.
      *
      * @param stream The data stream
      * @return ExcelHandler wrapping the workbook

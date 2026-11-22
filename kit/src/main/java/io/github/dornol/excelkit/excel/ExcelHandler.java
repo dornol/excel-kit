@@ -46,6 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ExcelHandler implements FileHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);
+
+    /** An encrypted export larger than this (plain size, in bytes) is held in heap while it is encrypted. */
+    static final long ENCRYPTION_HEAP_WARNING_BYTES = 64L * 1024 * 1024;
     private final SXSSFWorkbook wb;
     private final @Nullable String password;
 
@@ -252,6 +255,18 @@ public final class ExcelHandler implements FileHandler {
         }
     }
 
+    /** POI encrypts into an in-memory container, so a big workbook needs about its size in heap. */
+    static boolean isTooLargeToEncryptInMemory(long plainBytes) {
+        return plainBytes > ENCRYPTION_HEAP_WARNING_BYTES;
+    }
+
+    private static void warnIfTooLargeToEncryptInMemory(long plainBytes) {
+        if (isTooLargeToEncryptInMemory(plainBytes)) {
+            log.warn("Encrypting a {} MB workbook holds about that much in heap, because Apache POI encrypts in memory; "
+                    + "make sure the heap is large enough, or write the file without a password", plainBytes >> 20);
+        }
+    }
+
     private void encryptAndWrite(OutputStream outputStream, String password) throws IOException {
         markConsumed();
 
@@ -263,6 +278,8 @@ public final class ExcelHandler implements FileHandler {
             } finally {
                 closeConsumedWorkbook();
             }
+
+            warnIfTooLargeToEncryptInMemory(Files.size(tempFile));
 
             // Encrypt the plain temp file into an in-memory POIFS, then stream it out.
             // POI's encryption API buffers the OLE container in heap — there is no
