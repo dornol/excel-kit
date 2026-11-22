@@ -29,7 +29,9 @@ All three available on `ExcelSheetWriter` too.
 The filter written to the file covers the header row (the row of the column names, below any group header) and every data
 row of the sheet. It stops above the summary rows and anything written by `afterData`, and with `maxRows()` each
 rolled-over sheet filters its own rows. Excel extends a filter over the rows that follow it directly and hold data, so
-summary rows written right below the data are filtered along with it once the filter is applied. A sheet with a `table(...)` gets
+summary rows written right below the data are filtered along with it once the filter is applied (checked on Excel). An
+empty row above them keeps them out: `afterData(ctx -> ctx.getCurrentRow() + 1)` leaves one before the summary (checked on
+Excel: the Sum and Average rows stay visible while a filter is applied). A sheet with a `table(...)` gets
 its filter buttons from the table itself, since a second filter over the same cells would overlap it: `autoFilter(true)`
 turns them on, and without it the table has none.
 
