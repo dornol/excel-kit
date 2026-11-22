@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.read.Cursor;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 
 import java.util.LinkedHashMap;

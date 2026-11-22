@@ -15,7 +15,7 @@ class ExcelKitErrorResponseTest {
     @Test
     void reportRows_flattensCellErrors() {
         UploadError error = new UploadError(1, 2,
-                io.github.dornol.excelkit.core.RowError.Type.MAPPING,
+                io.github.dornol.excelkit.core.read.RowError.Type.MAPPING,
                 List.of("failed"),
                 List.of(new CellErrorResponse(2, "Price", "bad", "Failed to set column")),
                 List.of("Notebook", "bad"));
@@ -35,7 +35,7 @@ class ExcelKitErrorResponseTest {
     void csv_setsDownloadHeaders() throws IOException {
         UploadResult<Object> result = new UploadResult<>("CSV", 0, 1, List.of(),
                 List.of(new UploadError(1, 2,
-                        io.github.dornol.excelkit.core.RowError.Type.VALIDATION,
+                        io.github.dornol.excelkit.core.read.RowError.Type.VALIDATION,
                         List.of("required"), List.of())));
 
         var response = ExcelKitErrorResponse.csv(result, "errors");
@@ -50,7 +50,7 @@ class ExcelKitErrorResponseTest {
     @Test
     void errorReports_allowCustomCacheMaxAge() throws IOException {
         var errors = List.of(new UploadError(1, 2,
-                io.github.dornol.excelkit.core.RowError.Type.VALIDATION,
+                io.github.dornol.excelkit.core.read.RowError.Type.VALIDATION,
                 List.of("required"), List.of()));
 
         var csv = ExcelKitErrorResponse.csv(errors, "errors", Duration.ofMinutes(1));

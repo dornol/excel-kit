@@ -2,17 +2,17 @@ package io.github.dornol.excelkit.csv;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
-import io.github.dornol.excelkit.core.AbstractReadHandler;
-import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.read.AbstractReadHandler;
+import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.ExcelKitException;
-import io.github.dornol.excelkit.core.ReadColumn;
-import io.github.dornol.excelkit.core.ReadAbortException;
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.ReadLimitExceededException;
-import io.github.dornol.excelkit.core.ReadStoppedException;
-import io.github.dornol.excelkit.core.CellError;
-import io.github.dornol.excelkit.core.RowData;
-import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.read.ReadColumn;
+import io.github.dornol.excelkit.core.read.ReadAbortException;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.read.ReadStoppedException;
+import io.github.dornol.excelkit.core.read.CellError;
+import io.github.dornol.excelkit.core.read.RowData;
+import io.github.dornol.excelkit.core.read.RowError;
 import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;

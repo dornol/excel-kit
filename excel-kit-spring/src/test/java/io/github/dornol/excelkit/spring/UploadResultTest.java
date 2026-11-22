@@ -42,7 +42,7 @@ class UploadResultTest {
         UploadResult<Product> result = UploadResult.read("CSV", consumer ->
                 reader.read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), consumer));
 
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, result.errors().get(0).type());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, result.errors().get(0).type());
     }
 
     static class Product {

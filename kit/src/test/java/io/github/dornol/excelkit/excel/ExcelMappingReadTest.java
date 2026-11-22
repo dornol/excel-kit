@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadAbortException;
-import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadAbortException;
+import io.github.dornol.excelkit.core.read.ReadResult;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.Max;
@@ -137,7 +137,7 @@ class ExcelMappingReadTest {
 
         assertEquals(1, results.size());
         assertFalse(results.get(0).success());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, results.get(0).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, results.get(0).errorType());
         assertNull(results.get(0).data());
         assertNotNull(results.get(0).messages());
         assertTrue(results.get(0).messages().get(0).contains("NonExistent"));
@@ -160,7 +160,7 @@ class ExcelMappingReadTest {
 
         assertEquals(1, results.size());
         assertFalse(results.get(0).success());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, results.get(0).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, results.get(0).errorType());
         assertNull(results.get(0).data());
     }
 
@@ -423,8 +423,8 @@ class ExcelMappingReadTest {
         assertEquals("Alice", results.get(0).data().name);
         assertFalse(results.get(1).success());  // blank name
         assertFalse(results.get(2).success());  // age > 100
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.VALIDATION, results.get(1).errorType());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.VALIDATION, results.get(2).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.VALIDATION, results.get(1).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.VALIDATION, results.get(2).errorType());
     }
 
     // --- Round-trip: write then read back with mapping ---

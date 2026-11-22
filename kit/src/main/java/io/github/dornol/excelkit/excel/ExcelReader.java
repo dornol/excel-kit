@@ -1,8 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.AbstractReader;
-import io.github.dornol.excelkit.core.CellData;
-import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.read.AbstractReader;
+import io.github.dornol.excelkit.core.read.CellData;
+import io.github.dornol.excelkit.core.read.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
@@ -16,12 +16,12 @@ import java.util.function.Function;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import io.github.dornol.excelkit.core.InputStreamSource;
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.RowError;
-import io.github.dornol.excelkit.core.ReadSummary;
-import io.github.dornol.excelkit.core.ReadReport;
-import io.github.dornol.excelkit.core.ReadSession;
+import io.github.dornol.excelkit.core.io.InputStreamSource;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.RowError;
+import io.github.dornol.excelkit.core.read.ReadSummary;
+import io.github.dornol.excelkit.core.read.ReadReport;
+import io.github.dornol.excelkit.core.read.ReadSession;
 import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 
@@ -267,7 +267,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * <p>
      * When enabled, the reader performs a lightweight SAX scan of the sheet XML to count
      * {@code <row>} elements before the actual read. The total is then available via
-     * {@link io.github.dornol.excelkit.core.Cursor#getTotalRows()} in the
+     * {@link io.github.dornol.excelkit.core.read.Cursor#getTotalRows()} in the
      * {@link io.github.dornol.excelkit.core.ProgressCallback}.
      * <p>
      * This is useful for reporting percentage-based progress (e.g., via SSE):

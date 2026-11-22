@@ -2,8 +2,8 @@ package io.github.dornol.excelkit.csv;
 
 
 import com.opencsv.ICSVParser;
-import io.github.dornol.excelkit.core.AbstractReader;
-import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.read.AbstractReader;
+import io.github.dornol.excelkit.core.read.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
@@ -25,14 +25,14 @@ import java.util.function.Supplier;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import io.github.dornol.excelkit.core.InputStreamSource;
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.RowError;
-import io.github.dornol.excelkit.core.ReadSummary;
-import io.github.dornol.excelkit.core.ReadReport;
-import io.github.dornol.excelkit.core.ReadSession;
-import io.github.dornol.excelkit.core.TabularFileDetector;
-import io.github.dornol.excelkit.core.TabularFileType;
+import io.github.dornol.excelkit.core.io.InputStreamSource;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.RowError;
+import io.github.dornol.excelkit.core.read.ReadSummary;
+import io.github.dornol.excelkit.core.read.ReadReport;
+import io.github.dornol.excelkit.core.read.ReadSession;
+import io.github.dornol.excelkit.core.detect.TabularFileDetector;
+import io.github.dornol.excelkit.core.detect.TabularFileType;
 import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
 
 /**

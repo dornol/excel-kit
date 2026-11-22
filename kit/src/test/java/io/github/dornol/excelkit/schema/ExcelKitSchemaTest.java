@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.schema;
 
-import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.csv.CsvHandler;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;

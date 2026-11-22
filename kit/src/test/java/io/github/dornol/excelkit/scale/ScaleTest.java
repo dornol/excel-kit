@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.scale;
 
-import io.github.dornol.excelkit.core.ReadSummary;
+import io.github.dornol.excelkit.core.read.ReadSummary;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelDataType;

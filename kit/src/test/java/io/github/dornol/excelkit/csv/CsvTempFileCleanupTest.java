@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.TempResourceContainer;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.io.TempResourceContainer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

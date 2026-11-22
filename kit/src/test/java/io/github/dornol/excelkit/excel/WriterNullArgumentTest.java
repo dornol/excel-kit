@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.RowFunction;
+import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;

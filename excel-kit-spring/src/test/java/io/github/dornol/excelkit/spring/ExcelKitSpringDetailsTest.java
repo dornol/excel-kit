@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.read.RowError;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockMultipartFile;

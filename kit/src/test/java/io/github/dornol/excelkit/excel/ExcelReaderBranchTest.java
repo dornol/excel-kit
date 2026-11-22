@@ -1,8 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadAbortException;
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.read.ReadAbortException;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.RowData;
 import io.github.dornol.excelkit.csv.CsvReader;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -225,7 +225,7 @@ class ExcelReaderBranchTest {
             assertEquals(3, results.size());
             for (var r : results) {
                 assertFalse(r.success(), "Row should fail when setter throws");
-                assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, r.errorType());
+                assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, r.errorType());
                 assertNotNull(r.messages());
                 assertEquals(1, r.messages().size(), "Should have exactly one error message");
                 assertTrue(r.messages().get(0).contains("setter broke!"));

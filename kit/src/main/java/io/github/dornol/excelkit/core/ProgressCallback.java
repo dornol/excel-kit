@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.core;
 
+import io.github.dornol.excelkit.core.read.Cursor;
+
 /**
  * Callback for reporting progress during large Excel/CSV writes.
  * <p>

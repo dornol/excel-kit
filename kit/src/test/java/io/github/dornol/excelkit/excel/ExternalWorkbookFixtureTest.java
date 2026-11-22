@@ -1,9 +1,9 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.ReadSecurityException;
-import io.github.dornol.excelkit.core.ReadSecurityPolicy;
-import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadSecurityException;
+import io.github.dornol.excelkit.core.read.ReadSecurityPolicy;
+import io.github.dornol.excelkit.core.read.RowData;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.util.XMLHelper;
@@ -155,7 +155,7 @@ class ExternalWorkbookFixtureTest {
     private static List<ReadResult<RowData>> read(Path path, int sheet, String password) {
         var rows = new ArrayList<ReadResult<RowData>>();
         var reader = ExcelReader.<RowData>mapping(row -> row).sheetIndex(sheet).skipBlankRows()
-                .duplicateHeaderPolicy(io.github.dornol.excelkit.core.DuplicateHeaderPolicy.FIRST);
+                .duplicateHeaderPolicy(io.github.dornol.excelkit.core.read.DuplicateHeaderPolicy.FIRST);
         if (password != null) reader.password(password);
         reader.read(path, row -> { assertTrue(row.success(), row.messages().toString()); rows.add(row); });
         return rows;

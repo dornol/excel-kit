@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.core.ExcelKitException;
-import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -337,7 +337,7 @@ class CsvReaderMapModeTest {
             // addressable via get(name). The map output has one entry per unique header name.
             String csv = "A,B,A\nfirst,b-val,second\n";
             List<Map<String, String>> results = new ArrayList<>();
-            CsvReader.forMap().duplicateHeaderPolicy(io.github.dornol.excelkit.core.DuplicateHeaderPolicy.FIRST)
+            CsvReader.forMap().duplicateHeaderPolicy(io.github.dornol.excelkit.core.read.DuplicateHeaderPolicy.FIRST)
                     .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), r -> results.add(r.data()));
 
             assertEquals(1, results.size());

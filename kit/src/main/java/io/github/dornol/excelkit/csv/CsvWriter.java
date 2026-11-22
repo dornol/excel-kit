@@ -1,8 +1,8 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.core.RowFunction;
-import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.TempResourceCreator;
+import io.github.dornol.excelkit.core.read.RowFunction;
+import io.github.dornol.excelkit.core.read.Cursor;
+import io.github.dornol.excelkit.core.io.TempResourceCreator;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

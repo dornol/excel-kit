@@ -1,10 +1,10 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadColumn;
-import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.read.ReadColumn;
+import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.ExcelKitException;
-import io.github.dornol.excelkit.core.ReadAbortException;
-import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadAbortException;
+import io.github.dornol.excelkit.core.read.ReadResult;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.Max;
@@ -148,7 +148,7 @@ class ExcelReadHandlerTest {
         createInvalidTestExcelFile(invalidExcelFile);
 
         List<TestPerson> successes = new ArrayList<>();
-        List<io.github.dornol.excelkit.core.RowError> errors = new ArrayList<>();
+        List<io.github.dornol.excelkit.core.read.RowError> errors = new ArrayList<>();
 
         try (InputStream is = Files.newInputStream(invalidExcelFile)) {
             new ExcelReader<>(TestPerson::new, validator)
@@ -163,7 +163,7 @@ class ExcelReadHandlerTest {
         assertEquals(2L, errors.get(0).rowNum());
         assertEquals(3L, errors.get(1).rowNum());
         // Validation violations have no cause, classified as VALIDATION
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.VALIDATION, errors.get(0).type());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.VALIDATION, errors.get(0).type());
         assertNull(errors.get(0).cause());
         assertFalse(errors.get(0).messages().isEmpty());
     }

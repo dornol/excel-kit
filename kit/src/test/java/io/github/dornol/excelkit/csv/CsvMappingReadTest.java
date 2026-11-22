@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.core.ReadAbortException;
-import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadAbortException;
+import io.github.dornol.excelkit.core.read.ReadResult;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.Max;
@@ -106,7 +106,7 @@ class CsvMappingReadTest {
 
         assertEquals(1, results.size());
         assertFalse(results.get(0).success());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, results.get(0).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, results.get(0).errorType());
         assertNull(results.get(0).data());
         assertNotNull(results.get(0).messages());
         assertTrue(results.get(0).messages().get(0).contains("NonExistent"));
@@ -125,7 +125,7 @@ class CsvMappingReadTest {
 
         assertEquals(1, results.size());
         assertFalse(results.get(0).success());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, results.get(0).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, results.get(0).errorType());
     }
 
     @Test
@@ -143,7 +143,7 @@ class CsvMappingReadTest {
         assertTrue(results.get(0).success());
         assertEquals("Alice", results.get(0).data().name());
         assertFalse(results.get(1).success());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, results.get(1).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, results.get(1).errorType());
         assertTrue(results.get(2).success());
         assertEquals("Charlie", results.get(2).data().name());
     }

@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.csv.CsvReadException;
 import io.github.dornol.excelkit.csv.CsvWriteException;
 import io.github.dornol.excelkit.core.ExcelKitException;
-import io.github.dornol.excelkit.core.TempResourceCreateException;
+import io.github.dornol.excelkit.core.io.TempResourceCreateException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

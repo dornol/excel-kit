@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadSecurityException;
-import io.github.dornol.excelkit.core.ReadSecurityPolicy;
+import io.github.dornol.excelkit.core.read.ReadSecurityException;
+import io.github.dornol.excelkit.core.read.ReadSecurityPolicy;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;

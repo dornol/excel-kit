@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.RowFunction;
+import io.github.dornol.excelkit.core.read.RowFunction;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 

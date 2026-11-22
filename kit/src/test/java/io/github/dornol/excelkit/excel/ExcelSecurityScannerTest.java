@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadSecurityException;
-import io.github.dornol.excelkit.core.ReadSecurityPolicy;
+import io.github.dornol.excelkit.core.read.ReadSecurityException;
+import io.github.dornol.excelkit.core.read.ReadSecurityPolicy;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

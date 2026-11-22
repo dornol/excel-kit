@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.schema;
 
-import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
-import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.read.DuplicateHeaderPolicy;
+import io.github.dornol.excelkit.core.read.RowError;
 import io.github.dornol.excelkit.csv.CsvReadException;
 import io.github.dornol.excelkit.excel.ExcelReadException;
 import io.github.dornol.excelkit.schema.ExcelKitSchema;

@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.RowFunction;
-import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.read.RowFunction;
+import io.github.dornol.excelkit.core.read.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;

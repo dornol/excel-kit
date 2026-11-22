@@ -1,0 +1,138 @@
+package io.github.dornol.excelkit.core.read;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.UnaryOperator;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * Provides access to all cell data in a single row, indexed by header name or column position.
+ * <p>
+ * Used with the mapping-based reader API to support immutable object (e.g., Java record)
+ * construction from Excel/CSV rows:
+ * <pre>{@code
+ * ExcelReader.mapping(row -> new PersonRecord(
+ *         row.get("Name").asString(),
+ *         row.get("Age").asInt()
+ * )).read(inputStream, result -> { ... });
+ * }</pre>
+ *
+ * @author dhkim
+ * @since 0.8.0
+ */
+public class RowData {
+    private final List<CellData> cells;
+    private final List<String> headerNames;
+    private final Map<String, Integer> headerIndex;
+    private final UnaryOperator<String> headerNormalizer;
+
+    /**
+     * Constructs a RowData instance.
+     *
+     * @param cells       the cell data for this row
+     * @param headerNames the header names from the file
+     * @param headerIndex a map from header name to column index (built once per file)
+     */
+    public RowData(List<CellData> cells, List<String> headerNames, Map<String, Integer> headerIndex) {
+        this(cells, headerNames, headerIndex, UnaryOperator.identity());
+    }
+
+    public RowData(List<CellData> cells, List<String> headerNames, Map<String, Integer> headerIndex,
+                   UnaryOperator<String> headerNormalizer) {
+        this.cells = List.copyOf(cells);
+        this.headerNames = List.copyOf(headerNames);
+        this.headerIndex = Map.copyOf(headerIndex);
+        this.headerNormalizer = Objects.requireNonNull(headerNormalizer, "headerNormalizer cannot be null");
+    }
+
+    /**
+     * Gets cell data by header name.
+     * Returns an empty {@link CellData} if the column exists but the cell is missing in this row.
+     *
+     * @param headerName the column header name
+     * @return the cell data for the specified column
+     * @throws IllegalArgumentException if the header name is not found
+     */
+    public CellData get(String headerName) {
+        Integer idx = headerIndex.get(normalize(headerName));
+        if (idx == null) {
+            throw new IllegalArgumentException(
+                    "Header '" + headerName + "' not found. Available headers: " + headerNames);
+        }
+        return getCell(idx);
+    }
+
+    /** Gets a cell by header name, or returns {@code null} when the header is absent. */
+    public @Nullable CellData getOrNull(String headerName) {
+        Integer idx = headerIndex.get(normalize(headerName));
+        return idx == null ? null : getCell(idx);
+    }
+
+    /**
+     * Gets cell data by column index (0-based).
+     * Returns an empty {@link CellData} if the index is out of bounds for this row.
+     *
+     * @param columnIndex the 0-based column index
+     * @return the cell data at the specified index
+     */
+    public CellData get(int columnIndex) {
+        return getCell(columnIndex);
+    }
+
+    /**
+     * Checks whether a header name exists in this row's header definition.
+     *
+     * @param headerName the header name to check
+     * @return {@code true} if the header exists
+     */
+    public boolean has(String headerName) {
+        return headerIndex.containsKey(normalize(headerName));
+    }
+
+    /**
+     * Returns the resolved column index for a header name.
+     *
+     * @param headerName the header name to look up
+     * @return the resolved column index, or {@code -1} if the header is absent
+     */
+    public int headerIndexOf(String headerName) {
+        Integer idx = headerIndex.get(normalize(headerName));
+        return idx == null ? -1 : idx;
+    }
+
+    /**
+     * Returns the number of cells in this row.
+     *
+     * @return the cell count
+     */
+    public int size() {
+        return cells.size();
+    }
+
+    /**
+     * Returns the header names from the file.
+     *
+     * @return unmodifiable list of header names
+     */
+    public List<String> headerNames() {
+        return Collections.unmodifiableList(headerNames);
+    }
+
+    private CellData getCell(int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Column index must be non-negative, but was: " + index);
+        }
+        if (index >= cells.size()) {
+            return new CellData(index, null);
+        }
+        return cells.get(index);
+    }
+
+    private String normalize(String headerName) {
+        String normalized = headerNormalizer.apply(headerName);
+        if (normalized == null) throw new IllegalArgumentException("Header normalizer returned null");
+        return normalized;
+    }
+}

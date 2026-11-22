@@ -1,10 +1,10 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.ExcelKitException;
-import io.github.dornol.excelkit.core.InputStreamSource;
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.ReadSummary;
-import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.io.InputStreamSource;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadSummary;
+import io.github.dornol.excelkit.core.read.RowError;
 import org.jspecify.annotations.Nullable;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;

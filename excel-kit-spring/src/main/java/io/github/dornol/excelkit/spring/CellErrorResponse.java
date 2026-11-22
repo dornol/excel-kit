@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.CellError;
+import io.github.dornol.excelkit.core.read.CellError;
 import org.jspecify.annotations.Nullable;
 
 /**

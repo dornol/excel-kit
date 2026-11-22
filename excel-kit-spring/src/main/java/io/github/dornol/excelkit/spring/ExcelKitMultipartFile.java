@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.TabularFileDetector;
-import io.github.dornol.excelkit.core.TabularFileType;
+import io.github.dornol.excelkit.core.detect.TabularFileDetector;
+import io.github.dornol.excelkit.core.detect.TabularFileType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;

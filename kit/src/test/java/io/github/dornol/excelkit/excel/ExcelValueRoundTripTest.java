@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.read.CellData;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

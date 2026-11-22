@@ -1,10 +1,10 @@
 package io.github.dornol.excelkit.csv;
 
-import io.github.dornol.excelkit.core.ReadColumn;
-import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.read.ReadColumn;
+import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.ExcelKitException;
-import io.github.dornol.excelkit.core.ReadAbortException;
-import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadAbortException;
+import io.github.dornol.excelkit.core.read.ReadResult;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.Max;
@@ -90,8 +90,8 @@ class CsvReadHandlerTest {
         assertEquals(1, valid.size());
         assertEquals("Valid", valid.get(0).name);
         assertEquals(2, invalid.size());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.VALIDATION, invalid.get(0).errorType());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.VALIDATION, invalid.get(1).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.VALIDATION, invalid.get(0).errorType());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.VALIDATION, invalid.get(1).errorType());
         assertFalse(invalid.get(0).messages().isEmpty());
         assertFalse(invalid.get(1).messages().isEmpty());
     }
@@ -99,7 +99,7 @@ class CsvReadHandlerTest {
     @Test
     void read_setterFailure_isMappingError() {
         String csv = "Name,Age\nAlice,30";
-        List<io.github.dornol.excelkit.core.RowError> errors = new ArrayList<>();
+        List<io.github.dornol.excelkit.core.read.RowError> errors = new ArrayList<>();
 
         CsvReader.setter(Object::new)
                 .column("Name", (value, cell) -> { throw new IllegalArgumentException("bad setter"); })
@@ -107,7 +107,7 @@ class CsvReadHandlerTest {
                         value -> fail("setter failure must not be successful"), errors::add);
 
         assertEquals(1, errors.size());
-        assertEquals(io.github.dornol.excelkit.core.RowError.Type.MAPPING, errors.get(0).type());
+        assertEquals(io.github.dornol.excelkit.core.read.RowError.Type.MAPPING, errors.get(0).type());
         assertNull(errors.get(0).cause());
     }
 

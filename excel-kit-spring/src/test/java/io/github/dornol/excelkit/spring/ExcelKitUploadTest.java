@@ -2,9 +2,9 @@ package io.github.dornol.excelkit.spring;
 
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.schema.ExcelKitSchema;
-import io.github.dornol.excelkit.core.ReadLimits;
-import io.github.dornol.excelkit.core.ReadLimitExceededException;
-import io.github.dornol.excelkit.core.TabularFileType;
+import io.github.dornol.excelkit.core.read.ReadLimits;
+import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.detect.TabularFileType;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;

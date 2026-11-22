@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.ReadResult;
-import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.core.read.RowError;
 
 import java.util.List;
 

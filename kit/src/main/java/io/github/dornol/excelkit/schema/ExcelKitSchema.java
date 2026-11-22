@@ -1,10 +1,10 @@
 package io.github.dornol.excelkit.schema;
 
-import io.github.dornol.excelkit.core.CellConversionConfig;
-import io.github.dornol.excelkit.core.CellData;
-import io.github.dornol.excelkit.core.DuplicateHeaderPolicy;
-import io.github.dornol.excelkit.core.ReaderOptions;
-import io.github.dornol.excelkit.core.RowData;
+import io.github.dornol.excelkit.core.read.CellConversionConfig;
+import io.github.dornol.excelkit.core.read.CellData;
+import io.github.dornol.excelkit.core.read.DuplicateHeaderPolicy;
+import io.github.dornol.excelkit.core.read.ReaderOptions;
+import io.github.dornol.excelkit.core.read.RowData;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ExcelColumn;

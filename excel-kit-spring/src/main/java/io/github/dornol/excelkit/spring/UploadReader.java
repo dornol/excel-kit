@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.spring;
 
-import io.github.dornol.excelkit.core.ReadResult;
+import io.github.dornol.excelkit.core.read.ReadResult;
 
 import java.io.InputStream;
 import java.util.function.Consumer;

@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.ReadLimitExceededException;
+import io.github.dornol.excelkit.core.read.ReadLimitExceededException;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import java.io.InputStream;
 import java.util.Iterator;

@@ -1,9 +1,9 @@
 package io.github.dornol.excelkit.spring;
 
 import io.github.dornol.excelkit.schema.ExcelKitSchema;
-import io.github.dornol.excelkit.core.ReadLimits;
-import io.github.dornol.excelkit.core.TabularFileDetector;
-import io.github.dornol.excelkit.core.TabularFileType;
+import io.github.dornol.excelkit.core.read.ReadLimits;
+import io.github.dornol.excelkit.core.detect.TabularFileDetector;
+import io.github.dornol.excelkit.core.detect.TabularFileType;
 import jakarta.validation.Validator;
 import org.springframework.web.multipart.MultipartFile;
 

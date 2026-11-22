@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.InputStreamSource;
-import io.github.dornol.excelkit.core.TempResourceCreator;
+import io.github.dornol.excelkit.core.io.InputStreamSource;
+import io.github.dornol.excelkit.core.io.TempResourceCreator;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.util.XMLHelper;

@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.RowError;
+import io.github.dornol.excelkit.core.read.RowError;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

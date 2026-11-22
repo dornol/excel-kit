@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.CellConversionConfig;
-import io.github.dornol.excelkit.core.CellData;
+import io.github.dornol.excelkit.core.read.CellConversionConfig;
+import io.github.dornol.excelkit.core.read.CellData;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,7 +17,7 @@ import java.util.Locale;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link io.github.dornol.excelkit.core.CellData} class.
+ * Tests for {@link io.github.dornol.excelkit.core.read.CellData} class.
  */
 class CellDataTest {
 
