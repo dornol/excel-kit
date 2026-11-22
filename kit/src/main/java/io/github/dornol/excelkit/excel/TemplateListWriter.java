@@ -342,7 +342,7 @@ public class TemplateListWriter<T> {
             CellStyle headerStyle = ExcelStyleSupporter.headerStyle(wb,
                     new XSSFColor(
                             new byte[]{(byte) 255, (byte) 255, (byte) 255}));
-            ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, null, null, null, 0f);
+            ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, null, null, null, 0f, false);
         }
 
         stream.sequential().forEach(rowData -> {

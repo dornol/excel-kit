@@ -5,7 +5,6 @@ import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,15 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The {@code .xlsx} a writer streams out is a ZIP that stream-based readers can read: {@code java.util.zip.ZipInputStream},
  * LibreOffice and similar tools read entry sizes from the local header or from a 4-byte data descriptor. POI 6 writes
  * every entry with an 8-byte (ZIP64) data descriptor by default, which those readers reject
- * ("invalid entry size (expected 0 but got ..."; LibreOffice: "source file could not be loaded").
- * <p>
- * The ZIP64 mode the writers ask POI for ({@code AlwaysWithCompatibility}, which keeps entries beyond 4 GiB possible)
- * is read by the {@code ZipInputStream} of JDK 25, not of JDK 21 or 17, so these cases run on JDK 25 and later; the mode
- * itself is checked on every JDK by {@code ZipModeSettingTest}, and LibreOffice reads it on every JDK
- * ({@code LibreOfficeInteropTest}).
+ * ("invalid entry size (expected 0 but got ..."; LibreOffice: "source file could not be loaded"). The writers use
+ * {@code Zip64Mode.AsNeeded}, an ordinary ZIP that every JDK's {@code ZipInputStream} reads.
  */
-@EnabledIf(value = "io.github.dornol.excelkit.testsupport.JdkConditions#zipInputStreamReadsZip64Compatibility",
-        disabledReason = "the ZipInputStream of this JDK cannot read ZIP64 compatibility entries")
 class StreamingZipCompatibilityTest {
 
     private record Item(String name, int qty) {

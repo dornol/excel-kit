@@ -206,6 +206,33 @@ class FeatureMatrixTest {
         assertEquals(on(mask, Feature.TABLE) ? sheets : 0, tables, at + " table parts");
 
         OoxmlStructureTest.assertValidPackage(pkg);
+        if (on(mask, Feature.TABLE)) assertTableHeadersAreUsableByExcel(xlsx, at);
+    }
+
+    /**
+     * Excel refuses a table whose header cell is empty or sits in a merged range, which neither POI nor an XML check
+     * notices: the header row of every table holds its column names, and no merged range reaches into it.
+     */
+    static void assertTableHeadersAreUsableByExcel(byte[] xlsx, String at) throws Exception {
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
+            for (var sheet : wb) {
+                for (var table : ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).getTables()) {
+                    int headerRow = table.getStartCellReference().getRow();
+                    var columns = table.getCTTable().getTableColumns().getTableColumnArray();
+                    for (int c = 0; c < columns.length; c++) {
+                        var cell = sheet.getRow(headerRow).getCell(table.getStartCellReference().getCol() + c);
+                        assertTrue(cell != null && cell.getCellType() == CellType.STRING && !cell.getStringCellValue().isEmpty(),
+                                at + " the header cell of table column " + c + " on " + sheet.getSheetName() + " is empty");
+                        assertEquals(columns[c].getName(), cell.getStringCellValue(), at + " table column " + c + " on " + sheet.getSheetName());
+                    }
+                    for (var merged : sheet.getMergedRegions()) {
+                        assertTrue(merged.getLastRow() < headerRow || merged.getFirstRow() > headerRow,
+                                at + " merged range " + merged.formatAsString() + " reaches the table header row " + (headerRow + 1)
+                                        + " on " + sheet.getSheetName());
+                    }
+                }
+            }
+        }
     }
 
     private static byte[] decrypted(byte[] bytes, boolean encrypted, String at) throws Exception {

@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A worksheet whose XML is larger than 4 GiB, the limit of a plain ZIP entry. The writer asks POI for
- * {@code Zip64Mode.AlwaysWithCompatibility} so that LibreOffice and streaming ZIP readers can read ordinary files;
+ * {@code Zip64Mode.AsNeeded} so that Excel, LibreOffice and streaming ZIP readers can read ordinary files;
  * this checks that the same setting still produces a valid archive when an entry outgrows 32-bit sizes. The archive is
  * read back with the JDK's {@link ZipFile}, which takes sizes from the central directory, and every byte of the big
  * entry is checked against the CRC the archive recorded.

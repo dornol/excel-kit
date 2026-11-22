@@ -25,12 +25,16 @@ final class ExcelHeaderWriter {
     /**
      * Writes column headers, with 0..N optional group header rows if any column has groups.
      * {@code workbook} and {@code styleCache} are needed only for columns with their own header colors.
+     *
+     * @param tableHeader whether the column names row becomes the header of a table. Excel requires a table's header
+     *                    cells to hold the column names, so a column without a group (whose name would sit in the
+     *                    first header row, merged down) gets its name in the column names row instead, unmerged
      */
     static <T> void write(SXSSFSheet sheet, Cursor cursor,
                                         List<ExcelColumn<T>> columns, CellStyle headerStyle,
                                         @Nullable SXSSFWorkbook wb, @Nullable Map<String, CellStyle> headerStyleCache,
                                         @Nullable Map<List<String>, ExcelCellComment> groupComments,
-                                        float headerRowHeight) {
+                                        float headerRowHeight, boolean tableHeader) {
         int maxDepth = 0;
         for (ExcelColumn<T> c : columns) {
             int d = c.getGroupNames().length;
@@ -40,7 +44,7 @@ final class ExcelHeaderWriter {
             writeSingleHeaderRow(sheet, cursor, columns, headerStyle, wb, headerStyleCache, headerRowHeight);
         } else {
             writeGroupAndColumnHeaders(sheet, cursor, columns, headerStyle, wb, headerStyleCache,
-                    maxDepth, groupComments, headerRowHeight);
+                    maxDepth, groupComments, headerRowHeight, tableHeader);
         }
     }
 
@@ -117,7 +121,7 @@ final class ExcelHeaderWriter {
                                                         @Nullable Map<String, CellStyle> headerStyleCache,
                                                         int maxDepth,
                                                         @Nullable Map<List<String>, ExcelCellComment> groupComments,
-                                                        float headerRowHeight) {
+                                                        float headerRowHeight, boolean tableHeader) {
         int numCols = columns.size();
         int startRow = cursor.getRowOfSheet();
 
@@ -125,7 +129,7 @@ final class ExcelHeaderWriter {
         String[][] grid = buildGroupGrid(columns, maxDepth);
         populateHeaderCells(rows, grid, columns, headerStyle, wb, headerStyleCache, maxDepth);
         applyHorizontalMerges(sheet, rows, grid, startRow, maxDepth, numCols, groupComments);
-        applyVerticalMerges(sheet, rows, grid, columns, startRow, maxDepth, numCols);
+        applyVerticalMerges(sheet, rows, grid, columns, startRow, maxDepth, numCols, tableHeader);
     }
 
     /** Creates (maxDepth + 1) rows and advances the cursor. */
@@ -219,10 +223,14 @@ final class ExcelHeaderWriter {
     /**
      * Merges trailing-null columns vertically into the column header cell.
      * Moves the column name to the top-left cell and blanks others to avoid bottom alignment.
+     * <p>
+     * Under a table nothing is merged into the column names row and its cells are never blank: Excel refuses a table
+     * whose header cell is empty or part of a merged range. The name stays in the column names row and the cells
+     * above it are left empty.
      */
     private static <T> void applyVerticalMerges(SXSSFSheet sheet, SXSSFRow[] rows, String[][] grid,
                                                   List<ExcelColumn<T>> columns,
-                                                  int startRow, int maxDepth, int numCols) {
+                                                  int startRow, int maxDepth, int numCols, boolean tableHeader) {
         int columnHeaderRowIdx = startRow + maxDepth;
         for (int c = 0; c < numCols; c++) {
             int firstNullRow = maxDepth;
@@ -231,7 +239,11 @@ final class ExcelHeaderWriter {
                 else break;
             }
             SXSSFCell topCell;
-            if (firstNullRow < maxDepth) {
+            if (firstNullRow < maxDepth && tableHeader) {
+                // the name is already in the column names row; the cells above it stay empty and unmerged
+                for (int r = firstNullRow; r < maxDepth; r++) rows[r].getCell(c).setBlank();
+                topCell = rows[maxDepth].getCell(c);
+            } else if (firstNullRow < maxDepth) {
                 topCell = rows[firstNullRow].getCell(c);
                 ExcelCellText.write(topCell, columns.get(c).getName());
                 for (int r = firstNullRow + 1; r <= maxDepth; r++) {

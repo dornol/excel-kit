@@ -52,7 +52,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(16, samples.size());
+        assertEquals(17, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -195,6 +195,8 @@ class ExcelSamplesTest {
             assertEquals("A1:B6", filter(wb.getSheet("Users")));
             assertEquals("Total", wb.getSheet("Orders").getRow(5).getCell(0).getStringCellValue());
             assertEquals(1, wb.getSheet("Archive").getTables().size());
+            assertEquals("ArchiveTable_1", wb.getSheet("Archive").getTables().get(0).getName());
+            assertEquals("ArchiveTable_2", wb.getSheet("Archive (2)").getTables().get(0).getName());
             assertNotNull(wb.getSheet("Archive").getTables().get(0).getCTTable().getAutoFilter());
             assertEquals(1, wb.getSheet("Users").getPaneInformation().getHorizontalSplitPosition());
         }
@@ -227,6 +229,17 @@ class ExcelSamplesTest {
         }
         try (XSSFWorkbook wb = open("16-everything-at-once.xlsx")) {
             assertEquals(3, wb.getNumberOfSheets());
+        }
+    }
+
+    @Test
+    void theGapSampleKeepsItsSummaryBelowAnEmptyRow() throws Exception {
+        try (XSSFWorkbook wb = open("17-autofilter-summary-after-gap.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            assertEquals("A1:B8", filter(sheet));
+            assertNull(sheet.getRow(8), "row 9 is empty");
+            assertEquals("Sum", sheet.getRow(9).getCell(0).getStringCellValue());
+            assertEquals("Average", sheet.getRow(10).getCell(0).getStringCellValue());
         }
     }
 }

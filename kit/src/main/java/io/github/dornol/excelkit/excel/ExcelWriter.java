@@ -603,7 +603,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         execution().headerRow(headerStartRow);
 
         ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
-                options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
+                options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints,
+                options.sheetConfig().tableOptions != null);
         // With group headers the column names sit below the group rows: that row is the header row.
         execution().headerRow(cursor().getRowOfSheet() - 1);
         applySheetOptions();
@@ -686,7 +687,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
             cursor().setRowOfSheet(preambleRow);
             ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
-                    options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints);
+                    options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints,
+                    options.sheetConfig().tableOptions != null);
             execution().headerRow(cursor().getRowOfSheet() - 1);
             applySheetOptions();
         }

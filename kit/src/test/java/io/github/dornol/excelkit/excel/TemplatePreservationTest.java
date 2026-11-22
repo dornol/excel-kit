@@ -112,7 +112,8 @@ class TemplatePreservationTest {
             XDDFDataSource<String> categories = XDDFDataSourcesFactory.fromStringCellRange(sheet, new CellRangeAddress(4, 6, 0, 0));
             XDDFNumericalDataSource<Double> values = XDDFDataSourcesFactory.fromNumericCellRange(sheet, new CellRangeAddress(4, 6, 1, 1));
             XDDFBarChartData data = (XDDFBarChartData) chart.createData(ChartTypes.BAR, bottom, left);
-            data.addSeries(categories, values);
+            // a series without a title is written as an empty <c:tx/>, which Excel refuses
+            data.addSeries(categories, values).setTitle("Sales", new org.apache.poi.ss.util.CellReference("Report", 3, 1, true, true));
             chart.plot(data);
 
             // conditional formatting and a validation

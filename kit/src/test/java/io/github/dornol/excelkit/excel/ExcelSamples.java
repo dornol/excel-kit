@@ -113,8 +113,8 @@ public final class ExcelSamples {
         add("01-autofilter-plain.xlsx", "autoFilter over the data",
                 "Filter buttons on the header row (A1:B1). Filter Name = \"item 3\": ONE data row stays, the rows below the data (Sum, Average) are not hidden.",
                 "opens: no repair prompt",
-                "autoFilter sheet=Report range=A1:B8",
-                "filterRows sheet=Report column=1 criteria=\"item 3\" expectVisibleDataRows=1 (data range A2:A8)",
+                "autoFilter sheet=Report range=A1:B8 (the range in the file; Excel is known to report A1:B10 here, see sample 17: report the range Excel shows right after opening, before any filter call)",
+                "filterRows sheet=Report column=1 criteria=\"item 3\" expectVisibleDataRows=1 (data range A2:A8); Excel is known to hide Sum and Average as well, which is what sample 17 is about",
                 "cell sheet=Report cell=A9 text=Sum; cell sheet=Report cell=B9 value=21; cell sheet=Report cell=A10 text=Average; cell sheet=Report cell=B10 value=3");
 
         // 2. grouped header: the filter starts at the row of the column names
@@ -186,7 +186,7 @@ public final class ExcelSamples {
                 "Dates, a date after the 1900 leap-day quirk, a moment, a moment with milliseconds, grouped integers and decimals, a text that looks like a number, and a formula calculated when the file is opened.",
                 "opens: no repair prompt",
                 "cellText sheet=Report cell=A2 text=2024-02-29; cellText sheet=Report cell=B2 text=1900-03-01; cellText sheet=Report cell=C2 text=\"2024-12-31 23:59:58\"; cellText sheet=Report cell=D2 text=\"2024-12-31 23:59:58.123\"",
-                "cellText sheet=Report cell=E2 text=1,234,567; cellText sheet=Report cell=F2 text=1,234.50; cellText sheet=Report cell=G2 text=0012 (text, not 12); cell sheet=Report cell=H2 value=2469135");
+                "cellText sheet=Report cell=E2 text=1,234,567; cellText sheet=Report cell=F2 text=1,234.50; cellText sheet=Report cell=G2 text=0012 (text, not 12); cell sheet=Report cell=H2 value=2469134");
 
         // 8. protection
         save("10-protection.xlsx", ExcelWriter.<Item>create().sheetName("Report").protectSheet("lock").protectWorkbook("book")
@@ -241,7 +241,7 @@ public final class ExcelSamples {
                 "opens: no repair prompt",
                 "sheets names=Users|Orders|Archive|Archive (2)",
                 "autoFilter sheet=Users range=A1:B6; cell sheet=Orders cell=A6 text=Total; cell sheet=Orders cell=B6 value=6",
-                "table sheet=Archive name=ArchiveTable showAutoFilter=true; freezePanes sheet=Users rows=1");
+                "table sheet=Archive name=ArchiveTable_1 showAutoFilter=true; table sheet=\"Archive (2)\" name=ArchiveTable_2 showAutoFilter=true; freezePanes sheet=Users rows=1");
 
         // 12. layout: names, panes, print setup
         save("14-names-panes-print.xlsx", ExcelWriter.<Item>create().sheetName("Report").freezePane(1, 1).tabColor(255, 0, 0)
@@ -279,6 +279,19 @@ public final class ExcelSamples {
                 "Three sheets, each with a table (filter buttons), group header, summary rows, a chart, conditional formatting, protection, a row-number column and frozen header.",
                 "opens: no repair prompt (the strictest case: all features together)",
                 "sheets count=3");
+
+        writeGapSample();
+    }
+
+    private void writeGapSample() throws Exception {
+        // the summary starts after one empty row: does Excel then keep it out of the filter?
+        save("17-autofilter-summary-after-gap.xlsx", report().autoFilter(true).summary(s -> s.sum("Qty").average("Qty"))
+                .afterData(ctx -> ctx.getCurrentRow() + 1).write(items(7)));
+        add("17-autofilter-summary-after-gap.xlsx", "autoFilter with a gap above the summary",
+                "Like sample 01, but row 9 is empty and Sum/Average are on rows 10 and 11. Filter Name = \"item 3\": do Sum and Average stay visible now?",
+                "opens: no repair prompt",
+                "autoFilter sheet=Report range=A1:B8 (the range Excel shows right after opening, before any filter call)",
+                "filterRows sheet=Report column=1 criteria=\"item 3\" expectVisibleDataRows=1; cell sheet=Report cell=A10 text=Sum must stay visible");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {

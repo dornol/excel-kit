@@ -186,7 +186,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         Cursor cursor = new Cursor(currentRow);
         int headerRowIndex = currentRow;
 
-        ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
+        ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints,
+                cfg.tableOptions != null);
         int headerRowIdx = cursor.getRowOfSheet() - 1;
         // With group headers the column names sit below the group rows: that row is the header row.
         headerRowIndex = headerRowIdx;
@@ -210,7 +211,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     cursor.initRow();
                     int preambleRow = ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
                     cursor.setRowOfSheet(preambleRow);
-                    ExcelHeaderWriter.write(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints);
+                    ExcelHeaderWriter.write(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints,
+                            cfg.tableOptions != null);
                     int hdrIdx = cursor.getRowOfSheet() - 1;
                     headerRowIndex = hdrIdx;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.freezePaneCols, cfg.freezePaneRows);

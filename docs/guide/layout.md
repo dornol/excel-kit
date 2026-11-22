@@ -26,10 +26,12 @@ writer.freezePane(2, 1);     // 2 columns + 1 row
 
 All three available on `ExcelSheetWriter` too.
 
-The filter covers the header row (the row of the column names, below any group header) and every data row of the sheet,
-as Excel writes it. It stops above the summary rows and anything written by `afterData`, and with `maxRows()` each
-rolled-over sheet filters its own rows. A sheet with a `table(...)` gets its filter buttons from the table itself, since
-a second filter over the same cells would overlap it: `autoFilter(true)` turns them on, and without it the table has none.
+The filter written to the file covers the header row (the row of the column names, below any group header) and every data
+row of the sheet. It stops above the summary rows and anything written by `afterData`, and with `maxRows()` each
+rolled-over sheet filters its own rows. Excel extends a filter over the rows that follow it directly and hold data, so
+summary rows written right below the data are filtered along with it once the filter is applied. A sheet with a `table(...)` gets
+its filter buttons from the table itself, since a second filter over the same cells would overlap it: `autoFilter(true)`
+turns them on, and without it the table has none.
 
 ## Column Outline (Grouping)
 

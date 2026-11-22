@@ -29,13 +29,15 @@ final class ExcelWorkbookSupport {
     }
 
     /**
-     * POI writes every entry of a streamed workbook with an 8-byte (ZIP64) data descriptor by default. Readers that
-     * go through the archive from the front, such as {@code java.util.zip.ZipInputStream} and LibreOffice, then reject
-     * the file. {@code AlwaysWithCompatibility} keeps ZIP64 for entries beyond 4 GB and writes what those readers
-     * understand for the rest.
+     * POI writes every entry of a streamed workbook with an 8-byte (ZIP64) data descriptor by default
+     * ({@code Zip64Mode.Always}), which LibreOffice and {@code java.util.zip.ZipInputStream} cannot read.
+     * {@code AlwaysWithCompatibility}, which keeps entries beyond 4 GiB possible, writes a form that Excel rejects
+     * ("we found a problem with some content", opened on a real Excel). {@code AsNeeded} writes an ordinary ZIP for
+     * every entry that fits 32-bit sizes, which LibreOffice and streaming readers read, and ZIP64 only for an entry
+     * that does not (a worksheet of 7 GB was written and read back whole).
      */
     private static void readableByStreamingZipReaders(SXSSFWorkbook workbook) {
-        workbook.setZip64Mode(Zip64Mode.AlwaysWithCompatibility);
+        workbook.setZip64Mode(Zip64Mode.AsNeeded);
     }
 
     /** Creates the streaming workbook of a template writer: it wraps the template and keeps shared strings. */
