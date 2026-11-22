@@ -271,6 +271,21 @@ public ResponseEntity<StreamingResponseBody> download() {
 }
 ```
 
+## Packages
+
+The library is split into packages by purpose. The ones you import most:
+
+| Package | What you import from it |
+|---------|-------------------------|
+| `io.github.dornol.excelkit.excel` | `ExcelWriter`, `ExcelWorkbook`, `ExcelTemplateWriter`, `ExcelDataType` |
+| `io.github.dornol.excelkit.excel.read` | `ExcelReader`, `ExcelWorkbookReader` |
+| `io.github.dornol.excelkit.excel.style` | `ExcelColor`, `ExcelBorderStyle`, `ExcelDataFormat` |
+| `io.github.dornol.excelkit.csv` | `CsvWriter`, `CsvReader` |
+| `io.github.dornol.excelkit.core.read` | `ReadResult`, `ReadLimits`, `ReadSecurityPolicy`, `CellData`, `RowData` |
+| `io.github.dornol.excelkit.schema` | `ExcelKitSchema` |
+
+Every public type by package is listed in the [reference guide](docs/guide/reference.md#packages-and-imports).
+
 ## Features at a Glance
 
 **Writing (Excel & CSV)**

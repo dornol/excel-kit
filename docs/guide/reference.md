@@ -71,15 +71,65 @@ schema.excelReader(row -> new BookRecord(
 
 `WHITE`, `BLACK`, `LIGHT_GRAY`, `GRAY`, `DARK_GRAY`, `RED`, `GREEN`, `BLUE`, `YELLOW`, `ORANGE`, `LIGHT_RED`, `LIGHT_GREEN`, `LIGHT_BLUE`, `LIGHT_YELLOW`, `LIGHT_ORANGE`, `LIGHT_PURPLE`, `CORAL`, `STEEL_BLUE`, `FOREST_GREEN`, `GOLD`
 
+## Packages and Imports
+
+Every public type and the package it lives in. Each package depends only on the ones to its left: `core` ← `core.io` ←
+`core.read`/`core.detect` ← `csv`, `excel.read`, `excel` (with `excel.style` and `excel.feature`) ← `schema`.
+
+| Package | Public types | Use for |
+|---------|--------------|---------|
+| `io.github.dornol.excelkit.core` | `AtomicFileWriter`, `Cursor`, `ExcelKitException`, `FileHandler`, `ProgressCallback`, `RuntimeDependencyGuard` | Shared contracts: `FileHandler` (what a writer returns), progress callbacks, the base exception |
+| `io.github.dornol.excelkit.core.read` | `AbstractReadHandler`, `AbstractReader`, `CancellationToken`, `CellConversionConfig`, `CellData`, `CellError`, `DuplicateHeaderPolicy`, `HeaderPolicy`, `ReadAbortException`, `ReadAbortReason`, `ReadColumn`, `ReadLimitExceededException`, `ReadLimits`, `ReadOptions`, `ReadProgress`, `ReadProgressCallback`, `ReadReport`, `ReadResult`, `ReadSecurityException`, `ReadSecurityPolicy`, `ReadSession`, `ReadStoppedException`, `ReadSummary`, `ReaderOptions`, `RowData`, `RowError`, `RowFunction` | Reading, shared by Excel and CSV: options, limits, security policy, cell/row access, results and errors |
+| `io.github.dornol.excelkit.core.io` | `InputStreamSource`, `TempResourceCleaner`, `TempResourceContainer`, `TempResourceCreateException`, `TempResourceCreator` | Input sources and temp-file management |
+| `io.github.dornol.excelkit.core.detect` | `DetectionConfidence`, `TabularDetectionResult`, `TabularFileDetector`, `TabularFileType` | Telling an .xlsx from a CSV by content |
+| `io.github.dornol.excelkit.csv` | `CsvAfterDataWriter`, `CsvColumn`, `CsvDialect`, `CsvHandler`, `CsvQuoting`, `CsvReadException`, `CsvReader`, `CsvWriteException`, `CsvWriter` | CSV reading and writing |
+| `io.github.dornol.excelkit.excel` | `AfterDataWriter`, `BeforeHeaderWriter`, `ColumnConfig`, `ColumnStyleConfig`, `ExcelChartConfig`, `ExcelColumn`, `ExcelConditionalRule`, `ExcelDataType`, `ExcelHandler`, `ExcelKitConfig`, `ExcelPrintSetup`, `ExcelRichText`, `ExcelSheetWriter`, `ExcelSummary`, `ExcelTemplateWriter`, `ExcelValidation`, `ExcelWorkbook`, `ExcelWriteErrorPolicy`, `ExcelWriteException`, `ExcelWriter`, `HeaderStyleConfig`, `RowStyleConfig`, `SheetContext`, `StreamingOptions`, `TableOptions`, `TemplateListWriter`, `WriteRowCallback` | Excel writing: `ExcelWriter`, `ExcelWorkbook`, templates, column and sheet configuration |
+| `io.github.dornol.excelkit.excel.read` | `ExcelReadException`, `ExcelReader`, `ExcelSheetInfo`, `ExcelWorkbookReader`, `SheetFailurePolicy`, `SheetReadReport`, `WorkbookReadReport` | Excel reading: `ExcelReader`, multi-sheet `ExcelWorkbookReader`, sheet metadata |
+| `io.github.dornol.excelkit.excel.style` | `CellColorFunction`, `ExcelBorderStyle`, `ExcelColor`, `ExcelDataFormat` | Colors, borders and number formats |
+| `io.github.dornol.excelkit.excel.feature` | `ExcelCellComment`, `ExcelHyperlink`, `ExcelImage` | Cell content beyond text: comments, hyperlinks, images |
+| `io.github.dornol.excelkit.schema` | `ExcelKitSchema` | One column definition for both reading and writing, Excel or CSV |
+| `io.github.dornol.excelkit.spring` | `CellErrorResponse`, `DownloadFileType`, `ErrorReportRow`, `ExcelKitErrorResponse`, `ExcelKitMultipartFile`, `ExcelKitResponse`, `ExcelKitTemplateResponse`, `ExcelKitUpload`, `ExcelKitUploadException`, `UploadCollectionLimits`, `UploadError`, `UploadReader`, `UploadResult`, `UploadSummary` | Spring MVC download and upload helpers (`excel-kit-spring` artifact) |
+
+Typical imports:
+
+```java
+import io.github.dornol.excelkit.excel.ExcelWriter;
+import io.github.dornol.excelkit.excel.ExcelDataType;
+import io.github.dornol.excelkit.excel.read.ExcelReader;
+import io.github.dornol.excelkit.excel.style.ExcelColor;
+import io.github.dornol.excelkit.csv.CsvWriter;
+import io.github.dornol.excelkit.csv.CsvReader;
+import io.github.dornol.excelkit.core.read.ReadResult;
+import io.github.dornol.excelkit.schema.ExcelKitSchema;
+```
+
 ## Exception Handling
 
-| Exception | Description |
-|-----------|-------------|
-| `ExcelKitException` | Base class for all library exceptions |
-| `ExcelWriteException` | Excel write errors (no columns, handler already consumed, etc.) |
-| `ExcelReadException` | Excel read/parse errors |
-| `CsvWriteException` | CSV write errors |
-| `CsvReadException` | CSV read/parse errors |
+| Exception | Extends | Description |
+|-----------|---------|-------------|
+| `ExcelKitException` | `RuntimeException` | Base class for the library's own exceptions |
+| `ExcelWriteException` | `ExcelKitException` | Excel write errors (no columns, handler already consumed, etc.) |
+| `ExcelReadException` | `ExcelKitException` | Excel read/parse errors |
+| `CsvWriteException` | `ExcelKitException` | CSV write errors |
+| `CsvReadException` | `ExcelKitException` | CSV read/parse errors |
+| `ReadLimitExceededException` | `ExcelKitException` | A `ReadLimits` bound was exceeded; `limit()`, `configured()` and `actual()` say which |
+| `ReadSecurityException` | `ExcelKitException` | `ReadSecurityPolicy` rejected the input; `reason()` names the rule |
+| `TempResourceCreateException` | `ExcelKitException` | A temporary file or directory could not be created |
+| `ReadAbortException` | `RuntimeException` | `readStrict()`/`readAll()` hit a failing row, or `maxErrors()` was exceeded; `reason()` tells which |
+| `ReadStoppedException` | `RuntimeException` | Internal signal for `readWhile()`; the reader catches it, you do not see it |
+
+`ReadAbortException` does **not** extend `ExcelKitException`, so `catch (ExcelKitException e)` does not catch a
+`readStrict()` or `maxErrors()` abort. Catch it explicitly:
+
+```java
+try {
+    reader.readStrict(inputStream, result -> { ... });
+} catch (ReadAbortException e) {
+    // e.reason() is STRICT_FAILURE or MAX_ERRORS_EXCEEDED
+} catch (ExcelKitException e) {
+    // read errors, limits, security policy
+}
+```
 
 - Column mapping exceptions fall back to string conversion (Excel writing).
 - Calling `write` on an already-consumed handler throws the corresponding `WriteException`.

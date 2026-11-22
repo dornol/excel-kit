@@ -51,6 +51,11 @@ tasks.test {
     // PackageDependencyTest reads the main sources: an import-only change leaves the compiled classes
     // identical, so without this input the test would be skipped as up to date.
     inputs.dir("src/main/java").withPropertyName("mainSources").withPathSensitivity(PathSensitivity.RELATIVE)
+    // DocumentedPackagesTest compares the docs with the public types of both modules.
+    inputs.dir("../excel-kit-spring/src/main/java").withPropertyName("springSources")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file("../docs/guide/reference.md").withPropertyName("referenceGuide")
+    inputs.file("src/main/resources/META-INF/AI.md").withPropertyName("aiGuide")
     finalizedBy(tasks.jacocoTestReport)
 }
 

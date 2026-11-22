@@ -224,7 +224,8 @@ List<Person> people = ExcelReader.<Person>mapping(this::map)
 ```
 
 `readAll(...)` returns only successful rows and uses the same fail-fast behavior as
-`readStrict(...)`. For mapping code that tolerates optional columns, use `row.getOrNull("Name")`.
+`readStrict(...)`. Both throw `ReadAbortException`, which does not extend `ExcelKitException` (see
+[Exception Handling](reference.md#exception-handling)). For mapping code that tolerates optional columns, use `row.getOrNull("Name")`.
 For blank numeric cells, `cell.asOptionalInt()`, `asOptionalLong()`, and `asOptionalDouble()` avoid
 manual nullable checks.
 

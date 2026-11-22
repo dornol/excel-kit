@@ -139,7 +139,7 @@ Default `headerRows(1)` = existing single-row behavior. Empty-string headers pre
 |--------|-------------|
 | `.read(Consumer<ReadResult<T>>)` | Process each row (skips failures) |
 | `.read(Consumer<T> onSuccess, Consumer<RowError> onError)` | Split success/error callbacks (v0.16.12+) |
-| `.readStrict(Consumer<ReadResult<T>>)` | Throws on first validation failure |
+| `.readStrict(Consumer<ReadResult<T>>)` | Throws `ReadAbortException` on first validation failure (not an `ExcelKitException`) |
 | `.readWhile(Predicate<ReadResult<T>>)` | Stops normally when the callback returns false |
 
 Reader configurations are reusable; each call creates an independent one-shot session.

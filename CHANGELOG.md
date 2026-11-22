@@ -18,6 +18,9 @@ All notable changes to this project will be documented in this file.
 - `constColumn(name, value)`, `columnIf(name, condition, function)`, `maxRows(int)` and `table(...)` are declared once in the
   shared sheet-writer base instead of separately on `ExcelWriter` and `ExcelSheetWriter`. Calls compile unchanged;
   recompile code built against an earlier version.
+- The reference guide and `AI.md` list every public type by package (with typical imports), and say that
+  `ReadAbortException` (from `readStrict()`, `readAll()` and `maxErrors()`) does not extend `ExcelKitException`.
+  `DocumentedPackagesTest` keeps both tables equal to the source.
 - `PackageDependencyTest` pins the package layering (`core` <- `core.io` <- `core.read`/`core.detect` <-
   `csv`/`excel.read`/`excel` (+ `excel.style`, `excel.feature`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
 
