@@ -55,6 +55,10 @@ public class ExcelSummary {
     /**
      * Sets the label text for the summary row(s).
      * The label is placed in the first column by default.
+     * <p>
+     * With one operation the row carries the label as it is. With several, every row needs its own name, so each
+     * label is followed by its operation: {@code "Total - Sum"}, {@code "Total - Average"}. Without a label a row is
+     * named after its operation alone.
      *
      * @param text the label text (e.g., "Total", "Summary")
      * @return this summary for chaining
@@ -67,7 +71,8 @@ public class ExcelSummary {
     }
 
     /**
-     * Sets the label text for the summary row(s) in a specific column.
+     * Sets the label text for the summary row(s) in a specific column; with several operations each label is followed
+     * by its operation, as for {@link #label(String)}.
      *
      * @param columnName the column to place the label in
      * @param text       the label text
@@ -165,9 +170,11 @@ public class ExcelSummary {
                             + labelColumnName + "'. Columns: " + columnNames);
                     labelIdx = idx;
                 }
-                String text = entries.size() > 1
-                        ? op.name().substring(0, 1) + op.name().substring(1).toLowerCase(Locale.ROOT)
-                        : (labelText != null ? labelText : op.name().substring(0, 1) + op.name().substring(1).toLowerCase(Locale.ROOT));
+                String operation = op.name().substring(0, 1) + op.name().substring(1).toLowerCase(Locale.ROOT);
+                // One operation: the given label as it is. Several: every row needs its own name, so the label is
+                // followed by the operation ("Total - Sum"). Without a label the operation names the row.
+                String text = labelText == null ? operation
+                        : entries.size() > 1 ? labelText + " - " + operation : labelText;
                 ExcelCellText.write(summaryRow.createCell(labelIdx), text);
 
                 // Formulas

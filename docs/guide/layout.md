@@ -74,6 +74,10 @@ Multiple operations create multiple rows:
 
 Custom label column: `.label("Total", "Grand Total")`
 
+With several operations each row needs its own name, so a label is followed by the operation: `.label("Total")` with
+`sum` and `average` gives the rows `Total - Sum` and `Total - Average`. With one operation the row carries the label as
+it is, and without a label a row is named after its operation (`Sum`, `Average`).
+
 Works with sheet rollover — formulas generated per-sheet.
 
 A summary or label column name that is not among the sheet's columns fails with

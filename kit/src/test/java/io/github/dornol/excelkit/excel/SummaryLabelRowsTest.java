@@ -13,10 +13,9 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Which text a summary row carries in its label cell. This pins what the code does today: a label given with
- * {@code label(text)} is used when the summary has a single operation; with several operations every row is
- * named after its operation (Sum, Average, ...) and the given text is not written. (The javadoc of
- * {@code label} speaks of "the summary row(s)" without saying so.)
+ * Which text a summary row carries in its label cell. A label given with {@code label(text)} is used as it is when the
+ * summary has a single operation; with several operations every row needs its own name, so the label is followed by
+ * the operation ("Total - Sum"). Without a label a row is named after its operation.
  */
 class SummaryLabelRowsTest {
 
@@ -46,8 +45,20 @@ class SummaryLabelRowsTest {
     }
 
     @Test
-    void severalOperationsAreNamedAfterTheOperationAndNotAfterTheGivenLabel() throws Exception {
-        assertEquals(List.of("Sum", "Average", "Max"), labels(s -> s.label("Total").sum("Qty").average("Qty").max("Qty")));
+    void severalOperationsKeepTheGivenLabelAndAddTheOperation() throws Exception {
+        assertEquals(List.of("Total - Sum", "Total - Average", "Total - Max"),
+                labels(s -> s.label("Total").sum("Qty").average("Qty").max("Qty")));
+    }
+
+    @Test
+    void theLabelOfAColumnIsExtendedTheSameWay() throws Exception {
+        assertEquals(List.of("Grand - Sum", "Grand - Min"), labels(s -> s.label("Name", "Grand").sum("Qty").min("Qty")));
+        assertEquals(List.of("Grand"), labels(s -> s.label("Name", "Grand").sum("Qty")));
+    }
+
+    @Test
+    void withoutALabelSeveralOperationsAreNamedAfterTheOperation() throws Exception {
+        assertEquals(List.of("Sum", "Average"), labels(s -> s.sum("Qty").average("Qty")));
     }
 
     @Test
