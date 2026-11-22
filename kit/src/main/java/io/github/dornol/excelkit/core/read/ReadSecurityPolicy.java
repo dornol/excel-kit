@@ -13,6 +13,7 @@ package io.github.dornol.excelkit.core.read;
  * @param maxTotalScannedBytes maximum total bytes inspected by the scanner
  * @param maxCompressionRatio finite positive maximum allowed uncompressed/compressed ratio
  * @param maxZipEntries maximum number of ZIP entries in the workbook
+ * @since 0.21.0
  */
 public record ReadSecurityPolicy(boolean allowFormulas, boolean allowExternalLinks,
         long maxScannedEntryBytes, long maxTotalScannedBytes, double maxCompressionRatio,

@@ -16,7 +16,7 @@ import java.util.Objects;
  * providing automatic cleanup of temporary resources via {@link AutoCloseable}.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class TempResourceContainer implements AutoCloseable {
     /** Creates a new empty temp resource container. */

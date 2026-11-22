@@ -13,24 +13,35 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-/** Signature-based file type detection that does not depend on filename extensions. */
+/**
+ * Signature-based file type detection that does not depend on filename extensions.
+ *
+ * @since 0.21.0
+ */
 public final class TabularFileDetector {
     public static final int DEFAULT_SAMPLE_BYTES = 8192;
     private static final String DELIMITER_CANDIDATES = ",\t;|";
     private TabularFileDetector() {}
 
+    /** Detects the type of a file from its content, ignoring the filename extension. */
     public static TabularFileType detect(Path path) {
         return detectDetailed(path).type();
     }
 
+    /** Detects the type of the stream a source opens; the stream is opened and closed here. */
     public static TabularFileType detect(InputStreamSource source) {
         return detectDetailed(source).type();
     }
 
+    /**
+     * Like {@link #detect(InputStreamSource)}, returning the full {@link TabularDetectionResult};
+     * samples up to {@link #DEFAULT_SAMPLE_BYTES} bytes.
+     */
     public static TabularDetectionResult detectDetailed(InputStreamSource source) {
         return detectDetailed(source, DEFAULT_SAMPLE_BYTES);
     }
 
+    /** Like {@link #detectDetailed(InputStreamSource)}, sampling at most {@code sampleBytes} bytes. */
     public static TabularDetectionResult detectDetailed(InputStreamSource source, int sampleBytes) {
         Objects.requireNonNull(source, "source cannot be null");
         try (InputStream input = source.openStream()) {
@@ -40,6 +51,7 @@ public final class TabularFileDetector {
         }
     }
 
+    /** Like {@link #detect(Path)}, returning the full {@link TabularDetectionResult}. */
     public static TabularDetectionResult detectDetailed(Path path) {
         try (InputStream input = Files.newInputStream(path)) {
             return detectDetailed(new BufferedInputStream(input));
@@ -53,6 +65,10 @@ public final class TabularFileDetector {
         return detectDetailed(input).type();
     }
 
+    /**
+     * Like {@link #detect(InputStream)}, returning the full {@link TabularDetectionResult}; samples up
+     * to {@link #DEFAULT_SAMPLE_BYTES} bytes.
+     */
     public static TabularDetectionResult detectDetailed(InputStream input) {
         return detectDetailed(input, DEFAULT_SAMPLE_BYTES);
     }

@@ -13,6 +13,8 @@ import java.util.function.UnaryOperator;
  * The {@link Builder} is also what every reader keeps its own common settings in, so a setting given
  * by chaining on a reader and the same setting given through {@code ReaderOptions} are the same code:
  * one set of defaults and one set of checks.
+ *
+ * @since 0.23.0
  */
 public final class ReaderOptions {
     private final ReadOptions readOptions;

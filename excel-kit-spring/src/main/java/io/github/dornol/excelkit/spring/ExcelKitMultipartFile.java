@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 
 /**
  * Small adapter for opening upload streams from Spring {@link MultipartFile}s.
+ *
+ * @since 0.18.4
  */
 public final class ExcelKitMultipartFile {
     private static final int CONTENT_PREFIX_BYTES = 4096;
@@ -29,6 +31,13 @@ public final class ExcelKitMultipartFile {
     private ExcelKitMultipartFile() {
     }
 
+    /**
+     * Opens the stream of an upload.
+     *
+     * @param file the upload
+     * @return the upload's stream; the caller closes it
+     * @throws ExcelKitUploadException if the file is empty or cannot be opened
+     */
     public static InputStream open(MultipartFile file) {
         Objects.requireNonNull(file, "file must not be null");
         if (file.isEmpty()) {

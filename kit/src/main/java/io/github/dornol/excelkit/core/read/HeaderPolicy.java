@@ -4,7 +4,11 @@ import java.text.Normalizer;
 import java.util.Locale;
 import java.util.function.UnaryOperator;
 
-/** Common header normalization presets. */
+/**
+ * Common header normalization presets.
+ *
+ * @since 0.21.0
+ */
 public enum HeaderPolicy {
     /** Headers must match exactly. */
     EXACT(UnaryOperator.identity()),

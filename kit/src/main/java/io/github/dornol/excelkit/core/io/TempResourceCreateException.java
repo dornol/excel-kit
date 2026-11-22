@@ -6,7 +6,7 @@ import io.github.dornol.excelkit.core.ExcelKitException;
  * Exception thrown when a temporary resource (file or directory) cannot be created.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class TempResourceCreateException extends ExcelKitException {
     private static final long serialVersionUID = 1L;

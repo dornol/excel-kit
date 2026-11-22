@@ -7,6 +7,8 @@ import java.util.List;
 
 /**
  * JSON-friendly row-level upload read error.
+ *
+ * @since 0.18.4
  */
 public record UploadError(
         long rowNum,
@@ -22,11 +24,13 @@ public record UploadError(
         rawValues = rawValues == null ? List.of() : List.copyOf(rawValues);
     }
 
+    /** Creates an error without raw row values. */
     public UploadError(long rowNum, long fileRowNum, RowError.Type type,
                        List<String> messages, List<CellErrorResponse> cellErrors) {
         this(rowNum, fileRowNum, type, messages, cellErrors, List.of());
     }
 
+    /** Converts a row error from a read. */
     public static UploadError from(RowError error) {
         return new UploadError(
                 error.rowNum(),

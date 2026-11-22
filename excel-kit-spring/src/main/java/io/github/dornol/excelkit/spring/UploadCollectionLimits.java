@@ -1,6 +1,10 @@
 package io.github.dornol.excelkit.spring;
 
-/** Bounds in-memory upload result collections while preserving full summary counts. */
+/**
+ * Bounds in-memory upload result collections while preserving full summary counts.
+ *
+ * @since 0.21.0
+ */
 public record UploadCollectionLimits(int maxSuccessRows, int maxErrors) {
     public static final UploadCollectionLimits UNLIMITED = new UploadCollectionLimits(-1, -1);
     public UploadCollectionLimits {

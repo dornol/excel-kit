@@ -1,6 +1,10 @@
 package io.github.dornol.excelkit.core;
 
-/** Provides actionable errors when an optional format integration is missing at runtime. */
+/**
+ * Provides actionable errors when an optional format integration is missing at runtime.
+ *
+ * @since 0.23.0
+ */
 public final class RuntimeDependencyGuard {
     private RuntimeDependencyGuard() {
     }

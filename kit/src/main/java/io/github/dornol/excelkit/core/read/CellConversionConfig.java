@@ -77,14 +77,17 @@ public final class CellConversionConfig {
         return new Builder(this);
     }
 
+    /** Returns the locale used when parsing locale-dependent numbers. */
     public Locale locale() {
         return locale;
     }
 
+    /** Returns the formatters tried, in order, when parsing a date. */
     public List<DateTimeFormatter> dateFormats() {
         return dateFormats;
     }
 
+    /** Returns the formatters tried, in order, when parsing a date-time. */
     public List<DateTimeFormatter> dateTimeFormats() {
         return dateTimeFormats;
     }

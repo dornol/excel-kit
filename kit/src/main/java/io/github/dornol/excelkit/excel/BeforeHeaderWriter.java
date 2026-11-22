@@ -7,7 +7,7 @@ package io.github.dornol.excelkit.excel;
  * always produce the same number of rows.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.3.0
  */
 @FunctionalInterface
 public interface BeforeHeaderWriter {

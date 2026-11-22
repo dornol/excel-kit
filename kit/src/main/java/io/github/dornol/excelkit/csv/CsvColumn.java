@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  *
  * @param <T> The type of the row data object
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class CsvColumn<T> {
     private static final Logger log = LoggerFactory.getLogger(CsvColumn.class);

@@ -21,6 +21,12 @@ All notable changes to this project will be documented in this file.
 - The reference guide and `AI.md` list every public type by package (with typical imports), and say that
   `ReadAbortException` (from `readStrict()`, `readAll()` and `maxErrors()`) does not extend `ExcelKitException`.
   `DocumentedPackagesTest` keeps both tables equal to the source.
+- Every public type now has a version in its class javadoc `@since` (32 used the date `2025-07-19`, 45 had none) and
+  every public method and constructor has a javadoc, mostly the `Path`/`InputStream`/`InputStreamSource` overloads of the
+  readers and the Spring helpers. `ReadSecurityException.reason()` had its description attached to the wrong constructor.
+  `@since` values come from the first release tag that contains the type; `ReadLimits`, `AbstractReader` and
+  `HeaderStyleConfig` were corrected to the release both git and this changelog show. `PublicApiDocumentationTest`
+  keeps the rule.
 - `PackageDependencyTest` pins the package layering (`core` <- `core.io` <- `core.read`/`core.detect` <-
   `csv`/`excel.read`/`excel` (+ `excel.style`, `excel.feature`) <- `schema`), so `core` cannot depend on `excel` or `csv` again.
 

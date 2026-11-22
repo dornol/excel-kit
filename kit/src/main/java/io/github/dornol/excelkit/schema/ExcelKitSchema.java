@@ -44,6 +44,7 @@ import java.util.function.Supplier;
  *
  * @param <T> The row data type
  * @author dhkim
+ * @since 0.3.0
  */
 public class ExcelKitSchema<T> {
 

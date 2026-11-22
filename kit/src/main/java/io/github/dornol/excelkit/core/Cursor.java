@@ -8,7 +8,7 @@ package io.github.dornol.excelkit.core;
  * This allows support for sheet rollover, row-based formatting, and row-level indexing.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class Cursor {
     private final int baseRow;

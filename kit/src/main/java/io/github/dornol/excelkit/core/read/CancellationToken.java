@@ -1,6 +1,10 @@
 package io.github.dornol.excelkit.core.read;
 
-/** Cooperative cancellation signal checked between emitted rows. */
+/**
+ * Cooperative cancellation signal checked between emitted rows.
+ *
+ * @since 0.21.0
+ */
 @FunctionalInterface
 public interface CancellationToken {
     /** A token that never cancels; the default of a reader. */

@@ -10,6 +10,8 @@ import java.time.Duration;
 
 /**
  * Spring MVC response helpers for streaming Excel and CSV downloads.
+ *
+ * @since 0.18.3
  */
 public final class ExcelKitResponse {
     private static final Duration DEFAULT_CACHE_MAX_AGE = Duration.ofSeconds(10);
@@ -17,6 +19,13 @@ public final class ExcelKitResponse {
     private ExcelKitResponse() {
     }
 
+    /**
+     * Streams the handler as an Excel download.
+     *
+     * @param handler  the handler to stream
+     * @param filename the download filename
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> excel(ExcelHandler handler, String filename) {
         return excel(filename).body(handler::writeTo);
     }
@@ -43,10 +52,24 @@ public final class ExcelKitResponse {
         return excel(filename).body(out -> handler.writeTo(out, password));
     }
 
+    /**
+     * Streams the handler as a CSV download.
+     *
+     * @param handler  the handler to stream
+     * @param filename the download filename
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> csv(CsvHandler handler, String filename) {
         return csv(filename).body(handler::writeTo);
     }
 
+    /**
+     * Creates an Excel response builder with download headers and the default cache max-age of 10
+     * seconds.
+     *
+     * @param filename the download filename
+     * @return a response builder
+     */
     public static ResponseEntity.BodyBuilder excel(String filename) {
         return builder(filename, DownloadFileType.EXCEL);
     }
@@ -62,6 +85,13 @@ public final class ExcelKitResponse {
         return builder(filename, DownloadFileType.EXCEL, cacheMaxAge);
     }
 
+    /**
+     * Creates a CSV response builder with download headers and the default cache max-age of 10
+     * seconds.
+     *
+     * @param filename the download filename
+     * @return a response builder
+     */
     public static ResponseEntity.BodyBuilder csv(String filename) {
         return builder(filename, DownloadFileType.CSV);
     }
@@ -77,10 +107,26 @@ public final class ExcelKitResponse {
         return builder(filename, DownloadFileType.CSV, cacheMaxAge);
     }
 
+    /**
+     * Creates a response builder with download headers and the default cache max-age of 10 seconds.
+     *
+     * @param filename the download filename
+     * @param type     the file type
+     * @return a response builder
+     */
     public static ResponseEntity.BodyBuilder builder(String filename, DownloadFileType type) {
         return builder(filename, type, DEFAULT_CACHE_MAX_AGE);
     }
 
+    /**
+     * Creates a response builder with download headers and a private cache of the given max-age.
+     *
+     * @param filename     the download filename
+     * @param type         the file type
+     * @param cacheMaxAge  how long a private cache may keep the download
+     * @return a response builder
+     * @throws IllegalArgumentException if {@code cacheMaxAge} is null or negative
+     */
     public static ResponseEntity.BodyBuilder builder(
             String filename, DownloadFileType type, Duration cacheMaxAge) {
         if (cacheMaxAge == null || cacheMaxAge.isNegative()) {

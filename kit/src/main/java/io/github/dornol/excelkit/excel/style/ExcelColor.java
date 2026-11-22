@@ -15,6 +15,7 @@ package io.github.dornol.excelkit.excel.style;
  * }</pre>
  *
  * @author dhkim
+ * @since 0.3.0
  */
 public final class ExcelColor {
 

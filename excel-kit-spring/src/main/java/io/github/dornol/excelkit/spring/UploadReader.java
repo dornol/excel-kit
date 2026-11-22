@@ -5,7 +5,11 @@ import io.github.dornol.excelkit.core.read.ReadResult;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
-/** Executes a configured reader against an upload stream. */
+/**
+ * Executes a configured reader against an upload stream.
+ *
+ * @since 0.20.0
+ */
 @FunctionalInterface
 public interface UploadReader<T> {
     void read(InputStream inputStream, Consumer<ReadResult<T>> consumer);

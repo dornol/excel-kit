@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * rely on it.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public final class CsvHandler extends TempResourceContainer implements FileHandler {
     /** What must be released. Holds paths only, never the handler, so the handler can be collected. */

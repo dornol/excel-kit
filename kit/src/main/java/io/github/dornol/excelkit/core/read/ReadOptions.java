@@ -6,7 +6,11 @@ import org.jspecify.annotations.Nullable;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-/** Immutable snapshot of format-independent reader settings. */
+/**
+ * Immutable snapshot of format-independent reader settings.
+ *
+ * @since 0.20.0
+ */
 public record ReadOptions(
         boolean strictHeaders,
         DuplicateHeaderPolicy duplicateHeaderPolicy,

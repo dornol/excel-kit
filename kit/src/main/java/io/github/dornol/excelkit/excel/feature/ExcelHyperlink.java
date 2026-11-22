@@ -16,6 +16,7 @@ package io.github.dornol.excelkit.excel.feature;
  * @param url   the hyperlink URL
  * @param label the display text shown in the cell
  * @author dhkim
+ * @since 0.5.0
  */
 public record ExcelHyperlink(String url, String label) {
 

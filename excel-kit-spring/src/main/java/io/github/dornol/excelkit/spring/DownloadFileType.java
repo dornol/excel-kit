@@ -7,6 +7,8 @@ import java.util.Objects;
 
 /**
  * Supported download file types for Spring MVC responses.
+ *
+ * @since 0.18.4
  */
 public enum DownloadFileType {
     EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
@@ -20,14 +22,23 @@ public enum DownloadFileType {
         this.extension = extension;
     }
 
+    /** Returns the HTTP {@code Content-Type} of the download. */
     public String getContentType() {
         return contentType;
     }
 
+    /** Returns the file extension, without a dot. */
     public String getExtension() {
         return extension;
     }
 
+    /**
+     * Builds an {@code attachment} {@code Content-Disposition} value with an ASCII fallback {@code
+     * filename} and an RFC 8187 encoded {@code filename*}, so non-ASCII names survive.
+     *
+     * @param filename the download filename
+     * @return the header value
+     */
     public String contentDisposition(String filename) {
         String downloadFilename = normalizeFilename(filename);
         String fallback = asciiFallback(downloadFilename);

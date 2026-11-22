@@ -29,7 +29,7 @@ import java.util.stream.StreamSupport;
  *
  * @author dhkim
  * @param <T> The data type of each row to be written into the Excel file
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);

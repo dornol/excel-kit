@@ -24,7 +24,7 @@ import java.util.UUID;
  * Utility class for creating temporary files and directories with appropriate permissions.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class TempResourceCreator {
     private static final Logger log = LoggerFactory.getLogger(TempResourceCreator.class);

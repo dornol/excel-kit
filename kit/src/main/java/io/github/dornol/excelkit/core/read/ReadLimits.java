@@ -6,6 +6,8 @@ package io.github.dornol.excelkit.core.read;
  * A reader applies no limits unless it is given some, and it copies its whole input to a temp file,
  * so a file from an untrusted source (an upload) should be read with {@link #UPLOAD} or limits of
  * your own, together with {@link ReadSecurityPolicy#STRICT} for Excel.
+ *
+ * @since 0.21.0
  */
 public record ReadLimits(long maxInputBytes, int maxSheets, int maxColumns, int maxCellCharacters,
                          long maxTotalCells) {
@@ -20,6 +22,7 @@ public record ReadLimits(long maxInputBytes, int maxSheets, int maxColumns, int 
      */
     public static final ReadLimits UPLOAD = new ReadLimits(50L * 1024 * 1024, 50, 1_000, 32_767, 10_000_000L);
 
+    /** Creates limits with no bound on the total number of cells. */
     public ReadLimits(long maxInputBytes, int maxSheets, int maxColumns, int maxCellCharacters) {
         this(maxInputBytes, maxSheets, maxColumns, maxCellCharacters, -1);
     }

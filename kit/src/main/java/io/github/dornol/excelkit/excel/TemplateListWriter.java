@@ -218,10 +218,22 @@ public class TemplateListWriter<T> {
         return this;
     }
 
+    /**
+     * Turns the written range into an Excel structured table with default {@link TableOptions}.
+     *
+     * @param name the table name
+     * @return this writer for chaining
+     */
     public TemplateListWriter<T> table(String name) {
         return table(TableOptions.defaults(name));
     }
 
+    /**
+     * Turns the written range into an Excel structured table.
+     *
+     * @param options the table name and style
+     * @return this writer for chaining
+     */
     public TemplateListWriter<T> table(TableOptions options) {
         StructuredTableWriter.validateName(Objects.requireNonNull(options, "options cannot be null").name());
         this.tableOptions = options;
@@ -258,6 +270,12 @@ public class TemplateListWriter<T> {
         return writeInternal(stream, false);
     }
 
+    /**
+     * Like {@link #write(Stream)}, for an {@code Iterable}.
+     *
+     * @param rows the data rows
+     * @return the parent {@link ExcelTemplateWriter} for further chaining
+     */
     public ExcelTemplateWriter write(Iterable<T> rows) {
         Objects.requireNonNull(rows, "rows cannot be null");
         return write(StreamSupport.stream(rows.spliterator(), false));
@@ -275,6 +293,12 @@ public class TemplateListWriter<T> {
         return writeInternal(stream, true);
     }
 
+    /**
+     * Like {@link #writeWithHeaders(Stream)}, for an {@code Iterable}.
+     *
+     * @param rows the data rows
+     * @return the parent {@link ExcelTemplateWriter} for further chaining
+     */
     public ExcelTemplateWriter writeWithHeaders(Iterable<T> rows) {
         Objects.requireNonNull(rows, "rows cannot be null");
         return writeWithHeaders(StreamSupport.stream(rows.spliterator(), false));

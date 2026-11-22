@@ -39,6 +39,15 @@ public class RowData {
         this(cells, headerNames, headerIndex, UnaryOperator.identity());
     }
 
+    /**
+     * Like the three-argument constructor, passing every header name that is looked up through {@code
+     * headerNormalizer}.
+     *
+     * @param cells            the row's cells
+     * @param headerNames      the header names, in column order
+     * @param headerIndex      a map from header name to column index
+     * @param headerNormalizer applied to a header name before it is looked up
+     */
     public RowData(List<CellData> cells, List<String> headerNames, Map<String, Integer> headerIndex,
                    UnaryOperator<String> headerNormalizer) {
         this.cells = List.copyOf(cells);

@@ -6,7 +6,7 @@ package io.github.dornol.excelkit.core;
  * This allows callers to catch all library-specific exceptions with a single catch block.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.2.0
  */
 public class ExcelKitException extends RuntimeException {
     private static final long serialVersionUID = 1L;

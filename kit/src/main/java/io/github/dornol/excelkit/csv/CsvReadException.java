@@ -6,7 +6,7 @@ import io.github.dornol.excelkit.core.ExcelKitException;
  * Exception thrown during CSV read operations.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.2.0
  */
 public class CsvReadException extends ExcelKitException {
     private static final long serialVersionUID = 1L;

@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * {@code headerColor}).
  *
  * @author dhkim
- * @since 0.17.0
+ * @since 0.16.14
  */
 public class HeaderStyleConfig {
 

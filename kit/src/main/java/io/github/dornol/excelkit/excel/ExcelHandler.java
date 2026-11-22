@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * collector's choosing, so do not rely on it.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public final class ExcelHandler implements FileHandler {
     private static final Logger log = LoggerFactory.getLogger(ExcelHandler.class);

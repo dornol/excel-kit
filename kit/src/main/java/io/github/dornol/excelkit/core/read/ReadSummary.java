@@ -3,7 +3,11 @@ package io.github.dornol.excelkit.core.read;
 import java.time.Duration;
 import java.util.Objects;
 
-/** Aggregate outcome of one reader execution. */
+/**
+ * Aggregate outcome of one reader execution.
+ *
+ * @since 0.21.0
+ */
 public record ReadSummary(long totalRows, long successRows, long errorRows,
                           boolean stoppedEarly, Duration duration) {
     public ReadSummary {

@@ -44,7 +44,7 @@ import io.github.dornol.excelkit.core.RuntimeDependencyGuard;
  *
  * @param <T> The type of the object that represents one CSV row
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.3
  */
 public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private @Nullable Character configuredDelimiter;
@@ -404,12 +404,20 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         return List.copyOf(rows);
     }
 
+    /**
+     * Reads all successful rows from a path into an immutable list, failing on the first mapping or
+     * validation error. The file is not modified or deleted.
+     */
     public List<T> readAll(Path path) {
         List<T> rows = new ArrayList<>();
         readStrict(path, rows::add);
         return List.copyOf(rows);
     }
 
+    /**
+     * Reads all successful rows from an {@link InputStreamSource} into an immutable list, failing
+     * on the first mapping or validation error. The source's stream is opened and closed here.
+     */
     public List<T> readAll(InputStreamSource source) {
         List<T> rows = new ArrayList<>();
         readStrict(source, rows::add);
@@ -422,6 +430,10 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         executeInputStream(inputStream, this::createDetectedHandler, handler -> handler.read(consumer));
     }
 
+    /**
+     * Detects the charset and delimiter from a sample of a path, then reads it, passing every row's
+     * {@link ReadResult} to the consumer. The file is not modified or deleted.
+     */
     public void readDetected(Path path, Consumer<ReadResult<T>> consumer) {
         requirePath(path);
         requireCallback(consumer, "consumer");
@@ -439,12 +451,20 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         }
     }
 
+    /**
+     * Like {@code readDetected} for an input stream, and returns a {@link ReadSummary} with the row
+     * counts. The stream is not closed.
+     */
     public ReadSummary readDetectedWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
         return executeWithInputStream(inputStream, this::createDetectedHandler,
                 handler -> summarize(handler, consumer));
     }
 
+    /**
+     * Like {@code readDetected} for an {@link InputStreamSource}, and returns a {@link ReadSummary}
+     * with the row counts. The source's stream is opened and closed here.
+     */
     public ReadSummary readDetectedWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
         requireInputSource(source);
         try (InputStream input = source.openStream()) {
@@ -454,6 +474,10 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         }
     }
 
+    /**
+     * Like {@code readDetected} for a path, and returns a {@link ReadSummary} with the row counts.
+     * The file is not modified or deleted.
+     */
     public ReadSummary readDetectedWithSummary(Path path, Consumer<ReadResult<T>> consumer) {
         requirePath(path);
         requireCallback(consumer, "consumer");
@@ -464,18 +488,31 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         }
     }
 
+    /**
+     * Reads an input stream, passing every row's {@link ReadResult} to the consumer, and returns a
+     * {@link ReadSummary} with the row counts. The stream is not closed.
+     */
     public ReadSummary readWithSummary(InputStream inputStream, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
         return executeWithInputStream(inputStream, this::createHandler,
                 handler -> summarize(handler, consumer));
     }
 
+    /**
+     * Reads a path, passing every row's {@link ReadResult} to the consumer, and returns a {@link
+     * ReadSummary} with the row counts. The file is not modified or deleted.
+     */
     public ReadSummary readWithSummary(Path path, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
         return executeWithPath(path, this::createHandler,
                 handler -> summarize(handler, consumer));
     }
 
+    /**
+     * Reads an {@link InputStreamSource}, passing every row's {@link ReadResult} to the consumer,
+     * and returns a {@link ReadSummary} with the row counts. The source's stream is opened and
+     * closed here.
+     */
     public ReadSummary readWithSummary(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
         return executeFromSource(source, input -> readWithSummary(input, consumer),
@@ -487,18 +524,31 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
                 handler::read, handler::wasStoppedEarly, consumer);
     }
 
+    /**
+     * Reads an input stream without delivering rows, and returns a {@link ReadReport} with the row
+     * counts and up to {@code maxCollectedErrors} failed rows. The stream is not closed.
+     */
     public ReadReport readReport(InputStream inputStream, int maxCollectedErrors) {
         requireMaxCollectedErrors(maxCollectedErrors);
         return executeWithInputStream(inputStream, this::createHandler,
                 handler -> report(handler, maxCollectedErrors));
     }
 
+    /**
+     * Reads a path without delivering rows, and returns a {@link ReadReport} with the row counts
+     * and up to {@code maxCollectedErrors} failed rows. The file is not modified or deleted.
+     */
     public ReadReport readReport(Path path, int maxCollectedErrors) {
         requireMaxCollectedErrors(maxCollectedErrors);
         return executeWithPath(path, this::createHandler,
                 handler -> report(handler, maxCollectedErrors));
     }
 
+    /**
+     * Reads an {@link InputStreamSource} without delivering rows, and returns a {@link ReadReport}
+     * with the row counts and up to {@code maxCollectedErrors} failed rows. The source's stream is
+     * opened and closed here.
+     */
     public ReadReport readReport(InputStreamSource source, int maxCollectedErrors) {
         requireMaxCollectedErrors(maxCollectedErrors);
         return executeFromSource(source, input -> readReport(input, maxCollectedErrors),
@@ -514,6 +564,10 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
                 consumer -> handler.read(consumer), handler::wasStoppedEarly, maxCollectedErrors);
     }
 
+    /**
+     * Reads an input stream, passing each valid row to {@code onSuccess} and each failed row to
+     * {@code onError}. The stream is not closed.
+     */
     public void read(InputStream inputStream, Consumer<T> onSuccess, Consumer<RowError> onError) {
         requireCallback(onSuccess, "onSuccess");
         requireCallback(onError, "onError");
@@ -521,11 +575,20 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
                 handler -> handler.read(onSuccess, onError));
     }
 
+    /**
+     * Reads an input stream, passing each valid row to the consumer, and throws
+     * {@link io.github.dornol.excelkit.core.read.ReadAbortException ReadAbortException} at the
+     * first row that fails mapping or validation. The stream is not closed.
+     */
     public void readStrict(InputStream inputStream, Consumer<T> consumer) {
         requireCallback(consumer, "consumer");
         executeInputStream(inputStream, this::createHandler, handler -> handler.readStrict(consumer));
     }
 
+    /**
+     * Reads an input stream while the predicate returns true. Stopping early is normal, not an
+     * error; the returned {@link ReadSummary} says whether it happened. The stream is not closed.
+     */
     public ReadSummary readWhile(InputStream inputStream, Predicate<ReadResult<T>> predicate) {
         requireCallback(predicate, "predicate");
         return executeWithInputStream(inputStream, this::createHandler,
@@ -538,29 +601,50 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
         executePath(path, this::createHandler, handler -> handler.read(consumer));
     }
 
+    /**
+     * Reads a path, passing each valid row to {@code onSuccess} and each failed row to {@code
+     * onError}. The file is not modified or deleted.
+     */
     public void read(Path path, Consumer<T> onSuccess, Consumer<RowError> onError) {
         requireCallback(onSuccess, "onSuccess");
         requireCallback(onError, "onError");
         executePath(path, this::createHandler, handler -> handler.read(onSuccess, onError));
     }
 
+    /**
+     * Reads a path, passing each valid row to the consumer, and throws
+     * {@link io.github.dornol.excelkit.core.read.ReadAbortException ReadAbortException} at the
+     * first row that fails mapping or validation. The file is not modified or deleted.
+     */
     public void readStrict(Path path, Consumer<T> consumer) {
         requireCallback(consumer, "consumer");
         executePath(path, this::createHandler, handler -> handler.readStrict(consumer));
     }
 
+    /**
+     * Reads a path while the predicate returns true. Stopping early is normal, not an error; the
+     * returned {@link ReadSummary} says whether it happened. The file is not modified or deleted.
+     */
     public ReadSummary readWhile(Path path, Predicate<ReadResult<T>> predicate) {
         requireCallback(predicate, "predicate");
         return executeWithPath(path, this::createHandler,
                 handler -> readWhile(handler, predicate));
     }
 
+    /**
+     * Reads an {@link InputStreamSource}, passing every row's {@link ReadResult}, valid or failed,
+     * to the consumer. The source's stream is opened and closed here.
+     */
     public void read(InputStreamSource source, Consumer<ReadResult<T>> consumer) {
         requireCallback(consumer, "consumer");
         executeFromSource(source, input -> { read(input, consumer); return null; },
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
+    /**
+     * Reads an {@link InputStreamSource}, passing each valid row to {@code onSuccess} and each
+     * failed row to {@code onError}. The source's stream is opened and closed here.
+     */
     public void read(InputStreamSource source, Consumer<T> onSuccess, Consumer<RowError> onError) {
         requireCallback(onSuccess, "onSuccess");
         requireCallback(onError, "onError");
@@ -568,12 +652,22 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
+    /**
+     * Reads an {@link InputStreamSource}, passing each valid row to the consumer, and throws
+     * {@link io.github.dornol.excelkit.core.read.ReadAbortException ReadAbortException} at the
+     * first row that fails mapping or validation. The source's stream is opened and closed here.
+     */
     public void readStrict(InputStreamSource source, Consumer<T> consumer) {
         requireCallback(consumer, "consumer");
         executeFromSource(source, input -> { readStrict(input, consumer); return null; },
                 (message, error) -> new CsvReadException("Failed to open CSV input", error));
     }
 
+    /**
+     * Reads an {@link InputStreamSource} while the predicate returns true. Stopping early is
+     * normal, not an error; the returned {@link ReadSummary} says whether it happened. The source's
+     * stream is opened and closed here.
+     */
     public ReadSummary readWhile(InputStreamSource source, Predicate<ReadResult<T>> predicate) {
         requireCallback(predicate, "predicate");
         return executeFromSource(source, input -> readWhile(input, predicate),

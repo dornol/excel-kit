@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @param <T> the row data type
  * @author dhkim
+ * @since 0.5.0
  */
 @FunctionalInterface
 public interface CellColorFunction<T> {

@@ -1,6 +1,10 @@
 package io.github.dornol.excelkit.excel;
 
-/** Immutable SXSSF workbook-creation settings shared by writer entry points. */
+/**
+ * Immutable SXSSF workbook-creation settings shared by writer entry points.
+ *
+ * @since 0.21.0
+ */
 public record StreamingOptions(int rowAccessWindowSize, boolean compressTempFiles, boolean useSharedStrings) {
     public static final StreamingOptions DEFAULT = new StreamingOptions(1000, false, false);
     public StreamingOptions {

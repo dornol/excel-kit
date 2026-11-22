@@ -40,7 +40,7 @@ import java.util.function.Supplier;
  *
  * @param <T> The target row data type to map each row into
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.2.0
  */
 public abstract class AbstractReadHandler<T> extends TempResourceContainer implements ReadSession<T> {
     private static final Logger log = LoggerFactory.getLogger(AbstractReadHandler.class);

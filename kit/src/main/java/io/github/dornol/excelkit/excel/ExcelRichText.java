@@ -35,6 +35,7 @@ import java.util.function.Consumer;
  *
  * @author dhkim
  * @see ExcelDataType#RICH_TEXT
+ * @since 0.6.4
  */
 public class ExcelRichText {
 

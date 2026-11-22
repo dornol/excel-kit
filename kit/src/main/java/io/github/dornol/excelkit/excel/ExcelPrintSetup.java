@@ -26,6 +26,7 @@ import org.jspecify.annotations.Nullable;
  * footer, counting the {@code &L}, {@code &C} and {@code &R} that mark its sections.
  *
  * @author dhkim
+ * @since 0.6.4
  */
 public class ExcelPrintSetup {
 

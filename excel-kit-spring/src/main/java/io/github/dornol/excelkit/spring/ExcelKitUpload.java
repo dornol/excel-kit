@@ -14,6 +14,8 @@ import java.util.function.Supplier;
 
 /**
  * Spring upload helpers that open {@link MultipartFile}s and collect read results.
+ *
+ * @since 0.18.4
  */
 public final class ExcelKitUpload {
 
@@ -38,6 +40,16 @@ public final class ExcelKitUpload {
         return csv(file, reader);
     }
 
+    /**
+     * Opens an upload, passes its stream to the reader, and collects the rows and errors it reports.
+     *
+     * @param type   a label stored in the result, such as {@code "Excel"}
+     * @param file   the upload
+     * @param reader reads the stream
+     * @param <T>    the row type
+     * @return the collected result
+     * @throws ExcelKitUploadException if the file is empty or cannot be opened or closed
+     */
     public static <T> UploadResult<T> read(
             String type,
             MultipartFile file,
@@ -51,6 +63,18 @@ public final class ExcelKitUpload {
         }
     }
 
+    /**
+     * Like {@link #read(String, MultipartFile, UploadReader)}, keeping at most the rows and errors the
+     * limits allow; the counts still include the rest.
+     *
+     * @param type             a label stored in the result, such as {@code "Excel"}
+     * @param file             the upload
+     * @param reader           reads the stream
+     * @param collectionLimits how many rows and errors to keep
+     * @param <T>              the row type
+     * @return the collected result
+     * @throws ExcelKitUploadException if the file is empty or cannot be opened or closed
+     */
     public static <T> UploadResult<T> read(String type, MultipartFile file, UploadReader<T> reader,
             UploadCollectionLimits collectionLimits) {
         try (InputStream inputStream = ExcelKitMultipartFile.open(file)) {
@@ -78,12 +102,33 @@ public final class ExcelKitUpload {
         }
     }
 
+    /**
+     * Reads an Excel upload with a reader of your own.
+     *
+     * @param file   the upload
+     * @param reader reads the stream
+     * @param <T>    the row type
+     * @return the collected result
+     */
     public static <T> UploadResult<T> excel(
             MultipartFile file,
             UploadReader<T> reader) {
         return read("Excel", file, reader);
     }
 
+    /**
+     * Reads an XLSX upload with a schema, a Bean Validation provider and read limits. The content
+     * signature is checked first, so a file that is not XLSX is rejected with {@link
+     * ExcelKitUploadException} whatever its name.
+     *
+     * @param file      the upload
+     * @param schema    the columns
+     * @param supplier  creates a row object
+     * @param validator validates each row; may be null
+     * @param limits    bounds on the read
+     * @param <T>       the row type
+     * @return the collected result
+     */
     public static <T> UploadResult<T> excel(MultipartFile file, ExcelKitSchema<T> schema,
             Supplier<T> supplier, Validator validator, ReadLimits limits) {
         return readDetected("Excel", TabularFileType.XLSX, file, (input, consumer) ->
@@ -112,12 +157,33 @@ public final class ExcelKitUpload {
         return excel(file, schema, supplier, validator, ReadLimits.UPLOAD);
     }
 
+    /**
+     * Reads a CSV upload with a reader of your own.
+     *
+     * @param file   the upload
+     * @param reader reads the stream
+     * @param <T>    the row type
+     * @return the collected result
+     */
     public static <T> UploadResult<T> csv(
             MultipartFile file,
             UploadReader<T> reader) {
         return read("CSV", file, reader);
     }
 
+    /**
+     * Reads a CSV upload with a schema, a Bean Validation provider and read limits. The content
+     * signature is checked first, so a file that is not CSV is rejected with {@link
+     * ExcelKitUploadException} whatever its name.
+     *
+     * @param file      the upload
+     * @param schema    the columns
+     * @param supplier  creates a row object
+     * @param validator validates each row; may be null
+     * @param limits    bounds on the read
+     * @param <T>       the row type
+     * @return the collected result
+     */
     public static <T> UploadResult<T> csv(MultipartFile file, ExcelKitSchema<T> schema,
             Supplier<T> supplier, Validator validator, ReadLimits limits) {
         return readDetected("CSV", TabularFileType.CSV, file, (input, consumer) ->

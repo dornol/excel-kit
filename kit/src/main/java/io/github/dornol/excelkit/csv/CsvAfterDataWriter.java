@@ -9,7 +9,7 @@ import java.io.PrintWriter;
  * since CSV has no sheet/workbook concept.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.3.0
  */
 @FunctionalInterface
 public interface CsvAfterDataWriter {

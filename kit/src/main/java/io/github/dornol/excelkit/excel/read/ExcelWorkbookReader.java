@@ -20,7 +20,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-/** Reads multiple workbook sheets with independent readers and result aggregation. */
+/**
+ * Reads multiple workbook sheets with independent readers and result aggregation.
+ *
+ * @since 0.23.0
+ */
 public final class ExcelWorkbookReader {
     private static final int DEFAULT_MAX_ERRORS_PER_SHEET = 100;
 
@@ -31,21 +35,45 @@ public final class ExcelWorkbookReader {
     private ExcelWorkbookReader() {
     }
 
+    /** Creates a reader with no sheets registered. */
     public static ExcelWorkbookReader create() {
         return new ExcelWorkbookReader();
     }
 
+    /**
+     * Sets what happens after a sheet fails; the default is {@link SheetFailurePolicy#CONTINUE}.
+     *
+     * @param policy whether to carry on with the remaining sheets or stop
+     * @return this reader for chaining
+     */
     public ExcelWorkbookReader failurePolicy(SheetFailurePolicy policy) {
         this.failurePolicy = Objects.requireNonNull(policy, "policy cannot be null");
         return this;
     }
 
+    /**
+     * Sets how many failed rows each {@link SheetReadReport} keeps; the default is 100 and 0 keeps
+     * none.
+     *
+     * @param maximum the most failed rows kept per sheet
+     * @return this reader for chaining
+     */
     public ExcelWorkbookReader maxErrorsPerSheet(int maximum) {
         if (maximum < 0) throw new IllegalArgumentException("maximum must be non-negative");
         this.maxErrorsPerSheet = maximum;
         return this;
     }
 
+    /**
+     * Registers a sheet by name. A name that is not in the workbook is reported as that sheet's
+     * failure.
+     *
+     * @param name     the sheet name
+     * @param reader   the reader that maps the sheet's rows
+     * @param consumer receives every row's {@link ReadResult}
+     * @param <T>      the row type
+     * @return this reader for chaining
+     */
     public <T> ExcelWorkbookReader sheet(String name, ExcelReader<T> reader,
                                          Consumer<ReadResult<T>> consumer) {
         Objects.requireNonNull(name, "name cannot be null");
@@ -55,6 +83,15 @@ public final class ExcelWorkbookReader {
         return this;
     }
 
+    /**
+     * Registers a sheet by its 0-based index.
+     *
+     * @param index    the sheet index
+     * @param reader   the reader that maps the sheet's rows
+     * @param consumer receives every row's {@link ReadResult}
+     * @param <T>      the row type
+     * @return this reader for chaining
+     */
     public <T> ExcelWorkbookReader sheet(int index, ExcelReader<T> reader,
                                          Consumer<ReadResult<T>> consumer) {
         if (index < 0) throw new IllegalArgumentException("index must be non-negative");
@@ -64,6 +101,13 @@ public final class ExcelWorkbookReader {
         return this;
     }
 
+    /**
+     * Reads every registered sheet from a stream, which is copied to a temporary file first and is not
+     * closed.
+     *
+     * @param input the workbook
+     * @return one {@link SheetReadReport} per registered sheet
+     */
     public WorkbookReadReport read(InputStream input) {
         Objects.requireNonNull(input, "input cannot be null");
         try {
@@ -79,6 +123,7 @@ public final class ExcelWorkbookReader {
         }
     }
 
+    /** Like {@link #read(InputStream)}, for a source whose stream is opened and closed here. */
     public WorkbookReadReport read(InputStreamSource source) {
         Objects.requireNonNull(source, "source cannot be null");
         try (InputStream input = source.openStream()) {
@@ -88,6 +133,12 @@ public final class ExcelWorkbookReader {
         }
     }
 
+    /**
+     * Reads every registered sheet from a workbook file.
+     *
+     * @param path the workbook
+     * @return one {@link SheetReadReport} per registered sheet
+     */
     public WorkbookReadReport read(Path path) {
         Objects.requireNonNull(path, "path cannot be null");
         List<ExcelSheetInfo> sheets = sheetNames(path);

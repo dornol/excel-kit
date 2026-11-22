@@ -12,6 +12,7 @@ import java.util.Objects;
  *
  * @param name   the sheet name, or {@code #index} when it was registered by index
  * @param index  the 0-based sheet index, or {@code -1} when a sheet registered by name was not found
+ * @since 0.23.0
  */
 public record SheetReadReport(String name, int index, ReadSummary summary,
                               List<RowError> errors, boolean errorsTruncated,
@@ -23,6 +24,7 @@ public record SheetReadReport(String name, int index, ReadSummary summary,
         errors = List.copyOf(errors);
     }
 
+    /** Returns true when the sheet was read without a failure and without failed rows. */
     public boolean successful() {
         return failure == null && errors.isEmpty() && !errorsTruncated;
     }

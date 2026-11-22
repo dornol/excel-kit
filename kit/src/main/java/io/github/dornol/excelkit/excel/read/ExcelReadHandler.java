@@ -70,7 +70,7 @@ import org.slf4j.LoggerFactory;
  *
  * @param <T> The target row data type to map each row into
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private static final Logger log = LoggerFactory.getLogger(ExcelReadHandler.class);

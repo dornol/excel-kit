@@ -34,7 +34,7 @@ import java.util.Date;
  * This enum is used to simplify type-safe column setup in {@link ExcelColumn}.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public enum ExcelDataType {
 

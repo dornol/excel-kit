@@ -34,6 +34,7 @@ import java.util.stream.StreamSupport;
  *
  * @param <T> the row data type for this sheet
  * @author dhkim
+ * @since 0.3.0
  */
 public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter<T>> {
 

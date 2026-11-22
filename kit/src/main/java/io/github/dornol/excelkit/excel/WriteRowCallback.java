@@ -11,7 +11,7 @@ import io.github.dornol.excelkit.core.Cursor;
  * @param <T> The type of the row data
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 @FunctionalInterface
 public interface WriteRowCallback<T> {

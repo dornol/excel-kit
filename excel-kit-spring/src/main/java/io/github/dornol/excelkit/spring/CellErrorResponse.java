@@ -5,6 +5,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * JSON-friendly cell-level read error.
+ *
+ * @since 0.18.4
  */
 public record CellErrorResponse(
         int columnIndex,
@@ -12,6 +14,7 @@ public record CellErrorResponse(
         @Nullable String cellValue,
         String message
 ) {
+    /** Converts a cell error from a read. */
     public static CellErrorResponse from(CellError error) {
         return new CellErrorResponse(
                 error.columnIndex(),

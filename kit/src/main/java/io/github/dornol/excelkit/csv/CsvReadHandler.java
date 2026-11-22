@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @param <T> The target row data type
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.3
  */
 final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config) {

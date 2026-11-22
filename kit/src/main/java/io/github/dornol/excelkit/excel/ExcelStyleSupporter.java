@@ -21,7 +21,7 @@ import java.util.Map;
  * This class supports dynamic font color adjustment for dark headers and border styling.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 class ExcelStyleSupporter {
     // Private constructor to prevent instantiation

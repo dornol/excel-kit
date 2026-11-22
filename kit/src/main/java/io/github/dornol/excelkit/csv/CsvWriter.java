@@ -42,7 +42,7 @@ import java.util.stream.StreamSupport;
  *
  * @param <T> The type of the data row
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class CsvWriter<T> {
     /**

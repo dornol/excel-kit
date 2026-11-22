@@ -13,27 +13,59 @@ import java.util.stream.Stream;
 
 /**
  * Spring MVC response helpers for downloadable read-error reports.
+ *
+ * @since 0.18.4
  */
 public final class ExcelKitErrorResponse {
 
     private ExcelKitErrorResponse() {
     }
 
+    /**
+     * Streams the errors of an upload result as a CSV download.
+     *
+     * @param result   the upload result
+     * @param filename the download filename
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> csv(
             UploadResult<?> result, String filename) {
         return csv(result.errors(), filename);
     }
 
+    /**
+     * Streams the errors of an upload result as a CSV download with the given cache max-age.
+     *
+     * @param result      the upload result
+     * @param filename    the download filename
+     * @param cacheMaxAge how long a private cache may keep the download
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> csv(
             UploadResult<?> result, String filename, Duration cacheMaxAge) {
         return csv(result.errors(), filename, cacheMaxAge);
     }
 
+    /**
+     * Streams errors as a CSV download.
+     *
+     * @param errors   the errors to report
+     * @param filename the download filename
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> csv(
             Collection<UploadError> errors, String filename) {
         return csv(errors, filename, ExcelKitResponse.csv(filename));
     }
 
+    /**
+     * Streams errors as a CSV download with the given cache max-age.
+     *
+     * @param errors      the errors to report
+     * @param filename    the download filename
+     * @param cacheMaxAge how long a private cache may keep the download
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> csv(
             Collection<UploadError> errors, String filename, Duration cacheMaxAge) {
         return csv(errors, filename, ExcelKitResponse.csv(filename, cacheMaxAge));
@@ -55,21 +87,51 @@ public final class ExcelKitErrorResponse {
         return response.body(handler::writeTo);
     }
 
+    /**
+     * Streams the errors of an upload result as an Excel download.
+     *
+     * @param result   the upload result
+     * @param filename the download filename
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> excel(
             UploadResult<?> result, String filename) {
         return excel(result.errors(), filename);
     }
 
+    /**
+     * Streams the errors of an upload result as an Excel download with the given cache max-age.
+     *
+     * @param result      the upload result
+     * @param filename    the download filename
+     * @param cacheMaxAge how long a private cache may keep the download
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> excel(
             UploadResult<?> result, String filename, Duration cacheMaxAge) {
         return excel(result.errors(), filename, cacheMaxAge);
     }
 
+    /**
+     * Streams errors as an Excel download.
+     *
+     * @param errors   the errors to report
+     * @param filename the download filename
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> excel(
             Collection<UploadError> errors, String filename) {
         return excel(errors, filename, ExcelKitResponse.excel(filename));
     }
 
+    /**
+     * Streams errors as an Excel download with the given cache max-age.
+     *
+     * @param errors      the errors to report
+     * @param filename    the download filename
+     * @param cacheMaxAge how long a private cache may keep the download
+     * @return the streaming response
+     */
     public static ResponseEntity<StreamingResponseBody> excel(
             Collection<UploadError> errors, String filename, Duration cacheMaxAge) {
         return excel(errors, filename, ExcelKitResponse.excel(filename, cacheMaxAge));
@@ -94,6 +156,13 @@ public final class ExcelKitErrorResponse {
         return response.body(handler::writeTo);
     }
 
+    /**
+     * Flattens errors into report rows: one row per failed cell, or one row per message for an error
+     * that has no cell errors.
+     *
+     * @param errors the errors to report
+     * @return the report rows
+     */
     public static Stream<ErrorReportRow> reportRows(Collection<UploadError> errors) {
         return errors.stream().flatMap(error -> {
             if (error.cellErrors().isEmpty()) {

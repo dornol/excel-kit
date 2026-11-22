@@ -8,6 +8,8 @@ import java.util.function.Predicate;
 /**
  * One executable reader session. A session owns resources created while opening a path or source.
  * Caller-owned input streams passed to {@code open(InputStream)} remain caller-owned.
+ *
+ * @since 0.23.0
  */
 public interface ReadSession<T> extends AutoCloseable {
     void read(Consumer<ReadResult<T>> consumer);

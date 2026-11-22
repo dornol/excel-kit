@@ -41,6 +41,7 @@ import java.util.function.Consumer;
  * }</pre>
  *
  * @author dhkim
+ * @since 0.3.0
  */
 public class ExcelWorkbook implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ExcelWorkbook.class);

@@ -33,7 +33,7 @@ import java.util.function.UnaryOperator;
  * @param <T>    the row data type
  * @param <SELF> the concrete reader type, for fluent chaining
  * @author dhkim
- * @since 0.17.0
+ * @since 0.16.14
  */
 @SuppressWarnings("unchecked")
 public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {

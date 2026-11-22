@@ -7,6 +7,7 @@ package io.github.dornol.excelkit.core;
  * Invoked every N rows as configured via {@code onProgress(interval, callback)}.
  *
  * @author dhkim
+ * @since 0.5.0
  */
 @FunctionalInterface
 public interface ProgressCallback {

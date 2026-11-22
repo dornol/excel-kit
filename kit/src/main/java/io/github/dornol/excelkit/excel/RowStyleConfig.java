@@ -18,6 +18,7 @@ import org.jspecify.annotations.Nullable;
  * }</pre>
  *
  * @author dhkim
+ * @since 0.16.15
  */
 public class RowStyleConfig {
 

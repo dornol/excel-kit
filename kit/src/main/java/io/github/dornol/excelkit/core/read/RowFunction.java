@@ -10,7 +10,7 @@ import io.github.dornol.excelkit.core.Cursor;
  * @param <T> The type of the row data
  * @param <R> The type of the value to be returned
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.5.0
  */
 @FunctionalInterface
 public interface RowFunction<T, R> {

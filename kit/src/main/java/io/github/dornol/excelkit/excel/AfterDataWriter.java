@@ -7,7 +7,7 @@ package io.github.dornol.excelkit.excel;
  * and {@code afterAll} (called once on the last sheet after all data).
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.3.0
  */
 @FunctionalInterface
 public interface AfterDataWriter {

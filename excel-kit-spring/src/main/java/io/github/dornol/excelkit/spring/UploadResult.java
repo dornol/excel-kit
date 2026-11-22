@@ -12,6 +12,7 @@ import java.util.function.Consumer;
  * JSON-friendly upload read result containing successful rows and structured errors.
  *
  * @param <T> successful row type
+ * @since 0.18.4
  */
 public record UploadResult<T>(
         String type,
@@ -31,16 +32,27 @@ public record UploadResult<T>(
                 : summary;
     }
 
+    /** Creates a result with a default summary and nothing truncated. */
     public UploadResult(String type, int successCount, int errorCount, List<T> rows, List<UploadError> errors) {
         this(type, successCount, errorCount, rows, errors,
                 new UploadSummary(successCount + errorCount, successCount, errorCount, 0, null, -1), false, false);
     }
 
+    /** Creates a result with the given summary and nothing truncated. */
     public UploadResult(String type, int successCount, int errorCount, List<T> rows,
                         List<UploadError> errors, UploadSummary summary) {
         this(type, successCount, errorCount, rows, errors, summary, false, false);
     }
 
+    /**
+     * Runs {@code reader}, which feeds each row's {@link ReadResult} to the consumer it is given, and
+     * collects the rows and errors.
+     *
+     * @param type   a label stored in the result, such as {@code "Excel"}
+     * @param reader runs a read, passing every result to the consumer
+     * @param <T>    the row type
+     * @return the collected result
+     */
     public static <T> UploadResult<T> read(String type, Consumer<Consumer<ReadResult<T>>> reader) {
         return read(type, reader, null, -1);
     }

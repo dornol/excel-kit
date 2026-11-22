@@ -30,7 +30,7 @@ import java.util.function.Function;
  * @param <T> the row data type
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public class ExcelColumn<T> {
     private static final Logger log = LoggerFactory.getLogger(ExcelColumn.class);

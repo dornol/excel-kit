@@ -4,6 +4,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Flat row used for CSV/XLSX read-error report downloads.
+ *
+ * @since 0.18.4
  */
 public record ErrorReportRow(
         long rowNum,

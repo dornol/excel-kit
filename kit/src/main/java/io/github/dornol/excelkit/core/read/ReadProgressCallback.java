@@ -1,6 +1,10 @@
 package io.github.dornol.excelkit.core.read;
 
-/** Receives {@link ReadProgress} snapshots while a reader runs; see {@code onReadProgress(...)}. */
+/**
+ * Receives {@link ReadProgress} snapshots while a reader runs; see {@code onReadProgress(...)}.
+ *
+ * @since 0.21.0
+ */
 @FunctionalInterface
 public interface ReadProgressCallback {
     /**

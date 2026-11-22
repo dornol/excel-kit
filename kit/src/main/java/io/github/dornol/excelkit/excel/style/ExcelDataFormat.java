@@ -9,7 +9,7 @@ package io.github.dornol.excelkit.excel.style;
  * You can apply them via {@link io.github.dornol.excelkit.excel.ExcelDataType} or directly when building columns.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public enum ExcelDataFormat {
 

@@ -9,7 +9,7 @@ import org.apache.poi.xssf.streaming.SXSSFCell;
  * should be written into an Excel cell (e.g., string, number, date).
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 @FunctionalInterface
 interface ExcelColumnSetter {

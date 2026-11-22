@@ -30,7 +30,7 @@ import java.util.function.Function;
  * including number, string, boolean, date/time, etc.
  *
  * @author dhkim
- * @since 2025-07-19
+ * @since 0.1.2
  */
 public final class CellData {
     private static final Logger log = LoggerFactory.getLogger(CellData.class);
@@ -84,10 +84,15 @@ public final class CellData {
         this.rawNumericValue = rawNumericValue;
     }
 
+    /** Returns the 0-based column index of this cell in the source file. */
     public int columnIndex() {
         return columnIndex;
     }
 
+    /**
+     * Returns the cell's text as the file shows it: the displayed text of an Excel cell, or the field
+     * of a CSV record.
+     */
     public String formattedValue() {
         return formattedValue;
     }
@@ -579,6 +584,10 @@ public final class CellData {
         return converter.apply(formattedValue);
     }
 
+    /**
+     * Two cells are equal when they have the same column index, formatted value and stored number;
+     * stored numbers are compared by value, so {@code 1.0} equals {@code 1}.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -592,6 +601,7 @@ public final class CellData {
                 && Objects.equals(comparableRawValue(), cellData.comparableRawValue());
     }
 
+    /** Returns a hash code consistent with {@link #equals(Object)}. */
     @Override
     public int hashCode() {
         return Objects.hash(columnIndex, formattedValue, comparableRawValue());
@@ -607,6 +617,7 @@ public final class CellData {
         }
     }
 
+    /** Returns the column index and the formatted value. */
     @Override
     public String toString() {
         return "CellData[columnIndex=" + columnIndex + ", formattedValue=" + formattedValue + "]";

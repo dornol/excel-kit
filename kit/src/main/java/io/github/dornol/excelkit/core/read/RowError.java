@@ -37,6 +37,7 @@ public record RowError(
         rawValues = rawValues == null ? List.of() : List.copyOf(rawValues);
     }
 
+    /** Creates an error without raw row values. */
     public RowError(long rowNum, long fileRowNum, Type type, List<String> messages,
                     @Nullable Throwable cause, List<CellError> cellErrors) {
         this(rowNum, fileRowNum, type, messages, cause, cellErrors, List.of());
