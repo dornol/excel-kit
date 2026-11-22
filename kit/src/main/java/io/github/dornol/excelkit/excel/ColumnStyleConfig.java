@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.style.CellColorFunction;
 import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
 import io.github.dornol.excelkit.excel.style.ExcelColor;

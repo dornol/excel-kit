@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.feature.ExcelHyperlink;
+import io.github.dornol.excelkit.excel.feature.ExcelImage;
 import io.github.dornol.excelkit.excel.style.ExcelDataFormat;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.Cell;

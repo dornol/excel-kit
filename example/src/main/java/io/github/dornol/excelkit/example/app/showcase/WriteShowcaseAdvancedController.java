@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.example.app.showcase;
 import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
 import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
-import io.github.dornol.excelkit.excel.ExcelCellComment;
+import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.ExcelChartConfig;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.excel.ExcelConditionalRule;

@@ -1,9 +1,10 @@
-package io.github.dornol.excelkit.excel;
+package io.github.dornol.excelkit.excel.feature;
+
 
 /**
  * Represents a hyperlink value for Excel cells.
  * <p>
- * Use with {@link ExcelDataType#HYPERLINK} to create clickable links in Excel.
+ * Use with {@link io.github.dornol.excelkit.excel.ExcelDataType#HYPERLINK} to create clickable links in Excel.
  * If only a URL is provided, it is used as both the display label and the link target.
  *
  * <pre>{@code

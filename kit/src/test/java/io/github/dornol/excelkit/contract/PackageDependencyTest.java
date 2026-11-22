@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * back a package cycle (core depending on excel and csv, excel and csv depending on each other, ...).
  *
  * <pre>
- * core  &lt;-  core.io  &lt;-  core.detect, core.read  &lt;-  csv, excel.read, excel (+ excel.style)  &lt;-  schema
+ * core  &lt;-  core.io  &lt;-  core.detect, core.read  &lt;-  csv, excel.read, excel (+ excel.style, excel.feature)  &lt;-  schema
  * </pre>
  */
 class PackageDependencyTest {
@@ -37,13 +37,14 @@ class PackageDependencyTest {
             "core.read", Set.of("core", "core.io"),
             "csv", Set.of("core", "core.io", "core.detect", "core.read"),
             "excel.style", Set.of(),
+            "excel.feature", Set.of(),
             "excel.read", Set.of("core", "core.io", "core.detect", "core.read"),
-            "excel", Set.of("core", "core.io", "core.detect", "core.read", "excel.style"),
-            "schema", Set.of("core", "core.io", "core.detect", "core.read", "csv", "excel", "excel.read", "excel.style")
+            "excel", Set.of("core", "core.io", "core.detect", "core.read", "excel.style", "excel.feature"),
+            "schema", Set.of("core", "core.io", "core.detect", "core.read", "csv", "excel", "excel.read", "excel.style", "excel.feature")
     );
 
     private static final Pattern REFERENCE = Pattern.compile(
-            "\\bio\\.github\\.dornol\\.excelkit\\.(core\\.(?:io|detect|read)|core|csv|excel\\.(?:read|style)|excel|schema)\\.[A-Za-z]");
+            "\\bio\\.github\\.dornol\\.excelkit\\.(core\\.(?:io|detect|read)|core|csv|excel\\.(?:read|style|feature)|excel|schema)\\.[A-Za-z]");
 
     @Test
     void packagesOnlyDependOnLowerLayers() throws IOException {

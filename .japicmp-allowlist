@@ -133,6 +133,12 @@ io.github.dornol.excelkit.excel.ExcelSheetWriter#columnIf(java.lang.String,boole
 io.github.dornol.excelkit.excel.ExcelSheetWriter#maxRows(int)
 io.github.dornol.excelkit.excel.ExcelSheetWriter#table(java.lang.String)
 io.github.dornol.excelkit.excel.ExcelSheetWriter#table(io.github.dornol.excelkit.excel.TableOptions)
+# excel package split, part 3: ExcelCellComment, ExcelHyperlink and ExcelImage moved to excel.feature (same names, new
+# package), and the members of classes that stayed put whose signatures mention them.
+io.github.dornol.excelkit.excel.ExcelCellComment
+io.github.dornol.excelkit.excel.ExcelHyperlink
+io.github.dornol.excelkit.excel.ExcelImage
+io.github.dornol.excelkit.excel.ColumnStyleConfig#headerComment(io.github.dornol.excelkit.excel.ExcelCellComment)
 # excel-kit-spring: signatures that mention a moved type.
 io.github.dornol.excelkit.spring.CellErrorResponse#from(io.github.dornol.excelkit.core.CellError)
 io.github.dornol.excelkit.spring.ExcelKitUpload#csv(org.springframework.web.multipart.MultipartFile,io.github.dornol.excelkit.schema.ExcelKitSchema,java.util.function.Supplier,jakarta.validation.Validator,io.github.dornol.excelkit.core.ReadLimits)
