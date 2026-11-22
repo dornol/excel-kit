@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Opens what the writers produce in a real spreadsheet application. Excel is not available to the build; LibreOffice
  * is, in CI. A file that POI and the XML checks accept can still be one an application refuses (this is how the
  * ZIP64 data descriptors that POI 6 writes by default, which LibreOffice rejects, were found). The test is skipped
- * when no {@code soffice} is on the PATH.
+ * when no {@code soffice} is on the PATH, unless {@code REQUIRE_LIBREOFFICE=true} is set (the CI job sets it).
  */
 class LibreOfficeInteropTest {
 
@@ -37,6 +37,10 @@ class LibreOfficeInteropTest {
             for (String name : new String[]{"soffice", "libreoffice"}) {
                 if (soffice == null && Files.isExecutable(Path.of(dir, name))) soffice = Path.of(dir, name).toString();
             }
+        }
+        if (soffice == null && "true".equals(System.getenv("REQUIRE_LIBREOFFICE"))) {
+            // CI installs LibreOffice for this test; not finding it must not turn into a skipped, green job
+            org.junit.jupiter.api.Assertions.fail("REQUIRE_LIBREOFFICE is set but no soffice is on the PATH");
         }
         Assumptions.assumeTrue(soffice != null, "LibreOffice (soffice) is not installed; interop test skipped");
     }

@@ -157,6 +157,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Open the written workbooks in LibreOffice
+        env:
+          REQUIRE_LIBREOFFICE: "true"
         run: ./gradlew :kit:test --tests '*LibreOfficeInteropTest' --no-daemon
 
   consumer-installation:
