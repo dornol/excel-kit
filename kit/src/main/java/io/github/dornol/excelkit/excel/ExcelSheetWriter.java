@@ -179,6 +179,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
         List<SXSSFSheet> allSheets = new ArrayList<>();
         List<Integer> dataEndRows = new ArrayList<>();
+        List<Integer> nextFreeRows = new ArrayList<>();
         allSheets.add(this.sheet);
 
         int currentRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
@@ -202,7 +203,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                         && (cursor.getCurrentTotal() - 1) % cfg.maxRows == 0) {
                     StructuredTableWriter.requireRolloverAllowed(cfg.tableOptions);
                     dataEndRows.add(cursor.getRowOfSheet() - 1);
-                    ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+                    nextFreeRows.add(ExcelWriteSupport.writeAfterDataAndSummary(
+                            activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg));
                     activeSheet = createRolloverSheet(allSheets.size());
                     allSheets.add(activeSheet);
                     cursor.initRow();
@@ -221,6 +223,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         dataEndRows.add(cursor.getRowOfSheet() - 1);
         int nextFreeRow = ExcelWriteSupport.writeAfterDataAndSummary(
                 activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+        nextFreeRows.add(nextFreeRow);
 
         for (int i = 0; i < allSheets.size(); i++) {
             ExcelSheetPostProcessor.apply(allSheets.get(i), columns, headerRowIndex, dataEndRows.get(i), cfg, i);
@@ -239,10 +242,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         // One chart per sheet over that sheet's own rows: a chart of only the last sheet would plot just the remainder.
         if (cfg.chartConfig != null) {
             for (int i = 0; i < allSheets.size(); i++) {
-                boolean last = i == allSheets.size() - 1;
-                int dataEnd = dataEndRows.get(i);
-                ExcelWriteSupport.applyChart(allSheets.get(i), cfg.chartConfig, headerRowIndex, dataEnd,
-                        last ? nextFreeRow : dataEnd + 1, columns.size());
+                ExcelWriteSupport.applyChart(allSheets.get(i), cfg.chartConfig, headerRowIndex, dataEndRows.get(i),
+                        nextFreeRows.get(i), columns.size());
             }
         }
     }
