@@ -264,7 +264,7 @@ public final class ExcelHandler implements FileHandler {
      * away, a full disk) POI's ZIP writer reports a later, unrelated error while it cleans up ("This archive contains
      * unclosed entries."); the caller needs the stream's own failure.
      */
-    private static final class FirstFailureOutputStream extends FilterOutputStream {
+    static final class FirstFailureOutputStream extends FilterOutputStream {
         private @Nullable IOException first;
 
         FirstFailureOutputStream(OutputStream out) {
