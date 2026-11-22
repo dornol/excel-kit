@@ -720,7 +720,10 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      */
     private boolean isOverMaxRows() {
         int limit = executionOptions().maxRows();
-        return cursor().getCurrentTotal() >= limit && cursor().getCurrentTotal() % limit == 1;
+        // The total already counts the row about to be written: it starts a new sheet when it is the first
+        // one past a full sheet. (A "% limit == 1" test never holds for limit 1.)
+        long total = cursor().getCurrentTotal();
+        return total > limit && (total - 1) % limit == 0;
     }
 
     private ExcelWriteOptions<T> snapshotOptions() {
