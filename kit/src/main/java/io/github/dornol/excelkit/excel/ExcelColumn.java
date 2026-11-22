@@ -408,21 +408,11 @@ public class ExcelColumn<T> {
             if (defaults != null) {
                 this.applyDefaults(defaults);
             }
-            if (this.dataFormat == null) {
-                this.dataFormat = this.dataType != null ? this.dataType.getDefaultFormat() : null;
-            }
             if (this.style == null) {
-                CellStyleParams params = new CellStyleParams(
-                        this.alignment, this.dataFormat,
-                        this.backgroundColor, this.bold, this.fontSize,
-                        this.borderStyle, this.locked,
-                        this.rotation,
-                        this.borderTop, this.borderBottom, this.borderLeft, this.borderRight,
-                        this.fontColor, this.strikethrough, this.underline,
-                        this.verticalAlignment, this.wrapText, this.fontName, this.indentation
-                );
+                // The type's default format is not written back to dataFormat: the column must still know
+                // whether the format was given explicitly.
                 this.style = ExcelStyleSupporter.cellStyle(
-                        writer.getWb(), params, writer.getCellStyleCache());
+                        writer.getWb(), styleParams(), writer.getCellStyleCache());
             }
             if (this.columnSetter == null) {
                 this.columnSetter = this.dataType != null

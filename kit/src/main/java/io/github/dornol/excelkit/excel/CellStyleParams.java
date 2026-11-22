@@ -5,6 +5,8 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Arrays;
+
 /**
  * Bundles all cell styling parameters into a single record to avoid
  * bloating method signatures in {@link ExcelStyleSupporter}.
@@ -33,6 +35,24 @@ record CellStyleParams(
         @Nullable String fontName,
         @Nullable Short indentation
 ) {
+    /**
+     * Identifies the style these parameters describe, so equal parameters share one cell style. Every
+     * component has to appear here; the colors are arrays, which a record would compare by identity.
+     */
+    String cacheKey() {
+        return alignment.name() + "|" + format
+                + "|" + Arrays.toString(backgroundColor)
+                + "|" + bold + "|" + fontSize
+                + "|" + borderStyle + "|" + locked
+                + "|" + rotation
+                + "|" + borderTop + "|" + borderBottom
+                + "|" + borderLeft + "|" + borderRight
+                + "|" + Arrays.toString(fontColor)
+                + "|" + strikethrough + "|" + underline
+                + "|" + verticalAlignment + "|" + wrapText
+                + "|" + fontName + "|" + indentation;
+    }
+
     /** Creates params with only alignment and format; all styling fields are null/default. */
     static CellStyleParams of(HorizontalAlignment alignment, @Nullable String format) {
         return new CellStyleParams(alignment, format,

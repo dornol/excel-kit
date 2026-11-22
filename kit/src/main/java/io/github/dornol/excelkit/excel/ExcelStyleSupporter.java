@@ -9,7 +9,6 @@ import org.apache.poi.xssf.usermodel.XSSFFont;
 
 import org.jspecify.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -135,22 +134,8 @@ class ExcelStyleSupporter {
     }
 
     static CellStyle cellStyle(SXSSFWorkbook wb, CellStyleParams params, Map<String, CellStyle> cache) {
-        String key = buildCacheKey(params);
+        String key = params.cacheKey();
         return cache.computeIfAbsent(key, k -> createCellStyle(wb, params));
-    }
-
-    private static String buildCacheKey(CellStyleParams params) {
-        return params.alignment().name() + "|" + params.format()
-                + "|" + Arrays.toString(params.backgroundColor())
-                + "|" + params.bold() + "|" + params.fontSize()
-                + "|" + params.borderStyle() + "|" + params.locked()
-                + "|" + params.rotation()
-                + "|" + params.borderTop() + "|" + params.borderBottom()
-                + "|" + params.borderLeft() + "|" + params.borderRight()
-                + "|" + Arrays.toString(params.fontColor())
-                + "|" + params.strikethrough() + "|" + params.underline()
-                + "|" + params.verticalAlignment() + "|" + params.wrapText()
-                + "|" + params.fontName() + "|" + params.indentation();
     }
 
     private static CellStyle createCellStyle(SXSSFWorkbook wb, CellStyleParams params) {

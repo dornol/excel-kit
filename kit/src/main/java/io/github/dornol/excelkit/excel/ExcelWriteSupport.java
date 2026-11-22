@@ -227,15 +227,7 @@ class ExcelWriteSupport {
             c.applyDefaults(defaultStyle);
         }
         ExcelDataType dataType = c.dataType;
-        String dataFormat = c.dataFormat != null ? c.dataFormat
-                : (dataType != null ? dataType.getDefaultFormat() : null);
-
-        CellStyleParams params = new CellStyleParams(c.alignment, dataFormat,
-                c.backgroundColor, c.bold, c.fontSize, c.borderStyle, c.locked,
-                c.rotation, c.borderTop, c.borderBottom, c.borderLeft, c.borderRight,
-                c.fontColor, c.strikethrough, c.underline,
-                c.verticalAlignment, c.wrapText, c.fontName, c.indentation);
-        CellStyle style = ExcelStyleSupporter.cellStyle(wb, params, cellStyleCache);
+        CellStyle style = ExcelStyleSupporter.cellStyle(wb, c.styleParams(), cellStyleCache);
 
         return new ExcelColumn<>(name, function, style,
                 dataType != null ? dataType.getSetter() : ExcelDataType.STRING.getSetter(), c);

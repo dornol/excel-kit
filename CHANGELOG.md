@@ -49,6 +49,7 @@ All notable changes to this project will be documented in this file.
 - The `char[]` password overloads: `ExcelWriter.password(char[])`, `ExcelWorkbook.password(char[])`, `ExcelHandler.writeTo(OutputStream, char[])` and `ExcelHandler.writeTo(Path, char[])`. Apache POI's encryption API takes a `String`, so they never kept the password out of the heap, and `writeTo` zeroed the caller's array as a side effect. Use the `String` overloads.
 
 ### Fixed
+- `ExcelWriter.column(..., c -> c.type(ExcelDataType.DATETIME))` showed values with fractional seconds in the whole-second format, while the same column on an `ExcelWorkbook` sheet showed milliseconds. Both now show milliseconds.
 - `ExcelWriter.maxRows(1)` never rolled over to a new sheet, so all rows landed on one sheet. `ExcelSheetWriter` was not affected.
 
 - `CellData` number conversion (`asInt`, `asLong`, `asDouble`, `asNumber`, `asBigDecimal`) is about 2.5 times faster for most values: it reuses the locale's number format instead of building one per cell, skips the currency/percent matching when the text has no such sign, and converts plain digits directly. A numeric 300,000-row, three-number-column read spent about 510 ms on conversion and now about 200 ms. Results are unchanged (checked on 4,104 value/locale/method combinations against the previous implementation).

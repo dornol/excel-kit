@@ -744,6 +744,27 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     }
 
     /**
+     * The number format the column's cells use: the one given explicitly, else the default of the column's type,
+     * else none (the type is then inferred from the first value).
+     */
+    @Nullable String resolvedDataFormat() {
+        if (dataFormat != null) return dataFormat;
+        return dataType != null ? dataType.getDefaultFormat() : null;
+    }
+
+    /**
+     * The cell style this configuration describes, the one place that turns the column's settings into
+     * {@link CellStyleParams}. Defaults must have been applied already.
+     */
+    CellStyleParams styleParams() {
+        return new CellStyleParams(alignment, resolvedDataFormat(),
+                backgroundColor, bold, fontSize, borderStyle, locked,
+                rotation, borderTop, borderBottom, borderLeft, borderRight,
+                fontColor, strikethrough, underline,
+                verticalAlignment, wrapText, fontName, indentation);
+    }
+
+    /**
      * Concrete subclass for defining default column styles at the writer level.
      *
      * @param <T> the row data type
