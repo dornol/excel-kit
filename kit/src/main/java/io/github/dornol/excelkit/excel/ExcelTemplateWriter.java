@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.excel.style.ExcelDataFormat;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.Cell;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Fills data into an existing Excel template (.xlsx) while preserving formatting,
@@ -82,7 +84,8 @@ public class ExcelTemplateWriter implements AutoCloseable {
      * Opens a template from the given input stream.
      *
      * @param templateStream the .xlsx template file stream
-     * @throws IOException if the template cannot be read
+     * @throws IOException         if the stream cannot be read
+     * @throws ExcelWriteException if the stream is not a usable .xlsx workbook (not an OOXML file, damaged, ...)
      */
     public ExcelTemplateWriter(InputStream templateStream) throws IOException {
         this(templateStream, DEFAULT_ROW_ACCESS_WINDOW_SIZE);
@@ -92,18 +95,53 @@ public class ExcelTemplateWriter implements AutoCloseable {
      * Opens a template from the given input stream with a custom row access window size.
      *
      * @param templateStream      the .xlsx template file stream
-     * @param rowAccessWindowSize number of rows kept in memory by SXSSFWorkbook
-     * @throws IOException if the template cannot be read
+     * @param rowAccessWindowSize number of rows kept in memory by SXSSFWorkbook; {@code -1} keeps them all
+     * @throws IOException              if the stream cannot be read
+     * @throws ExcelWriteException      if the stream is not a usable .xlsx workbook (not an OOXML file, damaged, ...)
+     * @throws IllegalArgumentException if the window is 0 or below -1
      */
     public ExcelTemplateWriter(InputStream templateStream, int rowAccessWindowSize) throws IOException {
-        this.templateWb = new XSSFWorkbook(templateStream);
-        this.wb = ExcelWorkbookSupport.templateStreamingWorkbook(templateWb, rowAccessWindowSize);
-        // Record last existing row per sheet so we know which rows are in the template
-        for (int i = 0; i < templateWb.getNumberOfSheets(); i++) {
-            int lastRow = templateWb.getSheetAt(i).getLastRowNum();
-            if (templateWb.getSheetAt(i).getPhysicalNumberOfRows() > 0) {
-                templateLastRowBySheet.put(i, lastRow);
+        Objects.requireNonNull(templateStream, "templateStream cannot be null");
+        if (rowAccessWindowSize == 0 || rowAccessWindowSize < -1) {
+            throw new IllegalArgumentException("rowAccessWindowSize must be positive, or -1 to keep every row");
+        }
+        // A template is somebody's file, often an upload. POI reports a file it cannot use with its own runtime
+        // exceptions (not an OOXML file, a part that does not parse, no sheets ...): they become ours.
+        XSSFWorkbook template;
+        try {
+            template = new XSSFWorkbook(templateStream);
+        } catch (RuntimeException e) {
+            throw new ExcelWriteException("Failed to read the template: it is not a usable .xlsx workbook", e);
+        }
+        SXSSFWorkbook streaming = null;
+        try {
+            streaming = ExcelWorkbookSupport.templateStreamingWorkbook(template, rowAccessWindowSize);
+            // Record last existing row per sheet so we know which rows are in the template
+            for (int i = 0; i < template.getNumberOfSheets(); i++) {
+                int lastRow = template.getSheetAt(i).getLastRowNum();
+                if (template.getSheetAt(i).getPhysicalNumberOfRows() > 0) {
+                    templateLastRowBySheet.put(i, lastRow);
+                }
             }
+        } catch (RuntimeException e) {
+            closeQuietly(streaming, template);
+            throw new ExcelWriteException("Failed to read the template: it is not a usable .xlsx workbook", e);
+        }
+        if (template.getNumberOfSheets() == 0) {
+            closeQuietly(streaming, template);
+            throw new ExcelWriteException("Failed to read the template: it has no sheets");
+        }
+        this.templateWb = template;
+        this.wb = streaming;
+    }
+
+    /** Releases what a template that could not be opened had already taken. */
+    private static void closeQuietly(@Nullable SXSSFWorkbook streaming, XSSFWorkbook template) {
+        try {
+            if (streaming != null) ExcelWorkbookSupport.close(streaming);
+            else template.close();
+        } catch (IOException | RuntimeException e) {
+            log.debug("Failed to release a template that could not be opened", e);
         }
     }
 
@@ -192,6 +230,23 @@ public class ExcelTemplateWriter implements AutoCloseable {
         requirePosition(row, col);
         checkRowOrder(activeSheetIndex, row);
 
+        try {
+            writeCell(row, col, value, style);
+        } catch (ExcelKitException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            // A value the cell cannot hold is an IllegalArgumentException, as it always was: the JDK class itself, not a
+            // subclass of it that XML or POI code throws about a part of the template.
+            if (e.getClass() == IllegalArgumentException.class || e.getClass() == IllegalStateException.class) throw e;
+            // what POI throws on the way (a style or a part of a damaged template that cannot be used) becomes ours
+            throw new ExcelWriteException("Failed to write the cell at row " + row + ", column " + col, e);
+        }
+        // Only a write that went through moves the position, so a refused one leaves the writer as it was.
+        lastWrittenRowBySheet.put(activeSheetIndex, row);
+        return this;
+    }
+
+    private void writeCell(int row, int col, @Nullable Object value, @Nullable CellStyle style) {
         int templateLastRow = templateLastRowBySheet.getOrDefault(activeSheetIndex, -1);
         if (row <= templateLastRow) {
             // Row exists in template — write via underlying XSSFSheet to avoid SXSSFWorkbook flush conflict
@@ -228,9 +283,6 @@ public class ExcelTemplateWriter implements AutoCloseable {
                 applyDefaultTemporalFormat(cell, value);
             }
         }
-        // Only a write that went through moves the position, so a refused one leaves the writer as it was.
-        lastWrittenRowBySheet.put(activeSheetIndex, row);
-        return this;
     }
 
     /**

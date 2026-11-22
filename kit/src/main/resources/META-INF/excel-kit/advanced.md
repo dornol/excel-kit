@@ -297,6 +297,13 @@ try (var tw = new ExcelTemplateWriter(templateInputStream)) {
 }
 ```
 
+A template the application did not make itself (an upload) may be unusable. A stream that is not a usable `.xlsx`
+(not OOXML, damaged, without sheets) fails with `ExcelWriteException` ("Failed to read the template ...", the cause
+is what POI said); a stream that cannot be read still gives the `IOException` the constructor declares. What goes
+wrong later because of the template (`cell`, a list's `write`, saving) is an `ExcelWriteException` too, so
+`ExcelKitException` catches everything the library reports. Pictures, charts, tables, merged cells, conditional
+formatting, validations, names, widths, panes and headers of the template are kept.
+
 ## Unified Schema
 
 ```java

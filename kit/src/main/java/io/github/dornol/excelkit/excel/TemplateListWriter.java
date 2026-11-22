@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.excel.style.ExcelColor;
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
@@ -307,6 +308,18 @@ public class TemplateListWriter<T> {
     }
 
     private ExcelTemplateWriter writeInternal(Stream<T> stream, boolean writeHeaders) {
+        try {
+            return writeRows(stream, writeHeaders);
+        } catch (ExcelKitException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            // as in ExcelWriter: what goes wrong while the rows are written (a style or a part of a damaged template
+            // that cannot be used, ...) becomes a library exception
+            throw new ExcelWriteException("Failed to write the list into the template", e);
+        }
+    }
+
+    private ExcelTemplateWriter writeRows(Stream<T> stream, boolean writeHeaders) {
         if (columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }

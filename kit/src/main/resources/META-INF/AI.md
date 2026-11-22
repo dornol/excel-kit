@@ -210,6 +210,9 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   that cannot be told apart (and line breaks / NUL as delimiter); `CsvWriter.delimiter(...)` refuses `"`, line breaks and
   NUL. `ignoreLeadingWhiteSpace` defaults to `true` (a space before a quote is skipped). A decode failure names the
   charset and says to set `charset(...)`.
+- **Templates from users** — `new ExcelTemplateWriter(upload)` fails with `ExcelWriteException` for a stream that is not
+  a usable `.xlsx` (not OOXML, damaged, no sheets) and with `IOException` for a stream that cannot be read; `cell`, a
+  list's `write` and saving fail with `ExcelWriteException` too, never with POI's own exceptions.
 - **Rich text** — unformatted text and every formatted segment start from the column's font; `ExcelTemplateWriter.cell`
   accepts `ExcelRichText`. A `char[]` value is written as its characters.
 - **Charts** — with `maxRows()` rollover each sheet gets its own chart; `position(...)` and the chart's columns are

@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.AtomicFileWriter;
+import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.FileHandler;
 import io.github.dornol.excelkit.core.io.TempResourceCleaner;
 import io.github.dornol.excelkit.core.io.TempWorkspace;
@@ -251,11 +252,22 @@ public final class ExcelHandler implements FileHandler {
         markConsumed();
         FirstFailureOutputStream recording = new FirstFailureOutputStream(outputStream);
         try {
-            wb.write(recording);
+            writeWorkbookTo(recording);
         } catch (IOException e) {
             throw recording.reportedAs(e);
         } finally {
             closeConsumedWorkbook();
+        }
+    }
+
+    /** Lets POI write the workbook. What it throws unchecked (a part of a damaged template it cannot save) becomes ours. */
+    private void writeWorkbookTo(OutputStream out) throws IOException {
+        try {
+            wb.write(out);
+        } catch (IOException | ExcelKitException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new ExcelWriteException("Failed to write Excel", e);
         }
     }
 
@@ -343,7 +355,7 @@ public final class ExcelHandler implements FileHandler {
             Path plainFile = workspace.newFile("excel-plain", ".tmp");
             // Write the workbook to a temp file first, so the SXSSF window is released before encrypting.
             try (OutputStream plainOut = Files.newOutputStream(plainFile)) {
-                wb.write(plainOut);
+                writeWorkbookTo(plainOut);
             } finally {
                 closeConsumedWorkbook();
             }
