@@ -47,6 +47,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
    - `./gradlew :kit:javadoc` — javadoc 경고 0 확인
    - (선택) `./gradlew :kit:scaleTest` — 수백만 행을 256MB 힙으로 읽고 쓰며 순서·롤오버·힙 증가·임시 파일을 확인(1~2분)
    - (선택) `./gradlew :kit:hugeTest` — 압축 전 4GiB를 넘는 워크시트(ZIP64)가 유효한 아카이브로 쓰이는지 확인(약 3분, 디스크 수 GB)
+   - (선택) `./gradlew :kit:excelSamples` — 실제 Excel 로만 판정할 수 있는 샘플(복구 메시지, 필터 범위, 차트 위치 등)과 기대 결과(`manifest.json`)를 `kit/build/excel-samples` 에 만든다. Excel 이 있는 Windows 에서 `docs/verification/excel-agent.md` 지시서로 확인한다(CI 의 `excel-samples` 아티팩트로도 받을 수 있다)
 9. example 앱 실행 확인:
    - `cd example && docker compose up -d` → `./gradlew :example:bootRun`
    - `http://localhost:8080` 에서 showcase 페이지 접근

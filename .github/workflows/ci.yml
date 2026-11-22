@@ -160,6 +160,26 @@ jobs:
       - name: Test on ${{ matrix.os }}
         run: ./gradlew :kit:test :excel-kit-spring:test --no-daemon
 
+  excel-samples:
+    # The workbooks that only a real Excel can judge, with what Excel must show for each (docs/verification/excel-agent.md).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Write the sample workbooks
+        run: ./gradlew :kit:excelSamples --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: excel-samples
+          path: kit/build/excel-samples
+          retention-days: 30
+
   libreoffice-interop:
     # Opens what the writers produce in a real spreadsheet application. A file POI and the structure checks accept
     # can still be one an application refuses (POI 6 writes ZIP64 data descriptors that LibreOffice cannot read).

@@ -156,6 +156,17 @@ tasks.register<Test>("hugeTest") {
     }
 }
 
+// Workbooks that only a real Excel can judge (does it open without a repair prompt, does a filter reach the data, ...), with
+// manifest.json and CHECKLIST.md saying what Excel must show for each. They are written to build/excel-samples.
+tasks.register<JavaExec>("excelSamples") {
+    group = "verification"
+    description = "Write sample workbooks and a checklist to open in Excel"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("io.github.dornol.excelkit.excel.ExcelSamples")
+    args(layout.buildDirectory.dir("excel-samples").get().asFile.absolutePath)
+}
+
 tasks.register<Test>("benchmark") {
     group = "verification"
     description = "Run performance benchmarks"

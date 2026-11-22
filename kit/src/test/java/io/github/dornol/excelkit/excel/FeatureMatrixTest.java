@@ -50,6 +50,11 @@ class FeatureMatrixTest {
         return "mask=" + mask + " " + enabled;
     }
 
+    /** Every feature on except the encryption: the combination {@code ExcelSamples} opens in Excel. */
+    static int allFeaturesExceptEncryption() {
+        return ((1 << Feature.values().length) - 1) & ~(1 << Feature.ENCRYPT.ordinal());
+    }
+
     /** The writer for one combination of features; not yet written. */
     static ExcelWriter<Item> buildWriter(int mask) {
         int maxRows = on(mask, Feature.ROLLOVER) ? 4 : 0;
