@@ -267,7 +267,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * <p>
      * When enabled, the reader performs a lightweight SAX scan of the sheet XML to count
      * {@code <row>} elements before the actual read. The total is then available via
-     * {@link io.github.dornol.excelkit.core.read.Cursor#getTotalRows()} in the
+     * {@link io.github.dornol.excelkit.core.Cursor#getTotalRows()} in the
      * {@link io.github.dornol.excelkit.core.ProgressCallback}.
      * <p>
      * This is useful for reporting percentage-based progress (e.g., via SSE):

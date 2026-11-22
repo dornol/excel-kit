@@ -2,7 +2,7 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.testsupport.DisposingSxssfWorkbook;
 import io.github.dornol.excelkit.core.read.RowFunction;
-import io.github.dornol.excelkit.core.read.Cursor;
+import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFCell;

@@ -48,6 +48,9 @@ tasks.test {
     useJUnitPlatform {
         excludeTags("benchmark", "scale")
     }
+    // PackageDependencyTest reads the main sources: an import-only change leaves the compiled classes
+    // identical, so without this input the test would be skipped as up to date.
+    inputs.dir("src/main/java").withPropertyName("mainSources").withPathSensitivity(PathSensitivity.RELATIVE)
     finalizedBy(tasks.jacocoTestReport)
 }
 

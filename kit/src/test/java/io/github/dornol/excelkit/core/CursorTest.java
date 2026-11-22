@@ -1,4 +1,4 @@
-package io.github.dornol.excelkit.core.read;
+package io.github.dornol.excelkit.core;
 
 import org.junit.jupiter.api.Test;
 

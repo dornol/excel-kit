@@ -1,7 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.read.AbstractReadHandler;
-import io.github.dornol.excelkit.core.read.Cursor;
+import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.read.ReadColumn;
 import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.read.CellConversionConfig;

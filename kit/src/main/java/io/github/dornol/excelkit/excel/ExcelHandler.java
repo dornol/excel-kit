@@ -1,6 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.io.AtomicFileWriter;
+import io.github.dornol.excelkit.core.AtomicFileWriter;
 import io.github.dornol.excelkit.core.FileHandler;
 import io.github.dornol.excelkit.core.io.TempResourceCleaner;
 import io.github.dornol.excelkit.core.io.TempResourceCreator;

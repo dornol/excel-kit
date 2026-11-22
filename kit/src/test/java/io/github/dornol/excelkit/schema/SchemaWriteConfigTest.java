@@ -3,7 +3,6 @@ package io.github.dornol.excelkit.schema;
 import io.github.dornol.excelkit.excel.ExcelDataType;
 import io.github.dornol.excelkit.excel.ExcelHandler;
 import io.github.dornol.excelkit.excel.ExcelReader;
-import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

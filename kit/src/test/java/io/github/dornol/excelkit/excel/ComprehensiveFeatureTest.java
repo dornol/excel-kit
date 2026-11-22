@@ -3,7 +3,7 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.core.read.CellData;
-import io.github.dornol.excelkit.core.read.Cursor;
+import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import org.apache.poi.ss.usermodel.*;

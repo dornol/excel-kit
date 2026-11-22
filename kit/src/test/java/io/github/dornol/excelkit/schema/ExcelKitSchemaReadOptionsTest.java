@@ -4,7 +4,6 @@ import io.github.dornol.excelkit.core.read.DuplicateHeaderPolicy;
 import io.github.dornol.excelkit.core.read.RowError;
 import io.github.dornol.excelkit.csv.CsvReadException;
 import io.github.dornol.excelkit.excel.ExcelReadException;
-import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;

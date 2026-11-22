@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.core.read;
 
+import io.github.dornol.excelkit.core.Cursor;
+
 /**
  * A functional interface for mapping a row of data to a cell value, with optional cursor access.
  * <p>
