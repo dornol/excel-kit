@@ -69,7 +69,7 @@ final class ExcelSheetPostProcessor {
             if (column.getDropdownOptions() != null) {
                 DataValidationConstraint constraint = helper.createExplicitListConstraint(column.getDropdownOptions());
                 DataValidation validation = helper.createValidation(constraint,
-                        new CellRangeAddressList(header + 1, ExcelWriteSupport.EXCEL_MAX_ROWS, i, i));
+                        new CellRangeAddressList(header + 1, ExcelLimits.EXCEL_MAX_ROWS, i, i));
                 validation.setSuppressDropDownArrow(false);
                 validation.setShowErrorBox(true);
                 sheet.addValidationData(validation);

@@ -4,7 +4,6 @@ import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
@@ -31,26 +30,14 @@ import java.util.Set;
  */
 class ExcelWriteSupport {
 
-    static final int AUTO_WIDTH_SAMPLE_ROWS = 100;
-
-    /** Rows an Excel sheet can hold; row indices run from 0 to {@code SHEET_ROW_CAPACITY - 1}. */
-    static final int SHEET_ROW_CAPACITY = 1_048_576;
-
-    /**
-     * Cell styles an .xlsx workbook can hold. Every distinct color a {@code cellColor}, {@code rowColor}
-     * or {@code rowStyle} function returns needs a style of its own, so a function with many distinct
-     * results runs into this.
-     */
-    static final int MAX_CELL_STYLES = SpreadsheetVersion.EXCEL2007.getMaxCellStyles();
-
     /**
      * Creates a style for a color or row style, or says why the workbook cannot take another one:
      * {@code maxStyles} is either the .xlsx limit or a lower one the caller asked for.
      */
     static CellStyle createDerivedStyle(SXSSFWorkbook wb, int maxStyles) {
         if (wb.getNumCellStyles() >= maxStyles) {
-            String limit = maxStyles >= MAX_CELL_STYLES
-                    ? "an .xlsx workbook holds at most " + MAX_CELL_STYLES
+            String limit = maxStyles >= ExcelLimits.MAX_CELL_STYLES
+                    ? "an .xlsx workbook holds at most " + ExcelLimits.MAX_CELL_STYLES
                     : "maxCellStyles(" + maxStyles + ") allows at most " + maxStyles;
             throw new ExcelWriteException("Too many distinct cell styles: " + limit
                     + ". Each distinct color returned by cellColor, rowColor or rowStyle needs its own style; "
@@ -59,24 +46,6 @@ class ExcelWriteSupport {
         return wb.createCellStyle();
     }
 
-    /** Data rows per sheet before a writer rolls over to a new sheet. */
-    static final int DEFAULT_MAX_ROWS = 1_000_000;
-
-    /**
-     * Validates a {@code maxRows} setting: positive, and small enough that a sheet can hold that many
-     * data rows below its header row.
-     */
-    static int requireMaxRows(int maxRows) {
-        if (maxRows <= 0) {
-            throw new IllegalArgumentException("maxRows must be positive");
-        }
-        if (maxRows > SHEET_ROW_CAPACITY - 1) {
-            throw new IllegalArgumentException("maxRows must be at most " + (SHEET_ROW_CAPACITY - 1)
-                    + ", the most data rows an Excel sheet can hold below its header row, got " + maxRows);
-        }
-        return maxRows;
-    }
-    static final int EXCEL_MAX_ROWS = 1_048_575;
 
     private ExcelWriteSupport() {
     }

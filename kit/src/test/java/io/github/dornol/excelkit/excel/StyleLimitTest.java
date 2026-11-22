@@ -15,7 +15,7 @@ class StyleLimitTest {
 
     @Test
     void theLimitIsTheXlsxOne() {
-        assertEquals(64_000, ExcelWriteSupport.MAX_CELL_STYLES);
+        assertEquals(64_000, ExcelLimits.MAX_CELL_STYLES);
     }
 
     @Test

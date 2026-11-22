@@ -30,7 +30,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
 
     final SheetConfig<T> cfg = new SheetConfig<>();
 
-    int maxRows = ExcelWriteSupport.DEFAULT_MAX_ROWS;
+    int maxRows = ExcelLimits.DEFAULT_MAX_ROWS;
     @Nullable TableOptions tableOptions;
 
     private SELF self() {
@@ -96,7 +96,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @since 0.17.0
      */
     public SELF maxRows(int maxRows) {
-        this.maxRows = ExcelWriteSupport.requireMaxRows(maxRows);
+        this.maxRows = ExcelLimits.requireMaxRows(maxRows);
         return self();
     }
 
@@ -298,9 +298,9 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @since 0.27.0
      */
     public SELF maxCellStyles(int maxCellStyles) {
-        if (maxCellStyles < 1 || maxCellStyles > ExcelWriteSupport.MAX_CELL_STYLES) {
+        if (maxCellStyles < 1 || maxCellStyles > ExcelLimits.MAX_CELL_STYLES) {
             throw new IllegalArgumentException("maxCellStyles must be between 1 and "
-                    + ExcelWriteSupport.MAX_CELL_STYLES + ", got " + maxCellStyles);
+                    + ExcelLimits.MAX_CELL_STYLES + ", got " + maxCellStyles);
         }
         cfg.maxCellStyles = maxCellStyles;
         return self();

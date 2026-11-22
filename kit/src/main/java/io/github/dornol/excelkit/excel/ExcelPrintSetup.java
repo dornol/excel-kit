@@ -302,9 +302,9 @@ public class ExcelPrintSetup {
      * @return this instance for chaining
      */
     public ExcelPrintSetup repeatRows(int firstRow, int lastRow) {
-        if (firstRow < 0 || lastRow < firstRow || lastRow > ExcelWriteSupport.EXCEL_MAX_ROWS) {
+        if (firstRow < 0 || lastRow < firstRow || lastRow > ExcelLimits.EXCEL_MAX_ROWS) {
             throw new IllegalArgumentException("repeatRows needs 0 <= firstRow <= lastRow <= "
-                    + ExcelWriteSupport.EXCEL_MAX_ROWS + ", got " + firstRow + " and " + lastRow);
+                    + ExcelLimits.EXCEL_MAX_ROWS + ", got " + firstRow + " and " + lastRow);
         }
         this.repeatHeader = false;
         this.repeatRowsStart = firstRow;

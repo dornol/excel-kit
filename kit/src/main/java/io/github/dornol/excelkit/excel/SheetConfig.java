@@ -67,8 +67,8 @@ class SheetConfig<T> {
     final List<RowStyleEntry<T>> rowStyleEntries = new ArrayList<>();
     @Nullable ProgressCallback progressCallback;
     int progressInterval;
-    int autoWidthSampleRows = ExcelWriteSupport.AUTO_WIDTH_SAMPLE_ROWS;
-    int maxCellStyles = ExcelWriteSupport.MAX_CELL_STYLES;
+    int autoWidthSampleRows = ExcelLimits.AUTO_WIDTH_SAMPLE_ROWS;
+    int maxCellStyles = ExcelLimits.MAX_CELL_STYLES;
     @Nullable String sheetPassword;
     @Nullable List<ExcelConditionalRule> conditionalRules;
     @Nullable ExcelChartConfig chartConfig;

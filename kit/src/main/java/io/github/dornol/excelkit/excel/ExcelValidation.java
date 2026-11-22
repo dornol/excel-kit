@@ -240,7 +240,7 @@ public class ExcelValidation {
     void apply(DataValidationHelper helper, SXSSFSheet sheet, int col, int headerRow) {
         DataValidationConstraint constraint = createConstraint(helper);
         CellRangeAddressList range = new CellRangeAddressList(
-                headerRow + 1, ExcelWriteSupport.EXCEL_MAX_ROWS, col, col);
+                headerRow + 1, ExcelLimits.EXCEL_MAX_ROWS, col, col);
         DataValidation validation = helper.createValidation(constraint, range);
         validation.setShowErrorBox(showError);
         if (errorTitle != null) {
