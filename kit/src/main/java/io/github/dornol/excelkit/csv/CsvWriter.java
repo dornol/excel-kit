@@ -131,7 +131,7 @@ public class CsvWriter<T> {
     private static void requireDelimiter(char delimiter) {
         if (delimiter == '"' || delimiter == '\n' || delimiter == '\r' || delimiter == '\0') {
             throw new IllegalArgumentException("The delimiter cannot be the quote character, a line break or NUL, "
-                    + "or the file could not be read back; got " + (delimiter == '"' ? "'\"'" : "U+" + String.format("%04X", (int) delimiter)));
+                    + "or the file could not be read back; got " + (delimiter == '"' ? "'\"'" : "U+" + String.format(Locale.ROOT, "%04X", (int) delimiter)));
         }
     }
 

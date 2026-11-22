@@ -458,6 +458,17 @@ CsvReader.<Order>mapping(row -> new Order(
     .read(inputStream, result -> { ... });
 ```
 
+> **The default locale decides how text is read.** Where a number is text (a CSV field, an Excel text cell) the
+> default conversion locale is the JVM's, so the same file reads differently on another machine: under `de-DE`,
+> `"2.718"` is 2718, not 2.718 (the dot is the grouping separator), and under `ar-EG` a leading `-` is not the locale's
+> minus sign. A reader for files of one known format should say so with `.cellConversion(c -> c.locale(Locale.US))`
+> instead of relying on the machine. Numeric Excel cells are read from the stored number and are not affected.
+>
+> Dates do not depend on the locale: a date cell shows its digits as 0-9 and its year in the Gregorian calendar, also
+> where the JVM default locale writes its own digits (Arabic, Persian, Bengali, ...) or counts years differently
+> (`th-TH`, `ja-JP-u-ca-japanese`). Under such a calendar the text of a date cell is the ISO date, `2024-01-05` or
+> `2024-01-05 13:45:06`, whatever format the cell has.
+
 ## CSV Reading
 
 By default, CSV reading treats backslashes as literal text and preserves line

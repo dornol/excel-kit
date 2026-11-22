@@ -25,8 +25,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -96,6 +98,7 @@ class ExcelReadSupport {
             parser.parse(new InputSource(workbook));
         }
         boolean use1904Dates = date1904[0];
+        boolean gregorian = defaultCalendarIsGregorian();
         return withUtc(() -> new DataFormatter(locale) {
             @Override
             public String formatRawCellContents(double value, int formatIndex, String formatString) {
@@ -107,11 +110,59 @@ class ExcelReadSupport {
                     return date + "T" + LocalTime.ofNanoOfDay(timeMillis * 1_000_000).format(DateTimeFormatter.ISO_LOCAL_TIME);
                 }
                 if (DateUtil.isADateFormat(formatIndex, formatString)) {
-                    return withUtc(() -> super.formatRawCellContents(value, formatIndex, formatString, use1904Dates));
+                    // POI formats dates with the JVM's default calendar. Where that is not Gregorian (th-TH is Buddhist)
+                    // the text would carry the wrong year, so the date comes from the serial number in ISO form instead.
+                    if (!gregorian && hasCalendarFields(formatString)) return isoDateText(value, use1904Dates, formatString);
+                    return asciiDigits(withUtc(() -> super.formatRawCellContents(value, formatIndex, formatString, use1904Dates)));
                 }
                 return super.formatRawCellContents(value, formatIndex, formatString, use1904Dates);
             }
         });
+    }
+
+    private static boolean defaultCalendarIsGregorian() {
+        return "gregory".equals(Calendar.getInstance(Locale.getDefault(Locale.Category.FORMAT)).getCalendarType());
+    }
+
+    /**
+     * A date is converted back from its text, and the converters read ASCII digits. POI formats dates with the digits of
+     * the JVM's default locale (Arabic-Indic, Persian, Bengali, ...), which would show 2024-01-01 as '٢٠٢٤-٠١-٠١'.
+     * Other characters, such as month names, are kept.
+     */
+    static String asciiDigits(String text) {
+        StringBuilder out = null;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c > 127 && Character.getType(c) == Character.DECIMAL_DIGIT_NUMBER) {
+                if (out == null) out = new StringBuilder(text.length()).append(text, 0, i);
+                out.append((char) ('0' + Character.digit(c, 10)));
+            } else if (out != null) {
+                out.append(c);
+            }
+        }
+        return out == null ? text : out.toString();
+    }
+
+    /**
+     * The date of a serial number as {@code yyyy-MM-dd}, with {@code HH:mm:ss} and the fraction the format asks for
+     * when it also shows the time, whatever the default calendar.
+     */
+    static String isoDateText(double value, boolean use1904Dates, String format) {
+        String fields = FORMAT_LITERAL.matcher(format.toLowerCase(Locale.ROOT)).replaceAll("");
+        fields = FORMAT_MODIFIER.matcher(fields).replaceAll("");
+        boolean time = fields.indexOf('h') >= 0 || fields.indexOf('s') >= 0;
+        int fraction = 0;
+        int dot = fields.indexOf("s.0");
+        if (dot >= 0) {
+            for (int i = dot + 2; i < fields.length() && fields.charAt(i) == '0' && fraction < 9; i++) fraction++;
+        }
+        LocalDateTime moment = DateUtil.getLocalDateTime(value, use1904Dates);
+        // round to what is shown, as Excel does, and carry into the next second or day when that overflows
+        long unit = (long) Math.pow(10, 9 - fraction);
+        moment = moment.withNano(0).plusNanos((moment.getNano() + unit / 2) / unit * unit);
+        if (!time) return DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ROOT).format(moment);
+        String pattern = "yyyy-MM-dd HH:mm:ss" + (fraction > 0 ? "." + "S".repeat(fraction) : "");
+        return DateTimeFormatter.ofPattern(pattern, Locale.ROOT).format(moment);
     }
 
     private static <T> T withUtc(Supplier<T> formatting) {
