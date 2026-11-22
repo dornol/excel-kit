@@ -29,22 +29,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class FeatureMatrixTest {
 
-    private static final int ROWS = 11;
+    static final int ROWS = 11;
 
-    private enum Feature {ROLLOVER, TABLE, SUMMARY, CHART, ENCRYPT, GROUP, CONDITIONAL, PROTECT, ROW_NUMBER, SHEET_OPTIONS}
+    enum Feature {ROLLOVER, TABLE, SUMMARY, CHART, ENCRYPT, GROUP, CONDITIONAL, PROTECT, ROW_NUMBER, SHEET_OPTIONS}
 
-    private record Item(String name, int qty) {
+    record Item(String name, int qty) {
     }
 
     private static IntStream masks() {
         return IntStream.range(0, 1 << Feature.values().length);
     }
 
-    private static boolean on(int mask, Feature f) {
+    static boolean on(int mask, Feature f) {
         return (mask & (1 << f.ordinal())) != 0;
     }
 
-    private static String describe(int mask) {
+    static String describe(int mask) {
         List<Feature> enabled = new ArrayList<>();
         for (Feature f : Feature.values()) if (on(mask, f)) enabled.add(f);
         return "mask=" + mask + " " + enabled;
@@ -85,7 +85,52 @@ class FeatureMatrixTest {
         List<Item> items = IntStream.range(0, ROWS).mapToObj(i -> new Item("item " + i, i)).toList();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         writer.write(items).writeTo(out);
-        byte[] xlsx = decrypted(out.toByteArray(), on(mask, Feature.ENCRYPT), at);
+        verify(mask, decrypted(out.toByteArray(), on(mask, Feature.ENCRYPT), at), items);
+    }
+
+    @ParameterizedTest(name = "workbook {0}")
+    @MethodSource("masks")
+    void featuresCombineOnTheMultiSheetWriterToo(int mask) throws Exception {
+        String at = describe(mask);
+        int maxRows = on(mask, Feature.ROLLOVER) ? 4 : 0;
+        List<Item> items = IntStream.range(0, ROWS).mapToObj(i -> new Item("item " + i, i)).toList();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (ExcelWorkbook book = ExcelWorkbook.create()) {
+            if (on(mask, Feature.ENCRYPT)) book.password("pw");
+            ExcelSheetWriter<Item> writer = book.sheet("Data");
+            if (maxRows > 0) writer.maxRows(maxRows);
+            if (on(mask, Feature.TABLE)) writer.table("MatrixTable");
+            if (on(mask, Feature.PROTECT)) writer.protectSheet("lock");
+            if (on(mask, Feature.SHEET_OPTIONS)) writer.autoFilter(true).freezeRows(1).tabColor(ExcelColor.GREEN);
+            boolean group = on(mask, Feature.GROUP);
+            writer.column("Name", Item::name, c -> {
+                if (group) c.group("G");
+            });
+            writer.column("Qty", Item::qty, c -> {
+                c.type(ExcelDataType.INTEGER);
+                if (group) c.group("G");
+            });
+            if (on(mask, Feature.ROW_NUMBER)) writer.rowNumberColumn("No.");
+            if (on(mask, Feature.CONDITIONAL)) {
+                writer.conditionalFormatting(cf -> cf.columns(1).greaterThan("5", ExcelColor.LIGHT_RED));
+            }
+            if (on(mask, Feature.SUMMARY)) writer.summary(s -> s.label("Total").sum("Qty"));
+            if (on(mask, Feature.CHART)) {
+                writer.chart(ch -> ch.type(ExcelChartConfig.ChartType.BAR).title("Qty")
+                        .categoryColumn(0).valueColumn(1, "Qty").position(4, 0, 12, 20));
+            }
+            writer.write(items.stream());
+            book.finish().writeTo(out);
+        }
+        verify(mask, decrypted(out.toByteArray(), on(mask, Feature.ENCRYPT), at), items);
+    }
+
+    /** The same expectations for every way of writing the workbook. */
+    static void verify(int mask, byte[] xlsx, List<Item> items) throws Exception {
+        String at = describe(mask);
+        int maxRows = on(mask, Feature.ROLLOVER) ? 4 : 0;
+        int sheets = maxRows > 0 ? (int) Math.ceil(ROWS / (double) maxRows) : 1;
 
         // ---- the data: every item once, in order, on the expected sheet ----
         List<String> names = new ArrayList<>();
