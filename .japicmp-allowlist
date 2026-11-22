@@ -153,3 +153,6 @@ io.github.dornol.excelkit.excel.ExcelWriter#password(char[])
 io.github.dornol.excelkit.excel.ExcelWorkbook#password(char[])
 io.github.dornol.excelkit.excel.ExcelHandler#writeTo(java.io.OutputStream,char[])
 io.github.dornol.excelkit.excel.ExcelHandler#writeTo(java.nio.file.Path,char[])
+# Alias methods removed: strictHeaders() and ExcelKitUpload.excel/csv do the same.
+io.github.dornol.excelkit.spring.ExcelKitUpload#validateExcel(org.springframework.web.multipart.MultipartFile,io.github.dornol.excelkit.spring.UploadReader)
+io.github.dornol.excelkit.spring.ExcelKitUpload#validateCsv(org.springframework.web.multipart.MultipartFile,io.github.dornol.excelkit.spring.UploadReader)

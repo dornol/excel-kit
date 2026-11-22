@@ -23,24 +23,6 @@ public final class ExcelKitUpload {
     }
 
     /**
-     * Compatibility alias retained for clients compiled against 0.23.0.
-     * @deprecated Use {@link #excel(MultipartFile, UploadReader)}.
-     */
-    @Deprecated(since = "0.24.0")
-    public static <T> UploadResult<T> validateExcel(MultipartFile file, UploadReader<T> reader) {
-        return excel(file, reader);
-    }
-
-    /**
-     * Compatibility alias retained for clients compiled against 0.23.0.
-     * @deprecated Use {@link #csv(MultipartFile, UploadReader)}.
-     */
-    @Deprecated(since = "0.24.0")
-    public static <T> UploadResult<T> validateCsv(MultipartFile file, UploadReader<T> reader) {
-        return csv(file, reader);
-    }
-
-    /**
      * Opens an upload, passes its stream to the reader, and collects the rows and errors it reports.
      *
      * @param type   a label stored in the result, such as {@code "Excel"}

@@ -41,6 +41,7 @@ All notable changes to this project will be documented in this file.
 - The lenient write-failure logs (`ExcelWriteErrorPolicy.LENIENT`) no longer contain the row object or the cell value, which may hold personal data; they name the column, the row number and the value's type.
 
 ### Removed
+- `AbstractReader.requireHeaders()` (an alias of `strictHeaders()`) and the `@Deprecated` `ExcelKitUpload.validateExcel` / `validateCsv` (aliases of `excel` / `csv`).
 - The `char[]` password overloads: `ExcelWriter.password(char[])`, `ExcelWorkbook.password(char[])`, `ExcelHandler.writeTo(OutputStream, char[])` and `ExcelHandler.writeTo(Path, char[])`. Apache POI's encryption API takes a `String`, so they never kept the password out of the heap, and `writeTo` zeroed the caller's array as a side effect. Use the `String` overloads.
 
 ### Fixed

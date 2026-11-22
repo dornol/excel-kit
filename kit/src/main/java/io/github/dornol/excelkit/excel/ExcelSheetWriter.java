@@ -152,7 +152,9 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             column(name, function, cfg);
         }
         return this;
-    }    /**
+    }
+
+    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      *
      * <p>

@@ -628,12 +628,5 @@ class ReadEntryPointEquivalenceTest {
             assertEquals(List.of("  A| 1"), pairs(text, reader -> reader.ignoreLeadingWhiteSpace(true)));
             assertEquals(List.of("  A| 1"), pairs(text, reader -> reader.ignoreLeadingWhiteSpace(false)));
         }
-
-        @Test
-        void requireHeadersIsAnAliasOfStrictHeaders() {
-            assertEquals(csvReader().strictHeaders().snapshotReadOptions(),
-                    csvReader().requireHeaders().snapshotReadOptions());
-            assertTrue(csvReader().requireHeaders().snapshotReadOptions().strictHeaders());
-        }
     }
 }

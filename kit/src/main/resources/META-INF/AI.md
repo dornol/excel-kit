@@ -117,7 +117,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   `CsvWriter.<T>create()` (no public constructors)
 - `required()` on reader columns — blank cells produce validation errors
 - `column(List<String>, ...)` on readers — read by header aliases
-- `strictHeaders()` / `requireHeaders()` — fail fast when configured headers are absent
+- `strictHeaders()` — fail fast when configured headers are absent
 - `DuplicateHeaderPolicy` — choose first, last, or fail for duplicate headers
 - `CellError` and `RowError.cellErrors()` — structured cell-level read errors
 - Numeric `as*()` conversions (`asInt/asLong/asDouble/asFloat/asNumber/asBigDecimal`) use the stored XLSX number, not the display format (`0.25` in a `0%` cell stays `0.25`); CSV/text cells use their text
@@ -170,7 +170,7 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 ## Key API Notes (v0.18.0+) — Reading
 
 - **Header aliases** — `column(List.of("Name", "User Name", "이름"), setter)` tries aliases in order.
-- **Strict headers** — `strictHeaders()` / `requireHeaders()` fail before data rows when configured
+- **Strict headers** — `strictHeaders()` fails before data rows when configured
   headers or selected map-mode columns are missing.
 - **Duplicate headers** — `duplicateHeaderPolicy(DuplicateHeaderPolicy.FAIL|FIRST|LAST)` controls
   duplicate header resolution; the default is `FAIL`. A column with a blank header is left out of the header index, so it is not a key in `forMap()` rows.
@@ -220,5 +220,4 @@ Spring responses accept an explicit `Duration` for cache max-age through
 `ExcelKitResponse.excel/csv` and `ExcelKitErrorResponse.excel/csv` overloads.
 For example, `ExcelKitResponse.excel("report", Duration.ofMinutes(1))`
 returns a builder whose `.body(handler::writeTo)` streams the download.
-The default is 10 seconds. Upload helpers use `ExcelKitUpload.excel/csv`;
-the deprecated `validateExcel/validateCsv` aliases remain callable for compatibility.
+The default is 10 seconds. Upload helpers use `ExcelKitUpload.excel/csv`.

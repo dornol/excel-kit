@@ -237,7 +237,7 @@ reader.headerRowIndex(2)  // 3rd row as header (0-based)
 **Strict headers** fail before data rows when a positional or index-based column has no header:
 
 ```java
-reader.strictHeaders();       // equivalent to requireHeaders()
+reader.strictHeaders();
 reader.strictHeaders(false);  // default
 ```
 

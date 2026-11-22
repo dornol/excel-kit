@@ -233,13 +233,6 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     }
 
     /**
-     * Alias for {@link #strictHeaders()}.
-     */
-    public SELF requireHeaders() {
-        return strictHeaders();
-    }
-
-    /**
      * Sets duplicate header handling. Defaults to {@link DuplicateHeaderPolicy#FAIL}; blank headers are ignored.
      */
     public SELF duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
