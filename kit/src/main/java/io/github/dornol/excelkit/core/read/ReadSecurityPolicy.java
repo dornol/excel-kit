@@ -25,8 +25,13 @@ public record ReadSecurityPolicy(boolean allowFormulas, boolean allowExternalLin
         int maxZipEntries) {
     public static final ReadSecurityPolicy DEFAULT = new ReadSecurityPolicy(true, true,
             32L * 1024 * 1024, 128L * 1024 * 1024, 100.0, 50_000);
+    /**
+     * For files from untrusted sources: no formulas, no external links. The scan limits are sized by what the scan
+     * costs, about 200 MB of XML per second: a worksheet of up to 256 MB (more than a million rows of a few
+     * columns) and 512 MB in all keep it within a few seconds.
+     */
     public static final ReadSecurityPolicy STRICT = new ReadSecurityPolicy(false, false,
-            16L * 1024 * 1024, 64L * 1024 * 1024, 50.0, 10_000);
+            256L * 1024 * 1024, 512L * 1024 * 1024, 50.0, 10_000);
 
     /** Creates a policy using the default maximum of 50,000 ZIP entries. */
     public ReadSecurityPolicy(boolean allowFormulas, boolean allowExternalLinks,
