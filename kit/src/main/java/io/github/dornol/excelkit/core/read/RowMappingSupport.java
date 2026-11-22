@@ -37,7 +37,10 @@ final class RowMappingSupport {
                     + cell.formattedValue() + "', reason=" + exception.getMessage();
             messages.add(message);
             if (cellErrors != null) cellErrors.add(new CellError(index, header, cell.formattedValue(), message));
-            log.warn("Column mapping failed for '{}': value='{}'", header, cell.formattedValue(), exception);
+            // The failure reaches the caller in the result, value included; the log gets neither the value nor the
+            // exception's message, which usually repeats it. The details are there at DEBUG.
+            log.warn("Column mapping failed for '{}' (column {}): {}", header, index, exception.getClass().getSimpleName());
+            log.debug("Column mapping failure details", exception);
             return false;
         }
     }
@@ -62,7 +65,8 @@ final class RowMappingSupport {
         try {
             instance = mapper.apply(rowData);
         } catch (RuntimeException exception) {
-            log.warn("Row mapping failed", exception);
+            log.warn("Row mapping failed at file row {}: {}", fileRow, exception.getClass().getSimpleName());
+            log.debug("Row mapping failure details", exception);
             return ReadResult.mappingFailure(null,
                     List.of("Row mapping failed: " + exception.getMessage()), exception,
                     fileRow, List.of(), rawValues);

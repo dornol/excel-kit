@@ -21,6 +21,7 @@ public class CsvColumn<T> {
 
     private final String name;
     private final RowFunction<T, @Nullable Object> function;
+    private boolean failureLogged;
 
     /**
      * Constructs a CSV column definition.
@@ -56,7 +57,13 @@ public class CsvColumn<T> {
                 throw new CsvWriteException("Failed to extract CSV column '" + name
                         + "' at row " + cursor.getRowOfSheet(), e);
             }
-            log.error("Failed to apply function for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
+            if (!failureLogged) {
+                failureLogged = true;
+                log.error("Failed to apply function for column '{}' at row {}; further failures of this column are logged at DEBUG",
+                        name, cursor.getRowOfSheet(), e);
+            } else {
+                log.debug("Failed to apply function for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
+            }
             return null;
         }
     }

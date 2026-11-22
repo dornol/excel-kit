@@ -64,6 +64,8 @@ public class ExcelColumn<T> {
     private final int commentHeight;
     private final @Nullable Object nullValue;
     private int columnWidth = 1;
+    private boolean extractionFailureLogged;
+    private boolean cellWriteFailureLogged;
 
     static <T> ExcelColumn<T> of(String name, RowFunction<T, @Nullable Object> function,
                                   @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
@@ -140,7 +142,13 @@ public class ExcelColumn<T> {
                 throw new ExcelWriteException("Failed to extract value for column '" + name + "'", e);
             }
             // The row itself is not logged: it may hold personal data, and a failing column repeats this per row.
-            log.error("applyFunction exception caught for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
+            if (!extractionFailureLogged) {
+                extractionFailureLogged = true;
+                log.error("applyFunction exception caught for column '{}' at row {}; further failures of this column are logged at DEBUG",
+                        name, cursor.getRowOfSheet(), e);
+            } else {
+                log.debug("applyFunction exception caught for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
+            }
             return null;
         }
     }
@@ -223,8 +231,14 @@ public class ExcelColumn<T> {
                         + (columnData == null ? "null" : "of type " + columnData.getClass().getSimpleName())
                         + (dataType == null ? "" : ", column type " + dataType) + "): " + e.getMessage(), e);
             }
-            log.warn("Writing value as text after a cell write failure for column '{}' (value of type {})",
-                    name, columnData.getClass().getSimpleName(), e);
+            String type = columnData.getClass().getSimpleName();
+            if (!cellWriteFailureLogged) {
+                cellWriteFailureLogged = true;
+                log.warn("Writing value as text after a cell write failure for column '{}' (value of type {}); "
+                        + "further failures of this column are logged at DEBUG", name, type, e);
+            } else {
+                log.debug("Writing value as text after a cell write failure for column '{}' (value of type {})", name, type, e);
+            }
             ExcelCellText.write(cell, ExcelCellText.textOf(columnData));
             return style;
         }

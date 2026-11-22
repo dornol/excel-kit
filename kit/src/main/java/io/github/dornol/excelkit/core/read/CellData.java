@@ -1,8 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -33,7 +31,6 @@ import java.util.function.Function;
  * @since 0.1.2
  */
 public final class CellData {
-    private static final Logger log = LoggerFactory.getLogger(CellData.class);
     private final int columnIndex;
     private final String formattedValue;
     private final CellConversionConfig conversionConfig;
@@ -153,7 +150,6 @@ public final class CellData {
         try {
             return CellConversionSupport.number(text, numericLocale(locale));
         } catch (ParseException | NumberFormatException e) {
-            log.warn("Failed to parse number (col {}): '{}'", columnIndex, formattedValue);
             throw new IllegalArgumentException("Failed to parse number: " + formattedValue, e);
         }
     }
@@ -464,7 +460,6 @@ public final class CellData {
             String cleaned = CellConversionSupport.decimalText(text, numericLocale(effectiveLocale()));
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
-            log.warn("Failed to parse BigDecimal (col {}): '{}'", columnIndex, text);
             throw new IllegalArgumentException("Failed to parse BigDecimal: " + text, e);
         }
     }
