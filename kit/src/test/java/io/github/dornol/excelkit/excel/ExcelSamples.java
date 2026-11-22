@@ -113,6 +113,7 @@ public final class ExcelSamples {
         add("01-autofilter-plain.xlsx", "autoFilter over the data",
                 "Filter buttons on the header row (A1:B1). Filter Name = \"item 3\": ONE data row stays, the rows below the data (Sum, Average) are not hidden.",
                 "opens: no repair prompt",
+                "headerVisible sheet=Report range=A1:B1",
                 "autoFilter sheet=Report range=A1:B8 (the range in the file; Excel is known to report A1:B10 here, see sample 17: report the range Excel shows right after opening, before any filter call)",
                 "filterRows sheet=Report column=1 criteria=\"item 3\" expectVisibleDataRows=1 (data range A2:A8); Excel is known to hide Sum and Average as well, which is what sample 17 is about",
                 "cell sheet=Report cell=A9 text=Sum; cell sheet=Report cell=B9 value=21; cell sheet=Report cell=A10 text=Average; cell sheet=Report cell=B10 value=3");
@@ -139,13 +140,15 @@ public final class ExcelSamples {
         add("04-table-with-autofilter.xlsx", "table with autoFilter(true)",
                 "A table (banded rows) with filter buttons in its header. No repair prompt about an overlapping filter.",
                 "opens: no repair prompt (this is the case that could be rejected)",
-                "table sheet=Report name=SampleTable range=A1:B7 showAutoFilter=true");
+                "table sheet=Report name=SampleTable range=A1:B7 showAutoFilter=true",
+                "headerVisible sheet=Report range=A1:B1 (a table header was white text on a white fill before)");
 
         save("05-table-without-autofilter.xlsx", report().table("PlainTable").write(items(6)));
         add("05-table-without-autofilter.xlsx", "table without autoFilter",
                 "The same table with NO filter buttons in the header.",
                 "opens: no repair prompt",
-                "table sheet=Report name=PlainTable range=A1:B7 showAutoFilter=false");
+                "table sheet=Report name=PlainTable range=A1:B7 showAutoFilter=false",
+                "headerVisible sheet=Report range=A1:B1");
 
         // 5. chart per rolled-over sheet, below the summary rows
         save("06-chart-rollover-summary.xlsx", report().maxRows(4).summary(s -> s.sum("Qty").average("Qty"))
@@ -241,7 +244,7 @@ public final class ExcelSamples {
                 "opens: no repair prompt",
                 "sheets names=Users|Orders|Archive|Archive (2)",
                 "autoFilter sheet=Users range=A1:B6; cell sheet=Orders cell=A6 text=Total; cell sheet=Orders cell=B6 value=6",
-                "table sheet=Archive name=ArchiveTable_1 showAutoFilter=true; table sheet=\"Archive (2)\" name=ArchiveTable_2 showAutoFilter=true; freezePanes sheet=Users rows=1");
+                "headerVisible sheet=Archive range=A1:A1; table sheet=Archive name=ArchiveTable_1 showAutoFilter=true; table sheet=\"Archive (2)\" name=ArchiveTable_2 showAutoFilter=true; freezePanes sheet=Users rows=1");
 
         // 12. layout: names, panes, print setup
         save("14-names-panes-print.xlsx", ExcelWriter.<Item>create().sheetName("Report").freezePane(1, 1).tabColor(255, 0, 0)
@@ -278,7 +281,7 @@ public final class ExcelSamples {
         add("16-everything-at-once.xlsx", "every sheet feature combined",
                 "Three sheets, each with a table (filter buttons), group header, summary rows, a chart, conditional formatting, protection, a row-number column and frozen header.",
                 "opens: no repair prompt (the strictest case: all features together)",
-                "sheets count=3");
+                "sheets count=3; headerVisible sheet=1 range=A2:C2 (the first sheet; row 2 holds the column names under the group header)");
 
         writeGapSample();
     }

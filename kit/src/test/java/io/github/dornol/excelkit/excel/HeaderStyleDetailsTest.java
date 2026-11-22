@@ -71,10 +71,10 @@ class HeaderStyleDetailsTest {
     @Test
     void theHeaderFontIsWhiteOnADarkHeaderAndBlackOnALightOne() throws Exception {
         for (ExcelColor dark : List.of(ExcelColor.NAVY, ExcelColor.TEAL, ExcelColor.of(10, 10, 10))) {
-            assertEquals(org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.WHITE.getIndex(), fontColor(dark), "on " + dark.getR() + "," + dark.getG() + "," + dark.getB());
+            assertEquals(WHITE, fontColor(dark), "on " + dark.getR() + "," + dark.getG() + "," + dark.getB());
         }
         for (ExcelColor light : List.of(ExcelColor.LIGHT_YELLOW, ExcelColor.GOLD, ExcelColor.of(250, 250, 250))) {
-            assertEquals(org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLACK.getIndex(), fontColor(light), "on " + light.getR() + "," + light.getG() + "," + light.getB());
+            assertEquals(BLACK, fontColor(light), "on " + light.getR() + "," + light.getG() + "," + light.getB());
         }
     }
 
@@ -82,13 +82,19 @@ class HeaderStyleDetailsTest {
     void theLuminanceThresholdIsAroundMidGrey() throws Exception {
         // W3C brightness 0.299R + 0.587G + 0.114B against 128. (Grey 128 itself is not pinned: the three
         // weights add up to 1 only to within floating point error.)
-        assertEquals(org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.WHITE.getIndex(), fontColor(ExcelColor.of(127, 127, 127)));
-        assertEquals(org.apache.poi.hssf.util.HSSFColor.HSSFColorPredefined.BLACK.getIndex(), fontColor(ExcelColor.of(129, 129, 129)));
+        assertEquals(WHITE, fontColor(ExcelColor.of(127, 127, 127)));
+        assertEquals(BLACK, fontColor(ExcelColor.of(129, 129, 129)));
     }
 
-    private static short fontColor(ExcelColor header) throws Exception {
+    private static final String WHITE = "FFFFFFFF";
+    private static final String BLACK = "FF000000";
+
+    /** The header text colour as ARGB hex; it must be an RGB colour, not a palette index (see {@code HeaderFontColorTest}). */
+    private static String fontColor(ExcelColor header) throws Exception {
         CellStyle style = headerStyle(w -> w.headerColor(header));
-        return ((org.apache.poi.xssf.usermodel.XSSFCellStyle) style).getFont().getColor();
+        var color = ((org.apache.poi.xssf.usermodel.XSSFCellStyle) style).getFont().getXSSFColor();
+        assertTrue(color != null && color.isRGB(), "the header text colour must be an RGB colour, was " + color);
+        return color.getARGBHex();
     }
 
     @org.junit.jupiter.api.io.TempDir

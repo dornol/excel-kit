@@ -224,6 +224,10 @@ class FeatureMatrixTest {
                         assertTrue(cell != null && cell.getCellType() == CellType.STRING && !cell.getStringCellValue().isEmpty(),
                                 at + " the header cell of table column " + c + " on " + sheet.getSheetName() + " is empty");
                         assertEquals(columns[c].getName(), cell.getStringCellValue(), at + " table column " + c + " on " + sheet.getSheetName());
+                        // under a table Excel shows a palette (indexed) text colour as the table style's own, white: invisible on the white fill
+                        var color = ((org.apache.poi.xssf.usermodel.XSSFCellStyle) cell.getCellStyle()).getFont().getXSSFColor();
+                        assertTrue(color != null && color.isRGB(), at + " the header text of column " + c + " on " + sheet.getSheetName()
+                                + " must be an RGB colour, was " + color);
                     }
                     for (var merged : sheet.getMergedRegions()) {
                         assertTrue(merged.getLastRow() < headerRow || merged.getFirstRow() > headerRow,

@@ -1,7 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
-import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
@@ -77,11 +76,10 @@ class ExcelStyleSupporter {
             headerFont.setFontName(fontName);
         }
 
-        if (isDarkColor(headerColor)) {
-            headerFont.setColor(HSSFColor.HSSFColorPredefined.WHITE.getIndex());
-        } else {
-            headerFont.setColor(HSSFColor.HSSFColorPredefined.BLACK.getIndex());
-        }
+        // An RGB colour, not the palette's black or white: under a table Excel takes a palette colour for "automatic" and
+        // shows the table style's own header text colour (white) instead, which vanishes on the white fill of the header.
+        byte level = isDarkColor(headerColor) ? (byte) 0xFF : 0;
+        ((XSSFFont) headerFont).setColor(new XSSFColor(new byte[]{level, level, level}));
 
         headerStyle.setFont(headerFont);
         return headerStyle;

@@ -93,6 +93,7 @@ Excel 이 보는 것을 직접 읽어 판정한다. 화면은 필요한 경우�
 | `name name refersTo` | `Names.Item(name).RefersTo` (`=Report!$A$2:$A$6` 형태). |
 | `freezePanes sheet rows/columns` | 시트를 `Activate` 한 뒤 `ActiveWindow.FreezePanes`, `SplitRow`, `SplitColumn`. |
 | `pageSetup sheet orientation` | `PageSetup.Orientation` (landscape = 2). |
+| `headerVisible sheet range` | 범위의 각 셀에서 `DisplayFormat.Font.Color` 와 `DisplayFormat.Interior.Color`(화면에 실제로 적용되는 값)가 **서로 달라야** 한다. 같으면 글자가 배경에 묻혀 안 보이는 것이다(표 헤더가 흰 글자·흰 배경이었던 적이 있다). 값이 같지 않아도 확대 스크린샷으로 글자가 읽히는지 본다. 시트가 숫자면 N 번째 시트. |
 | `merged sheet cell mergeArea` | `Range(cell).MergeArea.Address($false,$false)`. |
 | `sheets names=A|B|C` / `sheets count=N` | `Worksheets` 의 이름 순서 / 개수. |
 

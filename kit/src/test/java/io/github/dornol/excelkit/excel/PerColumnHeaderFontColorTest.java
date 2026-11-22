@@ -40,7 +40,10 @@ class PerColumnHeaderFontColorTest {
             assertEquals((byte) 0, rgb[2], "Blue component");
 
             // Normal column should NOT have RED font
-            assertNotEquals(alertFont.getColor(), normalFont.getColor(),
+            // (an RGB colour has no palette index, so the colours themselves are compared)
+            var normalColor = ((org.apache.poi.xssf.usermodel.XSSFFont) normalFont).getXSSFColor();
+            assertNotNull(normalColor, "the normal header has a text colour");
+            assertNotEquals(alertColor.getARGBHex(), normalColor.getARGBHex(),
                     "Normal and alert headers should have different font colors");
         }
     }
