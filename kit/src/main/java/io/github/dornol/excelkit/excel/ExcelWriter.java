@@ -617,6 +617,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         execution().dataEndRow(cursor().getRowOfSheet() - 1);
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
                 options.columns(), headerRowIndex(), options.sheetConfig());
+        execution().nextFreeRow(nextRow);
         if (this.afterAllWriter != null) {
             this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
         }
@@ -624,9 +625,13 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         applyPostProcessingAllSheets();
         ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
 
-        // Apply chart on last sheet
+        // One chart per sheet over that sheet's own rows: a chart of only the last sheet would plot just the remainder.
         if (options.sheetConfig().chartConfig != null) {
-            ExcelWriteSupport.applyChart(sheet(), options.sheetConfig().chartConfig, headerRowIndex(), cursor().getRowOfSheet() - 1, nextRow, options.columns().size());
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+                SXSSFSheet target = wb.getSheetAt(i);
+                ExcelWriteSupport.applyChart(target, options.sheetConfig().chartConfig, execution().headerRow(target),
+                        execution().dataEndRow(target), execution().nextFreeRow(target), options.columns().size());
+            }
         }
         applyTables();
     }
@@ -675,7 +680,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         if (isOverMaxRows()) {
             StructuredTableWriter.requireRolloverAllowed(options.sheetConfig().tableOptions);
             execution().dataEndRow(cursor().getRowOfSheet() - 1);
-            ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(), options.columns(), headerRowIndex(), options.sheetConfig());
+            execution().nextFreeRow(ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
+                    options.columns(), headerRowIndex(), options.sheetConfig()));
             turnOverSheet();
             int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
             cursor().setRowOfSheet(preambleRow);

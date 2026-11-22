@@ -54,6 +54,7 @@ All notable changes to this project will be documented in this file.
 - The `char[]` password overloads: `ExcelWriter.password(char[])`, `ExcelWorkbook.password(char[])`, `ExcelHandler.writeTo(OutputStream, char[])` and `ExcelHandler.writeTo(Path, char[])`. Apache POI's encryption API takes a `String`, so they never kept the password out of the heap, and `writeTo` zeroed the caller's array as a side effect. Use the `String` overloads.
 
 ### Fixed
+- `ExcelWriter` with `maxRows()` drew a configured chart only on the last sheet, which plots just the remainder of the rows and leaves the other sheets without one, although the guides and `ExcelSheetWriter` give every sheet its own chart. Every sheet now gets a chart over its own rows, below its summary rows.
 - `ExcelWriter.column(..., c -> c.type(ExcelDataType.DATETIME))` showed values with fractional seconds in the whole-second format, while the same column on an `ExcelWorkbook` sheet showed milliseconds. Both now show milliseconds.
 - `ExcelWriter.maxRows(1)` never rolled over to a new sheet, so all rows landed on one sheet. `ExcelSheetWriter` was not affected.
 

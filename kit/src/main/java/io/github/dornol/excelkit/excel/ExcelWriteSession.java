@@ -11,6 +11,7 @@ final class ExcelWriteSession<T> {
     private final ExcelWriteOptions<T> options;
     private final Map<SXSSFSheet, Integer> headerRows = new LinkedHashMap<>();
     private final Map<SXSSFSheet, Integer> dataEndRows = new LinkedHashMap<>();
+    private final Map<SXSSFSheet, Integer> nextFreeRows = new LinkedHashMap<>();
     private SXSSFSheet sheet;
     private Cursor cursor;
 
@@ -28,5 +29,8 @@ final class ExcelWriteSession<T> {
     int headerRow(SXSSFSheet target) { return headerRows.get(target); }
     void dataEndRow(int row) { dataEndRows.put(sheet, row); }
     int dataEndRow(SXSSFSheet target) { return dataEndRows.getOrDefault(target, target.getLastRowNum()); }
+    /** The first row below the after-data and summary rows of the current sheet, where a chart may be placed. */
+    void nextFreeRow(int row) { nextFreeRows.put(sheet, row); }
+    int nextFreeRow(SXSSFSheet target) { return nextFreeRows.getOrDefault(target, dataEndRow(target) + 1); }
     Map<SXSSFSheet, Integer> headerRows() { return Map.copyOf(headerRows); }
 }
