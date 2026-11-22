@@ -683,7 +683,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         ExcelWriteOptions<T> options = executionOptions();
         cursor().plusTotal();
         if (isOverMaxRows()) {
-            StructuredTableWriter.requireRolloverAllowed(tableOptions);
+            StructuredTableWriter.requireRolloverAllowed(options.sheetConfig().tableOptions);
             execution().dataEndRow(cursor().getRowOfSheet() - 1);
             ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(), options.columns(), headerRowIndex(), options.sheetConfig());
             turnOverSheet();
@@ -726,7 +726,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * @return true if a sheet needs to turn over; otherwise false
      */
     private boolean isOverMaxRows() {
-        int limit = executionOptions().maxRows();
+        int limit = executionOptions().sheetConfig().maxRows;
         // The total already counts the row about to be written: it starts a new sheet when it is the first
         // one past a full sheet. (A "% limit == 1" test never holds for limit 1.)
         long total = cursor().getCurrentTotal();
@@ -734,7 +734,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     private ExcelWriteOptions<T> snapshotOptions() {
-        return new ExcelWriteOptions<>(List.copyOf(columns), maxRows, new SheetConfig<>(cfg));
+        return new ExcelWriteOptions<>(List.copyOf(columns), new SheetConfig<>(cfg));
     }
 
     private ExcelWriteOptions<T> executionOptions() {
@@ -764,6 +764,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     }
 
     private void applyTables() {
+        TableOptions tableOptions = executionOptions().sheetConfig().tableOptions;
         if (tableOptions == null) return;
         int sheets = wb.getNumberOfSheets();
         List<String> headers = executionOptions().columns().stream().map(ExcelColumn::getName).toList();

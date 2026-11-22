@@ -52,6 +52,8 @@ class SheetConfig<T> {
         groupComments = source.groupComments == null ? null : Map.copyOf(source.groupComments);
         namedRanges = source.namedRanges == null ? null : Map.copyOf(source.namedRanges);
         writeErrorPolicy = source.writeErrorPolicy;
+        maxRows = source.maxRows;
+        tableOptions = source.tableOptions;
     }
 
     static final float DEFAULT_ROW_HEIGHT_POINTS = 20f;
@@ -83,6 +85,8 @@ class SheetConfig<T> {
     /** Named ranges: name → column index. Applied after data is written. */
     @Nullable Map<String, Integer> namedRanges;
     ExcelWriteErrorPolicy writeErrorPolicy = ExcelWriteErrorPolicy.FAIL_FAST;
+    int maxRows = ExcelLimits.DEFAULT_MAX_ROWS;
+    @Nullable TableOptions tableOptions;
 
     record RowStyleEntry<T>(Predicate<T> predicate, RowStyleConfig style) {}
 

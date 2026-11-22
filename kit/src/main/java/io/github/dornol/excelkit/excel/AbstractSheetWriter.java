@@ -31,9 +31,6 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
 
     final SheetConfig<T> cfg = new SheetConfig<>();
 
-    int maxRows = ExcelLimits.DEFAULT_MAX_ROWS;
-    @Nullable TableOptions tableOptions;
-
     private SELF self() {
         return (SELF) this;
     }
@@ -97,7 +94,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @since 0.17.0
      */
     public SELF maxRows(int maxRows) {
-        this.maxRows = ExcelLimits.requireMaxRows(maxRows);
+        cfg.maxRows = ExcelLimits.requireMaxRows(maxRows);
         return self();
     }
 
@@ -122,7 +119,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
     public SELF table(TableOptions options) {
         Objects.requireNonNull(options, "options cannot be null");
         StructuredTableWriter.validateName(options.name());
-        this.tableOptions = options;
+        cfg.tableOptions = options;
         return self();
     }
 

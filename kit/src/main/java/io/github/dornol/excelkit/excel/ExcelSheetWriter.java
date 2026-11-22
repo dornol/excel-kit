@@ -193,9 +193,9 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             while (it.hasNext()) {
                 T rowData = it.next();
                 cursor.plusTotal();
-                if (cursor.getCurrentTotal() > maxRows
-                        && (cursor.getCurrentTotal() - 1) % maxRows == 0) {
-                    StructuredTableWriter.requireRolloverAllowed(tableOptions);
+                if (cursor.getCurrentTotal() > cfg.maxRows
+                        && (cursor.getCurrentTotal() - 1) % cfg.maxRows == 0) {
+                    StructuredTableWriter.requireRolloverAllowed(cfg.tableOptions);
                     dataEndRows.add(cursor.getRowOfSheet() - 1);
                     ExcelWriteSupport.writeAfterDataAndSummary(activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
                     activeSheet = createRolloverSheet(allSheets.size());
@@ -220,6 +220,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         for (int i = 0; i < allSheets.size(); i++) {
             ExcelSheetPostProcessor.apply(allSheets.get(i), columns, headerRowIndex, dataEndRows.get(i), cfg, i);
         }
+        TableOptions tableOptions = cfg.tableOptions;
         if (tableOptions != null) {
             for (int i = 0; i < allSheets.size(); i++) {
                 SXSSFSheet target = allSheets.get(i);
