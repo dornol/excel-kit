@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReadException;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.read.ExcelSheetInfo;
@@ -84,7 +85,7 @@ class TempFileCleanupIntegrationTest {
     }
 
     // ──────────────────────────────────────────────────────────────
-    // ExcelReader.getSheetNames: temp file cleanup
+    // ExcelWorkbookInspector.sheetNames: temp file cleanup
     // ──────────────────────────────────────────────────────────────
 
     @Test
@@ -93,7 +94,7 @@ class TempFileCleanupIntegrationTest {
 
         List<ExcelSheetInfo> sheets;
         try (InputStream is = Files.newInputStream(excelFile)) {
-            sheets = ExcelReader.getSheetNames(is);
+            sheets = ExcelWorkbookInspector.create().sheetNames(is);
         }
 
         assertEquals(3, sheets.size());
@@ -108,7 +109,7 @@ class TempFileCleanupIntegrationTest {
         InputStream badStream = new ByteArrayInputStream("not an excel file".getBytes());
 
         assertThrows(ExcelReadException.class, () ->
-                ExcelReader.getSheetNames(badStream));
+                ExcelWorkbookInspector.create().sheetNames(badStream));
     }
 
     @Test
@@ -116,11 +117,11 @@ class TempFileCleanupIntegrationTest {
         InputStream emptyStream = new ByteArrayInputStream(new byte[0]);
 
         assertThrows(ExcelReadException.class, () ->
-                ExcelReader.getSheetNames(emptyStream));
+                ExcelWorkbookInspector.create().sheetNames(emptyStream));
     }
 
     // ──────────────────────────────────────────────────────────────
-    // ExcelReader.getSheetHeaders: temp file cleanup
+    // ExcelWorkbookInspector.headers: temp file cleanup
     // ──────────────────────────────────────────────────────────────
 
     @Test
@@ -129,7 +130,7 @@ class TempFileCleanupIntegrationTest {
 
         List<String> headers;
         try (InputStream is = Files.newInputStream(excelFile)) {
-            headers = ExcelReader.getSheetHeaders(is, 0, 0);
+            headers = ExcelWorkbookInspector.create().headers(is, 0, 0);
         }
 
         assertEquals(3, headers.size());
@@ -143,7 +144,7 @@ class TempFileCleanupIntegrationTest {
         InputStream badStream = new ByteArrayInputStream("invalid".getBytes());
 
         assertThrows(ExcelReadException.class, () ->
-                ExcelReader.getSheetHeaders(badStream, 0, 0));
+                ExcelWorkbookInspector.create().headers(badStream, 0, 0));
     }
 
     // ──────────────────────────────────────────────────────────────

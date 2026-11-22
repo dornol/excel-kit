@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReadException;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.read.ExcelSheetInfo;
@@ -23,7 +24,7 @@ class WorkbookMultiSheetReadTest {
                 .write(Stream.of("A", "B", "C", "D", "E", "F", "G", "H", "I"))
                 .writeTo(out);
 
-        var sheets = ExcelReader.getSheetNames(new ByteArrayInputStream(out.toByteArray()));
+        var sheets = ExcelWorkbookInspector.create().sheetNames(new ByteArrayInputStream(out.toByteArray()));
         assertTrue(sheets.size() >= 3, "Should have multiple sheets");
         assertEquals("Data", sheets.get(0).name());
     }
@@ -37,7 +38,7 @@ class WorkbookMultiSheetReadTest {
                 .write(Stream.empty())
                 .writeTo(out);
 
-        var headers = ExcelReader.getSheetHeaders(
+        var headers = ExcelWorkbookInspector.create().headers(
                 new ByteArrayInputStream(out.toByteArray()), 0, 0);
         assertEquals(List.of("A", "B"), headers);
     }
@@ -45,13 +46,13 @@ class WorkbookMultiSheetReadTest {
     @Test
     void getSheetNames_exception_invalidStream() {
         assertThrows(ExcelReadException.class, () ->
-                ExcelReader.getSheetNames(new ByteArrayInputStream(new byte[]{1, 2, 3})));
+                ExcelWorkbookInspector.create().sheetNames(new ByteArrayInputStream(new byte[]{1, 2, 3})));
     }
 
     @Test
     void getSheetHeaders_exception_invalidStream() {
         assertThrows(ExcelReadException.class, () ->
-                ExcelReader.getSheetHeaders(new ByteArrayInputStream(new byte[]{1, 2, 3}), 0, 0));
+                ExcelWorkbookInspector.create().headers(new ByteArrayInputStream(new byte[]{1, 2, 3}), 0, 0));
     }
 
     @Test
@@ -68,7 +69,7 @@ class WorkbookMultiSheetReadTest {
         }
 
         byte[] data = out.toByteArray();
-        var sheets = ExcelReader.getSheetNames(new ByteArrayInputStream(data));
+        var sheets = ExcelWorkbookInspector.create().sheetNames(new ByteArrayInputStream(data));
 
         // Read each sheet by name
         Map<String, List<String>> allData = new LinkedHashMap<>();

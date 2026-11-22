@@ -50,8 +50,8 @@ class ExternalWorkbookFixtureTest {
     @Test
     void excelSharedStringsSparseRowsAndSheetMetadataAreReadWithoutRewriting() throws Exception {
         Path file = fixture("WithVariousData.xlsx");
-        assertEquals(List.of("Sheet1", "Sheet2", "Sheet3"), ExcelReader.getSheetNames(file).stream().map(ExcelSheetInfo::name).toList());
-        assertEquals(List.of("A1", "B1", "C1"), ExcelReader.getSheetHeaders(file, 0, 0));
+        assertEquals(List.of("Sheet1", "Sheet2", "Sheet3"), ExcelWorkbookInspector.create().sheetNames(file).stream().map(ExcelSheetInfo::name).toList());
+        assertEquals(List.of("A1", "B1", "C1"), ExcelWorkbookInspector.create().headers(file, 0, 0));
         var rows = read(file, 0, null);
         assertEquals(8, rows.size());
         assertEquals("22.3", rows.get(0).data().get(0).asString());
@@ -68,7 +68,7 @@ class ExternalWorkbookFixtureTest {
         assertEquals(45, rows.size());
         assertEquals("11-10-52", rows.get(0).data().get(0).asString());
         assertTrue(rows.get(0).data().get(2).asString().contains("1952"));
-        assertTrue(ExcelReader.getSheetHeaders(file, 1, 1).get(2).contains("1952"));
+        assertTrue(ExcelWorkbookInspector.create().headers(file, 1, 1).get(2).contains("1952"));
         try (var pkg = OPCPackage.open(file.toFile(), PackageAccess.READ)) {
             assertEquals("1952-10-11 14:35:27", ExcelReadSupport.dataFormatter(new XSSFReader(pkg))
                     .formatRawCellContents(17816.607951388887, 164, "yyyy-MM-dd HH:mm:ss"));

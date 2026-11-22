@@ -285,8 +285,8 @@ Callback reading is row-by-row and does not load the whole file into memory. A c
 `readWhile`. Path inputs are read directly and are never modified or deleted. Streams opened
 by an `InputStreamSource` are closed by excel-kit.
 
-Excel sheet discovery follows the same ownership rule: `getSheetNames(InputStream)` and
-`getSheetHeaders(InputStream, ...)` consume but do not close the supplied stream, while their
+Excel sheet discovery follows the same ownership rule: `ExcelWorkbookInspector.sheetNames(InputStream)` and
+`headers(InputStream, ...)` consume but do not close the supplied stream, while their
 `Path` and `InputStreamSource` overloads manage their own resources.
 
 Use `readWithSummary(...)` when aggregate counts and elapsed time are needed, or
@@ -364,32 +364,38 @@ ExcelReader.setter(MyDto::new)
 
 ## Multi-Sheet Discovery
 
+`ExcelWorkbookInspector` looks at a workbook without reading its rows:
+
 ```java
-List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(inputStream);
+ExcelWorkbookInspector inspector = ExcelWorkbookInspector.create();
+
+List<ExcelSheetInfo> sheets = inspector.sheetNames(inputStream);
 sheets.forEach(s -> log.info("{}: {}", s.index(), s.name()));
 
-List<String> headers = ExcelReader.getSheetHeaders(inputStream, 0, 0);
+List<String> headers = inspector.headers(inputStream, 0, 0);   // sheet index, header row index
 ```
 
-A password-protected workbook takes the password as the last argument of each overload; a wrong one fails with
+`sheetNames` and `headers` each take an `InputStream` (copied to a temporary file, not closed), a `Path` (opened in
+place) or an `InputStreamSource` (opened and closed here). Settings go on the inspector, so they do not multiply the
+overloads, and one inspector can be used for any number of files.
+
+A password-protected workbook needs `password(...)`; a wrong one fails with
 `ExcelReadException: Invalid password for encrypted Excel file`:
 
 ```java
-List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(path, "secret");
-List<String> headers = ExcelReader.getSheetHeaders(path, 0, 0, "secret");
+ExcelWorkbookInspector.create().password("secret").sheetNames(path);
+```
+
+For a file from an untrusted source (an upload) add `limits(...)`. The copy of a stream stops at `maxInputBytes`, a
+file larger than that is refused before it is opened, and a workbook with more sheets than `maxSheets` (or a header row
+wider than `maxColumns`) fails with `ReadLimitExceededException`. Without limits nothing is bounded:
+
+```java
+var inspector = ExcelWorkbookInspector.create().limits(ReadLimits.UPLOAD);
+List<ExcelSheetInfo> sheets = inspector.sheetNames(upload);
 ```
 
 `ExcelWorkbookReader` does this on its own when the readers it was given have a `password(...)`.
-
-These calls copy the whole stream to a temporary file. For a file from an untrusted source (an upload), pass
-`ReadLimits` as the last argument, after the password if there is one: the copy stops at `maxInputBytes`, and a
-workbook with more sheets than `maxSheets` (or a header row wider than `maxColumns`) is refused with
-`ReadLimitExceededException`.
-
-```java
-List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(upload, ReadLimits.UPLOAD);
-List<String> headers = ExcelReader.getSheetHeaders(upload, 0, 0, ReadLimits.UPLOAD);
-```
 
 ## CellData Conversion Methods
 

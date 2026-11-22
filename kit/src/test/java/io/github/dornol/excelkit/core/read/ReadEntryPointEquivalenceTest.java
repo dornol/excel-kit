@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.detect.TabularDetectionResult;
 import io.github.dornol.excelkit.core.detect.TabularFileDetector;
@@ -424,10 +425,11 @@ class ReadEntryPointEquivalenceTest {
         void sheetNamesAndHeadersCanBeReadFromAnyKindOfInput(Kind kind) throws IOException {
             Input input = input(PEOPLE);
 
-            List<ExcelSheetInfo> sheets = input.choose(kind, ExcelReader::getSheetNames,
-                    ExcelReader::getSheetNames, ExcelReader::getSheetNames);
-            List<String> headers = input.choose(kind, s -> ExcelReader.getSheetHeaders(s, 0, 0),
-                    p -> ExcelReader.getSheetHeaders(p, 0, 0), src -> ExcelReader.getSheetHeaders(src, 0, 0));
+            List<ExcelSheetInfo> sheets = input.choose(kind, s -> ExcelWorkbookInspector.create().sheetNames(s),
+                    p -> ExcelWorkbookInspector.create().sheetNames(p),
+                    src -> ExcelWorkbookInspector.create().sheetNames(src));
+            List<String> headers = input.choose(kind, s -> ExcelWorkbookInspector.create().headers(s, 0, 0),
+                    p -> ExcelWorkbookInspector.create().headers(p, 0, 0), src -> ExcelWorkbookInspector.create().headers(src, 0, 0));
 
             assertEquals(List.of("Sheet1"), sheets.stream().map(ExcelSheetInfo::name).toList());
             assertEquals(List.of("Name", "Qty"), headers);

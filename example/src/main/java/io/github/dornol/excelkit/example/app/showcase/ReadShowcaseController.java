@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.example.app.showcase;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.schema.ExcelKitSchema;
 import io.github.dornol.excelkit.spring.ExcelKitErrorResponse;
 import io.github.dornol.excelkit.spring.ExcelKitTemplateResponse;
@@ -186,12 +187,12 @@ public class ReadShowcaseController {
     @ResponseBody
     public String sheetInfo(MultipartFile file) throws IOException {
         byte[] data = file.getBytes();
-        List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(new ByteArrayInputStream(data));
+        List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(new ByteArrayInputStream(data));
 
         StringBuilder sb = new StringBuilder();
         sb.append("=== Sheet Info ===\n\n");
         for (ExcelSheetInfo info : sheets) {
-            List<String> headers = ExcelReader.getSheetHeaders(new ByteArrayInputStream(data), info.index(), 0);
+            List<String> headers = ExcelWorkbookInspector.create().headers(new ByteArrayInputStream(data), info.index(), 0);
             sb.append("Sheet %d: \"%s\" — Headers: %s\n".formatted(info.index(), info.name(), headers));
         }
         return sb.toString();

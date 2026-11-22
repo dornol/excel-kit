@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.read.ReadResult;
@@ -86,7 +87,7 @@ class ExcelValuePreservationTest {
                     assertEquals(timeZone, LocaleUtil.getUserTimeZone());
                 });
                 assertEquals(List.of("2025-03-09 02:30:00"),
-                        ExcelReader.getSheetHeaders(new ByteArrayInputStream(file), 0, 1));
+                        ExcelWorkbookInspector.create().headers(new ByteArrayInputStream(file), 0, 1));
                 assertEquals(timeZone, LocaleUtil.getUserTimeZone());
             }
         } finally {
@@ -115,7 +116,7 @@ class ExcelValuePreservationTest {
                 </worksheet>
                 """);
         assertEquals(List.of("First", "", "Third", "Fourth", "Fifth"),
-                ExcelReader.getSheetHeaders(new ByteArrayInputStream(file), 0, 0));
+                ExcelWorkbookInspector.create().headers(new ByteArrayInputStream(file), 0, 0));
         var results = new ArrayList<ReadResult<RowData>>();
         ExcelReader.mapping(row -> row).read(new ByteArrayInputStream(file), results::add);
         assertEquals(5L, results.get(0).fileRowNum());
@@ -198,7 +199,7 @@ class ExcelValuePreservationTest {
         assertEquals(LocalTime.of(12, 34, 56), row.get("Time").asLocalTime());
         assertNull(row.get("Date").rawNumber());
         assertEquals(List.of("2025-04-28", "2025-04-28T10:15:21.123", "12:34:56"),
-                ExcelReader.getSheetHeaders(new ByteArrayInputStream(file), 0, 1));
+                ExcelWorkbookInspector.create().headers(new ByteArrayInputStream(file), 0, 1));
     }
 
     @Test

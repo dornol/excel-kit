@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.read.ExcelSheetInfo;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -28,7 +29,7 @@ class MultiSheetReadTest {
             wb.finish().writeTo(out);
         }
 
-        List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(
+        List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(
                 new ByteArrayInputStream(out.toByteArray()));
 
         assertEquals(2, sheets.size());
@@ -48,7 +49,7 @@ class MultiSheetReadTest {
                 .write(Stream.of("data"))
                 .writeTo(out);
 
-        List<String> headers = ExcelReader.getSheetHeaders(
+        List<String> headers = ExcelWorkbookInspector.create().headers(
                 new ByteArrayInputStream(out.toByteArray()), 0, 0);
 
         assertEquals(List.of("First", "Second", "Third"), headers);
@@ -86,7 +87,7 @@ class MultiSheetReadTest {
                 .write(Stream.of("Alice"))
                 .writeTo(out);
 
-        List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(
+        List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(
                 new ByteArrayInputStream(out.toByteArray()));
 
         assertEquals(1, sheets.size());
@@ -108,7 +109,7 @@ class MultiSheetReadTest {
                 .write(Stream.of("Alice"))
                 .writeTo(out);
 
-        List<String> headers = ExcelReader.getSheetHeaders(
+        List<String> headers = ExcelWorkbookInspector.create().headers(
                 new ByteArrayInputStream(out.toByteArray()), 0, 1);
 
         assertEquals(List.of("Name", "Age"), headers);

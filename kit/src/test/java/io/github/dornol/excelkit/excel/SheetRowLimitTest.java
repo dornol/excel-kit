@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.read.ExcelSheetInfo;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class SheetRowLimitTest {
                 workbook.finish().writeTo(out);
             }
         }
-        List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(file);
+        List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(file);
         assertEquals(2, sheets.size());
         assertEquals("Big", sheets.get(0).name());
         assertEquals("Big (2)", sheets.get(1).name());

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.ExcelKitException;
@@ -451,7 +452,7 @@ class ExcelEdgeCaseTest {
                     .write(Stream.of(new Item("A", 1)))
                     .writeTo(out);
 
-            List<String> headers = ExcelReader.getSheetHeaders(
+            List<String> headers = ExcelWorkbookInspector.create().headers(
                     new ByteArrayInputStream(out.toByteArray()), 0, 0);
 
             assertEquals(2, headers.size());

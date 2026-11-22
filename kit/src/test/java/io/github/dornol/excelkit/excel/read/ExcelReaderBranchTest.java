@@ -306,7 +306,7 @@ class ExcelReaderBranchTest {
                 }
             }
 
-            List<String> headers = ExcelReader.getSheetHeaders(
+            List<String> headers = ExcelWorkbookInspector.create().headers(
                     Files.newInputStream(file), 0, 0);
 
             assertEquals(3, headers.size());
@@ -329,7 +329,7 @@ class ExcelReaderBranchTest {
                 }
             }
 
-            List<String> headers = ExcelReader.getSheetHeaders(
+            List<String> headers = ExcelWorkbookInspector.create().headers(
                     Files.newInputStream(file), 0, 1);
 
             assertEquals(2, headers.size());
@@ -351,7 +351,7 @@ class ExcelReaderBranchTest {
                 }
             }
 
-            List<String> headers = ExcelReader.getSheetHeaders(
+            List<String> headers = ExcelWorkbookInspector.create().headers(
                     Files.newInputStream(file), 1, 0);
 
             assertEquals(2, headers.size());
@@ -370,7 +370,7 @@ class ExcelReaderBranchTest {
 
             try (InputStream is = Files.newInputStream(file)) {
                 ExcelReadException ex = assertThrows(ExcelReadException.class,
-                        () -> ExcelReader.getSheetHeaders(is, 1, 0));
+                        () -> ExcelWorkbookInspector.create().headers(is, 1, 0));
                 assertTrue(ex.getMessage().contains("Sheet index 1 not found"));
             }
         }

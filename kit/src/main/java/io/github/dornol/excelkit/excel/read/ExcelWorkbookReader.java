@@ -211,7 +211,7 @@ public final class ExcelWorkbookReader {
     private List<ExcelSheetInfo> sheetNames(Path path) {
         String password = plans.stream().map(plan -> plan.execution.password()).filter(Objects::nonNull)
                 .findFirst().orElse(null);
-        return password == null ? ExcelReader.getSheetNames(path) : ExcelReader.getSheetNames(path, password);
+        return ExcelWorkbookInspector.create().password(password).sheetNames(path);
     }
 
     private @Nullable Integer findSheetIndex(@Nullable String name, List<ExcelSheetInfo> sheets) {

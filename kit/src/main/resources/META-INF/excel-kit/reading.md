@@ -203,19 +203,14 @@ excel-kit supports reading the detected format. Caller-provided streams remain c
 ## Multi-Sheet Discovery
 
 ```java
-List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(inputStream);
-// ExcelSheetInfo: index(), name()
-
-List<String> headers = ExcelReader.getSheetHeaders(inputStream, sheetIndex, headerRowIndex);
+ExcelWorkbookInspector inspector = ExcelWorkbookInspector.create();
+List<ExcelSheetInfo> sheets = inspector.sheetNames(inputStream);   // ExcelSheetInfo: index(), name()
+List<String> headers = inspector.headers(inputStream, sheetIndex, headerRowIndex);
 ```
 
-Encrypted workbooks: pass the password last — `getSheetNames(path, "secret")`,
-`getSheetHeaders(path, sheetIndex, headerRowIndex, "secret")` (`InputStream`, `Path` and `InputStreamSource` overloads).
-`ExcelWorkbookReader` uses the password of the readers it is given.
-
-Untrusted input: `getSheetNames(inputStream, ReadLimits.UPLOAD)` and
-`getSheetHeaders(inputStream, sheetIndex, headerRowIndex, ReadLimits.UPLOAD)` (password before the limits) stop the
-copy at `maxInputBytes` and refuse too many sheets or columns with `ReadLimitExceededException`.
+`InputStream`, `Path` and `InputStreamSource` overloads. Encrypted workbook: `.password("secret")` on the inspector.
+Untrusted upload: `.limits(ReadLimits.UPLOAD)` stops the copy at `maxInputBytes` and refuses too many sheets or columns
+with `ReadLimitExceededException`. `ExcelWorkbookReader` uses the password of the readers it is given.
 
 ## Bean Validation
 

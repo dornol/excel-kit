@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.scale;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.core.read.ReadSummary;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
@@ -119,7 +120,7 @@ class ScaleTest {
         writing.verify();
 
         long expectedSheets = (EXCEL_ROWS + 999_999) / 1_000_000;
-        List<ExcelSheetInfo> sheets = ExcelReader.getSheetNames(file);
+        List<ExcelSheetInfo> sheets = ExcelWorkbookInspector.create().sheetNames(file);
         assertEquals(expectedSheets, sheets.size(), "one sheet per million rows: " + sheets);
         assertEquals(sheets.size(), sheets.stream().map(ExcelSheetInfo::name).distinct().count(), "sheet names are unique: " + sheets);
 

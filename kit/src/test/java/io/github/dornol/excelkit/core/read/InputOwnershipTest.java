@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.core.read;
 
+import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.core.io.InputStreamSource;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
@@ -52,11 +53,11 @@ class InputOwnershipTest {
         var callerInput = new ByteArrayInputStream(workbook) {
             @Override public void close() { callerClosed.set(true); }
         };
-        assertEquals("Data", ExcelReader.getSheetNames(callerInput).get(0).name());
+        assertEquals("Data", ExcelWorkbookInspector.create().sheetNames(callerInput).get(0).name());
         assertFalse(callerClosed.get());
 
         AtomicBoolean sourceClosed = new AtomicBoolean();
-        ExcelReader.getSheetHeaders(() -> new ByteArrayInputStream(workbook) {
+        ExcelWorkbookInspector.create().headers(() -> new ByteArrayInputStream(workbook) {
             @Override public void close() { sourceClosed.set(true); }
         }, 0, 0);
         assertTrue(sourceClosed.get());

@@ -46,7 +46,7 @@ reference guide.
 | `io.github.dornol.excelkit.core.detect` | `DetectionConfidence`, `TabularDetectionResult`, `TabularFileDetector`, `TabularFileType` | Telling an .xlsx from a CSV by content |
 | `io.github.dornol.excelkit.csv` | `CsvAfterDataWriter`, `CsvColumn`, `CsvDialect`, `CsvHandler`, `CsvQuoting`, `CsvReadException`, `CsvReader`, `CsvWriteException`, `CsvWriter` | CSV reading and writing |
 | `io.github.dornol.excelkit.excel` | `AfterDataWriter`, `BeforeHeaderWriter`, `ColumnConfig`, `ColumnStyleConfig`, `ExcelChartConfig`, `ExcelColumn`, `ExcelConditionalRule`, `ExcelDataType`, `ExcelHandler`, `ExcelKitConfig`, `ExcelPrintSetup`, `ExcelRichText`, `ExcelSheetWriter`, `ExcelSummary`, `ExcelTemplateWriter`, `ExcelValidation`, `ExcelWorkbook`, `ExcelWriteErrorPolicy`, `ExcelWriteException`, `ExcelWriter`, `HeaderStyleConfig`, `RowStyleConfig`, `SheetContext`, `StreamingOptions`, `TableOptions`, `TemplateListWriter`, `WriteRowCallback` | Excel writing: `ExcelWriter`, `ExcelWorkbook`, templates, column and sheet configuration |
-| `io.github.dornol.excelkit.excel.read` | `ExcelReadException`, `ExcelReader`, `ExcelSheetInfo`, `ExcelWorkbookReader`, `SheetFailurePolicy`, `SheetReadReport`, `WorkbookReadReport` | Excel reading: `ExcelReader`, multi-sheet `ExcelWorkbookReader`, sheet metadata |
+| `io.github.dornol.excelkit.excel.read` | `ExcelReadException`, `ExcelReader`, `ExcelSheetInfo`, `ExcelWorkbookInspector`, `ExcelWorkbookReader`, `SheetFailurePolicy`, `SheetReadReport`, `WorkbookReadReport` | Excel reading: `ExcelReader`, multi-sheet `ExcelWorkbookReader`, sheet metadata |
 | `io.github.dornol.excelkit.excel.style` | `CellColorFunction`, `ExcelBorderStyle`, `ExcelColor`, `ExcelDataFormat` | Colors, borders and number formats |
 | `io.github.dornol.excelkit.excel.feature` | `ExcelCellComment`, `ExcelHyperlink`, `ExcelImage` | Cell content beyond text: comments, hyperlinks, images |
 | `io.github.dornol.excelkit.schema` | `ExcelKitSchema` | One column definition for both reading and writing, Excel or CSV |
@@ -201,10 +201,9 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
   `sheet(name, schema.excelReader(supplier, validator), consumer)`.
 - **Untrusted uploads** — readers have no limits by default; use `limits(ReadLimits.UPLOAD)` (50 MiB, 50 sheets,
   1,000 columns, 32,767 characters per cell, 10 million cells) and, for Excel, `securityPolicy(ReadSecurityPolicy.STRICT)`.
-- **Encrypted discovery** — `ExcelReader.getSheetNames(input, password)` and
-  `getSheetHeaders(input, sheetIndex, headerRowIndex, password)` (`InputStream`, `Path`, `InputStreamSource`).
-- **Discovery of an upload** — the discovery calls copy the whole stream; add `ReadLimits` as the last argument
-  (`getSheetNames(input, ReadLimits.UPLOAD)`, `getSheetHeaders(input, sheet, row, ReadLimits.UPLOAD)`) to cap it.
+- **Sheet discovery** — `ExcelWorkbookInspector.create().sheetNames(input)` / `.headers(input, sheetIndex, headerRowIndex)`
+  (`InputStream`, `Path`, `InputStreamSource`). `.password(...)` opens an encrypted workbook; `.limits(ReadLimits.UPLOAD)`
+  caps an upload (input bytes, sheets, header columns) and fails with `ReadLimitExceededException`.
 - **Style cap** — `maxCellStyles(int)` on `ExcelWriter` / `ExcelSheetWriter` limits the cell styles that `cellColor`,
   `rowColor` and `rowStyle` colors may create (default 64,000); a function returning more distinct colors fails fast.
 - **CSV** — `CsvWriter.lineSeparator("\r\n"|"\n"|"\r")`. `CsvReader` refuses a delimiter, quote and escape character

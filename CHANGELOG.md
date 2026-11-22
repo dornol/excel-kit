@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- `ExcelReader.getSheetNames(InputStream, [password,] ReadLimits)` and `getSheetHeaders(InputStream, int, int, [password,] ReadLimits)`: sheet discovery for an untrusted upload. The copy to the temp file stops at `maxInputBytes`, and more sheets than `maxSheets` or a header row wider than `maxColumns` is refused. The overloads without limits copy the whole stream, as before.
+- `ExcelWorkbookInspector` (`io.github.dornol.excelkit.excel.read`): sheet discovery with its settings on the object. `create().password(...).limits(...)` then `sheetNames(...)` / `headers(..., sheetIndex, headerRowIndex)` for an `InputStream`, a `Path` or an `InputStreamSource`. With `limits(...)` the copy of a stream stops at `maxInputBytes`, a file above it is refused before it is opened, and more sheets than `maxSheets` or a header row wider than `maxColumns` fails with `ReadLimitExceededException`. A `Path` is opened in place; it used to be copied to a temp file, and `ExcelWorkbookReader.read(Path)` copied the same file twice.
 
 ### Changed
+- **Breaking:** `ExcelReader.getSheetNames(...)` and `getSheetHeaders(...)` (12 overloads) are removed; use `ExcelWorkbookInspector.create()[.password(...)].sheetNames(...)` / `.headers(...)`. Discovery is a question about the file, not about one sheet's mapping, so it no longer lives on the single-sheet reader.
 - **Breaking:** `io.github.dornol.excelkit.core` is split by purpose (change the imports; names are unchanged):
   reading infrastructure (`AbstractReader`, `ReaderOptions`, `ReadLimits`, `CellData`, `RowData`, `ReadResult`,
   `CancellationToken`, the `Read*` exceptions and the rest) moved to `core.read`; `InputStreamSource` and the

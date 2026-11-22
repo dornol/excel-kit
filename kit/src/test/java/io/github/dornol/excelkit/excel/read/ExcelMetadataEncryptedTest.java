@@ -38,13 +38,13 @@ class ExcelMetadataEncryptedTest {
 
     @Test
     void sheetNamesComeFromAPath() throws IOException {
-        assertEquals(SHEETS, ExcelReader.getSheetNames(write(true), "secret"));
+        assertEquals(SHEETS, ExcelWorkbookInspector.create().password("secret").sheetNames(write(true)));
     }
 
     @Test
     void sheetNamesComeFromAStream() throws IOException {
         try (InputStream in = Files.newInputStream(write(true))) {
-            assertEquals(SHEETS, ExcelReader.getSheetNames(in, "secret"));
+            assertEquals(SHEETS, ExcelWorkbookInspector.create().password("secret").sheetNames(in));
         }
     }
 
@@ -56,28 +56,28 @@ class ExcelMetadataEncryptedTest {
             opened[0]++;
             return Files.newInputStream(file);
         };
-        assertEquals(SHEETS, ExcelReader.getSheetNames(source, "secret"));
+        assertEquals(SHEETS, ExcelWorkbookInspector.create().password("secret").sheetNames(source));
         assertEquals(1, opened[0]);
     }
 
     @Test
     void headersComeFromEachWayOfHandingOverTheFile() throws IOException {
         Path file = write(true);
-        assertEquals(List.of("Name", "Age"), ExcelReader.getSheetHeaders(file, 0, 0, "secret"));
-        assertEquals(List.of("City"), ExcelReader.getSheetHeaders(file, 1, 0, "secret"));
+        assertEquals(List.of("Name", "Age"), ExcelWorkbookInspector.create().password("secret").headers(file, 0, 0));
+        assertEquals(List.of("City"), ExcelWorkbookInspector.create().password("secret").headers(file, 1, 0));
         try (InputStream in = Files.newInputStream(file)) {
-            assertEquals(List.of("Name", "Age"), ExcelReader.getSheetHeaders(in, 0, 0, "secret"));
+            assertEquals(List.of("Name", "Age"), ExcelWorkbookInspector.create().password("secret").headers(in, 0, 0));
         }
-        assertEquals(List.of("Name", "Age"), ExcelReader.getSheetHeaders(
-                (InputStreamSource) () -> Files.newInputStream(file), 0, 0, "secret"));
+        assertEquals(List.of("Name", "Age"), ExcelWorkbookInspector.create().password("secret").headers(
+                (InputStreamSource) () -> Files.newInputStream(file), 0, 0));
     }
 
     @Test
     void aWrongPasswordIsReportedAsSuch() throws IOException {
         Path file = write(true);
         for (Runnable call : List.<Runnable>of(
-                () -> ExcelReader.getSheetNames(file, "wrong"),
-                () -> ExcelReader.getSheetHeaders(file, 0, 0, "wrong"))) {
+                () -> ExcelWorkbookInspector.create().password("wrong").sheetNames(file),
+                () -> ExcelWorkbookInspector.create().password("wrong").headers(file, 0, 0))) {
             ExcelReadException error = assertThrows(ExcelReadException.class, call::run);
             assertTrue(error.getMessage().contains("Invalid password"), error.getMessage());
         }
@@ -86,16 +86,16 @@ class ExcelMetadataEncryptedTest {
     @Test
     void aPasswordForAPlainWorkbookIsAFailureNotASilentRead() throws IOException {
         Path file = write(false);
-        assertThrows(ExcelReadException.class, () -> ExcelReader.getSheetNames(file, "secret"));
+        assertThrows(ExcelReadException.class, () -> ExcelWorkbookInspector.create().password("secret").sheetNames(file));
         // the plain overloads still read it, and still cannot read an encrypted one
-        assertEquals(SHEETS, ExcelReader.getSheetNames(file));
-        assertThrows(ExcelReadException.class, () -> ExcelReader.getSheetNames(write(true)));
+        assertEquals(SHEETS, ExcelWorkbookInspector.create().sheetNames(file));
+        assertThrows(ExcelReadException.class, () -> ExcelWorkbookInspector.create().sheetNames(write(true)));
     }
 
     @Test
     void theHeaderPositionIsStillChecked() throws IOException {
         Path file = write(true);
-        assertThrows(IllegalArgumentException.class, () -> ExcelReader.getSheetHeaders(file, -1, 0, "secret"));
-        assertThrows(IllegalArgumentException.class, () -> ExcelReader.getSheetHeaders(file, 0, -1, "secret"));
+        assertThrows(IllegalArgumentException.class, () -> ExcelWorkbookInspector.create().password("secret").headers(file, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> ExcelWorkbookInspector.create().password("secret").headers(file, 0, -1));
     }
 }

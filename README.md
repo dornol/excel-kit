@@ -278,7 +278,7 @@ The library is split into packages by purpose. The ones you import most:
 | Package | What you import from it |
 |---------|-------------------------|
 | `io.github.dornol.excelkit.excel` | `ExcelWriter`, `ExcelWorkbook`, `ExcelTemplateWriter`, `ExcelDataType` |
-| `io.github.dornol.excelkit.excel.read` | `ExcelReader`, `ExcelWorkbookReader` |
+| `io.github.dornol.excelkit.excel.read` | `ExcelReader`, `ExcelWorkbookReader`, `ExcelWorkbookInspector` |
 | `io.github.dornol.excelkit.excel.style` | `ExcelColor`, `ExcelBorderStyle`, `ExcelDataFormat` |
 | `io.github.dornol.excelkit.csv` | `CsvWriter`, `CsvReader` |
 | `io.github.dornol.excelkit.core.read` | `ReadResult`, `ReadLimits`, `ReadSecurityPolicy`, `CellData`, `RowData` |
@@ -317,7 +317,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 | Validation | Bean Validation, `required()` per column |
 | Callbacks | Unified `read(Consumer<ReadResult>)` or split `read(onSuccess, onError)` with typed `RowError`, `CellError`, physical file row number, and raw row values (`rawValues()`) |
 | Control flow | `readWhile()` for normal early stop, `readStrict()`/`readAll()` for fail-fast, `maxErrors()` for error limits |
-| Discovery | `getSheetNames()`, `getSheetHeaders()` (password overloads read encrypted workbooks) |
+| Discovery | `ExcelWorkbookInspector` — `sheetNames()`, `headers()`; `password(...)` reads encrypted workbooks, `limits(...)` bounds an upload |
 | Config | Sheet index, header row index, progress callback, row limits, blank-row handling, reader-scoped cell conversion, `countRows()` for total row pre-scan, password-encrypted files, `limits(ReadLimits.UPLOAD)` preset for untrusted uploads (readers have no limits by default) |
 
 Reader configurations are reusable. Each `read()`, `readWhile()`, or `readStrict()` call creates
