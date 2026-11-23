@@ -717,7 +717,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
                 rowStyleCache, wb);
         execution().pageBreaks().beforeRow(sheet(), cursor().getRowOfSheet(), rowData);
         ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb,
-                execution().merges());
+                execution().merges(), subtotals);
         ExcelWriteSupport.checkProgress(cursor(), options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
     }
 
@@ -753,7 +753,10 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         // The total already counts the row about to be written: it starts a new sheet when it is the first
         // one past a full sheet. (A "% limit == 1" test never holds for limit 1.)
         long total = cursor().getCurrentTotal();
-        return total > limit && (total - 1) % limit == 0;
+        if (total > limit && (total - 1) % limit == 0) return true;
+        // subtotal rows are not data rows: a sheet short of maxRows can still be out of room for them
+        var subtotals = execution().subtotals();
+        return total > 1 && subtotals != null && subtotals.sheetNearlyFull(cursor());
     }
 
     private ExcelWriteOptions<T> snapshotOptions() {

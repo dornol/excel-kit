@@ -484,7 +484,8 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * and a {@link #summary(Consumer)} over the sheet counts every row once (the summary switches to
      * {@code SUBTOTAL} too). The rows must be sorted by the key: a key that returns after another key gets a
      * subtotal of its own. The subtotal rows are not data rows: they do not count for {@code rowNumberColumn},
-     * {@code stripedRows} or {@code maxRows}, and a rolled-over sheet closes its last group and starts a new one.
+     * {@code stripedRows} or {@code maxRows}, and a rolled-over sheet closes its last group and starts a new one. A sheet
+     * also turns over early when the subtotal rows and the summary would not fit the 1,048,576 rows Excel allows.
      * <p>
      * Cannot be combined with {@code table(...)}, {@code chart(...)} or {@code namedRange(...)}, which take the
      * rows of the sheet for one block of data: the write fails with {@link ExcelWriteException}. A file written

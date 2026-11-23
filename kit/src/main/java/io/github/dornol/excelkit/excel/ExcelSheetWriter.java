@@ -232,8 +232,9 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             while (it.hasNext()) {
                 T rowData = it.next();
                 cursor.plusTotal();
-                if (cursor.getCurrentTotal() > cfg.maxRows
-                        && (cursor.getCurrentTotal() - 1) % cfg.maxRows == 0) {
+                if (cursor.getCurrentTotal() > 1 && ((cursor.getCurrentTotal() > cfg.maxRows
+                        && (cursor.getCurrentTotal() - 1) % cfg.maxRows == 0)
+                        || (subtotals != null && subtotals.sheetNearlyFull(cursor)))) {
                     StructuredTableWriter.requireRolloverAllowed(cfg.tableOptions);
                     if (subtotals != null) subtotals.close(activeSheet, cursor, cfg, merges, rowStyleCache, wb);
                     dataEndRows.add(cursor.getRowOfSheet() - 1);
@@ -253,7 +254,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 }
                 if (subtotals != null) subtotals.beforeRow(activeSheet, cursor, rowData, cfg, merges, rowStyleCache, wb);
                 pageBreaks.beforeRow(activeSheet, cursor.getRowOfSheet(), rowData);
-                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb, merges);
+                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb, merges, subtotals);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             }
         }

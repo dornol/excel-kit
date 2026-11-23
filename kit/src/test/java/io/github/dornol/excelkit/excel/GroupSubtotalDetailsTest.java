@@ -518,20 +518,13 @@ class GroupSubtotalDetailsTest {
         }
 
         @Test
-        void aSheetWithNoRoomForTheSubtotalRowFailsClearly() {
-            var rows = IntStream.rangeClosed(1, 1_048_575).mapToObj(i -> new Row("A", "n", 1, 0));
+        void aSheetThatCannotEvenHoldItsFirstSubtotalRowFailsClearly() {
+            // the preamble leaves one row below the header: the first data row fits, its subtotal row does not
             var w = ExcelWriter.<Row>create().column("Dept", Row::dept).column("Amount", Row::amount)
-                    .maxRows(1_048_575).groupSubtotal(Row::dept, s -> s.sum("Amount"));
-            var e = assertThrows(ExcelWriteException.class, () -> w.write(rows));
+                    .beforeHeader(ctx -> 1_048_576 - 2)
+                    .groupSubtotal(Row::dept, s -> s.sum("Amount"));
+            var e = assertThrows(ExcelWriteException.class, () -> w.write(List.of(new Row("A", "n", 1, 0))));
             assertTrue(e.getMessage().contains("no room for the subtotal row"), e.getMessage());
-        }
-
-        @Test
-        void aSheetWithExactlyOneRowOfRoomIsWritten() throws IOException {
-            var rows = IntStream.rangeClosed(1, 1_048_574).mapToObj(i -> new Row("A", "n", 1, 0));
-            var w = ExcelWriter.<Row>create().column("Dept", Row::dept).column("Amount", Row::amount)
-                    .maxRows(1_048_574).groupSubtotal(Row::dept, s -> s.sum("Amount"));
-            w.write(rows).writeTo(OutputStream.nullOutputStream());
         }
     }
 

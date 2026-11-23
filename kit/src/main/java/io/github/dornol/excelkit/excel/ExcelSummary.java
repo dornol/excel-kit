@@ -142,6 +142,11 @@ public class ExcelSummary {
         return this;
     }
 
+    /** The number of rows the summary writes: one for every operation. */
+    int rowCount() {
+        return entries.size();
+    }
+
     /**
      * Converts this summary configuration into an {@link AfterDataWriter} callback.
      */

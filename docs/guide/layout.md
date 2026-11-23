@@ -127,7 +127,9 @@ default bold-on-gray look; `label(column, key -> text)` sets the column of the t
 
 - Sort the rows by the key: a key that returns after another key gets a subtotal of its own.
 - Subtotal rows are not data rows: they do not count for `rowNumberColumn`, `stripedRows` or `maxRows`. A rolled-over
-  sheet closes its last group and starts a new one on the next sheet.
+  sheet closes its last group and starts a new one on the next sheet. Because `maxRows` does not count them, a sheet
+  also turns over early when the subtotal rows (and the summary) would take the room Excel's 1,048,576 rows leave, so
+  the default `maxRows` works with subtotals; a group that straddles that point gets a subtotal on each sheet.
 - `ExcelPrintSetup.rowBreakEvery(n)` counts sheet rows, so the subtotal rows take part of each page.
 - A subtotal row is always locked under `protectSheet(...)`, even in a column set to `locked(false)`, and its label counts
   for the column's automatic width (within `autoWidthSampleRows`). It takes the number format and alignment of its column;

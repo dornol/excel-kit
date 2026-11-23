@@ -90,6 +90,63 @@ class FeatureScaleTest {
         Files.delete(file);
     }
 
+    private static long countOccurrences(Path xlsx, String sheetEntry, String needle) throws IOException {
+        try (ZipFile zip = new ZipFile(xlsx.toFile()); var in = zip.getInputStream(zip.getEntry(sheetEntry))) {
+            long count = 0;
+            byte[] pattern = needle.getBytes();
+            byte[] buffer = new byte[1 << 16];
+            int matched = 0, read;
+            while ((read = in.read(buffer)) > 0) {
+                for (int i = 0; i < read; i++) {
+                    if (buffer[i] == pattern[matched]) {
+                        if (++matched == pattern.length) { count++; matched = 0; }
+                    } else matched = buffer[i] == pattern[0] ? 1 : 0;
+                }
+            }
+            return count;
+        }
+    }
+
+    @Test
+    void groupSubtotalsKeepNothingPerGroupAndTurnTheSheetOverBeforeItIsFull() throws IOException {
+        Path file = dir.resolve("subtotals.xlsx");
+        AtomicLong peak = new AtomicLong();
+        long started = System.nanoTime();
+        // a subtotal row for every RUN rows: with the default maxRows the sheet would run out of room for them
+        ExcelWriter.<Line>create()
+                .column("Dept", Line::dept)
+                .column("Name", Line::name)
+                .column("Id", Line::id)
+                .groupSubtotal(Line::dept, s -> s.label("Name", k -> "total").sum("Id"))
+                .onProgress(250_000, (total, cursor) -> peak.accumulateAndGet(usedMiB(), Math::max))
+                .write(LongStream.range(0, ROWS).mapToObj(Line::new))
+                .writeTo(file);
+        double seconds = (System.nanoTime() - started) / 1e9;
+        long dataRows = 0, subtotalRows = 0;
+        int sheets = 0;
+        try (ZipFile zip = new ZipFile(file.toFile())) {
+            while (zip.getEntry("xl/worksheets/sheet" + (sheets + 1) + ".xml") != null) sheets++;
+        }
+        for (int sheet = 1; sheet <= sheets; sheet++) {
+            String entry = "xl/worksheets/sheet" + sheet + ".xml";
+            long rows = countOccurrences(file, entry, "<row ");
+            long sub = countOccurrences(file, entry, "SUBTOTAL(9,");
+            assertTrue(rows <= 1_048_576, "sheet " + sheet + " holds " + rows + " rows");
+            dataRows += rows - 1 - sub;
+            subtotalRows += sub;
+        }
+        System.out.printf("[scale] %,d rows with %,d subtotal rows over %d sheets in %.1fs, peak heap after gc %d MiB%n",
+                dataRows, subtotalRows, sheets, seconds, peak.get());
+        assertEquals(ROWS, dataRows, "no data row lost");
+        // a subtotal row for every run of RUN rows, plus one more where a sheet ends inside a run (its last group is closed there)
+        long runs = (ROWS + RUN - 1) / RUN;
+        assertTrue(subtotalRows >= runs && subtotalRows <= runs + sheets - 1,
+                subtotalRows + " subtotal rows for " + runs + " runs over " + sheets + " sheets");
+        assertTrue(ROWS < 900_000 || sheets >= 2, "the rows and their subtotals do not fit one sheet");
+        assertTrue(peak.get() < 200, "the subtotals held " + peak.get() + " MiB");
+        Files.delete(file);
+    }
+
     @Test
     void fillMergedCellsReadsABigSheetWithManyRegionsInBoundedHeap() throws IOException {
         Path file = dir.resolve("merged-read.xlsx");

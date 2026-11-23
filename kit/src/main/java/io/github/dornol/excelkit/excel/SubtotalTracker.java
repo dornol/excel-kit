@@ -27,14 +27,21 @@ final class SubtotalTracker<T> {
     private final int labelIndex;
     private final ExcelSummary.@Nullable Op[] opOfColumn;
 
+    /** Rows the summary writes below the data of a sheet, which must still fit after the last subtotal row. */
+    private final int summaryRows;
+
+    private @Nullable SXSSFSheet currentSheet;
+    private long dataRowsInSheet;
     private boolean open;
     private int startRow;
     private @Nullable Object groupKey;
 
-    private SubtotalTracker(Function<T, @Nullable Object> key, ExcelSubtotal config, List<ExcelColumn<T>> columns) {
+    private SubtotalTracker(Function<T, @Nullable Object> key, ExcelSubtotal config, List<ExcelColumn<T>> columns,
+                            SheetConfig<T> cfg) {
         this.key = key;
         this.config = config;
         this.style = config.style().lockedCopy();
+        this.summaryRows = cfg.summaryConfig == null ? 0 : cfg.summaryConfig.rowCount();
         this.columns = columns;
         List<String> names = columns.stream().map(ExcelColumn::getName).toList();
         String labelColumn = config.labelColumn();
@@ -59,7 +66,7 @@ final class SubtotalTracker<T> {
     /** The tracker, or {@code null} when the sheet has no subtotals. */
     static <T> @Nullable SubtotalTracker<T> of(SheetConfig<T> cfg, List<ExcelColumn<T>> columns) {
         if (cfg.subtotalKey == null || cfg.subtotalConfig == null) return null;
-        return new SubtotalTracker<>(cfg.subtotalKey, cfg.subtotalConfig, columns);
+        return new SubtotalTracker<>(cfg.subtotalKey, cfg.subtotalConfig, columns, cfg);
     }
 
     /** Rejects what a subtotal row would corrupt: tables, charts and named ranges span the rows as one data block. */
@@ -74,18 +81,38 @@ final class SubtotalTracker<T> {
     }
 
     /**
+     * Whether the sheet must turn over before the next row: it has no room left for that row, the subtotal rows
+     * that may follow it, and the summary. Subtotal rows are not counted by {@code maxRows}, so a sheet of
+     * {@code maxRows} data rows can hold more rows than Excel allows. The check runs before every row, which adds at
+     * most two rows (a subtotal row and the data row) before the next check.
+     */
+    boolean sheetNearlyFull(Cursor cursor) {
+        return cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY - 2 - summaryRows;
+    }
+
+    /**
      * Called before {@code row} is written: ends the open group when the key changes, then starts the group
      * of {@code row} when none is open.
      */
     void beforeRow(SXSSFSheet sheet, Cursor cursor, T row, SheetConfig<T> cfg, @Nullable MergeRunTracker<T> merges,
                    Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook wb) {
         Object current = key.apply(row);
+        if (sheet != currentSheet) {
+            currentSheet = sheet;
+            dataRowsInSheet = 0;
+        }
+        dataRowsInSheet++;
         if (open && !Objects.equals(groupKey, current)) close(sheet, cursor, cfg, merges, styleCache, wb);
         if (!open) {
             open = true;
             startRow = cursor.getRowOfSheet();
             groupKey = current;
         }
+    }
+
+    /** The 0-based position, among the data rows of its sheet, of the row {@link #beforeRow} was last called for. */
+    long dataIndex() {
+        return dataRowsInSheet - 1;
     }
 
     /** Ends the open group, if any, with its subtotal row: at a key change, at the end of a sheet and of the data. */

@@ -18,15 +18,17 @@ final class ExcelRowWriter {
 
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
                           SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook) {
-        write(sheet, cursor, row, columns, config, styleCache, workbook, null);
+        write(sheet, cursor, row, columns, config, styleCache, workbook, null, null);
     }
 
     /**
-     * @param merges merges the runs of equal values of the columns that asked for it, or {@code null}
+     * @param merges    merges the runs of equal values of the columns that asked for it, or {@code null}
+     * @param subtotals the subtotal rows of the sheet, or {@code null}: they say which data row of the sheet this is,
+     *                  because a sheet can turn over before {@code maxRows} when the subtotal rows take its room
      */
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
                           SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook,
-                          @Nullable MergeRunTracker<T> merges) {
+                          @Nullable MergeRunTracker<T> merges, @Nullable SubtotalTracker<T> subtotals) {
         if (cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY) {
             throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: Excel sheets hold at most "
                     + ExcelLimits.SHEET_ROW_CAPACITY + " rows. Lower maxRows(...) so the writer rolls over to a "
@@ -40,7 +42,8 @@ final class ExcelRowWriter {
 
         ExcelColor rowColor = config.rowColorFunction == null ? null : config.rowColorFunction.apply(row);
         // every second data row of the sheet: the total counts rows over all sheets, a sheet takes maxRows of them
-        if (rowColor == null && config.stripeColor != null && (cursor.getCurrentTotal() - 1) % config.maxRows % 2 == 1) {
+        long dataIndexInSheet = subtotals != null ? subtotals.dataIndex() : (cursor.getCurrentTotal() - 1) % config.maxRows;
+        if (rowColor == null && config.stripeColor != null && dataIndexInSheet % 2 == 1) {
             rowColor = config.stripeColor;
         }
         @Nullable RowStyleConfig rowStyle = matchingStyle(row, config.rowStyleEntries);
