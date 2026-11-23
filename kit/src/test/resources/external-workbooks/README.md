@@ -16,6 +16,7 @@ They belong to test resources and are not packaged in the published library JAR.
 | `tile-range-test.xlsx` | LibreOffice 5.3.4.2 (Windows) | Two-sheet package sharing, cached numeric/shared formulas, formula-policy rejection |
 | `70005-countifs.xlsx` | LibreOffice 25.2.7.2 (Linux) | Cached array-formula results without recalculation |
 | `60320-protected.xlsx` | Microsoft Macintosh Excel / AppVersion 15.0300, inspected after decryption | Encrypted Path/stream/source reads, incorrect passwords, ownership and plaintext-workspace cleanup |
+| `excel-merged-cells.xlsx` | Microsoft Excel / AppVersion 16.0300 (not from the Apache POI repository, see below) | Regions merged by Excel itself: how Excel stores a merged value, `fillMergedCells()` |
 
 Producer names/versions above are **document metadata**, not authenticated evidence
 of the application that last edited a file. Tests check representative fields and
@@ -24,7 +25,7 @@ so OS language settings do not change the oracle. This corpus does not establish
 version or feature of Excel/LibreOffice. Numeric formula results are cached values;
 excel-kit does not evaluate these formulas.
 
-All files except `60320-protected.xlsx` come from `test-data/spreadsheet/`;
+All files except `60320-protected.xlsx` and `excel-merged-cells.xlsx` come from `test-data/spreadsheet/`;
 `60320-protected.xlsx` comes from `test-data/poifs/`. Their immutable source URL is:
 
 ```
@@ -41,6 +42,15 @@ The worksheet itself says it was created with Excel for Mac 2011 and re-encrypte
 by Mac Excel 2016. This is sample data, not a deployment credential. The matching constant has a
 line-scoped `ggignore` annotation for this documented public test credential;
 secret scanning remains enabled for the rest of the repository.
+
+## `excel-merged-cells.xlsx`
+
+Created for this repository, **not** copied from Apache POI. It was made on 2026-11-23 by driving Microsoft Excel
+(16.0, build 19127, Windows) through COM automation: the values were typed into cells and the regions were merged with
+`Range.Merge()`, as a person does, then saved with `SaveAs(..., xlOpenXMLWorkbook)`. Neither excel-kit nor POI wrote
+or re-saved it. Sheet `Merged` holds `A2:A4` (a text over three rows), `A5:A6`, `C2:C3` (a number formatted `#,##0.00`
+over two rows) and `D2:E2` (a text over two columns); sheet `Second` holds `A2:A3`. Excel stores a merged value in the
+top-left cell and writes the other cells of the region as empty styled cells. `SHA256SUMS` pins the exact bytes.
 
 ## Upstream license and notices
 

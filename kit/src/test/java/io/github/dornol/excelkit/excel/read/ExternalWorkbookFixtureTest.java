@@ -45,6 +45,7 @@ class ExternalWorkbookFixtureTest {
         assertProducer("70005-countifs.xlsx", "LibreOffice/25.2.7.2");
         assertProducer("60384.xlsx", "LibreOffice/5.1.4.2");
         assertProducer("tile-range-test.xlsx", "LibreOffice/5.3.4.2");
+        assertProducer("excel-merged-cells.xlsx", "Microsoft Excel");
     }
 
     @Test
@@ -148,7 +149,7 @@ class ExternalWorkbookFixtureTest {
 
     private static void verifyFixtureChecksums() throws Exception {
         var checksums = Files.readAllLines(fixture("SHA256SUMS"), StandardCharsets.UTF_8);
-        assertEquals(8, checksums.size());
+        assertEquals(9, checksums.size());
         for (String line : checksums) {
             var fields = line.split("  ", 2);
             assertEquals(fields[0], HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
