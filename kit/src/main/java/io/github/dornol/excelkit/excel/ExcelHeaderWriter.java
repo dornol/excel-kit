@@ -22,6 +22,9 @@ import java.util.Objects;
 final class ExcelHeaderWriter {
     private ExcelHeaderWriter() { }
 
+    /** A text format that shows {@code *} after the text of the cell. */
+    private static final String REQUIRED_MARK_FORMAT = "@\" *\"";
+
     /**
      * Writes column headers, with 0..N optional group header rows if any column has groups.
      * {@code workbook} and {@code styleCache} are needed only for columns with their own header colors.
@@ -53,15 +56,19 @@ final class ExcelHeaderWriter {
                                                      @Nullable Map<String, CellStyle> cache) {
         int[] fontColor = col.getHeaderFontColor();
         int[] bgColor = col.getHeaderBackgroundColor();
-        if ((fontColor == null && bgColor == null) || wb == null || cache == null) {
+        boolean required = col.isRequiredMark();
+        if ((fontColor == null && bgColor == null && !required) || wb == null || cache == null) {
             return baseStyle;
         }
         String key = "hdr_" + baseStyle.getIndex()
                 + "_f" + (fontColor == null ? "-" : fontColor[0] + "_" + fontColor[1] + "_" + fontColor[2])
-                + "_b" + (bgColor == null ? "-" : bgColor[0] + "_" + bgColor[1] + "_" + bgColor[2]);
+                + "_b" + (bgColor == null ? "-" : bgColor[0] + "_" + bgColor[1] + "_" + bgColor[2])
+                + (required ? "_req" : "");
         return cache.computeIfAbsent(key, k -> {
             CellStyle style = wb.createCellStyle();
             style.cloneStyleFrom(baseStyle);
+            // The mark is a number format, so the cell keeps the plain column name as its value
+            if (required) style.setDataFormat(wb.createDataFormat().getFormat(REQUIRED_MARK_FORMAT));
             if (bgColor != null) {
                 style.setFillForegroundColor(new XSSFColor(new byte[]{
                         (byte) bgColor[0], (byte) bgColor[1], (byte) bgColor[2]}));

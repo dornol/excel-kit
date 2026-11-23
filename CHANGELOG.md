@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `requiredMark()` / `requiredMark(boolean)` on columns show a `*` after the header text, as upload forms mark the columns that must be filled in. The header cell still holds the plain column name (the `*` is the cell's number format `@" *"`), so a file written with the mark reads back by the same header names. It is only a mark: it does not make the cells required (use `ExcelValidation.allowBlank(false)` and the reader's `required()`).
 - `ExcelReader.fillMergedCells()` gives every cell of a merged region the value of its top-left cell in the data rows. Excel stores the value there only, so a column that a person merged by hand (a department over its rows) read as blank in every row but the first. A merged number keeps its stored value, a region spanning columns fills them too, a cell with a value of its own keeps it, and header rows are unchanged. The merged regions are listed after the rows, so the sheet is scanned once more before the read (as with `countRows()`); a sheet may merge at most 200,000 regions with the option.
 - Page breaks: `ExcelPrintSetup.rowBreakEvery(n)` starts a new printed page after every `n` data rows, and `pageBreakOnChange(keyFn)` / `pageBreakWhen((previous, current) -> ...)` on `ExcelWriter` and `ExcelSheetWriter` start one where the data changes (a page per department of a sorted list). Each sheet of a rollover breaks within itself; more than Excel's 1026 breaks per sheet fails with `ExcelWriteException`. `TemplateListWriter` does not apply `pageBreakWhen`.
 - `zoom(percent)` on `ExcelWriter` and `ExcelSheetWriter` sets the zoom a sheet opens with (10-400, every sheet of a rollover).
@@ -12,6 +13,9 @@ All notable changes to this project will be documented in this file.
 - `ExcelErrorReport` (`io.github.dornol.excelkit.excel`) writes the rows of an upload that failed to read into an Excel file to give back to the uploader: the row number in the uploaded file, the uploaded values (`RowError.rawValues()`), the failed cells shaded with their message in a cell comment, and a last column with the row's messages. `ExcelErrorReport.create(headers)` then `write(Iterable<RowError>)`, `write(Stream<RowError>)` or `write(ReadReport)`; `rowColumnName`, `errorColumnName`, `sheetName` and `errorColor` are optional. Blank and repeated headers are renamed.
 - `ExcelValidation.inputTitle(..)` / `inputMessage(..)` set the tooltip Excel shows when a cell of the column is selected (limits: 32 and 255 characters, checked), and `allowBlank(boolean)` sets whether an empty cell passes (default `true`, as before).
 - `dependentDropdown(parentColumn, options)` on columns (`ExcelColumnBuilder`, `ColumnConfig`) makes a cascading dropdown: the cell offers the options of the value the parent column holds in the same row (`"A"` → `1, 2, 3`, `"B"` → `4, 5, 6`). The options are written to a hidden helper sheet (`_excelkit_dep_N`, shared by equal option sets, also across rollover sheets) and the column gets a list validation over its data rows. An unknown parent column fails when the sheet is written; combining it with `dropdown(...)` or `validation(...)` on one column is rejected.
+
+### Changed
+- A column of an `ExcelKitSchema` declared with `requiredColumn(...)` now shows the required mark on its header in the Excel it writes; the column's own write configuration can turn it off with `requiredMark(false)`.
 
 ## [0.28.0] - 2026-11-23
 

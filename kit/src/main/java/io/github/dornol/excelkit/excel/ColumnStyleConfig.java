@@ -86,6 +86,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     // ── Protection & visibility ──
     @Nullable Boolean locked;
     boolean hidden;
+    boolean requiredMark;
 
     // ── Grouping ──
     /** Group header levels from outermost to innermost. Empty = no grouping. */
@@ -476,6 +477,34 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     }
 
     /**
+     * Marks this column's header as required: Excel shows a {@code *} after the header text, as upload forms do
+     * for the columns that must be filled in.
+     * <p>
+     * It is only a mark. The header cell still holds the plain column name (the mark is a number format of the
+     * cell, {@code @" *"}), so a file written with it reads back by the same header names; it does not make the
+     * column's cells required. For that use {@link ExcelValidation#allowBlank(boolean)} and read the column with
+     * {@code required()}.
+     *
+     * @return this instance for chaining
+     * @since 0.29.0
+     */
+    public SELF requiredMark() {
+        return requiredMark(true);
+    }
+
+    /**
+     * Sets whether this column's header shows the required mark; see {@link #requiredMark()}.
+     *
+     * @param requiredMark whether to show the mark
+     * @return this instance for chaining
+     * @since 0.29.0
+     */
+    public SELF requiredMark(boolean requiredMark) {
+        this.requiredMark = requiredMark;
+        return self();
+    }
+
+    /**
      * Marks this column as hidden in the Excel output.
      *
      * @return this instance for chaining
@@ -733,6 +762,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         if (this.maxWidth == 0) this.maxWidth = defaults.maxWidth;
         this.fixedWidth |= defaults.fixedWidth;
         this.hidden |= defaults.hidden;
+        this.requiredMark |= defaults.requiredMark;
         if (this.headerFontColor == null) this.headerFontColor = defaults.headerFontColor;
         if (this.headerBackgroundColor == null) this.headerBackgroundColor = defaults.headerBackgroundColor;
         if (this.cellColorFunction == null) this.cellColorFunction = (CellColorFunction<T>) defaults.cellColorFunction;

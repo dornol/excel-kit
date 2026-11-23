@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.schema;
 
 import io.github.dornol.excelkit.csv.CsvWriter;
+import io.github.dornol.excelkit.excel.ExcelColumn;
 import io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 
@@ -18,8 +19,17 @@ final class SchemaWriterFactory {
         ExcelWriter<T> writer = ExcelWriter.create(configurer);
         if (writeErrorPolicy != null) writer.writeErrorPolicy(writeErrorPolicy);
         for (ExcelKitSchema.SchemaColumn<T> column : columns) {
-            if (column.writeConfigurer() != null) {
-                writer.column(column.name(), column.writeFunction(), column.writeConfigurer());
+            Consumer<ExcelColumn.ExcelColumnBuilder<T>> columnConfigurer = column.writeConfigurer();
+            if (column.required()) {
+                // A required column shows the mark on its header; the column's own configuration may still turn it off.
+                Consumer<ExcelColumn.ExcelColumnBuilder<T>> own = columnConfigurer;
+                columnConfigurer = builder -> {
+                    builder.requiredMark();
+                    if (own != null) own.accept(builder);
+                };
+            }
+            if (columnConfigurer != null) {
+                writer.column(column.name(), column.writeFunction(), columnConfigurer);
             } else {
                 writer.column(column.name(), column.writeFunction());
             }

@@ -362,10 +362,12 @@ public class WriteShowcaseController {
                 .sheetName("Upload Form")
                 .freezeRows(1)
                 .column("Group", UploadRow::group, cfg -> cfg
+                        .requiredMark()
                         .dropdown(optionsByGroup.keySet().toArray(String[]::new)))
                 .column("Option", UploadRow::option, cfg -> cfg
                         .dependentDropdown("Group", optionsByGroup))
                 .column("Age", UploadRow::age, cfg -> cfg
+                        .requiredMark()
                         .type(ExcelDataType.INTEGER)
                         .validation(ExcelValidation.integerBetween(0, 150)
                                 .inputTitle("Age")

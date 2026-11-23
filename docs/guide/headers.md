@@ -51,6 +51,22 @@ writer.column("Amount", Product::amount, cfg -> cfg
 
 Accepts `ExcelColor`, `null` (default), or `headerFontColor(int r, int g, int b)`.
 
+## Required Mark
+
+Upload forms mark the columns that must be filled in. `requiredMark()` shows a `*` after the header text:
+
+```java
+.column("Name", p -> p.name(), c -> c.requiredMark())
+.column("Age", p -> p.age(), c -> c.requiredMark()
+        .validation(ExcelValidation.integerBetween(0, 150).allowBlank(false)))
+```
+
+It is only a mark. The header cell still holds the plain column name (the `*` is a number format of the cell,
+`@" *"`), so a file written with it reads back by the same header names; it does not require the column's cells.
+For that use `allowBlank(false)` on the validation and read the column with `required()`. `requiredMark(false)`
+turns it off, and a column of an `ExcelKitSchema` declared with `requiredColumn(...)` gets the mark on its header
+(the column's write configuration may turn it off).
+
 ## Per-Column Header Background (v0.16.11+)
 
 ```java

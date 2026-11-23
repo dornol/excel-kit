@@ -242,6 +242,9 @@ same column, and an unknown parent column fails when the sheet is written.
 Page breaks: `printSetup(p -> p.rowBreakEvery(n))`, and `pageBreakOnChange(keyFn)` / `pageBreakWhen((previous, current) -> bool)`
 on `ExcelWriter` / `ExcelSheetWriter` (a new printed page where the data changes; at most 1026 breaks per sheet).
 
+`c.requiredMark()` shows `*` after a column's header text (a number format `@" *"`: the header cell keeps the plain
+name, so the file reads back by the same names). A schema `requiredColumn(...)` marks its header automatically.
+
 `ExcelReader.fillMergedCells()` gives every cell of a merged region the value of its top-left cell in the data rows
 (a department merged by hand over its rows reads in each row); one extra scan of the sheet, at most 200,000 regions.
 
