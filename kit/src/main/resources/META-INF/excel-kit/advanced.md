@@ -274,6 +274,15 @@ writer
     .onProgress(10_000, (count, cursor) -> log.info("Processed {}", count))
 ```
 
+## Hidden sheets and zoom
+
+```java
+wb.<Code>sheet("Codes").column("Code", Code::value).hideSheet().write(codes);   // veryHideSheet(): no Unhide menu
+writer.zoom(80);                                                                 // 10-400, default 100
+```
+
+`hideSheet()` / `veryHideSheet()` are on `ExcelSheetWriter` only; `finish()` throws if no sheet stays visible.
+
 ## Sheet Tab Color
 
 ```java

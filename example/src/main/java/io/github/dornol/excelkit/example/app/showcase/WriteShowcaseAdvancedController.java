@@ -381,6 +381,33 @@ public class WriteShowcaseAdvancedController {
         }
     }
 
+    @GetMapping("/hidden-sheet")
+    public ResponseEntity<StreamingResponseBody> downloadHiddenSheet() {
+        var categories = List.of("Electronics", "Accessories", "Office", "Peripherals");
+
+        try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
+            // The master codes behind the dropdown: first in the file, but hidden (right-click a tab > Unhide)
+            wb.<String>sheet("Codes")
+                    .column("Category", s -> s)
+                    .hideSheet()
+                    .write(categories.stream());
+
+            wb.<ProductDto>sheet("Data")
+                    .zoom(90)
+                    .autoFilter()
+                    .freezeRows(1)
+                    .column("Name", ProductDto::name)
+                    .column("Category", ProductDto::category, c -> c
+                            .validation(ExcelValidation.listFromRange("Codes!$A$2:$A$5")))
+                    .column("Price", p -> p.price(), c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                    .write(sampleProducts().stream());
+
+            var handler = wb.finish();
+            return ExcelKitResponse.excel("hidden-sheet-demo")
+                    .body(handler::writeTo);
+        }
+    }
+
     @GetMapping("/data-bar")
     public ResponseEntity<StreamingResponseBody> downloadDataBar() {
         var writer = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)

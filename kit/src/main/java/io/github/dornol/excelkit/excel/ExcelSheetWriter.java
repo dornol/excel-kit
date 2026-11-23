@@ -93,6 +93,33 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     /**
+     * Hides the sheet from the tab bar; the person opening the file can show it again (right-click on a tab, Unhide).
+     * Use it for a sheet that only feeds the others, such as the master codes behind a dropdown
+     * ({@code ExcelValidation.listFromRange("Codes!$A$2:$A$20")}). Every sheet of a rollover is hidden. The
+     * workbook must keep a visible sheet: {@link ExcelWorkbook#finish()} throws {@link ExcelWriteException}
+     * otherwise.
+     *
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public ExcelSheetWriter<T> hideSheet() {
+        cfg.visibility = org.apache.poi.ss.usermodel.SheetVisibility.HIDDEN;
+        return this;
+    }
+
+    /**
+     * Hides the sheet so that it cannot be shown from Excel's Unhide menu (only from the VBA editor or a program).
+     * Otherwise as {@link #hideSheet()}.
+     *
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public ExcelSheetWriter<T> veryHideSheet() {
+        cfg.visibility = org.apache.poi.ss.usermodel.SheetVisibility.VERY_HIDDEN;
+        return this;
+    }
+
+    /**
      * Adds a column using a row function with cursor support.
      *
      * @param name the column header

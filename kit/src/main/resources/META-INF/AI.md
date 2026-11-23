@@ -236,6 +236,9 @@ helper sheet (`_excelkit_dep_N`); equal option sets share one sheet. The parent 
 `LinkedHashMap` to keep the parent order. It cannot be combined with `dropdown(...)` or `validation(...)` on the
 same column, and an unknown parent column fails when the sheet is written.
 
+`zoom(percent)` (10-400) on any sheet writer; `ExcelSheetWriter.hideSheet()` / `veryHideSheet()` hide a workbook sheet
+(`finish()` throws `ExcelWriteException` if no sheet stays visible).
+
 `ExcelErrorReport.create(headers).write(errors)` writes the failed rows of an upload (row number, uploaded values,
 failed cells shaded with a comment, a messages column) as an `ExcelHandler`, from `RowError`s or a `ReadReport`.
 

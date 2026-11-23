@@ -294,7 +294,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 |----------|-----------|
 | Column DSL | Type, format, alignment, width, font, color, rotation, indentation |
 | Styling | Row/cell conditional colors (`cellColor`, `rowColor`), conditional row style (`rowStyle`: bold/font/color), borders (per-side), bold, strikethrough, underline; `maxCellStyles(int)` caps the styles those colors may create |
-| Layout | Auto-filter, freeze panes (row + column), multi-level group headers, column outline, hiding |
+| Layout | Auto-filter, freeze panes (row + column), sheet zoom, hidden sheets (`hideSheet()`), multi-level group headers, column outline, hiding |
 | Header | Global/per-column header color, per-column header background, header row height, header style config, group header comments, row-number column |
 | Validation | Dropdown, dependent (cascading) dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
 | Upload errors | `ExcelErrorReport`: failed rows of an upload as an Excel file (row number, uploaded values, shaded cells with comments, messages) |

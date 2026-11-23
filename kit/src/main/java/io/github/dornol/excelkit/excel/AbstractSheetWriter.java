@@ -352,6 +352,25 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+    // ── Zoom ──
+
+    /**
+     * Sets the zoom the sheet opens with, in percent (a wide sheet is easier to take in at 80, a dense one to read at 120).
+     * Every sheet of a rollover gets it. The default is Excel's 100.
+     *
+     * @param percent the zoom, from 10 to 400
+     * @return this writer for chaining
+     * @throws IllegalArgumentException if {@code percent} is outside 10..400, the range Excel accepts
+     * @since 0.29.0
+     */
+    public SELF zoom(int percent) {
+        if (percent < 10 || percent > 400) {
+            throw new IllegalArgumentException("zoom must be between 10 and 400 percent, was " + percent);
+        }
+        cfg.zoom = percent;
+        return self();
+    }
+
     // ── Tab color ──
 
     /**

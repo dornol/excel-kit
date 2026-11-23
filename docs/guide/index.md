@@ -18,7 +18,7 @@ infrastructure concerns.
 | [Validation](validation.md) | Dropdown, data validation, conditional formatting | `dropdown()`, `dependentDropdown()`, `validation()`, `conditionalFormatting()` |
 | [Layout](layout.md) | Freeze, filter, outline, print, summary rows | `freezeRows()`, `autoFilter()`, `outline()`, `summary()` |
 | [Content](content.md) | Formula, hyperlink, rich text, image, chart | `ExcelDataType.FORMULA`, `HYPERLINK`, `RICH_TEXT`, `IMAGE` |
-| [Multi-Sheet](multi-sheet.md) | ExcelWorkbook, auto-rollover, tab color | `ExcelWorkbook.create()`, `maxRows()`, `tabColor()` |
+| [Multi-Sheet](multi-sheet.md) | ExcelWorkbook, auto-rollover, tab color, hidden sheets, zoom | `ExcelWorkbook.create()`, `maxRows()`, `tabColor()`, `hideSheet()`, `zoom()` |
 | [Protection](protection.md) | Sheet/workbook protection, password encryption | `protectSheet()`, `protectWorkbook()`, `password()` |
 | [CSV](csv.md) | CSV write/read, dialect, quoting | `CsvWriter.create()`, `CsvReader.setter()`, `dialect()` |
 | [Spring](spring.md) | MVC helpers, WebFlux manual integration | `ExcelKitResponse.excel()`, `UploadResult` |

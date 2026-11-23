@@ -275,6 +275,41 @@ class ExcelWriteSupport {
         }
     }
 
+    /**
+     * Hides the sheet. A hidden sheet is not the one the workbook opens on: it is also deselected, since a selected
+     * hidden sheet would make Excel type into it together with the visible one.
+     */
+    static void applyVisibility(SXSSFSheet sheet, org.apache.poi.ss.usermodel.@Nullable SheetVisibility visibility) {
+        if (visibility == null || visibility == org.apache.poi.ss.usermodel.SheetVisibility.VISIBLE) return;
+        var wb = sheet.getWorkbook();
+        wb.setSheetVisibility(wb.getSheetIndex(sheet), visibility);
+        SXSSFSheetHelper.getXSSFSheet(sheet).setSelected(false);
+    }
+
+    /**
+     * Checks that a workbook keeps a visible sheet (Excel cannot open one with none) and that it opens on one.
+     *
+     * @throws ExcelWriteException if every sheet is hidden
+     */
+    static void requireVisibleSheet(org.apache.poi.xssf.streaming.SXSSFWorkbook wb) {
+        int first = -1;
+        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            if (wb.getSheetVisibility(i) == org.apache.poi.ss.usermodel.SheetVisibility.VISIBLE) {
+                first = i;
+                break;
+            }
+        }
+        if (first < 0) {
+            if (wb.getNumberOfSheets() == 0) return;
+            throw new ExcelWriteException("Every sheet of the workbook is hidden; Excel cannot open a workbook "
+                    + "without a visible sheet, so leave at least one sheet visible");
+        }
+        if (wb.getSheetVisibility(wb.getActiveSheetIndex()) != org.apache.poi.ss.usermodel.SheetVisibility.VISIBLE) {
+            wb.setActiveSheet(first);
+            SXSSFSheetHelper.getXSSFSheet(wb.getSheetAt(first)).setSelected(true);
+        }
+    }
+
     static void applyTabColor(SXSSFSheet sheet, int @Nullable [] tabColor) {
         if (tabColor == null) return;
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);

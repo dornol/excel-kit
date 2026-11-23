@@ -76,6 +76,27 @@ holds 1,048,576 rows in total, so `maxRows` accepts at most 1,048,575, and the r
 data (`beforeHeader`, the header) and after it (`afterData`, summary) count towards that limit: leave room
 for them. A sheet that still runs out of rows fails with an `ExcelWriteException` that says so.
 
+## Hidden Sheets
+
+A sheet that only feeds the others, such as the master codes behind a dropdown, can be hidden:
+
+```java
+wb.<Code>sheet("Codes").column("Code", Code::value).hideSheet()      // shown again with right-click > Unhide
+        .write(codes);
+wb.<Row>sheet("Upload").column("Type", Row::type, c -> c
+        .validation(ExcelValidation.listFromRange("Codes!$A$2:$A$20")))
+        .write(rows);
+// veryHideSheet(): cannot be shown from Excel's Unhide menu (only from the VBA editor or a program)
+```
+
+Every sheet of a rollover is hidden too. The workbook must keep a visible sheet: `finish()` throws `ExcelWriteException`
+when every sheet is hidden. A hidden first sheet is not selected, and the workbook opens on the first visible one.
+
+## Zoom
+
+`zoom(percent)` (10-400, Excel's default is 100) sets the zoom a sheet opens with, on `ExcelWriter` (every sheet of a
+rollover) and `ExcelSheetWriter`: `writer.zoom(80)`.
+
 ## Sheet Tab Color
 
 ```java

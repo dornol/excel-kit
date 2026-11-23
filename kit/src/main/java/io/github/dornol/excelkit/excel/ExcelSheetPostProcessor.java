@@ -37,6 +37,8 @@ final class ExcelSheetPostProcessor {
             rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow);
         if (config.printSetup != null) config.printSetup.apply(sheet, headerRowIndex);
         ExcelWriteSupport.applyTabColor(sheet, config.tabColor);
+        if (config.zoom > 0) sheet.setZoom(config.zoom);
+        ExcelWriteSupport.applyVisibility(sheet, config.visibility);
         ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, sheetIndex);
     }
 

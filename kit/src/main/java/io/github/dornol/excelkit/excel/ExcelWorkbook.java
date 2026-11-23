@@ -244,6 +244,7 @@ public class ExcelWorkbook implements AutoCloseable {
         if (finished) {
             throw new ExcelWriteException("Workbook is already finished");
         }
+        ExcelWriteSupport.requireVisibleSheet(wb);
         finished = true;
         ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
         return new ExcelHandler(wb, settings.password());

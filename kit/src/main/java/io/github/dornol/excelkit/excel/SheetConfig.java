@@ -46,6 +46,8 @@ class SheetConfig<T> {
         chartConfig = source.chartConfig;
         printSetup = source.printSetup;
         tabColor = source.tabColor == null ? null : source.tabColor.clone();
+        zoom = source.zoom;
+        visibility = source.visibility;
         defaultStyleConfig = source.defaultStyleConfig;
         summaryConfig = source.summaryConfig;
         sheetNameFunction = source.sheetNameFunction;
@@ -77,6 +79,10 @@ class SheetConfig<T> {
     @Nullable ExcelChartConfig chartConfig;
     @Nullable ExcelPrintSetup printSetup;
     int @Nullable [] tabColor;
+    /** The zoom in percent, or 0 for Excel's default (100). */
+    int zoom;
+    /** {@code HIDDEN} or {@code VERY_HIDDEN}; {@code null} keeps the sheet visible. Set by a workbook's sheet writer only. */
+    org.apache.poi.ss.usermodel.@Nullable SheetVisibility visibility;
     ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyleConfig;
     @Nullable ExcelSummary summaryConfig;
     @Nullable Function<Integer, String> sheetNameFunction;
