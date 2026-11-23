@@ -120,6 +120,7 @@ public class ExcelPrintSetup {
     private boolean repeatHeader;
     private int repeatRowsStart = -1;
     private int repeatRowsEnd = -1;
+    private int rowBreakEvery;
     private boolean fitToPage;
     private int fitWidth = 1;
     private int fitHeight;
@@ -296,6 +297,24 @@ public class ExcelPrintSetup {
     }
 
     /**
+     * Starts a new printed page after every {@code dataRows} data rows (the header rows are not counted), so that
+     * each page holds that many rows whatever the paper size would have fitted. Each sheet of a rollover is
+     * counted on its own. For a page per group of rows use {@code pageBreakOnChange(...)} on the writer.
+     *
+     * @param dataRows the rows per page, at least 1
+     * @return this instance for chaining
+     * @throws IllegalArgumentException if {@code dataRows} is below 1
+     * @since 0.29.0
+     */
+    public ExcelPrintSetup rowBreakEvery(int dataRows) {
+        if (dataRows < 1) {
+            throw new IllegalArgumentException("rowBreakEvery needs at least 1 row per page, got " + dataRows);
+        }
+        this.rowBreakEvery = dataRows;
+        return this;
+    }
+
+    /**
      * Repeats specific rows on every printed page.
      *
      * @param firstRow first row to repeat (0-based)
@@ -348,7 +367,7 @@ public class ExcelPrintSetup {
      * @param sheet          the sheet to configure
      * @param headerRowIndex the 0-based row index of the header row
      */
-    void apply(SXSSFSheet sheet, int headerRowIndex) {
+    void apply(SXSSFSheet sheet, int headerRowIndex, int dataEndRow) {
         PrintSetup ps = sheet.getPrintSetup();
 
         if (orientation != null) {
@@ -374,6 +393,10 @@ public class ExcelPrintSetup {
         if (footerLeft != null) sheet.getFooter().setLeft(footerLeft);
         if (footerCenter != null) sheet.getFooter().setCenter(footerCenter);
         if (footerRight != null) sheet.getFooter().setRight(footerRight);
+
+        for (int row = headerRowIndex + 1 + rowBreakEvery; rowBreakEvery > 0 && row <= dataEndRow; row += rowBreakEvery) {
+            sheet.setRowBreak(row);
+        }
 
         if (repeatHeader) {
             sheet.setRepeatingRows(new CellRangeAddress(0, headerRowIndex, -1, -1));

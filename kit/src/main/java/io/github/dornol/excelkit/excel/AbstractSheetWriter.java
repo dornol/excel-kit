@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -350,6 +351,38 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         config.validate();
         cfg.printSetup = config;
         return self();
+    }
+
+    // ── Page breaks ──
+
+    /**
+     * Starts a new printed page where the data changes: a page break goes above a row when {@code startsNewPage}
+     * holds for the row before it and the row itself. A rolled-over sheet breaks within itself only. It adds to
+     * {@link ExcelPrintSetup#rowBreakEvery(int)}; Excel keeps at most 1026 breaks per sheet, and the write fails
+     * with {@link ExcelWriteException} beyond that. Not applied by {@link TemplateListWriter}.
+     *
+     * @param startsNewPage {@code (previous, current) -> true} to break above {@code current}
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public SELF pageBreakWhen(BiPredicate<T, T> startsNewPage) {
+        cfg.pageBreakWhen = Objects.requireNonNull(startsNewPage, "startsNewPage cannot be null");
+        return self();
+    }
+
+    /**
+     * Starts a new printed page whenever the key of the row differs from the key of the row before it, for example
+     * one page per department of a list sorted by department: {@code pageBreakOnChange(Employee::department)}.
+     * The keys are compared with {@link Objects#equals(Object, Object)}. Otherwise as
+     * {@link #pageBreakWhen(BiPredicate)}.
+     *
+     * @param key extracts the key of a row
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public SELF pageBreakOnChange(Function<T, @Nullable Object> key) {
+        Objects.requireNonNull(key, "key cannot be null");
+        return pageBreakWhen((previous, current) -> !Objects.equals(key.apply(previous), key.apply(current)));
     }
 
     // ── Zoom ──

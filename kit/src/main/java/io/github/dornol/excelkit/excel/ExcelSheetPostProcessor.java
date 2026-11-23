@@ -35,11 +35,24 @@ final class ExcelSheetPostProcessor {
         if (config.sheetPassword != null) sheet.protectSheet(config.sheetPassword);
         if (config.conditionalRules != null) for (ExcelConditionalRule rule : config.conditionalRules)
             rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow);
-        if (config.printSetup != null) config.printSetup.apply(sheet, headerRowIndex);
+        if (config.printSetup != null) config.printSetup.apply(sheet, headerRowIndex, dataEndRow);
+        requirePageBreaksWithinLimit(sheet);
         ExcelWriteSupport.applyTabColor(sheet, config.tabColor);
         if (config.zoom > 0) sheet.setZoom(config.zoom);
         ExcelWriteSupport.applyVisibility(sheet, config.visibility);
         ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, sheetIndex);
+    }
+
+    /** Excel keeps at most 1026 horizontal page breaks per sheet and repairs a file that holds more. */
+    private static final int MAX_ROW_BREAKS = 1026;
+
+    private static void requirePageBreaksWithinLimit(SXSSFSheet sheet) {
+        int breaks = sheet.getRowBreaks().length;
+        if (breaks > MAX_ROW_BREAKS) {
+            throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' has " + breaks
+                    + " page breaks; Excel keeps at most " + MAX_ROW_BREAKS + ". Use fewer breaks (a larger rowBreakEvery, "
+                    + "or a pageBreakWhen that holds less often)");
+        }
     }
 
     /**

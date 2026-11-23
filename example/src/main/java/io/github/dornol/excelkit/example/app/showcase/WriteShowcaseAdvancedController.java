@@ -408,6 +408,24 @@ public class WriteShowcaseAdvancedController {
         }
     }
 
+    @GetMapping("/page-break")
+    public ResponseEntity<StreamingResponseBody> downloadPageBreak() {
+        // One printed page per category: the list is sorted by category and a page break goes where it changes
+        var products = sampleProducts().stream()
+                .sorted(java.util.Comparator.comparing(ProductDto::category)).toList();
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Page Break Demo")
+                .freezeRows(1)
+                .pageBreakOnChange(ProductDto::category)
+                .printSetup(ps -> ps.repeatHeaderRows().fitToPageWidth().footerCenter("Page &P of &N"))
+                .column("Category", ProductDto::category)
+                .column("Name", ProductDto::name)
+                .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .write(products);
+        return ExcelKitResponse.excel("page-break-demo")
+                .body(handler::writeTo);
+    }
+
     @GetMapping("/data-bar")
     public ResponseEntity<StreamingResponseBody> downloadDataBar() {
         var writer = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)

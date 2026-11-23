@@ -12,14 +12,17 @@ final class ExcelWriteSession<T> {
     private final Map<SXSSFSheet, Integer> headerRows = new LinkedHashMap<>();
     private final Map<SXSSFSheet, Integer> dataEndRows = new LinkedHashMap<>();
     private final Map<SXSSFSheet, Integer> nextFreeRows = new LinkedHashMap<>();
+    private final PageBreakTracker<T> pageBreaks;
     private SXSSFSheet sheet;
     private Cursor cursor;
 
     ExcelWriteSession(ExcelWriteOptions<T> options) {
         this.options = options;
+        this.pageBreaks = new PageBreakTracker<>(options.sheetConfig().pageBreakWhen);
     }
 
     ExcelWriteOptions<T> options() { return options; }
+    PageBreakTracker<T> pageBreaks() { return pageBreaks; }
     SXSSFSheet sheet() { return sheet; }
     void sheet(SXSSFSheet sheet) { this.sheet = sheet; }
     Cursor cursor() { return cursor; }

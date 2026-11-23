@@ -136,3 +136,18 @@ writer.printSetup(ps -> ps
 - Special codes: `&P` (page), `&N` (total pages), `&D` (date), `&T` (time), `&F` (filename)
 - Repeat: `repeatHeaderRows()` or `repeatRows(first, last)`
 - Fit: `fitToPageWidth()` or `fitToPage(width, height)`
+- Page break every N data rows: `rowBreakEvery(n)` (each rollover sheet counts its own rows)
+
+### Page breaks by data
+
+A new printed page where the data changes, for example one page per department of a list sorted by department:
+
+```java
+writer.pageBreakOnChange(Employee::department)                        // key changed from the row before
+      .printSetup(ps -> ps.repeatHeaderRows().fitToPageWidth());
+writer.pageBreakWhen((previous, current) -> current.level() < previous.level())   // any condition
+```
+
+The breaks add to `rowBreakEvery(n)`; a rolled-over sheet breaks within itself only. Excel keeps at most 1026 page
+breaks per sheet: the write fails with `ExcelWriteException` beyond that. `pageBreakWhen`/`pageBreakOnChange` are
+on `ExcelWriter` and `ExcelSheetWriter`, not on `TemplateListWriter`.

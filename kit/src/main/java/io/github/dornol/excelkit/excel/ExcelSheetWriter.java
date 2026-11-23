@@ -221,6 +221,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.freezePaneCols, cfg.freezePaneRows);
 
         SXSSFSheet activeSheet = this.sheet;
+        var pageBreaks = new PageBreakTracker<T>(cfg.pageBreakWhen);
 
         {
             Iterator<T> it = stream.iterator();
@@ -244,6 +245,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     headerRowIndex = hdrIdx;
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.freezePaneCols, cfg.freezePaneRows);
                 }
+                pageBreaks.beforeRow(activeSheet, cursor.getRowOfSheet(), rowData);
                 ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             }

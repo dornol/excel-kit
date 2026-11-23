@@ -264,6 +264,9 @@ writer.printSetup(p -> p
     .repeatRows(0, 0))
 ```
 
+Page breaks: `printSetup(p -> p.rowBreakEvery(40))` breaks every 40 data rows; `writer.pageBreakOnChange(Emp::department)`
+(or `pageBreakWhen((previous, current) -> ...)`) starts a new page where the data changes. At most 1026 breaks per sheet.
+
 ## Callbacks
 
 ```java

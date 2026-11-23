@@ -693,6 +693,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             execution().headerRow(cursor().getRowOfSheet() - 1);
             applySheetOptions();
         }
+        execution().pageBreaks().beforeRow(sheet(), cursor().getRowOfSheet(), rowData);
         ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb);
         ExcelWriteSupport.checkProgress(cursor(), options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
     }
