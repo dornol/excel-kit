@@ -89,6 +89,7 @@ class NullArgumentContractTest {
             new Target(RowStyleConfig.class, () -> new Receiver(construct(RowStyleConfig.class), NOTHING)),
             new Target(HeaderStyleConfig.class, () -> new Receiver(construct(HeaderStyleConfig.class), NOTHING)),
             new Target(ExcelSummary.class, () -> new Receiver(construct(ExcelSummary.class), NOTHING)),
+            new Target(io.github.dornol.excelkit.excel.ExcelSubtotal.class, () -> new Receiver(construct(io.github.dornol.excelkit.excel.ExcelSubtotal.class), NOTHING)),
             new Target(ExcelConditionalRule.class, () -> new Receiver(construct(ExcelConditionalRule.class), NOTHING)),
             new Target(ExcelChartConfig.class, () -> new Receiver(construct(ExcelChartConfig.class), NOTHING)),
             new Target(ExcelPrintSetup.class, () -> new Receiver(construct(ExcelPrintSetup.class), NOTHING)),

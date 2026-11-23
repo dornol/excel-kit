@@ -106,6 +106,38 @@ With several operations each row needs its own name, so a label is followed by t
 `sum` and `average` gives the rows `Total - Sum` and `Total - Average`. With one operation the row carries the label as
 it is, and without a label a row is named after its operation (`Sum`, `Average`).
 
+## Group Subtotals
+
+```java
+ExcelWriter.<Employee>create()
+    .column("Department", Employee::department)
+    .column("Name", Employee::name)
+    .column("Salary", Employee::salary)
+    .groupSubtotal(Employee::department, s -> s
+        .label("Department", dept -> dept + " total")
+        .sum("Salary").average("Salary"))
+    .summary(s -> s.label("Total").sum("Salary"))
+    .write(sortedByDepartment);
+```
+
+A subtotal row follows every run of rows with the same key. It is an Excel `SUBTOTAL` formula over the rows of its
+group, so it follows the data when a person edits the file, and a `summary(...)` over the sheet counts every row once
+(it switches to `SUBTOTAL` too). `sum`, `average`, `count`, `min` and `max` are available; `style(...)` changes the
+default bold-on-gray look; `label(column, key -> text)` sets the column of the text (the first column by default).
+
+- Sort the rows by the key: a key that returns after another key gets a subtotal of its own.
+- Subtotal rows are not data rows: they do not count for `rowNumberColumn`, `stripedRows` or `maxRows`. A rolled-over
+  sheet closes its last group and starts a new one on the next sheet.
+- `ExcelPrintSetup.rowBreakEvery(n)` counts sheet rows, so the subtotal rows take part of each page.
+- A subtotal row is always locked under `protectSheet(...)`, even in a column set to `locked(false)`, and its label counts
+  for the column's automatic width (within `autoWidthSampleRows`). It takes the number format and alignment of its column;
+  `cellColor`, `rowColor` and `rowStyle` do not apply to it (use `style(...)`).
+- Conditional formatting rules and column validations (`dropdown`, `validation`) run over the subtotal rows too, as they
+  run over every row of the data block.
+- Cannot be combined with `table(...)`, `chart(...)` or `namedRange(...)` (the write fails with `ExcelWriteException`).
+- The formulas hold no cached value: viewers that do not calculate (previews, some libraries) show them empty, as for `summary(...)`.
+- Reading the file back returns the subtotal rows as data rows.
+
 Works with sheet rollover — formulas generated per-sheet.
 
 A summary or label column name that is not among the sheet's columns fails with

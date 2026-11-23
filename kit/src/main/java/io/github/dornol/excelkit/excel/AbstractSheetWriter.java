@@ -476,6 +476,41 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+    // ── Group subtotals ──
+
+    /**
+     * Writes a subtotal row below every run of rows that share a key, such as a department over its employees.
+     * A subtotal is a {@code SUBTOTAL} formula over the rows of its group, so it follows the data when it is edited,
+     * and a {@link #summary(Consumer)} over the sheet counts every row once (the summary switches to
+     * {@code SUBTOTAL} too). The rows must be sorted by the key: a key that returns after another key gets a
+     * subtotal of its own. The subtotal rows are not data rows: they do not count for {@code rowNumberColumn},
+     * {@code stripedRows} or {@code maxRows}, and a rolled-over sheet closes its last group and starts a new one.
+     * <p>
+     * Cannot be combined with {@code table(...)}, {@code chart(...)} or {@code namedRange(...)}, which take the
+     * rows of the sheet for one block of data: the write fails with {@link ExcelWriteException}. A file written
+     * with subtotals reads back with the subtotal rows as data rows.
+     *
+     * <pre>{@code
+     * writer.groupSubtotal(Employee::department, s -> s
+     *     .label("Department", dept -> dept + " total")
+     *     .sum("Salary").average("Salary"));
+     * }</pre>
+     *
+     * @param key        the group of a row; consecutive rows with equal keys form a group
+     * @param configurer sets the subtotal columns and the style of the subtotal rows
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public SELF groupSubtotal(Function<T, @Nullable Object> key, Consumer<ExcelSubtotal> configurer) {
+        Objects.requireNonNull(key, "key cannot be null");
+        Objects.requireNonNull(configurer, "configurer cannot be null");
+        ExcelSubtotal subtotal = new ExcelSubtotal();
+        configurer.accept(subtotal);
+        cfg.subtotalKey = key;
+        cfg.subtotalConfig = subtotal;
+        return self();
+    }
+
     // ── Sheet naming ──
 
     /**

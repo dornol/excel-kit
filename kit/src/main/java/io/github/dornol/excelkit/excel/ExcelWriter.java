@@ -594,6 +594,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
         ExcelWriteSupport.validateUniqueColumnNames(options.columns());
         ExcelWriteSupport.validateMergeColumns(options.columns(), options.sheetConfig().tableOptions, true);
+        SubtotalTracker.validate(options.sheetConfig());
     }
 
     /** Creates the first sheet and writes its preamble, header and sheet options. */
@@ -611,6 +612,13 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         applySheetOptions();
     }
 
+    /** Writes the subtotal row of the group still open at the end of the data of the current sheet. */
+    private void closeSubtotal() {
+        var subtotals = execution().subtotals();
+        if (subtotals != null) subtotals.close(sheet(), cursor(), executionOptions().sheetConfig(), execution().merges(),
+                rowStyleCache, wb);
+    }
+
     /** Merges the runs of equal values still open at the end of the data of the current sheet. */
     private void closeMergeRuns() {
         var merges = execution().merges();
@@ -622,6 +630,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * {@code afterAll} callback, per-sheet post-processing, workbook protection, the chart and tables.
      */
     private void finishWorkbook(ExcelWriteOptions<T> options) {
+        closeSubtotal();
         execution().dataEndRow(cursor().getRowOfSheet() - 1);
         closeMergeRuns();
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
@@ -689,6 +698,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         cursor().plusTotal();
         if (isOverMaxRows()) {
             StructuredTableWriter.requireRolloverAllowed(options.sheetConfig().tableOptions);
+            closeSubtotal();
             execution().dataEndRow(cursor().getRowOfSheet() - 1);
             closeMergeRuns();
             execution().nextFreeRow(ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
@@ -702,6 +712,9 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             execution().headerRow(cursor().getRowOfSheet() - 1);
             applySheetOptions();
         }
+        var subtotals = execution().subtotals();
+        if (subtotals != null) subtotals.beforeRow(sheet(), cursor(), rowData, options.sheetConfig(), execution().merges(),
+                rowStyleCache, wb);
         execution().pageBreaks().beforeRow(sheet(), cursor().getRowOfSheet(), rowData);
         ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb,
                 execution().merges());

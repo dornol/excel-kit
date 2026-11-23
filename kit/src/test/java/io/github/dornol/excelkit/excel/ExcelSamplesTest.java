@@ -56,7 +56,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(26, samples.size());
+        assertEquals(30, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -244,6 +244,70 @@ class ExcelSamplesTest {
             assertNull(sheet.getRow(8), "row 9 is empty");
             assertEquals("Sum", sheet.getRow(9).getCell(0).getStringCellValue());
             assertEquals("Average", sheet.getRow(10).getCell(0).getStringCellValue());
+        }
+    }
+
+    @Test
+    void theSubtotalSampleCalculatesTheWayItsManifestSays() throws Exception {
+        try (XSSFWorkbook wb = open("27-group-subtotal.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            var evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            assertEquals(30, evaluator.evaluate(sheet.getRow(3).getCell(2)).getNumberValue());
+            assertEquals(5, evaluator.evaluate(sheet.getRow(5).getCell(2)).getNumberValue());
+            assertEquals("SUBTOTAL(9,C2:C6)", sheet.getRow(6).getCell(2).getCellFormula());
+            assertEquals(35, evaluator.evaluate(sheet.getRow(6).getCell(2)).getNumberValue(), "not 70: the subtotals are skipped");
+            assertEquals("A total", sheet.getRow(3).getCell(1).getStringCellValue());
+            assertEquals("A1:C6", filter(sheet));
+        }
+    }
+
+    @Test
+    void theRolloverSubtotalSampleHasTheRowsItsManifestSays() throws Exception {
+        try (XSSFWorkbook wb = open("28-subtotal-rollover.xlsx")) {
+            var evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            assertEquals(3, wb.getNumberOfSheets());
+            int[][] rows = {{5, 7, 8}, {4, 7, 8}, {4, 5}};
+            double[][] values = {{6, 4, 10}, {11, 15, 26}, {19, 19}};
+            for (int s = 0; s < 3; s++) {
+                for (int i = 0; i < rows[s].length; i++) {
+                    assertEquals(values[s][i],
+                            evaluator.evaluate(wb.getSheetAt(s).getRow(rows[s][i] - 1).getCell(2)).getNumberValue(),
+                            "sheet " + s + " row " + rows[s][i]);
+                }
+            }
+            assertEquals("A1:C7", filter(wb.getSheetAt(0)));
+            assertEquals("A1:C4", filter(wb.getSheetAt(2)));
+            assertArrayEquals(new int[]{4}, wb.getSheetAt(0).getRowBreaks(), "a break below the subtotal row 5: the new page starts at row 6");
+            assertArrayEquals(new int[]{3}, wb.getSheetAt(1).getRowBreaks(), "below the subtotal row 4: the new page starts at row 5");
+            assertEquals(0, wb.getSheetAt(2).getRowBreaks().length);
+        }
+    }
+
+    @Test
+    void theProtectionSubtotalSampleLocksTheSubtotalRowsOnly() throws Exception {
+        try (XSSFWorkbook wb = open("29-subtotal-protection.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            assertTrue(sheet.getProtect());
+            assertFalse(sheet.getRow(1).getCell(1).getCellStyle().getLocked());
+            assertFalse(sheet.getRow(1).getCell(2).getCellStyle().getLocked());
+            assertTrue(sheet.getRow(1).getCell(0).getCellStyle().getLocked());
+            for (int row : new int[]{3, 5}) {
+                for (int col = 0; col < 3; col++) assertTrue(sheet.getRow(row).getCell(col).getCellStyle().getLocked(), row + "," + col);
+            }
+        }
+    }
+
+    @Test
+    void theFilterAndRulesSubtotalSampleHoldsTheTotalsItsManifestSays() throws Exception {
+        try (XSSFWorkbook wb = open("30-subtotal-filter-and-rules.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            var evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            assertEquals(30, evaluator.evaluate(sheet.getRow(3).getCell(2)).getNumberValue());
+            assertEquals(35, evaluator.evaluate(sheet.getRow(6).getCell(2)).getNumberValue());
+            assertEquals(65, evaluator.evaluate(sheet.getRow(7).getCell(2)).getNumberValue());
+            assertEquals("A1:C7", filter(sheet));
+            assertEquals(2, sheet.getDataValidations().size());
+            assertEquals(1, sheet.getSheetConditionalFormatting().getNumConditionalFormattings());
         }
     }
 

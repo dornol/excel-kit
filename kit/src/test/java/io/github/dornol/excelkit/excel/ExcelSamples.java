@@ -473,6 +473,79 @@ public final class ExcelSamples {
                 "dependentOptions sheet=Report cell=B2 parentCell=A2 parent=A count=2; parent=B count=1; parent=C count=3",
                 "dependentOptions sheet=\"Report (3)\" cell=B2 parentCell=A2 parent=C count=3 (the helper sheet is shared)",
                 "fill sheet=Report cells=C3,C5 rgb=F2F2F2; fill sheet=\"Report (2)\" cells=C3,C5 rgb=F2F2F2; fill sheet=\"Report (3)\" cells=C3 rgb=F2F2F2");
+
+        // 27. group subtotals: SUBTOTAL formulas that a total below them must not count twice
+        save("27-group-subtotal.xlsx", ExcelWriter.<Order>create().sheetName("Report").autoFilter(true)
+                .column("Dept", Order::dept)
+                .column("Item", Order::item)
+                .column("Qty", Order::qty, c -> c.type(ExcelDataType.INTEGER))
+                .groupSubtotal(Order::dept, s -> s.label("Item", k -> k + " total").sum("Qty"))
+                .summary(s -> s.label("Dept", "Total").sum("Qty"))
+                .write(List.of(new Order("A", "1", 10), new Order("A", "2", 20), new Order("B", "3", 5))));
+        add("27-group-subtotal.xlsx", "group subtotals and a total that skips them",
+                "Rows 2-3 are department A, row 4 is its subtotal (bold on gray), row 5 is department B, row 6 its subtotal, row 7 the total. The subtotals and the total are SUBTOTAL formulas: edit a Qty and they follow.",
+                "opens: no repair prompt",
+                "cell sheet=Report cell=C4 value=30; cell sheet=Report cell=C6 value=5",
+                "cell sheet=Report cell=C7 value=35 (the total skips the two subtotal cells: 70 would mean they were counted twice)",
+                "cellText sheet=Report cell=B4 text=\"A total\"; cellText sheet=Report cell=B6 text=\"B total\"",
+                "fill sheet=Report cells=A4,B4,C4,A6,B6,C6 rgb=D9D9D9",
+                "autoFilter sheet=Report range=A1:C7 (Excel's range right after opening; the file itself holds A1:C6, the subtotal rows without the total, and Excel extends a filter over the row directly below it)");
+
+        // 28. subtotals over rolled-over sheets, with merging, stripes, page breaks and a filter
+        save("28-subtotal-rollover.xlsx", ExcelWriter.<Order>create().sheetName("Report").maxRows(4).autoFilter(true)
+                .stripedRows().pageBreakOnChange(Order::dept)
+                .column("Dept", Order::dept, c -> c.mergeSameValues())
+                .column("Item", Order::item)
+                .column("Qty", Order::qty, c -> c.type(ExcelDataType.INTEGER))
+                .groupSubtotal(Order::dept, s -> s.label("Item", k -> k + " total").sum("Qty"))
+                .summary(s -> s.label("Item", "Total").sum("Qty"))
+                .write(List.of(new Order("A", "1", 1), new Order("A", "2", 2), new Order("A", "1", 3), new Order("B", "3", 4),
+                        new Order("B", "3", 5), new Order("B", "3", 6), new Order("C", "4", 7), new Order("C", "5", 8),
+                        new Order("C", "6", 9), new Order("C", "4", 10))));
+        add("28-subtotal-rollover.xlsx", "subtotals over rolled-over sheets with merging, stripes, page breaks and a filter",
+                "Three sheets of 4, 4 and 2 data rows. Every sheet closes its last department with a subtotal and ends with its own total; a department that continues on the next sheet gets a second subtotal there. Dept is merged over the data rows of a run but not over the subtotal row; a page starts where the department changes (below the subtotal); data rows alternate white and light gray, subtotal rows are darker gray.",
+                "opens: no repair prompt (merged cells, filter and subtotal formulas on three sheets)",
+                "sheets names=Report|Report (2)|Report (3)",
+                "cell sheet=Report cell=C5 value=6; cell sheet=Report cell=C7 value=4; cell sheet=Report cell=C8 value=10",
+                "cell sheet=\"Report (2)\" cell=C4 value=11; cell sheet=\"Report (2)\" cell=C7 value=15; cell sheet=\"Report (2)\" cell=C8 value=26",
+                "cell sheet=\"Report (3)\" cell=C4 value=19; cell sheet=\"Report (3)\" cell=C5 value=19",
+                "merged sheet=Report cell=A2 mergeArea=A2:A4; merged sheet=Report cell=A5 mergeArea=A5; merged sheet=\"Report (2)\" cell=A2 mergeArea=A2:A3; merged sheet=\"Report (2)\" cell=A5 mergeArea=A5:A6; merged sheet=\"Report (3)\" cell=A2 mergeArea=A2:A3",
+                "pageBreaks sheet=Report manualRows=6; pageBreaks sheet=\"Report (2)\" manualRows=5; pageBreaks sheet=\"Report (3)\" manualRows=(none)",
+                "autoFilter sheet=Report range=A1:C8; autoFilter sheet=\"Report (2)\" range=A1:C8; autoFilter sheet=\"Report (3)\" range=A1:C5 (Excel's range right after opening; the files hold A1:C7, A1:C7 and A1:C4, and Excel extends each over the total directly below)",
+                "fill sheet=Report cells=C3,C6 rgb=F2F2F2; fill sheet=Report cells=C5,C7 rgb=D9D9D9; fill sheet=\"Report (2)\" cells=C3,C6 rgb=F2F2F2; fill sheet=\"Report (2)\" cells=C4,C7 rgb=D9D9D9");
+
+        // 29. subtotals on a protected sheet whose data columns are unlocked
+        save("29-subtotal-protection.xlsx", ExcelWriter.<Order>create().sheetName("Report").protectSheet("pw")
+                .column("Dept", Order::dept)
+                .column("Item", Order::item, c -> c.locked(false))
+                .column("Qty", Order::qty, c -> c.type(ExcelDataType.INTEGER).locked(false))
+                .groupSubtotal(Order::dept, s -> s.label("Item", k -> k + " total").sum("Qty"))
+                .write(List.of(new Order("A", "1", 10), new Order("A", "2", 20), new Order("B", "3", 5))));
+        add("29-subtotal-protection.xlsx", "subtotals stay locked on a protected sheet",
+                "The sheet is protected (password pw). Item and Qty are unlocked for the data rows, so a person can type there; the subtotal rows (4 and 6) are locked in every column, so a subtotal cannot be overwritten.",
+                "opens: no repair prompt",
+                "protection sheet=Report ProtectContents=True",
+                "protection sheet=Report cell=B2 Locked=False; cell=C2 Locked=False; cell=A2 Locked=True",
+                "protection sheet=Report cell=B4 Locked=True; cell=C4 Locked=True; cell=A4 Locked=True; cell=C6 Locked=True",
+                "edit sheet=Report cell=C2 value=20 must succeed, then cell sheet=Report cell=C4 value=40 (the subtotal follows the edit); restore C2 to 10",
+                "edit sheet=Report cell=C4 value=1 must FAIL (the cell is locked): report the exception text");
+
+        // 30. subtotals under a filter, a conditional format and validations
+        save("30-subtotal-filter-and-rules.xlsx", ExcelWriter.<Order>create().sheetName("Report").autoFilter(true)
+                .column("Dept", Order::dept, c -> c.dropdown("A", "B"))
+                .column("Item", Order::item)
+                .column("Qty", Order::qty, c -> c.type(ExcelDataType.INTEGER).validation(ExcelValidation.integerBetween(0, 100)))
+                .conditionalFormatting(c -> c.columns(2).greaterThan("15", ExcelColor.LIGHT_YELLOW))
+                .groupSubtotal(Order::dept, s -> s.label("Dept", k -> k + " total").sum("Qty"))
+                .summary(s -> s.label("Dept", "Total").sum("Qty"))
+                .write(List.of(new Order("A", "1", 10), new Order("A", "2", 20), new Order("B", "3", 5), new Order("B", "4", 30))));
+        add("30-subtotal-filter-and-rules.xlsx", "a total under a filter, and a conditional format and validations over subtotal rows",
+                "Rows 2-3 are A, row 4 its subtotal (\"A total\"), rows 5-6 are B, row 7 its subtotal, row 8 the total. Qty above 15 is yellow, and that includes the subtotal cells (a rule runs over every row of the data block). Dept is a dropdown (A, B) and Qty accepts whole numbers 0-100, down through the subtotal rows.",
+                "opens: no repair prompt",
+                "cell sheet=Report cell=C4 value=30; cell sheet=Report cell=C7 value=35; cell sheet=Report cell=C8 value=65",
+                "filterRows sheet=Report column=1 criteria=\"A*\" expectVisibleDataRows=3 (rows 2, 3 and the subtotal row 4); then cell sheet=Report cell=C8 value=30 (SUBTOTAL skips the rows the filter hides and the visible subtotal cell); ShowAllData and cell C8 value=65 again; info: row 8 (the total) stays visible under the filter",
+                "conditionalFormats sheet=Report range=C2:C7 countAtLeast=1; fill sheet=Report cells=C3,C6 rgb=FFEB9C (the rule's color, see info); info sheet=Report cell=C4: report the fill of the subtotal cell (the rule may show over the gray)",
+                "validation sheet=Report cell=A2 type=3; validation sheet=Report cell=C2 type=1; info sheet=Report cell=C4: report Validation.Type of the subtotal cell (the validation runs below the header, through the subtotal rows)");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {

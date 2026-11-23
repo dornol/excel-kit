@@ -249,6 +249,18 @@ writer
 
 Operations: `sum`, `average`, `count`, `min`, `max`
 
+## Group Subtotals
+
+```java
+.groupSubtotal(Employee::department, s -> s
+    .label("Department", dept -> dept + " total")
+    .sum("Salary").average("Salary"))
+```
+
+`groupSubtotal(key, ...)` writes a `SUBTOTAL` formula row below every run of rows with an equal key (sort the rows by the
+key). `summary(...)` then uses `SUBTOTAL` too, so nothing is counted twice. Subtotal rows are not data rows
+(`rowNumberColumn`, `stripedRows`, `maxRows` skip them). Not with `table(...)`, `chart(...)` or `namedRange(...)`.
+
 ## Named Ranges
 
 ```java

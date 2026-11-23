@@ -53,6 +53,8 @@ class SheetConfig<T> {
         visibility = source.visibility;
         defaultStyleConfig = source.defaultStyleConfig;
         summaryConfig = source.summaryConfig;
+        subtotalKey = source.subtotalKey;
+        subtotalConfig = source.subtotalConfig;
         sheetNameFunction = source.sheetNameFunction;
         groupComments = source.groupComments == null ? null : Map.copyOf(source.groupComments);
         namedRanges = source.namedRanges == null ? null : Map.copyOf(source.namedRanges);
@@ -92,6 +94,9 @@ class SheetConfig<T> {
     org.apache.poi.ss.usermodel.@Nullable SheetVisibility visibility;
     ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyleConfig;
     @Nullable ExcelSummary summaryConfig;
+    /** The key whose changes end a group of rows with a subtotal row, and what the row holds. */
+    @Nullable Function<T, @Nullable Object> subtotalKey;
+    @Nullable ExcelSubtotal subtotalConfig;
     @Nullable Function<Integer, String> sheetNameFunction;
     /** Map from group header path (outermost-first) to its comment. */
     @Nullable Map<List<String>, ExcelCellComment> groupComments;

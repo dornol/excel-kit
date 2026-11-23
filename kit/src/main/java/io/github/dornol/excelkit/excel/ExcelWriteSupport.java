@@ -61,7 +61,7 @@ class ExcelWriteSupport {
         }
         if (cfg.summaryConfig != null) {
             // The summary covers the data rows only, not whatever afterData wrote below them.
-            row = cfg.summaryConfig.toAfterDataWriter().write(
+            row = cfg.summaryConfig.toAfterDataWriter(cfg.subtotalKey != null).write(
                     new SheetContext(sheet, wb, row, columns, headerRowIndex, startRow));
         }
         return row;
@@ -186,6 +186,7 @@ class ExcelWriteSupport {
                 }
                 style.setFont(newFont);
             }
+            if (rowStyle.locked != null) style.setLocked(rowStyle.locked);
             return style;
         });
     }

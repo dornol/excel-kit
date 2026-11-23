@@ -28,6 +28,8 @@ public class RowStyleConfig {
     @Nullable ExcelColor backgroundColor;
     @Nullable Boolean italic;
     @Nullable Boolean strikethrough;
+    /** Set by the writer only (no public setter): a row whose cells must stay locked under sheet protection. */
+    @Nullable Boolean locked;
     private @Nullable String cacheKey;
 
     /**
@@ -102,9 +104,22 @@ public class RowStyleConfig {
         return this;
     }
 
+    /** A copy of this style whose cells are locked, whatever the column says. */
+    RowStyleConfig lockedCopy() {
+        RowStyleConfig copy = new RowStyleConfig();
+        copy.bold = bold;
+        copy.fontSize = fontSize;
+        copy.fontColor = fontColor;
+        copy.backgroundColor = backgroundColor;
+        copy.italic = italic;
+        copy.strikethrough = strikethrough;
+        copy.locked = true;
+        return copy;
+    }
+
     boolean hasAnyStyle() {
         return bold != null || fontSize != null || fontColor != null
-                || backgroundColor != null || italic != null || strikethrough != null;
+                || backgroundColor != null || italic != null || strikethrough != null || locked != null;
     }
 
     /**
@@ -128,6 +143,7 @@ public class RowStyleConfig {
         if (backgroundColor != null) sb.append("bg").append(backgroundColor.getR()).append("_").append(backgroundColor.getG()).append("_").append(backgroundColor.getB());
         if (italic != null) sb.append("i").append(italic ? "1" : "0");
         if (strikethrough != null) sb.append("s").append(strikethrough ? "1" : "0");
+        if (locked != null) sb.append("l").append(locked ? "1" : "0");
         return sb.toString();
     }
 }

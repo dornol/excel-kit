@@ -146,6 +146,11 @@ public class ExcelSummary {
      * Converts this summary configuration into an {@link AfterDataWriter} callback.
      */
     AfterDataWriter toAfterDataWriter() {
+        return toAfterDataWriter(false);
+    }
+
+    /** @param subtotals whether the data holds subtotal rows: then {@code SUBTOTAL} counts every row once */
+    AfterDataWriter toAfterDataWriter(boolean subtotals) {
         return ctx -> {
             List<String> columnNames = ctx.getColumnNames();
             int headerRow = ctx.getHeaderRowIndex();
@@ -185,7 +190,9 @@ public class ExcelSummary {
                     // Without data rows the range would be reversed (A2:A1) and include the header.
                     if (dataEndRow < dataStartRow) continue;
                     String colLetter = SheetContext.columnLetter(colIdx);
-                    String formula = op.name() + "(" + colLetter + dataStartRow + ":" + colLetter + dataEndRow + ")";
+                    String range = colLetter + dataStartRow + ":" + colLetter + dataEndRow;
+                    String formula = subtotals ? "SUBTOTAL(" + ExcelSubtotal.functionNumber(op) + "," + range + ")"
+                            : op.name() + "(" + range + ")";
                     SXSSFCell cell = summaryRow.createCell(colIdx);
                     ExcelDataType.setUncalculatedFormula(cell, formula);
                 }
