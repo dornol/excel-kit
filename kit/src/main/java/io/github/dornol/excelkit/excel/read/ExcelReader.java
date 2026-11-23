@@ -34,6 +34,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private int sheetIndex = 0;
     private int headerRows = 1;
     private boolean countRows = false;
+    private boolean fillMergedCells = false;
     private @Nullable String password;
     private boolean inputDecrypted;
 
@@ -287,6 +288,34 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     /**
+     * Gives every cell of a merged region the value of the region's top-left cell, in the data rows.
+     * <p>
+     * Excel stores the value of a merged region in its top-left cell only, so a column that a person merged by hand
+     * (one department over its rows, say) reads as blank in every row but the first. With this option each
+     * row reads the department:
+     * <pre>{@code
+     * ExcelReader.setter(Row::new)
+     *     .fillMergedCells()
+     *     .column((r, c) -> r.department = c.asString())
+     *     .read(inputStream, result -> { ... });
+     * }</pre>
+     * A merged region spanning columns fills them too. The header rows are not changed (a merged group header
+     * keeps its existing handling, see {@link #headerRows(int)}), and a cell that has a value of its own keeps it.
+     * A row that is not in the file at all (Excel omits a row with nothing in it) is not created.
+     * <p>
+     * The merged regions are listed after the rows in the sheet's XML, so the reader scans the sheet once more
+     * before it reads: the same extra pass as {@link #countRows()}, and a sheet may merge at most 200,000
+     * regions with this option.
+     *
+     * @return this reader for chaining
+     * @since 0.29.0
+     */
+    public ExcelReader<T> fillMergedCells() {
+        this.fillMergedCells = true;
+        return this;
+    }
+
+    /**
      * Sets the password for reading encrypted Excel files.
      * <p>
      * If the file is encrypted with the "agile" encryption mode (as produced by
@@ -324,7 +353,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private ExcelReadSessionConfig<T> sessionConfig() {
         return new ExcelReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
                 instanceSupplier, rowMapper, configuredValidator(), sheetIndex, configuredHeaderRowIndex(), headerRows,
-                inputDecrypted ? null : password, countRows,
+                inputDecrypted ? null : password, countRows, fillMergedCells,
                 configuredSelectedMapColumns(), snapshotReadOptions());
     }
 

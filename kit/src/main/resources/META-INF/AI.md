@@ -242,6 +242,9 @@ same column, and an unknown parent column fails when the sheet is written.
 Page breaks: `printSetup(p -> p.rowBreakEvery(n))`, and `pageBreakOnChange(keyFn)` / `pageBreakWhen((previous, current) -> bool)`
 on `ExcelWriter` / `ExcelSheetWriter` (a new printed page where the data changes; at most 1026 breaks per sheet).
 
+`ExcelReader.fillMergedCells()` gives every cell of a merged region the value of its top-left cell in the data rows
+(a department merged by hand over its rows reads in each row); one extra scan of the sheet, at most 200,000 regions.
+
 `ExcelErrorReport.create(headers).write(errors)` writes the failed rows of an upload (row number, uploaded values,
 failed cells shaded with a comment, a messages column) as an `ExcelHandler`, from `RowError`s or a `ReadReport`.
 

@@ -159,6 +159,25 @@ public class ReadShowcaseController {
     }
 
     // ========================================================================
+    // 18-a. Merged cells - a value merged over several rows, read with and without fillMergedCells()
+    // ========================================================================
+    @PostMapping("/map-reader-merged")
+    @ResponseBody
+    public String readMapMerged(MultipartFile file) throws IOException {
+        byte[] data = file.getBytes();
+        List<Map<String, String>> plain = new ArrayList<>();
+        ExcelReader.forMap().read(new ByteArrayInputStream(data), r -> plain.add(r.data()));
+        List<Map<String, String>> filled = new ArrayList<>();
+        ExcelReader.forMap().fillMergedCells().read(new ByteArrayInputStream(data), r -> filled.add(r.data()));
+
+        StringBuilder sb = new StringBuilder("=== Without fillMergedCells(): only the top-left cell of a merge has the value ===\n");
+        plain.forEach(row -> sb.append(row).append("\n"));
+        sb.append("\n=== With fillMergedCells(): every cell of a merged region reads the value ===\n");
+        filled.forEach(row -> sb.append(row).append("\n"));
+        return sb.toString();
+    }
+
+    // ========================================================================
     // 18-b. Raw Map Reader - stored numbers instead of displayed text
     // ========================================================================
     @PostMapping("/map-reader-raw")

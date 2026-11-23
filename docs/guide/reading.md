@@ -204,6 +204,26 @@ schema.excelReader(User::new)
     .read(inputStream, user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
 ```
 
+## Merged Cells
+
+Excel stores the value of a merged region in its top-left cell only, so a column that a person merged by hand (one
+department over its rows) reads as blank in every row but the first. `fillMergedCells()` gives every cell of a region
+the value of its top-left cell:
+
+```java
+ExcelReader.setter(Row::new)
+    .fillMergedCells()
+    .column((r, c) -> r.department = c.asString())
+    .read(inputStream, result -> { ... });
+```
+
+- Only data rows are filled: the header rows keep their existing handling (`headerRows(n)`). A region that spans columns fills them too.
+- A cell that has a value of its own keeps it. A merged number keeps its stored value, not just its text.
+- A row that is not in the file at all (Excel omits a row with nothing in it) is not created.
+- The merged regions are listed after the rows in the sheet's XML, so the reader scans the sheet once more before it
+  reads (the same extra pass as `countRows()`). A sheet may merge at most 200,000 regions with this option.
+- Works in setter, mapping and map mode, and for each reader of an `ExcelWorkbookReader`.
+
 ## Error Report Workbook
 
 `ExcelErrorReport` turns the `RowError`s of an upload (or a `ReadReport`) into an Excel file to hand back to the

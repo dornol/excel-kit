@@ -93,6 +93,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         this.headerRows = config.headerRows();
         this.password = config.password();
         this.countRows = config.countRows();
+        this.fillMergedCells = config.fillMergedCells();
         if (externalPath) useExternalInput(path);
         validateOrClose(this::validateReadOptions);
     }
@@ -103,6 +104,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final int headerRows;
     private final @Nullable String password;
     private final boolean countRows;
+    private final boolean fillMergedCells;
 
     private static void validateHeaderRows(int headerRows) {
         if (headerRows < 1) {
@@ -190,6 +192,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
 
             XSSFReader reader = new XSSFReader(pkg);
+            @Nullable MergedCellFill mergedFill = fillMergedCells ? scanMergedRegions(reader) : null;
             ExcelSheetNavigator.enforceLimit(reader, readOptions.limits().maxSheets());
 
             SharedStrings ss = reader.getSharedStringsTable();
@@ -197,6 +200,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             XMLReader parser = XMLHelper.newXMLReader();
             SheetHandler sheetHandler = new SheetHandler(consumer, totalRows);
+            sheetHandler.mergedFill = mergedFill;
             CellConversionConfig conversionConfig = readOptions.cellConversionConfig();
             Locale locale = (conversionConfig != null ? conversionConfig : CellConversionConfig.defaults()).locale();
             XSSFSheetXMLHandler sheetParser = new NumericSheetXmlHandler(styles, ss, sheetHandler,
@@ -207,6 +211,13 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 try { parser.parse(new InputSource(sheet)); }
                 catch (StopReadingException ignored) { /* configured row stop */ }
             });
+    }
+
+    /** Reads the merged regions of the selected sheet; {@code null} when it has none. */
+    private @Nullable MergedCellFill scanMergedRegions(XSSFReader reader) throws Exception {
+        var found = new MergedCellFill[1];
+        ExcelSheetNavigator.consume(reader, sheetIndex, sheet -> found[0] = MergedCellFill.scan(sheet));
+        return found[0].isEmpty() ? null : found[0];
     }
 
     /**
@@ -344,6 +355,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private class SheetHandler extends DefaultHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
         private @Nullable T currentInstance;
         private @Nullable String rawNumericValue;
+        private @Nullable MergedCellFill mergedFill;
+        private int currentRowNumber;
         private final List<CellData> currentRow = new ArrayList<>();
         private final List<String> headerNames = new ArrayList<>();
         /** Accumulates bottom-most non-blank header value per column across multi-row headers. */
@@ -380,6 +393,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             if (instanceSupplier != null) {
                 currentInstance = instanceSupplier.get();
             }
+            currentRowNumber = rowNum;
             currentRow.clear();
             messages = null;
             cellErrors = null;
@@ -411,6 +425,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 return;
             }
 
+            fillMergedCells(rowNum);
             List<String> rawValues = rawValues(currentRow);
             int rowDecision = evaluateRow(rawValues);
             if (rowDecision == STOP_READING) {
@@ -448,6 +463,19 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             }
         }
 
+        /** Gives the empty cells of this row that lie in a merged region the value of the region's top-left cell. */
+        private void fillMergedCells(int rowNum) {
+            if (mergedFill == null) return;
+            for (MergedCellFill.Fill fill : mergedFill.cellsOf(rowNum)) {
+                while (currentRow.size() <= fill.column()) {
+                    currentRow.add(cellData(currentRow.size(), null));
+                }
+                if (currentRow.get(fill.column()).isEmpty()) {
+                    currentRow.set(fill.column(), cellData(fill.column(), fill.formatted(), fill.raw()));
+                }
+            }
+        }
+
         /**
          * Called for each cell in the current row.
          */
@@ -466,6 +494,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
         private void addCell(String cellReference, String formattedValue) {
             int colIndex = getColumnIndex(cellReference);
+            if (mergedFill != null) mergedFill.capture(currentRowNumber, colIndex, formattedValue, rawNumericValue);
             while (currentRow.size() < colIndex) {
                 currentRow.add(cellData(currentRow.size(), null));
             }

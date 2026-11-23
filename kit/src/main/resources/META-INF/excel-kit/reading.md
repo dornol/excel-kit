@@ -190,6 +190,13 @@ schema.excelReader(User::new)
 
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 
+## Merged cells
+
+`ExcelReader.fillMergedCells()` gives every cell of a merged region the value of its top-left cell (Excel stores it
+there only), in the data rows: a department merged over its rows reads in each row. Header rows are unchanged, a cell
+with a value of its own keeps it, a row absent from the file is not created. It scans the sheet once more before the
+read (like `countRows()`); at most 200,000 merged regions per sheet.
+
 ## Error report workbook
 
 `ExcelErrorReport.create(headers).write(errors)` (`Iterable<RowError>`, `Stream<RowError>` or `ReadReport`) returns an
