@@ -31,6 +31,7 @@ final class SubtotalTracker<T> {
 
     /** Rows the summary writes below the data of a sheet, which must still fit after the last subtotal row. */
     private final int summaryRows;
+    private final @Nullable FormulaValues values;
 
     private @Nullable SXSSFSheet currentSheet;
     private long dataRowsInSheet;
@@ -41,7 +42,8 @@ final class SubtotalTracker<T> {
     private @Nullable Object keyCellValue;
 
     private SubtotalTracker(Function<T, @Nullable Object> key, ExcelSubtotal config, List<ExcelColumn<T>> columns,
-                            SheetConfig<T> cfg) {
+                            SheetConfig<T> cfg, @Nullable FormulaValues values) {
+        this.values = values;
         this.key = key;
         this.config = config;
         this.style = config.style().lockedCopy();
@@ -76,9 +78,10 @@ final class SubtotalTracker<T> {
     }
 
     /** The tracker, or {@code null} when the sheet has no subtotals. */
-    static <T> @Nullable SubtotalTracker<T> of(SheetConfig<T> cfg, List<ExcelColumn<T>> columns) {
+    static <T> @Nullable SubtotalTracker<T> of(SheetConfig<T> cfg, List<ExcelColumn<T>> columns,
+                                               @Nullable FormulaValues values) {
         if (cfg.subtotalKey == null || cfg.subtotalConfig == null) return null;
-        return new SubtotalTracker<>(cfg.subtotalKey, cfg.subtotalConfig, columns, cfg);
+        return new SubtotalTracker<>(cfg.subtotalKey, cfg.subtotalConfig, columns, cfg, values);
     }
 
     /** Rejects what a subtotal row would corrupt: tables, charts and named ranges span the rows as one data block. */
@@ -158,13 +161,15 @@ final class SubtotalTracker<T> {
                 base = columns.get(i).setColumnData(cell, keyCellValue, cfg.writeErrorPolicy);
             } else if (op != null) {
                 String letter = SheetContext.columnLetter(i);
-                ExcelDataType.setUncalculatedFormula(cell, "SUBTOTAL(" + ExcelSubtotal.functionNumber(op) + ","
-                        + letter + (startRow + 1) + ":" + letter + (endRow + 1) + ")");
+                ExcelDataType.setFormula(cell, "SUBTOTAL(" + ExcelSubtotal.functionNumber(op) + ","
+                        + letter + (startRow + 1) + ":" + letter + (endRow + 1) + ")",
+                        values == null ? null : values.groupValue(i, op));
             } else {
                 cell.setBlank();
             }
             cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(base, style.backgroundColor,
                     style, styleCache, wb, cfg.maxCellStyles));
         }
+        if (values != null) values.resetGroup();
     }
 }

@@ -18,17 +18,19 @@ final class ExcelRowWriter {
 
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
                           SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook) {
-        write(sheet, cursor, row, columns, config, styleCache, workbook, null, null);
+        write(sheet, cursor, row, columns, config, styleCache, workbook, null, null, null);
     }
 
     /**
      * @param merges    merges the runs of equal values of the columns that asked for it, or {@code null}
+     * @param values    the results of the formulas that cover the data cells, or {@code null}
      * @param subtotals the subtotal rows of the sheet, or {@code null}: they say which data row of the sheet this is,
      *                  because a sheet can turn over before {@code maxRows} when the subtotal rows take its room
      */
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
                           SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook,
-                          @Nullable MergeRunTracker<T> merges, @Nullable SubtotalTracker<T> subtotals) {
+                          @Nullable MergeRunTracker<T> merges, @Nullable SubtotalTracker<T> subtotals,
+                          @Nullable FormulaValues values) {
         if (cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY) {
             throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: Excel sheets hold at most "
                     + ExcelLimits.SHEET_ROW_CAPACITY + " rows. Lower maxRows(...) so the writer rolls over to a "
@@ -53,6 +55,7 @@ final class ExcelRowWriter {
             @Nullable Object value = column.applyFunction(row, cursor, config.writeErrorPolicy);
             if (merges != null && merges.ordinal(i) >= 0) merges.value(merges.ordinal(i), value);
             CellStyle baseStyle = column.setColumnData(cell, value, config.writeErrorPolicy);
+            if (values != null) values.cell(i, cell);
 
             ExcelColor color = effectiveColor(column, value, row, rowStyle, rowColor);
             if (rowStyle != null && rowStyle.hasAnyStyle())

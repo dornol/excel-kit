@@ -634,7 +634,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         execution().dataEndRow(cursor().getRowOfSheet() - 1);
         closeMergeRuns();
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                options.columns(), headerRowIndex(), options.sheetConfig());
+                options.columns(), headerRowIndex(), options.sheetConfig(), execution().values());
         execution().nextFreeRow(nextRow);
         if (this.afterAllWriter != null) {
             this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
@@ -702,7 +702,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             execution().dataEndRow(cursor().getRowOfSheet() - 1);
             closeMergeRuns();
             execution().nextFreeRow(ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                    options.columns(), headerRowIndex(), options.sheetConfig()));
+                    options.columns(), headerRowIndex(), options.sheetConfig(), execution().values()));
+            if (execution().values() != null) execution().values().resetSheet();
             turnOverSheet();
             int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
             cursor().setRowOfSheet(preambleRow);
@@ -717,7 +718,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
                 rowStyleCache, wb);
         execution().pageBreaks().beforeRow(sheet(), cursor().getRowOfSheet(), rowData);
         ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb,
-                execution().merges(), subtotals);
+                execution().merges(), subtotals, execution().values());
         ExcelWriteSupport.checkProgress(cursor(), options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
     }
 

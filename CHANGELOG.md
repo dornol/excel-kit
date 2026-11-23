@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
 - `ExcelSubtotal.keyColumn(column)` writes the group's value (as the first row of the group holds it, same type and format) into that column of the subtotal row, so an auto filter on the column keeps the subtotal with the rows of its group: filtering `Dept = A` shows A's rows and its subtotal, where the label alone (`"A total"`) is filtered out.
 - `countA(column)` on `ExcelSubtotal` and `ExcelSummary` counts the cells that are not empty, text included (`COUNTA`, `SUBTOTAL(3, ...)` under subtotals); `count(column)` keeps counting only the cells that hold a number.
 
+- A `groupSubtotal(...)` subtotal and a `summary(...)` formula now carry their result next to the formula. Until now the result was left out, so a file seen in Protected View (a download or an attachment that Excel has not been told to trust), a preview or a library that does not calculate showed those cells empty. The result is worked out while the rows are written, from the cells as they are stored (a text cell does not count for `sum`, a date is a number), with one small accumulator per formula column; a result that cannot be known for sure (a column of formulas, an `average` over no numbers, `countA` over empty text) is still written without one. Excel recalculates when it opens the file either way.
+
 ### Fixed
 - `dropdown(...)` wrote `showDropDown="true"` for the list, which OOXML defines as *hiding* the in-cell arrow, so Excel could show the dropdown list without its arrow. The attribute is no longer written (as for `listFromRange`): the arrow is shown. Not checked on a real Excel.
 

@@ -17,6 +17,7 @@ final class ExcelWriteSession<T> {
     private final PageBreakTracker<T> pageBreaks;
     private final @Nullable MergeRunTracker<T> merges;
     private final @Nullable SubtotalTracker<T> subtotals;
+    private final @Nullable FormulaValues values;
     private SXSSFSheet sheet;
     private Cursor cursor;
 
@@ -24,13 +25,15 @@ final class ExcelWriteSession<T> {
         this.options = options;
         this.pageBreaks = new PageBreakTracker<>(options.sheetConfig().pageBreakWhen);
         this.merges = MergeRunTracker.of(options.columns());
-        this.subtotals = SubtotalTracker.of(options.sheetConfig(), options.columns());
+        this.values = FormulaValues.of(options.sheetConfig(), options.columns());
+        this.subtotals = SubtotalTracker.of(options.sheetConfig(), options.columns(), values);
     }
 
     ExcelWriteOptions<T> options() { return options; }
     PageBreakTracker<T> pageBreaks() { return pageBreaks; }
     @Nullable MergeRunTracker<T> merges() { return merges; }
     @Nullable SubtotalTracker<T> subtotals() { return subtotals; }
+    @Nullable FormulaValues values() { return values; }
     SXSSFSheet sheet() { return sheet; }
     void sheet(SXSSFSheet sheet) { this.sheet = sheet; }
     Cursor cursor() { return cursor; }

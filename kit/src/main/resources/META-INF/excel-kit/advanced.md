@@ -264,6 +264,7 @@ sheets); the same holds for `groupSubtotal(...)`.
 `groupSubtotal(key, ...)` writes a `SUBTOTAL` formula row below every run of rows with an equal key (sort the rows by the
 key). `summary(...)` then uses `SUBTOTAL` too, so nothing is counted twice. Subtotal rows are not data rows
 (`rowNumberColumn`, `stripedRows`, `maxRows` skip them). Not with `table(...)`, `chart(...)` or `namedRange(...)`.
+Subtotal and summary formulas carry their calculated result (shown in Protected View and previews); Excel recalculates on open.
 
 ## Named Ranges
 

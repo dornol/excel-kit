@@ -156,6 +156,10 @@ public class ExcelSummary {
         return this;
     }
 
+    Map<Op, List<String>> entries() {
+        return entries;
+    }
+
     /** The number of rows the summary writes: one for every operation. */
     int rowCount() {
         return entries.size();
@@ -165,11 +169,11 @@ public class ExcelSummary {
      * Converts this summary configuration into an {@link AfterDataWriter} callback.
      */
     AfterDataWriter toAfterDataWriter() {
-        return toAfterDataWriter(false);
+        return toAfterDataWriter(false, null);
     }
 
     /** @param subtotals whether the data holds subtotal rows: then {@code SUBTOTAL} counts every row once */
-    AfterDataWriter toAfterDataWriter(boolean subtotals) {
+    AfterDataWriter toAfterDataWriter(boolean subtotals, @Nullable FormulaValues values) {
         return ctx -> {
             List<String> columnNames = ctx.getColumnNames();
             int headerRow = ctx.getHeaderRowIndex();
@@ -213,7 +217,7 @@ public class ExcelSummary {
                     String formula = subtotals ? "SUBTOTAL(" + ExcelSubtotal.functionNumber(op) + "," + range + ")"
                             : op.name() + "(" + range + ")";
                     SXSSFCell cell = summaryRow.createCell(colIdx);
-                    ExcelDataType.setUncalculatedFormula(cell, formula);
+                    ExcelDataType.setFormula(cell, formula, values == null ? null : values.sheetValue(colIdx, op));
                 }
 
                 row++;

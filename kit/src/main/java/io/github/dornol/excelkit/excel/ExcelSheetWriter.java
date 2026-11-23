@@ -225,7 +225,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         SXSSFSheet activeSheet = this.sheet;
         var pageBreaks = new PageBreakTracker<T>(cfg.pageBreakWhen);
         var merges = MergeRunTracker.of(columns);
-        var subtotals = SubtotalTracker.of(cfg, columns);
+        var values = FormulaValues.of(cfg, columns);
+        var subtotals = SubtotalTracker.of(cfg, columns, values);
 
         {
             Iterator<T> it = stream.iterator();
@@ -240,7 +241,8 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     dataEndRows.add(cursor.getRowOfSheet() - 1);
                     if (merges != null) merges.closeRuns(cursor.getRowOfSheet() - 1);
                     nextFreeRows.add(ExcelWriteSupport.writeAfterDataAndSummary(
-                            activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg));
+                            activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values));
+                    if (values != null) values.resetSheet();
                     activeSheet = createRolloverSheet(allSheets.size());
                     allSheets.add(activeSheet);
                     cursor.initRow();
@@ -254,7 +256,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                 }
                 if (subtotals != null) subtotals.beforeRow(activeSheet, cursor, rowData, cfg, merges, rowStyleCache, wb);
                 pageBreaks.beforeRow(activeSheet, cursor.getRowOfSheet(), rowData);
-                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb, merges, subtotals);
+                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb, merges, subtotals, values);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             }
         }
@@ -263,7 +265,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         dataEndRows.add(cursor.getRowOfSheet() - 1);
         if (merges != null) merges.closeRuns(cursor.getRowOfSheet() - 1);
         int nextFreeRow = ExcelWriteSupport.writeAfterDataAndSummary(
-                activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+                activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values);
         nextFreeRows.add(nextFreeRow);
 
         for (int i = 0; i < allSheets.size(); i++) {

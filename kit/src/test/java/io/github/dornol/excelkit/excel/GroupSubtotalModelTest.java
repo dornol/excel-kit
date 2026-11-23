@@ -72,10 +72,12 @@ class GroupSubtotalModelTest {
                     String first = string(row.getCell(0));
                     if (name.endsWith(" total")) {
                         double value = evaluator.evaluate(row.getCell(2)).getNumberValue();
+                        assertCached(row.getCell(2), value, context + " sheet " + s + " row " + r);
                         actual.add("S:" + name + ":" + (long) value);
                     } else if (first.equals("Total")) {
                         var cell = row.getCell(2);
                         // Without data rows a summary has a label and no formula.
+                        if (cell != null) assertCached(cell, evaluator.evaluate(cell).getNumberValue(), context + " sheet " + s + " summary row " + r);
                         actual.add(cell == null ? "T:none" : "T:" + (long) evaluator.evaluate(cell).getNumberValue());
                     } else {
                         actual.add("D:" + first + ":" + name + ":" + (long) row.getCell(2).getNumericCellValue());
@@ -231,6 +233,12 @@ class GroupSubtotalModelTest {
             workbook.finish().writeTo(out);
             return out.toByteArray();
         }
+    }
+
+    /** The result the file carries next to a formula is the one Excel calculates (what POI's evaluator gives). */
+    private static void assertCached(org.apache.poi.ss.usermodel.Cell cell, double calculated, String at) {
+        assertEquals(CellType.NUMERIC, cell.getCachedFormulaResultType(), at + ": cached result type");
+        assertEquals(calculated, cell.getNumericCellValue(), 1e-9, at + ": cached result");
     }
 
     private static String string(org.apache.poi.ss.usermodel.Cell cell) {

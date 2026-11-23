@@ -236,6 +236,21 @@ public enum ExcelDataType {
         cell.setCellValue(fraction);
     }
 
+    /**
+     * Writes a formula with its result when the result is known, so that a viewer that does not calculate shows it;
+     * the workbook still recalculates when Excel opens it.
+     */
+    static void setFormula(Cell cell, String formula, @Nullable Double result) {
+        if (result == null) {
+            setUncalculatedFormula(cell, formula);
+            return;
+        }
+        cell.setCellFormula(formula);
+        cell.setCellValue(result);
+        var workbook = cell.getSheet().getWorkbook();
+        if (!workbook.getForceFormulaRecalculation()) workbook.setForceFormulaRecalculation(true);
+    }
+
     static void setUncalculatedFormula(Cell cell, String formula) {
         cell.setCellFormula(formula);
         // SXSSF leaves the cached value out of the sheet XML for an empty string result.

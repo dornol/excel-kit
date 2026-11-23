@@ -55,13 +55,20 @@ class ExcelWriteSupport {
     static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
                                              List<ExcelColumn<T>> columns, int headerRowIndex,
                                              SheetConfig<T> cfg) {
+        return writeAfterDataAndSummary(sheet, wb, startRow, columns, headerRowIndex, cfg, null);
+    }
+
+    /** @param values what the summary formulas calculate for the sheet, or {@code null} when they are not tracked */
+    static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
+                                             List<ExcelColumn<T>> columns, int headerRowIndex,
+                                             SheetConfig<T> cfg, @Nullable FormulaValues values) {
         int row = startRow;
         if (cfg.afterDataWriter != null) {
             row = cfg.afterDataWriter.write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
         }
         if (cfg.summaryConfig != null) {
             // The summary covers the data rows only, not whatever afterData wrote below them.
-            row = cfg.summaryConfig.toAfterDataWriter(cfg.subtotalKey != null).write(
+            row = cfg.summaryConfig.toAfterDataWriter(cfg.subtotalKey != null, values).write(
                     new SheetContext(sheet, wb, row, columns, headerRowIndex, startRow));
         }
         return row;

@@ -147,7 +147,11 @@ default bold-on-gray look; `label(column, key -> text)` sets the column of the t
 - Conditional formatting rules and column validations (`dropdown`, `validation`) run over the subtotal rows too, as they
   run over every row of the data block.
 - Cannot be combined with `table(...)`, `chart(...)` or `namedRange(...)` (the write fails with `ExcelWriteException`).
-- The formulas hold no cached value: viewers that do not calculate (previews, some libraries) show them empty, as for `summary(...)`.
+- A subtotal and a `summary(...)` formula carry their result next to the formula (worked out while the rows are written
+  from the cells as they are stored: text does not count for `sum`, a date is a number), so Protected View, previews and
+  libraries that do not calculate show the number; Excel recalculates when it opens the file. Where the result cannot be
+  known for sure (the column holds formulas of its own, an `average` over no numbers, `countA` over empty text) the
+  formula is written without one and shows empty until Excel calculates.
 - Reading the file back returns the subtotal rows as data rows.
 
 Works with sheet rollover — formulas generated per-sheet.

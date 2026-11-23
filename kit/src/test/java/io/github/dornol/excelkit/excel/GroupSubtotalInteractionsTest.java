@@ -362,11 +362,12 @@ class GroupSubtotalInteractionsTest {
         }
 
         @Test
-        void aSubtotalCellHoldsNoCachedValueUntilExcelCalculates() throws IOException {
+        void aSubtotalCellHoldsItsResultAndExcelStillRecalculatesOnOpen() throws IOException {
             try (var wb = open(base().write(ROWS))) {
                 var cell = wb.getSheetAt(0).getRow(3).getCell(2);
                 assertEquals(CellType.FORMULA, cell.getCellType());
-                assertEquals("", cell.getStringCellValue(), "the cached result is empty");
+                assertEquals(CellType.NUMERIC, cell.getCachedFormulaResultType(), "a viewer that does not calculate shows it");
+                assertEquals(30, cell.getNumericCellValue());
                 assertTrue(wb.getForceFormulaRecalculation(), "Excel recalculates the workbook when it opens it");
             }
         }
