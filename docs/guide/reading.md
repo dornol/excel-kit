@@ -204,6 +204,26 @@ schema.excelReader(User::new)
     .read(inputStream, user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
 ```
 
+## Error Report Workbook
+
+`ExcelErrorReport` turns the `RowError`s of an upload (or a `ReadReport`) into an Excel file to hand back to the
+person who uploaded it: the row number in the uploaded file, the uploaded values, the failed cells shaded with their
+message in a cell comment, and a last column with the messages of the row.
+
+```java
+var errors = new ArrayList<RowError>();
+reader.read(input, row -> save(row), errors::add);
+
+ExcelHandler report = ExcelErrorReport.create(List.of("Name", "Age"))   // the headers of the uploaded file
+        .errorColumnName("Reason")                                    // optional: also rowColumnName, sheetName, errorColor
+        .write(errors);                                               // Iterable, Stream or ReadReport
+// e.g. ExcelKitResponse.excel("upload-errors").body(report::writeTo)
+```
+
+It holds the failed rows only, from `RowError.rawValues()`; the original file is not read again. Headers start at the
+file's first column (as `CellError.columnIndex()` counts) and a blank or repeated one is renamed. A `ReadReport` holds
+a bounded number of errors (`errorsTruncated()`).
+
 ## Advanced Options
 
 ### Reusable reader options and list results

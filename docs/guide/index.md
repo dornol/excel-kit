@@ -12,7 +12,7 @@ infrastructure concerns.
 | Document | Covers | Key APIs |
 |----------|--------|----------|
 | [Writing](writing.md) | Column DSL, types, formats, callbacks, auto-split | `ExcelWriter.create()`, `column()`, `write()`, `ExcelDataType` |
-| [Reading](reading.md) | Setter/Mapping/Map mode, CellData, stream reading | `ExcelReader.setter()`, `mapping()`, `forMap()`, `CellData` |
+| [Reading](reading.md) | Setter/Mapping/Map mode, CellData, stream reading | `ExcelReader.setter()`, `mapping()`, `forMap()`, `CellData`, `ExcelErrorReport` |
 | [Styling](styling.md) | Font, color, border, alignment, rotation | `fontColor()`, `border()`, `backgroundColor()`, `bold()` |
 | [Headers](headers.md) | Header color/font, group headers, comments | `headerColor()`, `group()`, `headerComment()`, `groupComment()` |
 | [Validation](validation.md) | Dropdown, data validation, conditional formatting | `dropdown()`, `dependentDropdown()`, `validation()`, `conditionalFormatting()` |

@@ -377,4 +377,34 @@ public class WriteShowcaseController {
                 .body(handler::writeTo);
     }
 
+    // ========================================================================
+    // Error report - the rows of an upload that failed to read, as an Excel file for the uploader
+    // ========================================================================
+    private static class UploadedPerson {
+        String name;
+        int age;
+    }
+
+    @GetMapping("/error-report")
+    public ResponseEntity<StreamingResponseBody> downloadErrorReport() throws java.io.IOException {
+        // A stand-in for an uploaded file: the third row has an age that is not a number
+        var upload = new java.io.ByteArrayOutputStream();
+        ExcelWriter.<String[]>create()
+                .column("Name", r -> r[0])
+                .column("Age", r -> r[1])
+                .write(Stream.of(new String[]{"Alice", "30"}, new String[]{"Bob", "abc"}, new String[]{"Carol", "41"},
+                        new String[]{"Dave", "n/a"}))
+                .writeTo(upload);
+
+        var errors = new java.util.ArrayList<io.github.dornol.excelkit.core.read.RowError>();
+        io.github.dornol.excelkit.excel.read.ExcelReader.setter(UploadedPerson::new)
+                .column((p, c) -> p.name = c.asString())
+                .column((p, c) -> p.age = c.asInt())
+                .read(new java.io.ByteArrayInputStream(upload.toByteArray()), person -> { }, errors::add);
+
+        var report = ExcelErrorReport.create(List.of("Name", "Age")).write(errors);
+        return ExcelKitResponse.excel("upload-errors")
+                .body(report::writeTo);
+    }
+
 }

@@ -190,6 +190,14 @@ schema.excelReader(User::new)
 
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 
+## Error report workbook
+
+`ExcelErrorReport.create(headers).write(errors)` (`Iterable<RowError>`, `Stream<RowError>` or `ReadReport`) returns an
+`ExcelHandler` for an Excel file of the failed rows: row number in the uploaded file, uploaded values, failed cells shaded
+with their message as a cell comment, and a last column with the row's messages. Options: `rowColumnName`,
+`errorColumnName`, `sheetName`, `errorColor`. It uses `RowError.rawValues()` and `CellError.columnIndex()`; blank or repeated
+headers are renamed.
+
 ## Summaries, bounded reports, and file detection
 
 `readWithSummary(...)` returns a `ReadSummary` with total, successful, and failed row counts,
