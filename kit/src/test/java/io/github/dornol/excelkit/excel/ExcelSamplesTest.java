@@ -4,7 +4,9 @@ import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.PrintOrientation;
+import org.apache.poi.ss.usermodel.SheetVisibility;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,7 +18,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -52,7 +56,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(17, samples.size());
+        assertEquals(24, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -240,6 +244,134 @@ class ExcelSamplesTest {
             assertNull(sheet.getRow(8), "row 9 is empty");
             assertEquals("Sum", sheet.getRow(9).getCell(0).getStringCellValue());
             assertEquals("Average", sheet.getRow(10).getCell(0).getStringCellValue());
+        }
+    }
+
+    // ---- the upload-form samples (18-24) ------------------------------------------------------------------
+
+    private static boolean arrowHidden(XSSFSheet sheet, int validation) {
+        return sheet.getCTWorksheet().getDataValidations().getDataValidationArray(validation).getShowDropDown();
+    }
+
+    private static String fill(org.apache.poi.ss.usermodel.Cell cell) {
+        var style = cell.getCellStyle();
+        if (style.getFillPattern() != FillPatternType.SOLID_FOREGROUND) return "none";
+        byte[] rgb = ((org.apache.poi.xssf.usermodel.XSSFColor) style.getFillForegroundColorColor()).getRGB();
+        return String.format("%02X%02X%02X", rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF);
+    }
+
+    @Test
+    void theDropdownSampleKeepsTheArrowAndTheOptions() throws Exception {
+        try (XSSFWorkbook wb = open("18-dropdown-validation.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Form");
+            var validations = sheet.getDataValidations();
+            assertEquals(3, validations.size());
+            for (int i = 0; i < 3; i++) assertFalse(arrowHidden(sheet, i), "validation " + i);
+            assertEquals("\"Active,Inactive,Pending\"", validations.get(0).getValidationConstraint().getFormula1());
+            var priority = validations.get(1);
+            assertFalse(priority.getEmptyCellAllowed());
+            assertTrue(priority.getShowPromptBox());
+            assertEquals("Priority", priority.getPromptBoxTitle());
+            assertEquals("Pick one of the two", priority.getPromptBoxText());
+            assertTrue(validations.get(2).getEmptyCellAllowed());
+            assertEquals("Codes!$A$2:$A$4", validations.get(2).getValidationConstraint().getFormula1());
+            assertEquals(2, wb.getNumberOfSheets());
+        }
+    }
+
+    @Test
+    void theDependentSampleOffersTheCountsTheManifestExpects() throws Exception {
+        try (XSSFWorkbook wb = open("19-dependent-dropdown.xlsx")) {
+            assertEquals(List.of("Form", "_excelkit_dep_1", "_excelkit_dep_2"),
+                    List.of(wb.getSheetName(0), wb.getSheetName(1), wb.getSheetName(2)));
+            assertEquals(SheetVisibility.HIDDEN, wb.getSheetVisibility(1));
+            assertEquals(SheetVisibility.HIDDEN, wb.getSheetVisibility(2));
+            XSSFSheet sheet = wb.getSheet("Form");
+            var validations = sheet.getDataValidations();
+            assertEquals(3, validations.size(), "Category (dropdown), Item, Sub");
+            var evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            var scratch = sheet.getRow(1).createCell(25);
+
+            String itemFormula = validations.get(1).getValidationConstraint().getFormula1();
+            for (var expected : java.util.Map.of("가", 3, "나", 2, "다", 1).entrySet()) {
+                sheet.getRow(1).getCell(0).setCellValue(expected.getKey());
+                scratch.setCellFormula("COUNTA(" + itemFormula + ")");
+                evaluator.clearAllCachedResultValues();
+                assertEquals(expected.getValue(), (int) evaluator.evaluate(scratch).getNumberValue(), expected.getKey());
+            }
+
+            String subFormula = validations.get(2).getValidationConstraint().getFormula1();
+            assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, sheet.getRow(1).getCell(2).getCellType(), "a number, not text");
+            for (var expected : java.util.Map.of(1, 3, 2, 1).entrySet()) {
+                sheet.getRow(1).getCell(2).setCellValue((double) expected.getKey());
+                scratch.setCellFormula("COUNTA(" + subFormula + ")");
+                evaluator.clearAllCachedResultValues();
+                assertEquals(expected.getValue(), (int) evaluator.evaluate(scratch).getNumberValue(), "code " + expected.getKey());
+            }
+        }
+    }
+
+    @Test
+    void theHiddenSheetSampleOpensOnTheVisibleSheetAtTheZoomAsked() throws Exception {
+        try (XSSFWorkbook wb = open("20-hidden-sheets-and-zoom.xlsx")) {
+            assertEquals(List.of("Codes", "Secret", "Main"), List.of(wb.getSheetName(0), wb.getSheetName(1), wb.getSheetName(2)));
+            assertEquals(SheetVisibility.HIDDEN, wb.getSheetVisibility(0));
+            assertEquals(SheetVisibility.VERY_HIDDEN, wb.getSheetVisibility(1));
+            assertEquals(SheetVisibility.VISIBLE, wb.getSheetVisibility(2));
+            assertEquals(2, wb.getActiveSheetIndex());
+            assertFalse(wb.getSheetAt(0).isSelected(), "a hidden sheet is not selected");
+            assertEquals(90, wb.getSheet("Main").getCTWorksheet().getSheetViews().getSheetViewArray(0).getZoomScale());
+        }
+    }
+
+    @Test
+    void thePageBreakSampleBreaksWhereTheManifestSays() throws Exception {
+        try (XSSFWorkbook wb = open("21-page-breaks.xlsx")) {
+            // a break id is the 0-based index of the first row of the next page: Excel row = id + 1
+            assertArrayEquals(new int[]{4, 7}, wb.getSheet("EveryThree").getRowBreaks());
+            assertArrayEquals(new int[]{3, 6}, wb.getSheet("ByDept").getRowBreaks());
+        }
+    }
+
+    @Test
+    void theMergeSampleMergesWhereTheManifestSays() throws Exception {
+        try (XSSFWorkbook wb = open("22-merge-same-values.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            assertEquals(List.of("A2:A4", "A5:A6", "B2:B3", "B5:B6"), sheet.getMergedRegions().stream()
+                    .map(org.apache.poi.ss.util.CellRangeAddress::formatAsString).sorted().toList());
+            assertEquals("Sales", sheet.getRow(2).getCell(0).getStringCellValue(), "the covered cell keeps its value");
+        }
+    }
+
+    @Test
+    void theStripeAndRequiredMarkSampleIsAsDescribed() throws Exception {
+        try (XSSFWorkbook wb = open("23-striped-rows-required-mark.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            assertEquals("Name", sheet.getRow(0).getCell(0).getStringCellValue());
+            assertEquals("@\" *\"", sheet.getRow(0).getCell(0).getCellStyle().getDataFormatString());
+            assertNotEquals("@\" *\"", sheet.getRow(0).getCell(1).getCellStyle().getDataFormatString());
+            for (int r : new int[]{2, 4, 6}) assertEquals("none", fill(sheet.getRow(r - 1).getCell(0)), "row " + r);
+            for (int r : new int[]{3, 5, 7}) assertEquals("F2F2F2", fill(sheet.getRow(r - 1).getCell(0)), "row " + r);
+            assertEquals("F2F2F2", fill(sheet.getRow(2).getCell(1)));
+        }
+    }
+
+    @Test
+    void theErrorReportSampleShadesAndCommentsTheFailedCells() throws Exception {
+        try (XSSFWorkbook wb = open("24-error-report.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Errors");
+            assertEquals(3, (long) sheet.getRow(1).getCell(0).getNumericCellValue());
+            assertEquals(5, (long) sheet.getRow(2).getCell(0).getNumericCellValue());
+            assertEquals("age is not a number", sheet.getRow(1).getCell(3).getStringCellValue());
+            assertEquals("not a number", sheet.getRow(1).getCell(2).getCellComment().getString().getString());
+            assertEquals("duplicate of row 3", sheet.getRow(2).getCell(1).getCellComment().getString().getString());
+            assertNull(sheet.getRow(1).getCell(1).getCellComment());
+            for (var cell : new String[]{"C2", "B3", "D2", "D3"}) {
+                var ref = new org.apache.poi.ss.util.CellReference(cell);
+                assertEquals("FFC7CE", fill(sheet.getRow(ref.getRow()).getCell(ref.getCol())), cell);
+            }
+            assertEquals("none", fill(sheet.getRow(1).getCell(1)));
+            assertEquals("none", fill(sheet.getRow(2).getCell(2)));
         }
     }
 }

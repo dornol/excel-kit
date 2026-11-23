@@ -15,6 +15,9 @@ excel-kit 의 테스트는 파일을 POI 로 읽거나 XML 로 검사한다. 그
 - 롤오버된 시트마다 차트를 그리며, 차트는 그 시트의 요약 행·`afterData` 내용 **아래**에 놓인다.
 - 스트리밍 워크북의 ZIP 모드가 `AlwaysWithCompatibility` 로 바뀌었다(모든 파일의 zip 구조에 영향).
 - 암호화(AES-256) 두 경로, 템플릿에 값을 채운 결과, 모든 기능을 한꺼번에 켠 파일.
+- 업로드 양식 기능(18~24번): 드롭다운 **화살표**(`showDropDown` 을 더 이상 쓰지 않는다 — OOXML 에서 `true` 는 화살표를
+  숨긴다), 부모 값에 따라 바뀌는 목록(숫자 부모 포함), 검증 안내 메시지·빈 값, 숨김·완전 숨김 시트와 열리는 시트, 확대 비율,
+  페이지 나누기 위치, 같은 값 병합, 줄무늬와 헤더 필수 표시(`@" *"` 서식), 셀 주석이 달린 오류 리포트.
 
 ## 하지 말 것
 
@@ -24,7 +27,7 @@ excel-kit 의 테스트는 파일을 POI 로 읽거나 XML 로 검사한다. 그
 
 ## 1. 준비
 
-샘플 파일(`01-…xlsx` ~ `16-…xlsx`, `manifest.json`, `CHECKLIST.md`)을 구한다. 둘 중 하나:
+샘플 파일(`01-…xlsx` ~ `24-…xlsx`, `manifest.json`, `CHECKLIST.md`)을 구한다. 둘 중 하나:
 
 **A. CI 아티팩트 (JDK 불필요, 권장)**
 
@@ -88,14 +91,22 @@ Excel 이 보는 것을 직접 읽어 판정한다. 화면은 필요한 경우�
 | `shapes sheet pictures` | `Shapes` 중 `Type = 13`(msoPicture) 개수. |
 | `hyperlinks sheet count` | `Hyperlinks.Count`. |
 | `protection …` | `ProtectContents`, 지정한 셀의 `Locked`, `$wb.ProtectStructure`. |
-| `validation sheet cell type` | `Range(cell).Validation.Type` (whole=1, list=3). |
+| `validation sheet cell type …` | `Range(cell).Validation.Type` (whole=1, list=3). 뒤에 붙은 속성도 확인한다: `inCellDropdown`(`Validation.InCellDropdown`; **True 여야 화살표가 보인다**), `ignoreBlank`(`IgnoreBlank`), `showInput`(`ShowInput`), `inputTitle`(`InputTitle`), `inputMessage`(`InputMessage`), `formula1`(`Formula1`; 범위 참조는 `=` 로 시작한다). |
+| `dependentOptions sheet cell parentCell parent count` | 의존 드롭다운의 선택지 개수. 부모 셀(`parentCell`)에 `parent` 값을 넣고(숫자처럼 보이는 `1` 은 **숫자**로, `(a NUMBER)` 표시가 있으면 반드시 숫자), **`cell` 과 같은 행**의 빈 열(예: Z열)에 `=COUNTA(<cell 의 Validation.Formula1 에서 맨 앞 =를 뺀 것>)` 을 넣고 `Calculate` 한 값이 `count` 인지 본다. 수식이 `#N/A` 등 오류면 빈 목록(0)으로 본다. 끝나면 두 셀을 원래대로 되돌린다. |
+| `sheetVisible sheet visible` | `Worksheets(name).Visible` (visible=-1, hidden=0, veryHidden=2). |
+| `activeSheet name` | 파일을 연 직후 `ActiveSheet.Name`. |
+| `zoom sheet percent` | 시트를 `Activate` 한 뒤 `ActiveWindow.Zoom`. |
+| `pageBreaks sheet manualRows` | `HPageBreaks` 중 `Type = -4135`(xlPageBreakManual) 인 것의 `Location.Row`(새 페이지의 첫 행). **프린터 드라이버가 없으면 `HPageBreaks` 를 읽지 못한다** — "확인 불가"로 적고 페이지 나누기 미리보기를 눈으로 본다. |
+| `fill sheet cells rgb` | 각 셀의 `DisplayFormat.Interior.Color` 를 RGB 로 바꿔 `rgb`(예: `F2F2F2`)와 같은지 본다(Excel 의 `Color` 는 `R + G*256 + B*65536`). `rgb=none` 은 `DisplayFormat.Interior.ColorIndex = -4142`(xlColorIndexNone). |
+| `comment sheet cell text` | `Range(cell).Comment.Text()` 가 `text` 와 같은가. `none` 이면 `Comment` 가 없다. |
+| `info …` | 합격·불합격 없이 **관찰값만 보고서에 적는다**(예: 병합으로 가려진 셀의 `Value2`). |
 | `conditionalFormats sheet range countAtLeast` | `Range(range).FormatConditions.Count` 가 이상인가. |
 | `name name refersTo` | `Names.Item(name).RefersTo` (`=Report!$A$2:$A$6` 형태). |
 | `freezePanes sheet rows/columns` | 시트를 `Activate` 한 뒤 `ActiveWindow.FreezePanes`, `SplitRow`, `SplitColumn`. |
 | `pageSetup sheet orientation` | `PageSetup.Orientation` (landscape = 2). |
 | `headerVisible sheet range` | 범위의 각 셀에서 `DisplayFormat.Font.Color` 와 `DisplayFormat.Interior.Color`(화면에 실제로 적용되는 값)가 **서로 달라야** 한다. 같으면 글자가 배경에 묻혀 안 보이는 것이다(표 헤더가 흰 글자·흰 배경이었던 적이 있다). 값이 같지 않아도 확대 스크린샷으로 글자가 읽히는지 본다. 시트가 숫자면 N 번째 시트. |
-| `merged sheet cell mergeArea` | `Range(cell).MergeArea.Address($false,$false)`. |
-| `sheets names=A|B|C` / `sheets count=N` | `Worksheets` 의 이름 순서 / 개수. |
+| `merged sheet cell mergeArea` | `Range(cell).MergeArea.Address($false,$false)`. 병합되지 않은 셀은 자기 자신이 나온다(`mergeArea=B4`). |
+| `sheets names=A|B|C` / `sheets count=N` | `Worksheets` 의 이름 순서 / 개수(숨김 시트도 포함된다). |
 
 manifest 의 표현이 위 표에 없으면 의미에 맞게 해석하되, **해석을 보고서에 적는다**.
 

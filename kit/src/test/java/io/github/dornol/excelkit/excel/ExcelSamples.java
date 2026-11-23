@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.read.CellError;
+import io.github.dornol.excelkit.core.read.RowError;
 import io.github.dornol.excelkit.excel.feature.ExcelImage;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 
@@ -17,8 +19,11 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Writes the workbooks that only a real Excel can judge (does it open without a repair prompt, does a filter reach the
@@ -284,6 +289,7 @@ public final class ExcelSamples {
                 "sheets count=3; headerVisible sheet=1 range=A2:C2 (the first sheet; row 2 holds the column names under the group header)");
 
         writeGapSample();
+        writeFormSamples();
     }
 
     private void writeGapSample() throws Exception {
@@ -295,6 +301,136 @@ public final class ExcelSamples {
                 "opens: no repair prompt",
                 "autoFilter sheet=Report range=A1:B8 (the range Excel shows right after opening, before any filter call)",
                 "filterRows sheet=Report column=1 criteria=\"item 3\" expectVisibleDataRows=1; cell sheet=Report cell=A10 text=Sum must stay visible");
+    }
+
+    // ---- upload forms: validations, hidden sheets, page breaks, merging, stripes, error reports --------------
+
+    private record Choice(String status, String priority, String country) {
+    }
+
+    private record Pick(String category, String item, int code, String sub) {
+    }
+
+    private record Staff(String dept, String team, String name) {
+    }
+
+    private void writeFormSamples() throws Exception {
+        // 18. the list validations: the in-cell arrow, the tooltip, blank cells
+        try (ExcelWorkbook book = ExcelWorkbook.create()) {
+            book.<Choice>sheet("Form")
+                    .column("Status", Choice::status, c -> c.dropdown("Active", "Inactive", "Pending"))
+                    .column("Priority", Choice::priority, c -> c.validation(ExcelValidation.list("High", "Low")
+                            .allowBlank(false).inputTitle("Priority").inputMessage("Pick one of the two")))
+                    .column("Country", Choice::country, c -> c.validation(ExcelValidation.listFromRange("Codes!$A$2:$A$4")))
+                    .write(List.of(new Choice("Active", "High", "KR"), new Choice("Pending", "Low", "US")).stream());
+            book.<String>sheet("Codes").column("Code", x -> x).write(Stream.of("KR", "US", "JP"));
+            save("18-dropdown-validation.xlsx", book.finish());
+        }
+        add("18-dropdown-validation.xlsx", "dropdown validations",
+                "Status (A), Priority (B) and Country (C) cells are dropdowns: click one and the list opens, WITH the arrow at the right of the cell. Selecting a Priority cell shows a tooltip titled \"Priority\" saying \"Pick one of the two\".",
+                "opens: no repair prompt",
+                "validation sheet=Form cell=A2 type=list inCellDropdown=true formula1=\"Active,Inactive,Pending\" (the arrow: this is the case that wrote showDropDown=true before, which hides it)",
+                "validation sheet=Form cell=B2 type=list inCellDropdown=true ignoreBlank=false showInput=true inputTitle=Priority inputMessage=\"Pick one of the two\"",
+                "validation sheet=Form cell=C2 type=list inCellDropdown=true ignoreBlank=true formula1==Codes!$A$2:$A$4",
+                "visual: the arrow is visible at the right edge of A2, B2 and C2 when the cell is selected");
+
+        // 19. dependent dropdowns, with a text parent and a numeric parent
+        Map<String, List<String>> byCategory = new LinkedHashMap<>();
+        byCategory.put("가", List.of("1", "2", "3"));
+        byCategory.put("나", List.of("4", "5"));
+        byCategory.put("다", List.of("6"));
+        Map<String, List<String>> byCode = new LinkedHashMap<>();
+        byCode.put("1", List.of("a", "b", "c"));
+        byCode.put("2", List.of("d"));
+        save("19-dependent-dropdown.xlsx", ExcelWriter.<Pick>create().sheetName("Form")
+                .column("Category", Pick::category, c -> c.dropdown("가", "나", "다"))
+                .column("Item", Pick::item, c -> c.dependentDropdown("Category", byCategory))
+                .column("Code", Pick::code, c -> c.type(ExcelDataType.INTEGER))
+                .column("Sub", Pick::sub, c -> c.dependentDropdown("Code", byCode))
+                .write(List.of(new Pick("가", "1", 1, "a"), new Pick("나", "4", 2, "d"))));
+        add("19-dependent-dropdown.xlsx", "dependent dropdowns",
+                "Item (B) offers the options of the Category in the same row: 가 -> 1,2,3; 나 -> 4,5; 다 -> 6. Sub (D) offers the options of the NUMBER in Code (C): 1 -> a,b,c; 2 -> d. Two hidden helper sheets hold the options.",
+                "opens: no repair prompt",
+                "validation sheet=Form cell=B2 type=list inCellDropdown=true; validation sheet=Form cell=D2 type=list inCellDropdown=true",
+                "dependentOptions sheet=Form cell=B2 parentCell=A2 parent=가 count=3; parent=나 count=2; parent=다 count=1; parent=zzz count=0 (an error such as #N/A also means an empty list)",
+                "dependentOptions sheet=Form cell=D2 parentCell=C2 parent=1 (a NUMBER, not text) count=3; parent=2 count=1 (the numeric parent is the case a plain MATCH would miss)",
+                "sheets names=Form|_excelkit_dep_1|_excelkit_dep_2; the two _excelkit_dep sheets are hidden (not very hidden)");
+
+        // 20. hidden sheets and zoom
+        try (ExcelWorkbook book = ExcelWorkbook.create()) {
+            book.<Item>sheet("Codes").column("Name", Item::name).hideSheet().write(items(3).stream());
+            book.<Item>sheet("Secret").column("Name", Item::name).veryHideSheet().write(items(3).stream());
+            book.<Item>sheet("Main").zoom(90).column("Name", Item::name).column("Qty", Item::qty).write(items(5).stream());
+            save("20-hidden-sheets-and-zoom.xlsx", book.finish());
+        }
+        add("20-hidden-sheets-and-zoom.xlsx", "hidden sheets and zoom",
+                "Only the tab Main is shown, and the workbook opens on it (the first two sheets are hidden). Right-click a tab > Unhide lists Codes but NOT Secret (very hidden). Main opens at 90% zoom.",
+                "opens: no repair prompt (a hidden first sheet must not be the one the workbook opens on)",
+                "sheets names=Codes|Secret|Main (Worksheets lists hidden sheets too)",
+                "sheetVisible sheet=Codes visible=hidden (xlSheetHidden=0); sheetVisible sheet=Secret visible=veryHidden (xlSheetVeryHidden=2); sheetVisible sheet=Main visible=visible (xlSheetVisible=-1)",
+                "activeSheet name=Main (ActiveSheet.Name right after opening)",
+                "zoom sheet=Main percent=90 (Activate the sheet, then ActiveWindow.Zoom)");
+
+        // 21. page breaks
+        try (ExcelWorkbook book = ExcelWorkbook.create()) {
+            book.<Item>sheet("EveryThree").printSetup(p -> p.rowBreakEvery(3))
+                    .column("Name", Item::name).column("Qty", Item::qty).write(items(8).stream());
+            book.<Staff>sheet("ByDept").pageBreakOnChange(Staff::dept)
+                    .column("Dept", Staff::dept).column("Name", Staff::name)
+                    .write(List.of(new Staff("A", "", "1"), new Staff("A", "", "2"), new Staff("B", "", "3"),
+                            new Staff("B", "", "4"), new Staff("B", "", "5"), new Staff("C", "", "6")).stream());
+            save("21-page-breaks.xlsx", book.finish());
+        }
+        add("21-page-breaks.xlsx", "page breaks",
+                "In Page Break Preview, EveryThree has a page break after every 3 data rows; ByDept has one where the department changes (A | B | C).",
+                "opens: no repair prompt",
+                "pageBreaks sheet=EveryThree manualRows=5,8 (the first row of each new page: HPageBreaks(i).Location.Row where Type=xlPageBreakManual=-4135; data rows are 2-9)",
+                "pageBreaks sheet=ByDept manualRows=4,7 (A on rows 2-3, B on rows 4-6, C on row 7)",
+                "HPageBreaks needs a printer driver; without one report \"not checkable\" and look at Page Break Preview instead");
+
+        // 22. merging equal values
+        save("22-merge-same-values.xlsx", ExcelWriter.<Staff>create().sheetName("Report")
+                .column("Dept", Staff::dept, c -> c.mergeSameValues())
+                .column("Team", Staff::team, c -> c.mergeSameValues())
+                .column("Name", Staff::name)
+                .write(List.of(new Staff("Sales", "East", "Ann"), new Staff("Sales", "East", "Bob"),
+                        new Staff("Sales", "West", "Cy"), new Staff("Dev", "West", "Di"),
+                        new Staff("Dev", "West", "Ed"), new Staff("Ops", "East", "Flo"))));
+        add("22-merge-same-values.xlsx", "merged runs of equal values",
+                "Dept shows Sales once over rows 2-4, Dev once over rows 5-6, Ops alone on row 7. Team merges only inside a department: East over rows 2-3, West over row 4 (single), West over rows 5-6 (NOT joined with row 4), East alone on row 7.",
+                "opens: no repair prompt",
+                "merged sheet=Report cell=A2 mergeArea=A2:A4; merged sheet=Report cell=A5 mergeArea=A5:A6; merged sheet=Report cell=A7 mergeArea=A7",
+                "merged sheet=Report cell=B2 mergeArea=B2:B3; merged sheet=Report cell=B4 mergeArea=B4; merged sheet=Report cell=B5 mergeArea=B5:B6; merged sheet=Report cell=B7 mergeArea=B7",
+                "info sheet=Report cell=A3: report what Value2 gives for the covered cell (the file keeps \"Sales\" there; Excel may show it as empty)",
+                "visual: each merged value is vertically centered in its area");
+
+        // 23. striped rows and the required mark
+        save("23-striped-rows-required-mark.xlsx", ExcelWriter.<Item>create().sheetName("Report").headerColor(ExcelColor.STEEL_BLUE)
+                .stripedRows()
+                .column("Name", Item::name, c -> c.requiredMark())
+                .column("Qty", Item::qty, c -> c.type(ExcelDataType.INTEGER))
+                .write(items(6)));
+        add("23-striped-rows-required-mark.xlsx", "striped rows and the required mark",
+                "The header Name reads \"Name *\" (the star is a cell format; the cell value is still \"Name\"), Qty reads \"Qty\". Every second data row (rows 3, 5, 7) is light gray; rows 2, 4, 6 are not.",
+                "opens: no repair prompt",
+                "cellText sheet=Report cell=A1 text=\"Name *\"; cell sheet=Report cell=A1 value=Name; cellText sheet=Report cell=B1 text=Qty",
+                "headerVisible sheet=Report range=A1:B1",
+                "fill sheet=Report cells=A3,B3,A5,A7 rgb=F2F2F2; fill sheet=Report cells=A2,A4,A6 rgb=none (DisplayFormat.Interior.ColorIndex = xlColorIndexNone)");
+
+        // 24. the error report of an upload
+        List<RowError> errors = List.of(
+                new RowError(2, 3, RowError.Type.MAPPING, List.of("age is not a number"), null,
+                        List.of(new CellError(1, "Age", "abc", "not a number")), List.of("Bob", "abc")),
+                new RowError(4, 5, RowError.Type.VALIDATION, List.of("Duplicate key [Name=Bob]; first seen at row 3"), null,
+                        List.of(new CellError(0, "Name", "Bob", "duplicate of row 3")), List.of("Bob", "41")));
+        save("24-error-report.xlsx", ExcelErrorReport.create(List.of("Name", "Age")).write(errors));
+        add("24-error-report.xlsx", "upload error report",
+                "Columns Row, Name, Age, Error. The failed cells are shaded light red and carry a comment: C2 (\"not a number\") and B3 (\"duplicate of row 3\"). The Error column is shaded too and shows the messages.",
+                "opens: no repair prompt (cell comments written by the streaming writer)",
+                "cell sheet=Errors cell=A2 value=3; cell sheet=Errors cell=A3 value=5; cell sheet=Errors cell=B2 text=Bob; cell sheet=Errors cell=C2 text=abc",
+                "cellText sheet=Errors cell=D2 text=\"age is not a number\"; cellText sheet=Errors cell=D3 text=\"Duplicate key [Name=Bob]; first seen at row 3\"",
+                "comment sheet=Errors cell=C2 text=\"not a number\"; comment sheet=Errors cell=B3 text=\"duplicate of row 3\"; comment sheet=Errors cell=B2 none",
+                "fill sheet=Errors cells=C2,B3,D2,D3 rgb=FFC7CE; fill sheet=Errors cells=B2,C3 rgb=none");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {
