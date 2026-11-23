@@ -373,7 +373,7 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
     }
 
     /**
-     * Shades every second data row with the given color; see {@link #stripedRows()}.
+     * Shades every second data row with the given color; see {@code stripedRows()}.
      *
      * @param color the background of the shaded rows
      * @return this writer for chaining
