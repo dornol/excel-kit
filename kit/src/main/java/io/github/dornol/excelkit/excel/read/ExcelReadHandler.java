@@ -416,6 +416,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                 accumulateHeaderRow();
                 if (rowNum == headerRowIndex) {
                     finalizeHeaderNames();
+                    prepareUniqueKey(headerNames);
                     if (rowMapper != null) {
                         buildHeaderIndex();
                     } else {
@@ -452,7 +453,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
                         messages, null, fileRowNum, errors, rawValues);
             }
 
-            consumer.accept(result);
+            consumer.accept(applyUniqueKey(result));
 
             dataRowCount++;
             recordEmittedRow();

@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Map;
@@ -115,6 +116,68 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
         ReadRowPolicy.Decision decision = rowPolicy.evaluate(rawValues);
         return decision == ReadRowPolicy.Decision.PROCESS ? PROCESS_ROW
                 : decision == ReadRowPolicy.Decision.SKIP ? SKIP_ROW : STOP_READING;
+    }
+
+    private int @Nullable [] uniqueKeyColumns;
+    private List<String> uniqueKeyHeaders = List.of();
+    private final java.util.Map<String, Long> seenKeys = new java.util.HashMap<>();
+
+    /**
+     * Resolves the {@code uniqueKey} headers against the file's headers; call it once they are known.
+     *
+     * @throws ExcelKitException if a key header is not among them
+     */
+    protected final void prepareUniqueKey(List<String> headerNames) {
+        List<String> wanted = readOptions.uniqueKey();
+        if (wanted.isEmpty()) return;
+        int[] columns = new int[wanted.size()];
+        for (int k = 0; k < columns.length; k++) {
+            String target = normalizeHeader(wanted.get(k));
+            int found = -1;
+            for (int i = 0; i < headerNames.size() && found < 0; i++) {
+                String header = headerNames.get(i);
+                if (normalizeHeader(header == null ? "" : header).equals(target)) found = i;
+            }
+            if (found < 0) {
+                throw new ExcelKitException("Unique key header '" + wanted.get(k) + "' is not among the file's headers "
+                        + headerNames);
+            }
+            columns[k] = found;
+        }
+        this.uniqueKeyColumns = columns;
+        this.uniqueKeyHeaders = List.copyOf(headerNames);
+    }
+
+    /**
+     * Fails a row whose {@code uniqueKey} was seen in an earlier row; any other row is returned as it is.
+     */
+    protected final ReadResult<T> applyUniqueKey(ReadResult<T> result) {
+        int[] columns = uniqueKeyColumns;
+        if (columns == null) return result;
+        List<String> raw = result.rawValues();
+        var parts = new ArrayList<String>(columns.length);
+        for (int column : columns) {
+            String value = column < raw.size() ? raw.get(column).trim() : "";
+            if (value.isEmpty()) return result; // a missing key is for required(), not for uniqueness
+            parts.add(value);
+        }
+        Long first = seenKeys.putIfAbsent(String.join("\u0000", parts), result.fileRowNum());
+        if (first == null) return result;
+
+        var shown = new StringBuilder();
+        for (int k = 0; k < columns.length; k++) {
+            if (k > 0) shown.append(", ");
+            shown.append(uniqueKeyHeaders.get(columns[k])).append('=').append(parts.get(k));
+        }
+        String message = "Duplicate key [" + shown + "]" + (first >= 0 ? "; first seen at row " + first : "");
+        var messages = new ArrayList<>(result.messages());
+        messages.add(message);
+        var cellErrors = new ArrayList<>(result.cellErrors());
+        for (int k = 0; k < columns.length; k++) {
+            cellErrors.add(new CellError(columns[k], uniqueKeyHeaders.get(columns[k]), parts.get(k), message));
+        }
+        return ReadResult.failure(result.data(), result.success() ? RowError.Type.VALIDATION : result.errorType(),
+                messages, result.cause(), result.fileRowNum(), cellErrors, raw);
     }
 
     protected final void recordEmittedRow() {

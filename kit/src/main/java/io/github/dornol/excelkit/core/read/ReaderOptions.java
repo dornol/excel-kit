@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.core.ProgressCallback;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
@@ -55,6 +56,7 @@ public final class ReaderOptions {
         private int readProgressInterval;
         private @Nullable ReadProgressCallback readProgressCallback;
         private ReadSecurityPolicy securityPolicy = ReadSecurityPolicy.DEFAULT;
+        private List<String> uniqueKey = List.of();
 
         /** Creates a builder with every setting at its default. */
         public Builder() { }
@@ -78,6 +80,7 @@ public final class ReaderOptions {
             this.readProgressInterval = read.readProgressInterval();
             this.readProgressCallback = read.readProgressCallback();
             this.securityPolicy = read.securityPolicy();
+            this.uniqueKey = read.uniqueKey();
         }
 
         /** The Bean Validation provider that validates every mapped row; {@code null} disables validation. */
@@ -132,6 +135,19 @@ public final class ReaderOptions {
         public Builder securityPolicy(ReadSecurityPolicy value) {
             this.securityPolicy = Objects.requireNonNull(value, "policy cannot be null"); return this;
         }
+        /** The headers whose values together must be unique across the rows; see {@code AbstractReader#uniqueKey}. */
+        public Builder uniqueKey(String... headers) {
+            Objects.requireNonNull(headers, "headers cannot be null");
+            if (headers.length == 0) { this.uniqueKey = List.of(); return this; }
+            var copy = new java.util.ArrayList<String>(headers.length);
+            for (String header : headers) {
+                Objects.requireNonNull(header, "a header cannot be null");
+                if (header.isBlank()) throw new IllegalArgumentException("a unique key header must not be blank");
+                copy.add(header);
+            }
+            this.uniqueKey = List.copyOf(copy);
+            return this;
+        }
         /** Validates the settings and returns them as immutable options. */
         public ReaderOptions build() { return new ReaderOptions(this); }
 
@@ -139,7 +155,7 @@ public final class ReaderOptions {
         ReadOptions toReadOptions() {
             return new ReadOptions(strictHeaders, duplicateHeaderPolicy, cellConversionConfig, maxRows,
                     skipBlankRows, stopAtBlankRows, maxErrors, headerNormalizer, limits, cancellationToken,
-                    progressInterval, progressCallback, readProgressInterval, readProgressCallback, securityPolicy);
+                    progressInterval, progressCallback, readProgressInterval, readProgressCallback, securityPolicy, uniqueKey);
         }
 
         @Nullable Validator configuredValidator() { return validator; }

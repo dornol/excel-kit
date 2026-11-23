@@ -297,7 +297,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 | Layout | Auto-filter, freeze panes (row + column), sheet zoom, hidden sheets (`hideSheet()`), page breaks (`rowBreakEvery`, `pageBreakOnChange`), multi-level group headers, column outline, hiding |
 | Header | Required mark (`requiredMark()`), global/per-column header color, per-column header background, header row height, header style config, group header comments, row-number column |
 | Validation | Dropdown, dependent (cascading) dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
-| Reading | `fillMergedCells()` reads a hand-merged region's value in every row |
+| Reading | `uniqueKey(...)` fails rows whose key repeats, `fillMergedCells()` reads a hand-merged region's value in every row |
 | Upload errors | `ExcelErrorReport`: failed rows of an upload as an Excel file (row number, uploaded values, shaded cells with comments, messages) |
 | Content | Formulas, hyperlinks, rich text, images (byte[] or URL, custom size), cell comments |
 | Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |

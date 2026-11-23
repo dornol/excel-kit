@@ -302,6 +302,34 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
         return self();
     }
 
+    /**
+     * Requires the values of the given columns, taken together, to be unique across the rows of the file: a row
+     * whose key was already seen in an earlier row fails with a {@link RowError.Type#VALIDATION} error that names
+     * the key and the file row where it first appeared, and marks the key cells in
+     * {@link RowError#cellErrors()}. The first row with a key is not affected. Without this a program has to keep
+     * its own {@code Set} of the keys.
+     * <pre>{@code
+     * reader.uniqueKey("Employee ID")              // one column
+     * reader.uniqueKey("Department", "Employee ID") // the pair
+     * }</pre>
+     * The columns are given by header name, matched like the other header names of this reader (see
+     * {@link #headerNormalizer(java.util.function.UnaryOperator)}); a header that is not in the file fails the read
+     * before the first row. The cell values are compared as text, trimmed and case-sensitive, using the stored
+     * number for a numeric Excel cell. A row whose key has an empty cell is not checked: that is for
+     * {@code required()}. A row that fails for another reason still takes its key, and its duplicate is reported
+     * together with the other errors. All keys seen are held in memory until the read ends, so bound a very large
+     * file with {@link #maxRows(long)}. Calling this again replaces the key; no header turns it off.
+     *
+     * @param headers the header names of the key columns
+     * @return this reader for chaining
+     * @throws IllegalArgumentException if a header is blank
+     * @since 0.29.0
+     */
+    public SELF uniqueKey(String... headers) {
+        settings.uniqueKey(headers);
+        return self();
+    }
+
     /** Limits failed rows; zero aborts on the first failure. Disabled by default. */
     public SELF maxErrors(long maxErrors) {
         settings.maxErrors(maxErrors);

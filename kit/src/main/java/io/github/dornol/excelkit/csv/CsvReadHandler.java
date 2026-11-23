@@ -90,6 +90,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);
             prepareColumnHeaders(headerLine);
+            prepareUniqueKey(headerNames);
 
             String[] line;
             long rowCount = 0;
@@ -103,7 +104,8 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     if (rowDecision == STOP_READING) break;
                     // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
                     if (rowDecision == SKIP_ROW) continue;
-                    guardedConsumer.accept(processRowMapping(line, headerIndexMap, reader.recordStartLine(), rawValues));
+                    guardedConsumer.accept(applyUniqueKey(
+                            processRowMapping(line, headerIndexMap, reader.recordStartLine(), rawValues)));
                     recordEmittedRow();
                     rowCount++;
                     notifyLegacyProgress(rowCount, null);
@@ -120,7 +122,8 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
                     if (rowDecision == STOP_READING) break;
                     // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
                     if (rowDecision == SKIP_ROW) continue;
-                    guardedConsumer.accept(processRow(line, resolvedIndices, reader.recordStartLine(), rawValues));
+                    guardedConsumer.accept(applyUniqueKey(
+                            processRow(line, resolvedIndices, reader.recordStartLine(), rawValues)));
                     recordEmittedRow();
                     rowCount++;
                     notifyLegacyProgress(rowCount, null);

@@ -242,6 +242,10 @@ same column, and an unknown parent column fails when the sheet is written.
 Page breaks: `printSetup(p -> p.rowBreakEvery(n))`, and `pageBreakOnChange(keyFn)` / `pageBreakWhen((previous, current) -> bool)`
 on `ExcelWriter` / `ExcelSheetWriter` (a new printed page where the data changes; at most 1026 breaks per sheet).
 
+`reader.uniqueKey("Employee ID")` (`ExcelReader`, `CsvReader`, also `ReaderOptions`) fails every row whose key (one or several
+headers) was seen in an earlier row: `VALIDATION` `RowError` `Duplicate key [..]; first seen at row N`, key cells in
+`cellErrors()`. Empty key cells are not checked; keys are held in memory.
+
 `c.requiredMark()` shows `*` after a column's header text (a number format `@" *"`: the header cell keeps the plain
 name, so the file reads back by the same names). A schema `requiredColumn(...)` marks its header automatically.
 

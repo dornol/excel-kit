@@ -99,7 +99,9 @@ class ReaderSettingsEquivalenceTest {
                         r -> r.onReadProgress(6, READ_PROGRESS), o -> o.onReadProgress(6, READ_PROGRESS)),
                 setting("securityPolicy", Set.of("securityPolicy"),
                         r -> r.securityPolicy(ReadSecurityPolicy.STRICT),
-                        o -> o.securityPolicy(ReadSecurityPolicy.STRICT))
+                        o -> o.securityPolicy(ReadSecurityPolicy.STRICT)),
+                setting("uniqueKey", Set.of("uniqueKey"),
+                        r -> r.uniqueKey("Dept", "ID"), o -> o.uniqueKey("Dept", "ID"))
         );
     }
 

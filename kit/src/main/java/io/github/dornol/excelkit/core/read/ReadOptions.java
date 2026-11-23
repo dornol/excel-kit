@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.core.read;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
@@ -26,7 +27,8 @@ public record ReadOptions(
         @Nullable ProgressCallback progressCallback,
         int readProgressInterval,
         @Nullable ReadProgressCallback readProgressCallback,
-        ReadSecurityPolicy securityPolicy
+        ReadSecurityPolicy securityPolicy,
+        List<String> uniqueKey
 ) {
     public ReadOptions {
         Objects.requireNonNull(duplicateHeaderPolicy, "duplicateHeaderPolicy cannot be null");
@@ -34,6 +36,7 @@ public record ReadOptions(
         Objects.requireNonNull(limits, "limits cannot be null");
         Objects.requireNonNull(cancellationToken, "cancellationToken cannot be null");
         Objects.requireNonNull(securityPolicy, "securityPolicy cannot be null");
+        uniqueKey = List.copyOf(Objects.requireNonNull(uniqueKey, "uniqueKey cannot be null"));
         if (maxRows < -1) throw new IllegalArgumentException("maxRows must be >= -1");
         if (stopAtBlankRows < 0) throw new IllegalArgumentException("stopAtBlankRows must be non-negative");
         if (maxErrors < -1) throw new IllegalArgumentException("maxErrors must be >= -1");

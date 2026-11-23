@@ -178,6 +178,21 @@ public class ReadShowcaseController {
     }
 
     // ========================================================================
+    // 18-c. Duplicate keys - rows whose key repeats fail; the failed rows go back as an error report
+    // ========================================================================
+    @PostMapping("/duplicate-keys")
+    public ResponseEntity<StreamingResponseBody> downloadDuplicateKeyReport(MultipartFile file, String key)
+            throws IOException {
+        byte[] data = file.getBytes();
+        List<String> headers = ExcelWorkbookInspector.create().headers(new ByteArrayInputStream(data), 0, 0);
+        List<io.github.dornol.excelkit.core.read.RowError> errors = new ArrayList<>();
+        ExcelReader.forMap().uniqueKey(key).read(new ByteArrayInputStream(data), row -> { }, errors::add);
+
+        var report = io.github.dornol.excelkit.excel.ExcelErrorReport.create(headers).write(errors);
+        return io.github.dornol.excelkit.spring.ExcelKitResponse.excel("duplicate-keys").body(report::writeTo);
+    }
+
+    // ========================================================================
     // 18-b. Raw Map Reader - stored numbers instead of displayed text
     // ========================================================================
     @PostMapping("/map-reader-raw")

@@ -190,6 +190,14 @@ schema.excelReader(User::new)
 
 `ReadResult<T>.cause()` is also available for fail-paths in the unified `read(Consumer<ReadResult<T>>)` form.
 
+## Duplicate keys
+
+`reader.uniqueKey("Employee ID")` (or several headers for a composite key) fails every row whose key was already seen
+in an earlier row with a `VALIDATION` `RowError`: `Duplicate key [Employee ID=1001]; first seen at row 2`, key cells in
+`cellErrors()`. `ExcelReader` and `CsvReader`, every mode. Compared as trimmed, case-sensitive text (numeric cells by
+their stored number); an empty key cell is not checked (use `required()`); keys are held in memory, so bound huge files
+with `maxRows(...)`. Also on `ReaderOptions.builder().uniqueKey(...)`.
+
 ## Merged cells
 
 `ExcelReader.fillMergedCells()` gives every cell of a merged region the value of its top-left cell (Excel stores it

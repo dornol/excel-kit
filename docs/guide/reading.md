@@ -204,6 +204,28 @@ schema.excelReader(User::new)
     .read(inputStream, user -> importUser(user), error -> log.warn("{}", error.cellErrors()));
 ```
 
+## Duplicate Keys
+
+`uniqueKey(headers...)` requires the values of the given columns, taken together, to be unique across the rows of the
+file. A row whose key was already seen fails with a `VALIDATION` error that names the key and the row where it first
+appeared; the first row with the key is not affected. It works on `ExcelReader` and `CsvReader`, in every mode.
+
+```java
+ExcelReader.setter(Employee::new)
+    .column("Employee ID", (e, c) -> e.id = c.asString())
+    .uniqueKey("Employee ID")                 // or uniqueKey("Department", "Employee ID")
+    .read(input, row -> save(row), error -> report.add(error));
+// error.messages(): ["Duplicate key [Employee ID=1001]; first seen at row 2"]
+// error.cellErrors(): the key cells, so ExcelErrorReport shades them
+```
+
+- Header names are matched like the other header names of the reader (`headerNormalizer`); a name that is not in the file fails the read before the first row.
+- Values are compared as text, trimmed and case-sensitive; a numeric Excel cell by its stored number (`1001`, not `1,001`).
+- A row whose key has an empty cell is not checked: that is for `required()`.
+- A row that fails for another reason still takes its key, and the duplicate is reported with its other errors.
+- A duplicate counts as an error for `maxErrors(...)` and the read summary.
+- All keys seen are kept in memory until the read ends: bound a very large file with `maxRows(...)`.
+
 ## Merged Cells
 
 Excel stores the value of a merged region in its top-left cell only, so a column that a person merged by hand (one

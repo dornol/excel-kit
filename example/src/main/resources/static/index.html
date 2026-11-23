@@ -114,6 +114,15 @@
 </div>
 
 <div class="section">
+    <p><strong>Duplicate Keys</strong> - <code>uniqueKey(header)</code>: rows whose key repeats fail; they come back as an error report with the key cells shaded</p>
+    <form action="/showcase/duplicate-keys" method="POST" enctype="multipart/form-data" target="_blank">
+        <input type="file" name="file" accept=".xlsx" required>
+        <input type="text" name="key" placeholder="key header, e.g. Name" required>
+        <button type="submit" class="upload">Upload Excel (Duplicate Keys)</button>
+    </form>
+</div>
+
+<div class="section">
     <p><strong>Raw Map Reader</strong> - Compare displayed text (<code>forMap()</code>) with stored numbers (<code>forMapRaw()</code>)</p>
     <form action="/showcase/map-reader-raw" method="POST" enctype="multipart/form-data" target="_blank">
         <input type="file" name="file" accept=".xlsx" required>
