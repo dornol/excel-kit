@@ -31,6 +31,7 @@ public class GroupSubtotalShowcaseController {
     /** One deal. Regions come in blocks of six rows: East, North, South, West (24 rows). */
     record Sale(String region, String rep, int units, int amount) {
         int unitPrice() { return amount / units; }
+        String repCode() { return rep.toUpperCase(); }
     }
 
     private static final String[] REGIONS = {"East", "North", "South", "West"};
@@ -77,6 +78,7 @@ public class GroupSubtotalShowcaseController {
                 .freezeRows(1)
                 .column("Region", Sale::region)
                 .column("Rep", Sale::rep)
+                .column("Rep code", Sale::repCode)
                 .column("Deals", s -> 1, c -> c.type(ExcelDataType.INTEGER))
                 .column("Units", Sale::units, c -> c.type(ExcelDataType.INTEGER))
                 .column("Amount", Sale::amount, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
@@ -85,10 +87,10 @@ public class GroupSubtotalShowcaseController {
                 .column("Smallest", Sale::amount, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .groupSubtotal(Sale::region, s -> s
                         .label("Rep", region -> region + " (subtotal)")
-                        .count("Deals").sum("Units").sum("Amount")
+                        .count("Deals").countA("Rep code").sum("Units").sum("Amount")
                         .average("Unit price").max("Largest").min("Smallest"))
                 .summary(s -> s.label("Rep", "All regions")
-                        .count("Deals").sum("Units").sum("Amount")
+                        .count("Deals").countA("Rep code").sum("Units").sum("Amount")
                         .average("Unit price").max("Largest").min("Smallest"))
                 .write(sales().stream());
         return ExcelKitResponse.excel("subtotal-functions-demo").body(handler::writeTo);
@@ -111,6 +113,7 @@ public class GroupSubtotalShowcaseController {
                 .column("Amount", Sale::amount, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
                 .groupSubtotal(Sale::region, s -> s
                         .label("Rep", region -> region + " total")
+                        .keyColumn("Region")
                         .sum("Units").sum("Amount")
                         .style(st -> st.bold(true).italic(true).fontColor(ExcelColor.STEEL_BLUE)
                                 .backgroundColor(ExcelColor.LIGHT_BLUE)))

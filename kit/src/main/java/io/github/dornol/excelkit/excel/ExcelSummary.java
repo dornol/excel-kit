@@ -40,8 +40,10 @@ public class ExcelSummary {
         SUM,
         /** Average formula. */
         AVERAGE,
-        /** Count formula. */
+        /** Count formula: counts the cells that hold a number. */
         COUNT,
+        /** Count formula that counts every cell that is not empty, text included ({@code COUNTA}). */
+        COUNTA,
         /** Min formula. */
         MIN,
         /** Max formula. */
@@ -117,6 +119,18 @@ public class ExcelSummary {
     }
 
     /**
+     * Adds a COUNTA formula for the specified column: it counts the cells that are not empty, text included,
+     * where {@link #count(String)} counts only the cells that hold a number.
+     *
+     * @param columnName the target column name
+     * @return this summary for chaining
+     * @since 0.29.0
+     */
+    public ExcelSummary countA(String columnName) {
+        return addEntry(Op.COUNTA, columnName);
+    }
+
+    /**
      * Adds a MIN formula for the specified column.
      *
      * @param columnName the target column name
@@ -180,7 +194,7 @@ public class ExcelSummary {
                             + labelColumnName + "'. Columns: " + columnNames);
                     labelIdx = idx;
                 }
-                String operation = op.name().substring(0, 1) + op.name().substring(1).toLowerCase(Locale.ROOT);
+                String operation = op == Op.COUNTA ? "CountA" : op.name().substring(0, 1) + op.name().substring(1).toLowerCase(Locale.ROOT);
                 // One operation: the given label as it is. Several: every row needs its own name, so the label is
                 // followed by the operation ("Total - Sum"). Without a label the operation names the row.
                 String text = labelText == null ? operation

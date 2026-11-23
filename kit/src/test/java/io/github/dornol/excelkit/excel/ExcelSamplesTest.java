@@ -305,6 +305,8 @@ class ExcelSamplesTest {
             assertEquals(30, evaluator.evaluate(sheet.getRow(3).getCell(2)).getNumberValue());
             assertEquals(35, evaluator.evaluate(sheet.getRow(6).getCell(2)).getNumberValue());
             assertEquals(65, evaluator.evaluate(sheet.getRow(7).getCell(2)).getNumberValue());
+            assertEquals("A", sheet.getRow(3).getCell(0).getStringCellValue(), "the subtotal row shows its key");
+            assertEquals("A total", sheet.getRow(3).getCell(1).getStringCellValue());
             assertEquals("A1:C7", filter(sheet));
             assertEquals(2, sheet.getDataValidations().size());
             assertEquals(1, sheet.getSheetConditionalFormatting().getNumConditionalFormattings());

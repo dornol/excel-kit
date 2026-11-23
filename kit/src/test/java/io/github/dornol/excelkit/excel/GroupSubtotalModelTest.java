@@ -50,11 +50,12 @@ class GroupSubtotalModelTest {
         boolean mergeKey = random.nextBoolean();
         boolean pageBreaks = random.nextBoolean();
         boolean cf = random.nextBoolean();
+        boolean keyColumn = random.nextBoolean();
         String context = "seed " + seed + (viaWorkbook ? " (workbook)" : " (writer)") + " maxRows " + maxRows + " rows " + count;
 
         byte[] file = viaWorkbook
-                ? writeViaWorkbook(rows, maxRows, summary, autoFilter, stripes, mergeKey, pageBreaks, cf)
-                : writeViaWriter(rows, maxRows, summary, autoFilter, stripes, mergeKey, pageBreaks, cf);
+                ? writeViaWorkbook(rows, maxRows, summary, autoFilter, stripes, mergeKey, pageBreaks, cf, keyColumn)
+                : writeViaWriter(rows, maxRows, summary, autoFilter, stripes, mergeKey, pageBreaks, cf, keyColumn);
 
         List<List<String>> expected = expectedSheets(rows, maxRows, summary);
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(file))) {
@@ -82,14 +83,14 @@ class GroupSubtotalModelTest {
                 }
                 List<String> want = s < expected.size() ? expected.get(s) : List.of();
                 assertEquals(want, actual, context + ": sheet " + s);
-                structure(wb, s, want, context, autoFilter, stripes, mergeKey, pageBreaks, cf);
+                structure(wb, s, want, context, autoFilter, stripes, mergeKey, pageBreaks, cf, keyColumn);
             }
         }
     }
 
     /** What a sheet must look like around its rows: filter, rules, merges, page breaks and the look of every row. */
     private static void structure(XSSFWorkbook wb, int sheetIndex, List<String> lines, String context, boolean autoFilter,
-                                  boolean stripes, boolean mergeKey, boolean pageBreaks, boolean cf) {
+                                  boolean stripes, boolean mergeKey, boolean pageBreaks, boolean cf, boolean keyColumn) {
         var sheet = wb.getSheetAt(sheetIndex);
         String at = context + ", sheet " + sheetIndex;
         List<String> body = lines.stream().filter(l -> !l.startsWith("T:")).toList();
@@ -149,6 +150,10 @@ class GroupSubtotalModelTest {
             String fill = style.getFillPattern() == org.apache.poi.ss.usermodel.FillPatternType.NO_FILL ? "-"
                     : hex(style.getFillForegroundXSSFColor().getRGB());
             if (body.get(i).startsWith("S:")) {
+                String key = body.get(i).split(":")[1].replace(" total", "");
+                var keyCell = row.getCell(0);
+                if (keyColumn) assertEquals(key, keyCell.getStringCellValue(), at + ": row " + (i + 2) + " shows its key");
+                else assertEquals(org.apache.poi.ss.usermodel.CellType.BLANK, keyCell.getCellType(), at + ": row " + (i + 2) + " shows no key");
                 assertEquals(true, bold, at + ": row " + (i + 2) + " subtotal is bold");
                 assertEquals("D9D9D9", fill, at + ": row " + (i + 2) + " subtotal fill");
             } else {
@@ -190,13 +195,13 @@ class GroupSubtotalModelTest {
     }
 
     private static byte[] writeViaWriter(List<Row> rows, int maxRows, boolean summary, boolean autoFilter,
-                                         boolean stripes, boolean mergeKey, boolean pageBreaks, boolean cf) throws IOException {
+                                         boolean stripes, boolean mergeKey, boolean pageBreaks, boolean cf, boolean keyColumn) throws IOException {
         var writer = ExcelWriter.<Row>create()
                 .column("Dept", Row::dept, c -> c.mergeSameValues(mergeKey))
                 .column("Name", Row::name)
                 .column("Amount", Row::amount)
                 .maxRows(maxRows)
-                .groupSubtotal(Row::dept, s -> s.label("Name", k -> k + " total").sum("Amount"));
+                .groupSubtotal(Row::dept, s -> { s.label("Name", k -> k + " total").sum("Amount"); if (keyColumn) s.keyColumn("Dept"); });
         if (summary) writer.summary(s -> s.label("Total").sum("Amount"));
         if (autoFilter) writer.autoFilter(true);
         if (stripes) writer.stripedRows();
@@ -208,14 +213,14 @@ class GroupSubtotalModelTest {
     }
 
     private static byte[] writeViaWorkbook(List<Row> rows, int maxRows, boolean summary, boolean autoFilter,
-                                           boolean stripes, boolean mergeKey, boolean pageBreaks, boolean cf) throws IOException {
+                                           boolean stripes, boolean mergeKey, boolean pageBreaks, boolean cf, boolean keyColumn) throws IOException {
         try (var workbook = ExcelWorkbook.create()) {
             var sheet = workbook.<Row>sheet("Data")
                     .column("Dept", Row::dept, c -> c.mergeSameValues(mergeKey))
                     .column("Name", Row::name)
                     .column("Amount", Row::amount)
                     .maxRows(maxRows)
-                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> k + " total").sum("Amount"));
+                    .groupSubtotal(Row::dept, s -> { s.label("Name", k -> k + " total").sum("Amount"); if (keyColumn) s.keyColumn("Dept"); });
             if (summary) sheet.summary(s -> s.label("Total").sum("Amount"));
             if (autoFilter) sheet.autoFilter(true);
             if (stripes) sheet.stripedRows();

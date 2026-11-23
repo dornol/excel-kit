@@ -493,7 +493,8 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      *
      * <pre>{@code
      * writer.groupSubtotal(Employee::department, s -> s
-     *     .label("Department", dept -> dept + " total")
+     *     .label("Name", dept -> dept + " total")
+     *     .keyColumn("Department")
      *     .sum("Salary").average("Salary"));
      * }</pre>
      *

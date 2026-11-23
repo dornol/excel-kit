@@ -19,6 +19,9 @@ All notable changes to this project will be documented in this file.
 - `ExcelValidation.inputTitle(..)` / `inputMessage(..)` set the tooltip Excel shows when a cell of the column is selected (limits: 32 and 255 characters, checked), and `allowBlank(boolean)` sets whether an empty cell passes (default `true`, as before).
 - `dependentDropdown(parentColumn, options)` on columns (`ExcelColumnBuilder`, `ColumnConfig`) makes a cascading dropdown: the cell offers the options of the value the parent column holds in the same row (`"A"` → `1, 2, 3`, `"B"` → `4, 5, 6`). The options are written to a hidden helper sheet (`_excelkit_dep_N`, shared by equal option sets, also across rollover sheets) and the column gets a list validation over its data rows. An unknown parent column fails when the sheet is written; combining it with `dropdown(...)` or `validation(...)` on one column is rejected.
 
+- `ExcelSubtotal.keyColumn(column)` writes the group's value (as the first row of the group holds it, same type and format) into that column of the subtotal row, so an auto filter on the column keeps the subtotal with the rows of its group: filtering `Dept = A` shows A's rows and its subtotal, where the label alone (`"A total"`) is filtered out.
+- `countA(column)` on `ExcelSubtotal` and `ExcelSummary` counts the cells that are not empty, text included (`COUNTA`, `SUBTOTAL(3, ...)` under subtotals); `count(column)` keeps counting only the cells that hold a number.
+
 ### Fixed
 - `dropdown(...)` wrote `showDropDown="true"` for the list, which OOXML defines as *hiding* the in-cell arrow, so Excel could show the dropdown list without its arrow. The attribute is no longer written (as for `listFromRange`): the arrow is shown. Not checked on a real Excel.
 

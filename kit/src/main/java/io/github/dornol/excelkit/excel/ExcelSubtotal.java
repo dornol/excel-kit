@@ -22,6 +22,7 @@ import java.util.function.Function;
 public class ExcelSubtotal {
     private final Map<ExcelSummary.Op, List<String>> entries = new LinkedHashMap<>();
     private @Nullable String labelColumn;
+    private @Nullable String keyColumn;
     private Function<@Nullable Object, String> labelText = key -> (key == null ? "" : key + " ") + "Subtotal";
     private final RowStyleConfig style = new RowStyleConfig().bold(true)
             .backgroundColor(io.github.dornol.excelkit.excel.style.ExcelColor.LIGHT_GRAY);
@@ -40,6 +41,20 @@ public class ExcelSubtotal {
     public ExcelSubtotal label(String columnName, Function<@Nullable Object, String> text) {
         this.labelColumn = Objects.requireNonNull(columnName, "columnName cannot be null");
         this.labelText = Objects.requireNonNull(text, "text cannot be null");
+        return this;
+    }
+
+    /**
+     * Writes the group's value into the given column of its subtotal row, as the first row of the group holds it. An
+     * auto filter on that column then keeps the subtotal row with the rows of its group: filtering {@code Dept = A}
+     * shows the rows of A and its subtotal, where the label alone ({@code "A total"}) would be filtered out. The
+     * column must not also hold the label or a subtotal. Without it the subtotal row has nothing in that column.
+     *
+     * @param columnName the column of the group key, usually the one the rows are grouped by
+     * @return this configuration for chaining
+     */
+    public ExcelSubtotal keyColumn(String columnName) {
+        this.keyColumn = Objects.requireNonNull(columnName, "columnName cannot be null");
         return this;
     }
 
@@ -69,6 +84,17 @@ public class ExcelSubtotal {
         return add(ExcelSummary.Op.COUNT, columnName);
     }
 
+    /**
+     * Subtotals the column with {@code COUNTA}: the cells that are not empty, text included (where {@code count}
+     * counts only the cells that hold a number).
+     *
+     * @param columnName the column
+     * @return this configuration for chaining
+     */
+    public ExcelSubtotal countA(String columnName) {
+        return add(ExcelSummary.Op.COUNTA, columnName);
+    }
+
     /** Subtotals the column with {@code MIN}. @param columnName the column @return this configuration */
     public ExcelSubtotal min(String columnName) {
         return add(ExcelSummary.Op.MIN, columnName);
@@ -89,6 +115,8 @@ public class ExcelSubtotal {
 
     @Nullable String labelColumn() { return labelColumn; }
 
+    @Nullable String keyColumn() { return keyColumn; }
+
     Function<@Nullable Object, String> labelText() { return labelText; }
 
     RowStyleConfig style() { return style; }
@@ -98,6 +126,7 @@ public class ExcelSubtotal {
         return switch (op) {
             case AVERAGE -> 1;
             case COUNT -> 2;
+            case COUNTA -> 3;
             case MAX -> 4;
             case MIN -> 5;
             case SUM -> 9;

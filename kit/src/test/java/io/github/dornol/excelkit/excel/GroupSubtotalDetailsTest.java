@@ -103,6 +103,164 @@ class GroupSubtotalDetailsTest {
     }
 
     @Nested
+    class CountingText {
+        @Test
+        void countACountsTheTextCellsThatCountSkips() throws IOException {
+            var w = base().groupSubtotal(Row::dept, s -> s.label("Dept", k -> "t").count("Amount").countA("Name"));
+            try (var wb = open(w.write(ROWS))) {
+                var sheet = wb.getSheetAt(0);
+                assertEquals("SUBTOTAL(3,B2:B4)", formula(sheet, 4, 1));
+                assertEquals("SUBTOTAL(2,C2:C4)", formula(sheet, 4, 2));
+                assertEquals(3, eval(wb, 4, 1), "COUNTA counts the three names");
+                assertEquals(3, eval(wb, 4, 2));
+                assertEquals(1, eval(wb, 6, 1));
+            }
+        }
+
+        @Test
+        void aSummaryCanCountTextToo() throws IOException {
+            var plain = base().summary(s -> s.label("Dept", "All").countA("Name"));
+            try (var wb = open(plain.write(ROWS))) {
+                assertEquals("COUNTA(B2:B5)", formula(wb.getSheetAt(0), 5, 1));
+            }
+            var withSubtotals = base().groupSubtotal(Row::dept, s -> s.label("Dept", k -> "t").sum("Amount"))
+                    .summary(s -> s.label("Dept", "All").countA("Name"));
+            try (var wb = open(withSubtotals.write(ROWS))) {
+                assertEquals("SUBTOTAL(3,B2:B7)", formula(wb.getSheetAt(0), 7, 1));
+                assertEquals(4, eval(wb, 7, 1), "the four names; the subtotal rows hold no name");
+            }
+        }
+
+        @Test
+        void severalSummaryOperationsKeepTheirRowNames() throws IOException {
+            var w = base().summary(s -> s.label("Dept", "All").count("Amount").countA("Name"));
+            try (var wb = open(w.write(ROWS))) {
+                assertEquals("All - Count", wb.getSheetAt(0).getRow(5).getCell(0).getStringCellValue());
+                assertEquals("All - CountA", wb.getSheetAt(0).getRow(6).getCell(0).getStringCellValue());
+            }
+        }
+
+        @Test
+        void countAHasASubtotalCode() {
+            assertEquals(3, ExcelSubtotal.functionNumber(ExcelSummary.Op.COUNTA));
+        }
+    }
+
+    @Nested
+    class KeyColumn {
+        private XSSFWorkbook run(ExcelWriter<Row> w, List<Row> rows) throws IOException {
+            return open(w.write(rows));
+        }
+
+        @Test
+        void theSubtotalRowShowsTheKeyInTheKeyColumnBesideItsLabel() throws IOException {
+            var w = base().groupSubtotal(Row::dept, s -> s.label("Name", k -> k + " total").keyColumn("Dept").sum("Amount"));
+            try (var wb = run(w, ROWS)) {
+                var sheet = wb.getSheetAt(0);
+                assertEquals("A", sheet.getRow(4).getCell(0).getStringCellValue());
+                assertEquals("A total", sheet.getRow(4).getCell(1).getStringCellValue());
+                assertEquals("B", sheet.getRow(6).getCell(0).getStringCellValue());
+            }
+        }
+
+        @Test
+        void aNumericKeyColumnKeepsItsTypeAndFormat() throws IOException {
+            record Coded(int code, int amount) {}
+            var w = ExcelWriter.<Coded>create()
+                    .column("Code", Coded::code, c -> c.type(ExcelDataType.INTEGER).format("000"))
+                    .column("Label", c -> "-")
+                    .column("Amount", Coded::amount)
+                    .groupSubtotal(Coded::code, s -> s.label("Label", k -> "t").keyColumn("Code").sum("Amount"));
+            try (var wb = open(w.write(List.of(new Coded(7, 1), new Coded(7, 2), new Coded(9, 3))))) {
+                var cell = wb.getSheetAt(0).getRow(3).getCell(0);
+                assertEquals(CellType.NUMERIC, cell.getCellType());
+                assertEquals(7, cell.getNumericCellValue());
+                assertEquals("000", cell.getCellStyle().getDataFormatString());
+                assertEquals(9, wb.getSheetAt(0).getRow(5).getCell(0).getNumericCellValue());
+            }
+        }
+
+        @Test
+        void theValueIsWhatTheColumnShowsNotTheRawKey() throws IOException {
+            var w = ExcelWriter.<Row>create()
+                    .column("Dept", r -> "Dept " + r.dept().toLowerCase())
+                    .column("Name", Row::name)
+                    .column("Amount", Row::amount)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> "t").keyColumn("Dept").sum("Amount"));
+            try (var wb = run(w, ROWS)) {
+                assertEquals("Dept a", wb.getSheetAt(0).getRow(3).getCell(0).getStringCellValue());
+                assertEquals("Dept b", wb.getSheetAt(0).getRow(5).getCell(0).getStringCellValue());
+            }
+        }
+
+        @Test
+        void theKeyCellIsStyledAsPartOfTheSubtotalRowAndLocked() throws IOException {
+            var w = ExcelWriter.<Row>create().protectSheet("pw")
+                    .column("Dept", Row::dept, c -> c.locked(false))
+                    .column("Name", Row::name).column("Amount", Row::amount)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> "t").keyColumn("Dept").sum("Amount"));
+            try (var wb = run(w, ROWS)) {
+                var style = wb.getSheetAt(0).getRow(4).getCell(0).getCellStyle();
+                assertTrue(wb.getFontAt(style.getFontIndex()).getBold());
+                assertTrue(style.getLocked());
+                assertFalse(wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle().getLocked(), "the data cell stays editable");
+            }
+        }
+
+        @Test
+        void aMergedKeyColumnStillMergesOnlyTheDataRows() throws IOException {
+            var w = ExcelWriter.<Row>create()
+                    .column("Dept", Row::dept, c -> c.mergeSameValues())
+                    .column("Name", Row::name).column("Amount", Row::amount)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> "t").keyColumn("Dept").sum("Amount"));
+            try (var wb = run(w, ROWS)) {
+                var regions = wb.getSheetAt(0).getMergedRegions();
+                assertEquals(1, regions.size());
+                assertEquals("A2:A4", regions.get(0).formatAsString(), "the three data rows of A, not its subtotal row 5");
+                assertEquals("A", wb.getSheetAt(0).getRow(4).getCell(0).getStringCellValue(), "the subtotal row shows the key, unmerged");
+            }
+        }
+
+        @Test
+        void aNullKeyValueLeavesTheCellEmpty() throws IOException {
+            var w = ExcelWriter.<Row>create()
+                    .column("Dept", Row::dept).column("Name", Row::name).column("Amount", Row::amount)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> "t").keyColumn("Dept").sum("Amount"));
+            try (var wb = run(w, List.of(new Row(null, "x", 1, 0)))) {
+                assertEquals(CellType.BLANK, wb.getSheetAt(0).getRow(2).getCell(0).getCellType());
+            }
+        }
+
+        @Test
+        void theKeyIsTakenFromTheFirstRowOfEachGroupAcrossASheetBreak() throws IOException {
+            var w = ExcelWriter.<Row>create().maxRows(1)
+                    .column("Dept", Row::dept).column("Name", Row::name).column("Amount", Row::amount)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> "t").keyColumn("Dept").sum("Amount"));
+            try (var wb = run(w, ROWS)) {
+                assertEquals(4, wb.getNumberOfSheets());
+                // maxRows(1): one data row and its subtotal row on every sheet; the three rows of A come first
+                for (int sheet = 0; sheet < 3; sheet++) {
+                    assertEquals("A", wb.getSheetAt(sheet).getRow(2).getCell(0).getStringCellValue(), "the subtotal of sheet " + sheet);
+                }
+                assertEquals("B", wb.getSheetAt(3).getRow(2).getCell(0).getStringCellValue());
+            }
+        }
+
+        @Test
+        void theKeyColumnMustExistAndBeNeitherTheLabelNorASubtotal() {
+            assertThrows(ExcelWriteException.class, () -> base().groupSubtotal(Row::dept,
+                    s -> s.keyColumn("Nope").sum("Amount")).write(ROWS));
+            assertThrows(ExcelWriteException.class, () -> base().groupSubtotal(Row::dept,
+                    s -> s.label("Name", k -> "t").keyColumn("Name").sum("Amount")).write(ROWS));
+            assertThrows(ExcelWriteException.class, () -> base().groupSubtotal(Row::dept,
+                    s -> s.label("Name", k -> "t").keyColumn("Amount").sum("Amount")).write(ROWS));
+            assertThrows(ExcelWriteException.class, () -> base().groupSubtotal(Row::dept,
+                    s -> s.keyColumn("Dept").sum("Amount")).write(ROWS), "the default label column is the first one: the key column is it");
+            assertThrows(NullPointerException.class, () -> new ExcelSubtotal().keyColumn(null));
+        }
+    }
+
+    @Nested
     class SummaryWithSubtotals {
         @Test
         void everySummaryOperationSwitchesToItsSubtotalCode() throws IOException {

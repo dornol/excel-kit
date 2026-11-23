@@ -536,14 +536,15 @@ public final class ExcelSamples {
                 .column("Item", Order::item)
                 .column("Qty", Order::qty, c -> c.type(ExcelDataType.INTEGER).validation(ExcelValidation.integerBetween(0, 100)))
                 .conditionalFormatting(c -> c.columns(2).greaterThan("15", ExcelColor.LIGHT_YELLOW))
-                .groupSubtotal(Order::dept, s -> s.label("Dept", k -> k + " total").sum("Qty"))
-                .summary(s -> s.label("Dept", "Total").sum("Qty"))
+                .groupSubtotal(Order::dept, s -> s.label("Item", k -> k + " total").keyColumn("Dept").sum("Qty"))
+                .summary(s -> s.label("Item", "Total").sum("Qty"))
                 .write(List.of(new Order("A", "1", 10), new Order("A", "2", 20), new Order("B", "3", 5), new Order("B", "4", 30))));
         add("30-subtotal-filter-and-rules.xlsx", "a total under a filter, and a conditional format and validations over subtotal rows",
-                "Rows 2-3 are A, row 4 its subtotal (\"A total\"), rows 5-6 are B, row 7 its subtotal, row 8 the total. Qty above 15 is yellow, and that includes the subtotal cells (a rule runs over every row of the data block). Dept is a dropdown (A, B) and Qty accepts whole numbers 0-100, down through the subtotal rows.",
+                "Rows 2-3 are A, row 4 its subtotal (Dept \"A\", Item \"A total\": keyColumn shows the key), rows 5-6 are B, row 7 its subtotal, row 8 the total. Qty above 15 is yellow, and that includes the subtotal cells (a rule runs over every row of the data block). Dept is a dropdown (A, B) and Qty accepts whole numbers 0-100, down through the subtotal rows.",
                 "opens: no repair prompt",
                 "cell sheet=Report cell=C4 value=30; cell sheet=Report cell=C7 value=35; cell sheet=Report cell=C8 value=65",
-                "filterRows sheet=Report column=1 criteria=\"A*\" expectVisibleDataRows=3 (rows 2, 3 and the subtotal row 4); then cell sheet=Report cell=C8 value=30 (SUBTOTAL skips the rows the filter hides and the visible subtotal cell); ShowAllData and cell C8 value=65 again; info: row 8 (the total) stays visible under the filter",
+                "cellText sheet=Report cell=A4 text=A; cellText sheet=Report cell=B4 text=\"A total\"; cellText sheet=Report cell=A7 text=B",
+                "filterRows sheet=Report column=1 criteria=\"A\" expectVisibleDataRows=3 (rows 2, 3 and the subtotal row 4, which holds the key A in Dept: an exact filter keeps it); then cell sheet=Report cell=C8 value=30 (SUBTOTAL skips the rows the filter hides and the visible subtotal cell); ShowAllData and cell C8 value=65 again; info sheet=Report cell=A8: report whether row 8 (the total, empty in Dept) is hidden by the filter",
                 "conditionalFormats sheet=Report range=C2:C7 countAtLeast=1; fill sheet=Report cells=C3,C6 rgb=FFEB9C (the rule's color, see info); info sheet=Report cell=C4: report the fill of the subtotal cell (the rule may show over the gray)",
                 "validation sheet=Report cell=A2 type=3; validation sheet=Report cell=C2 type=1; info sheet=Report cell=C4: report Validation.Type of the subtotal cell (the validation runs below the header, through the subtotal rows)");
     }

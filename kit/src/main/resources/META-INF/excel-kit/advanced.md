@@ -247,7 +247,7 @@ writer
     .write(data);
 ```
 
-Operations: `sum`, `average`, `count`, `min`, `max`
+Operations: `sum`, `average`, `count` (numbers only), `countA` (every non-empty cell, text included), `min`, `max`
 
 A summary covers its own sheet only: over rolled-over sheets each one gets a summary of its own rows (no total over all
 sheets); the same holds for `groupSubtotal(...)`.
@@ -256,7 +256,8 @@ sheets); the same holds for `groupSubtotal(...)`.
 
 ```java
 .groupSubtotal(Employee::department, s -> s
-    .label("Department", dept -> dept + " total")
+    .label("Name", dept -> dept + " total")
+    .keyColumn("Department")             // shows the key in that column, so a filter on it keeps the subtotal row
     .sum("Salary").average("Salary"))
 ```
 

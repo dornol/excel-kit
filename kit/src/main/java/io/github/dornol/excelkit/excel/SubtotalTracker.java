@@ -25,6 +25,8 @@ final class SubtotalTracker<T> {
     private final RowStyleConfig style;
     private final List<ExcelColumn<T>> columns;
     private final int labelIndex;
+    /** The column that shows the group key in the subtotal row, or -1. */
+    private final int keyIndex;
     private final ExcelSummary.@Nullable Op[] opOfColumn;
 
     /** Rows the summary writes below the data of a sheet, which must still fit after the last subtotal row. */
@@ -35,6 +37,8 @@ final class SubtotalTracker<T> {
     private boolean open;
     private int startRow;
     private @Nullable Object groupKey;
+    /** What the key column holds in the first row of the group: the subtotal row shows the same value. */
+    private @Nullable Object keyCellValue;
 
     private SubtotalTracker(Function<T, @Nullable Object> key, ExcelSubtotal config, List<ExcelColumn<T>> columns,
                             SheetConfig<T> cfg) {
@@ -48,6 +52,12 @@ final class SubtotalTracker<T> {
         this.labelIndex = labelColumn == null ? 0 : names.indexOf(labelColumn);
         if (labelIndex < 0) throw new ExcelWriteException("Subtotal label column not found: '" + labelColumn
                 + "'. Columns: " + names);
+        String keyColumn = config.keyColumn();
+        this.keyIndex = keyColumn == null ? -1 : names.indexOf(keyColumn);
+        if (keyColumn != null && keyIndex < 0) throw new ExcelWriteException("Subtotal key column not found: '"
+                + keyColumn + "'. Columns: " + names);
+        if (keyIndex >= 0 && keyIndex == labelIndex) throw new ExcelWriteException("Subtotal key column '"
+                + keyColumn + "' also holds the label of the subtotal row");
         this.opOfColumn = new ExcelSummary.Op[columns.size()];
         for (var entry : config.entries().entrySet()) {
             for (String name : entry.getValue()) {
@@ -56,6 +66,8 @@ final class SubtotalTracker<T> {
                         + "'. Columns: " + names);
                 if (index == labelIndex) throw new ExcelWriteException("Subtotal column '" + name
                         + "' also holds the label of the subtotal row");
+                if (index == keyIndex) throw new ExcelWriteException("Subtotal column '" + name
+                        + "' also shows the group key of the subtotal row");
                 if (opOfColumn[index] != null) throw new ExcelWriteException("Subtotal column '" + name
                         + "' is given more than one function");
                 opOfColumn[index] = entry.getKey();
@@ -107,6 +119,7 @@ final class SubtotalTracker<T> {
             open = true;
             startRow = cursor.getRowOfSheet();
             groupKey = current;
+            keyCellValue = keyIndex < 0 ? null : columns.get(keyIndex).applyFunction(row, cursor, cfg.writeErrorPolicy);
         }
     }
 
@@ -133,6 +146,7 @@ final class SubtotalTracker<T> {
         for (int i = 0; i < columns.size(); i++) {
             SXSSFCell cell = target.createCell(i);
             ExcelSummary.Op op = opOfColumn[i];
+            CellStyle base = columns.get(i).getStyle();
             if (i == labelIndex) {
                 String text = config.labelText().apply(groupKey);
                 ExcelCellText.write(cell, text);
@@ -140,6 +154,8 @@ final class SubtotalTracker<T> {
                 if (cfg.autoWidthSampleRows > 0 && cursor.getCurrentTotal() <= cfg.autoWidthSampleRows) {
                     columns.get(i).fitColumnWidthByValue(text);
                 }
+            } else if (i == keyIndex) {
+                base = columns.get(i).setColumnData(cell, keyCellValue, cfg.writeErrorPolicy);
             } else if (op != null) {
                 String letter = SheetContext.columnLetter(i);
                 ExcelDataType.setUncalculatedFormula(cell, "SUBTOTAL(" + ExcelSubtotal.functionNumber(op) + ","
@@ -147,7 +163,7 @@ final class SubtotalTracker<T> {
             } else {
                 cell.setBlank();
             }
-            cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(columns.get(i).getStyle(), style.backgroundColor,
+            cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(base, style.backgroundColor,
                     style, styleCache, wb, cfg.maxCellStyles));
         }
     }

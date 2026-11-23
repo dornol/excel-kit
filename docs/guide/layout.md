@@ -117,7 +117,8 @@ ExcelWriter.<Employee>create()
     .column("Name", Employee::name)
     .column("Salary", Employee::salary)
     .groupSubtotal(Employee::department, s -> s
-        .label("Department", dept -> dept + " total")
+        .label("Name", dept -> dept + " total")
+        .keyColumn("Department")
         .sum("Salary").average("Salary"))
     .summary(s -> s.label("Total").sum("Salary"))
     .write(sortedByDepartment);
@@ -125,9 +126,15 @@ ExcelWriter.<Employee>create()
 
 A subtotal row follows every run of rows with the same key. It is an Excel `SUBTOTAL` formula over the rows of its
 group, so it follows the data when a person edits the file, and a `summary(...)` over the sheet counts every row once
-(it switches to `SUBTOTAL` too). `sum`, `average`, `count`, `min` and `max` are available; `style(...)` changes the
+(it switches to `SUBTOTAL` too). `sum`, `average`, `count`, `countA`, `min` and `max` are available; `style(...)` changes the
 default bold-on-gray look; `label(column, key -> text)` sets the column of the text (the first column by default).
 
+- `keyColumn("Dept")` writes the group's value into that column of the subtotal row (same type and format as the data
+  cells), so an auto filter on `Dept` keeps the subtotal with its rows: filtering `Dept = A` shows A's rows and its
+  subtotal. Without it the subtotal row is empty in that column and a filter on it hides the subtotal. The column must
+  not be the label column or a subtotal column.
+- `count` counts the cells that hold a number; for text columns use `countA` (counts every non-empty cell). Both are
+  available in `summary(...)` too.
 - Sort the rows by the key: a key that returns after another key gets a subtotal of its own.
 - Subtotal rows are not data rows: they do not count for `rowNumberColumn`, `stripedRows` or `maxRows`. A rolled-over
   sheet closes its last group and starts a new one on the next sheet. Because `maxRows` does not count them, a sheet

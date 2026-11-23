@@ -95,10 +95,11 @@ class ExcelSummaryTest {
 
         @Test
         void allOpsExist() {
-            assertEquals(5, ExcelSummary.Op.values().length);
+            assertEquals(6, ExcelSummary.Op.values().length);
             assertNotNull(ExcelSummary.Op.SUM);
             assertNotNull(ExcelSummary.Op.AVERAGE);
             assertNotNull(ExcelSummary.Op.COUNT);
+            assertNotNull(ExcelSummary.Op.COUNTA);
             assertNotNull(ExcelSummary.Op.MIN);
             assertNotNull(ExcelSummary.Op.MAX);
         }
