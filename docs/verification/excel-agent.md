@@ -15,9 +15,10 @@ excel-kit 의 테스트는 파일을 POI 로 읽거나 XML 로 검사한다. 그
 - 롤오버된 시트마다 차트를 그리며, 차트는 그 시트의 요약 행·`afterData` 내용 **아래**에 놓인다.
 - 스트리밍 워크북의 ZIP 모드가 `AlwaysWithCompatibility` 로 바뀌었다(모든 파일의 zip 구조에 영향).
 - 암호화(AES-256) 두 경로, 템플릿에 값을 채운 결과, 모든 기능을 한꺼번에 켠 파일.
-- 업로드 양식 기능(18~24번): 드롭다운 **화살표**(`showDropDown` 을 더 이상 쓰지 않는다 — OOXML 에서 `true` 는 화살표를
+- 업로드 양식 기능(18~26번): 드롭다운 **화살표**(`showDropDown` 을 더 이상 쓰지 않는다 — OOXML 에서 `true` 는 화살표를
   숨긴다), 부모 값에 따라 바뀌는 목록(숫자 부모 포함), 검증 안내 메시지·빈 값, 숨김·완전 숨김 시트와 열리는 시트, 확대 비율,
-  페이지 나누기 위치, 같은 값 병합, 줄무늬와 헤더 필수 표시(`@" *"` 서식), 셀 주석이 달린 오류 리포트.
+  페이지 나누기 위치, 같은 값 병합, 줄무늬와 헤더 필수 표시(`@" *"` 서식), 셀 주석이 달린 오류 리포트, 그리고 표 헤더의
+  필수 표시, 시트가 롤오버될 때 병합·페이지 나누기·의존 드롭다운(숨김 헬퍼 시트 공유)·필터·확대의 조합(25, 26번).
 
 ## 하지 말 것
 
@@ -27,7 +28,7 @@ excel-kit 의 테스트는 파일을 POI 로 읽거나 XML 로 검사한다. 그
 
 ## 1. 준비
 
-샘플 파일(`01-…xlsx` ~ `24-…xlsx`, `manifest.json`, `CHECKLIST.md`)을 구한다. 둘 중 하나:
+샘플 파일(`01-…xlsx` ~ `26-…xlsx`, `manifest.json`, `CHECKLIST.md`)을 구한다. 둘 중 하나:
 
 **A. CI 아티팩트 (JDK 불필요, 권장)**
 
@@ -84,7 +85,7 @@ Excel 이 보는 것을 직접 읽어 판정한다. 화면은 필요한 경우�
 |---|---|
 | `autoFilter sheet range` | 시트의 `AutoFilterMode` 가 True 이고 `AutoFilter.Range.Address($false,$false)` 가 `range` 와 같다. `range` 가 없으면(`none`) `AutoFilterMode` 가 False. |
 | `filterRows … criteria expectVisibleDataRows` | 필터 범위의 `column` 번째 열에 `Range.AutoFilter(column, criteria)` 를 적용한 뒤, 데이터 행(헤더 제외, 요약 행 제외) 중 `SpecialCells(xlCellTypeVisible=12)` 로 보이는 행 수를 센다. 요약 행이 보여야 하는지 숨겨져야 하는지는 **manifest 항목의 문구를 따른다**(Excel 이 필터를 바로 아래 행까지 넓히므로 01 번은 숨겨지는 것이 기대값이고, 17 번은 보이는 것이 기대값이다). 확인 후 `ShowAllData` 로 되돌린다. |
-| `table sheet name range showAutoFilter` | `ListObjects(name)` 의 `Range.Address($false,$false)` 와 `ShowAutoFilter`(True/False). |
+| `table sheet name range showAutoFilter [column1=이름]` | `ListObjects(name)` 의 `Range.Address($false,$false)` 와 `ShowAutoFilter`(True/False). `column1` 이 있으면 `ListColumns(1).Name` 도 그 이름과 같아야 한다(헤더 셀에 서식이 있어도 표의 열 이름은 순수한 이름). |
 | `cell … value=` / `cell … text=` | 먼저 `Application.Calculate()`. `Value2` 가 값과 같은가. `text=` 는 `.Text`(화면에 보이는 문자열). |
 | `cellText … text=` | `.Text` 가 정확히 같은가(표시 형식 확인). |
 | `chart sheet count topLeftRowGreaterThan` | `ChartObjects().Count` 와 각 차트의 `TopLeftCell.Row` 가 값보다 큰가(요약 행 아래에 놓였는가). |

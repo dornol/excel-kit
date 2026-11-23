@@ -314,6 +314,9 @@ public final class ExcelSamples {
     private record Staff(String dept, String team, String name) {
     }
 
+    private record Order(String dept, String item, int qty) {
+    }
+
     private void writeFormSamples() throws Exception {
         // 18. the list validations: the in-cell arrow, the tooltip, blank cells
         try (ExcelWorkbook book = ExcelWorkbook.create()) {
@@ -431,6 +434,45 @@ public final class ExcelSamples {
                 "cellText sheet=Errors cell=D2 text=\"age is not a number\"; cellText sheet=Errors cell=D3 text=\"Duplicate key [Name=Bob]; first seen at row 3\"",
                 "comment sheet=Errors cell=C2 text=\"not a number\"; comment sheet=Errors cell=B3 text=\"duplicate of row 3\"; comment sheet=Errors cell=B2 none",
                 "fill sheet=Errors cells=C2,B3,D2,D3 rgb=FFC7CE; fill sheet=Errors cells=B2,C3 rgb=none");
+
+        // 25. the required mark and stripes on a table
+        save("25-required-mark-in-table.xlsx", ExcelWriter.<Item>create().sheetName("Report").table("Marked").autoFilter(true)
+                .stripedRows()
+                .column("Name", Item::name, c -> c.requiredMark())
+                .column("Qty", Item::qty, c -> c.type(ExcelDataType.INTEGER))
+                .write(items(6)));
+        add("25-required-mark-in-table.xlsx", "required mark and stripes on a table",
+                "A table with filter buttons whose header Name reads \"Name *\" (a number format; the cell and the table column are still \"Name\"). Every second data row is light gray over the table style's banding.",
+                "opens: no repair prompt (the header cell of a table carries a number format here)",
+                "table sheet=Report name=Marked range=A1:B7 showAutoFilter=true column1=Name (ListColumns(1).Name must be the plain \"Name\")",
+                "cellText sheet=Report cell=A1 text=\"Name *\"; cell sheet=Report cell=A1 value=Name; cellText sheet=Report cell=B1 text=Qty",
+                "headerVisible sheet=Report range=A1:B1",
+                "fill sheet=Report cells=A3,A5,A7 rgb=F2F2F2 (the stripe wins over the table style); info sheet=Report cell=A2: report the fill of a row that is not striped (the table's own banding)");
+
+        // 26. features combined over a rolled-over sheet
+        Map<String, List<String>> perDept = new LinkedHashMap<>();
+        perDept.put("A", List.of("1", "2"));
+        perDept.put("B", List.of("3"));
+        perDept.put("C", List.of("4", "5", "6"));
+        save("26-rollover-combined.xlsx", ExcelWriter.<Order>create().sheetName("Report").maxRows(4).autoFilter(true).zoom(80)
+                .stripedRows().pageBreakOnChange(Order::dept)
+                .column("Dept", Order::dept, c -> c.mergeSameValues())
+                .column("Item", Order::item, c -> c.dependentDropdown("Dept", perDept))
+                .column("Qty", Order::qty, c -> c.type(ExcelDataType.INTEGER))
+                .write(List.of(new Order("A", "1", 1), new Order("A", "2", 2), new Order("A", "1", 3), new Order("B", "3", 4),
+                        new Order("B", "3", 5), new Order("B", "3", 6), new Order("C", "4", 7), new Order("C", "5", 8),
+                        new Order("C", "6", 9), new Order("C", "4", 10))));
+        add("26-rollover-combined.xlsx", "merging, page breaks, dropdowns, stripes, filter and zoom over rolled-over sheets",
+                "Three data sheets of 4, 4 and 2 rows and one hidden helper sheet shared by all of them. Dept is merged inside each sheet (a run does not continue onto the next sheet); a page starts where the department changes; Item is a dropdown that follows the Dept of its row; every second row is gray; each sheet is at 80% with its own filter.",
+                "opens: no repair prompt (merged cells under a filter, on three sheets, with one helper sheet)",
+                "sheets names=Report|Report (2)|Report (3)|_excelkit_dep_1; sheetVisible sheet=_excelkit_dep_1 visible=hidden",
+                "merged sheet=Report cell=A2 mergeArea=A2:A4; merged sheet=Report cell=A5 mergeArea=A5; merged sheet=\"Report (2)\" cell=A2 mergeArea=A2:A3; merged sheet=\"Report (2)\" cell=A4 mergeArea=A4:A5; merged sheet=\"Report (3)\" cell=A2 mergeArea=A2:A3",
+                "pageBreaks sheet=Report manualRows=5; pageBreaks sheet=\"Report (2)\" manualRows=4; pageBreaks sheet=\"Report (3)\" manualRows=(none)",
+                "autoFilter sheet=Report range=A1:C5; autoFilter sheet=\"Report (2)\" range=A1:C5; autoFilter sheet=\"Report (3)\" range=A1:C3",
+                "zoom sheet=Report percent=80; zoom sheet=\"Report (2)\" percent=80; zoom sheet=\"Report (3)\" percent=80",
+                "dependentOptions sheet=Report cell=B2 parentCell=A2 parent=A count=2; parent=B count=1; parent=C count=3",
+                "dependentOptions sheet=\"Report (3)\" cell=B2 parentCell=A2 parent=C count=3 (the helper sheet is shared)",
+                "fill sheet=Report cells=C3,C5 rgb=F2F2F2; fill sheet=\"Report (2)\" cells=C3,C5 rgb=F2F2F2; fill sheet=\"Report (3)\" cells=C3 rgb=F2F2F2");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {

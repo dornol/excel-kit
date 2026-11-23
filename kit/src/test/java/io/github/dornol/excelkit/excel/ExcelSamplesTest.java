@@ -56,7 +56,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(24, samples.size());
+        assertEquals(26, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -373,6 +373,47 @@ class ExcelSamplesTest {
             }
             assertEquals("none", fill(sheet.getRow(1).getCell(1)));
             assertEquals("none", fill(sheet.getRow(2).getCell(2)));
+        }
+    }
+
+    @Test
+    void theTableSampleKeepsThePlainHeaderNameUnderTheMark() throws Exception {
+        try (XSSFWorkbook wb = open("25-required-mark-in-table.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            var table = sheet.getTables().get(0);
+            assertEquals("Marked", table.getName());
+            assertEquals("A1:B7", table.getCellReferences().formatAsString());
+            assertEquals("Name", table.getCTTable().getTableColumns().getTableColumnArray(0).getName());
+            assertEquals("Name", sheet.getRow(0).getCell(0).getStringCellValue());
+            assertEquals("@\" *\"", sheet.getRow(0).getCell(0).getCellStyle().getDataFormatString());
+            for (int r : new int[]{3, 5, 7}) assertEquals("F2F2F2", fill(sheet.getRow(r - 1).getCell(0)), "row " + r);
+        }
+    }
+
+    @Test
+    void theRolloverSampleHasEachFeatureOnEachSheet() throws Exception {
+        try (XSSFWorkbook wb = open("26-rollover-combined.xlsx")) {
+            assertEquals(List.of("Report", "Report (2)", "Report (3)", "_excelkit_dep_1"),
+                    List.of(wb.getSheetName(0), wb.getSheetName(1), wb.getSheetName(2), wb.getSheetName(3)));
+            assertEquals(SheetVisibility.HIDDEN, wb.getSheetVisibility(3));
+            var merged = new java.util.ArrayList<List<String>>();
+            for (int i = 0; i < 3; i++) merged.add(wb.getSheetAt(i).getMergedRegions().stream()
+                    .map(org.apache.poi.ss.util.CellRangeAddress::formatAsString).sorted().toList());
+            assertEquals(List.of(List.of("A2:A4"), List.of("A2:A3", "A4:A5"), List.of("A2:A3")), merged);
+            // the stored value is the last row above the break: pages that start on Excel rows 5 and 4
+            assertArrayEquals(new int[]{3}, wb.getSheet("Report").getRowBreaks());
+            assertArrayEquals(new int[]{2}, wb.getSheet("Report (2)").getRowBreaks());
+            assertArrayEquals(new int[0], wb.getSheet("Report (3)").getRowBreaks());
+            assertEquals("A1:C5", filter(wb.getSheet("Report")));
+            assertEquals("A1:C5", filter(wb.getSheet("Report (2)")));
+            assertEquals("A1:C3", filter(wb.getSheet("Report (3)")));
+            for (int i = 0; i < 3; i++) {
+                var sheet = wb.getSheetAt(i);
+                assertEquals(80, sheet.getCTWorksheet().getSheetViews().getSheetViewArray(0).getZoomScale(), "sheet " + i);
+                assertEquals(1, sheet.getDataValidations().size(), "sheet " + i);
+                assertEquals("F2F2F2", fill(sheet.getRow(2).getCell(2)), "sheet " + i + " C3");
+                assertEquals("none", fill(sheet.getRow(1).getCell(2)), "sheet " + i + " C2");
+            }
         }
     }
 }
