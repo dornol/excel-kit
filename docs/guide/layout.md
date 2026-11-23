@@ -151,7 +151,8 @@ default bold-on-gray look; `label(column, key -> text)` sets the column of the t
   from the cells as they are stored: text does not count for `sum`, a date is a number), so Protected View, previews and
   libraries that do not calculate show the number; Excel recalculates when it opens the file. Where the result cannot be
   known for sure (the column holds formulas of its own, an `average` over no numbers, `countA` over empty text) the
-  formula is written without one and shows empty until Excel calculates.
+  formula is written without one and shows empty until Excel calculates. LibreOffice shows the stored result without
+  recalculating (and calculates a formula that has none, skipping the subtotal cells like Excel).
 - Reading the file back returns the subtotal rows as data rows.
 
 Works with sheet rollover — formulas generated per-sheet.
