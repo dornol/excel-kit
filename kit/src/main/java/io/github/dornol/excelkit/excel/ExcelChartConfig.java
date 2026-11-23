@@ -114,6 +114,9 @@ public class ExcelChartConfig {
     private @Nullable String title;
     private int categoryColumnIndex = 0;
     private final List<ValueSeries> valueSeries = new ArrayList<>();
+    /** Series drawn as lines over the main chart (a combination chart), on the primary or the secondary value axis. */
+    private final List<ValueSeries> lineSeries = new ArrayList<>();
+    private @Nullable String secondaryValueAxisTitle;
     private int anchorCol1 = 0;
     private int anchorRow1 = -1;
     private int anchorCol2 = 8;
@@ -174,7 +177,57 @@ public class ExcelChartConfig {
         if (columnIndex < 0) {
             throw new IllegalArgumentException("valueColumn index must be non-negative");
         }
-        this.valueSeries.add(new ValueSeries(columnIndex, seriesTitle));
+        this.valueSeries.add(new ValueSeries(columnIndex, seriesTitle, false));
+        return this;
+    }
+
+    /**
+     * Adds a series drawn as a line over the chart, on the same value axis as the main series: with {@link ChartType#BAR}
+     * columns a line over the bars, for a target or a trend that has the same unit. The chart must be a vertical
+     * {@code BAR}, a {@code LINE} or an {@code AREA} chart, and have at least one {@link #valueColumn} (the main series).
+     *
+     * @param columnIndex 0-based column index for values
+     * @param seriesTitle title of this data series
+     * @return this config for chaining
+     * @since 0.29.0
+     */
+    public ExcelChartConfig lineColumn(int columnIndex, String seriesTitle) {
+        Objects.requireNonNull(seriesTitle, "seriesTitle cannot be null");
+        if (columnIndex < 0) {
+            throw new IllegalArgumentException("lineColumn index must be non-negative");
+        }
+        this.lineSeries.add(new ValueSeries(columnIndex, seriesTitle, false));
+        return this;
+    }
+
+    /**
+     * Adds a series drawn as a line over the chart on a second value axis on the right, for a quantity with another
+     * unit or scale than the main series (columns of revenue with a line of the growth rate). See {@link #lineColumn}
+     * for the chart types it needs; {@link #secondaryValueAxisTitle(String)} titles the axis.
+     *
+     * @param columnIndex 0-based column index for values
+     * @param seriesTitle title of this data series
+     * @return this config for chaining
+     * @since 0.29.0
+     */
+    public ExcelChartConfig secondaryLineColumn(int columnIndex, String seriesTitle) {
+        Objects.requireNonNull(seriesTitle, "seriesTitle cannot be null");
+        if (columnIndex < 0) {
+            throw new IllegalArgumentException("secondaryLineColumn index must be non-negative");
+        }
+        this.lineSeries.add(new ValueSeries(columnIndex, seriesTitle, true));
+        return this;
+    }
+
+    /**
+     * Sets the title of the secondary value axis (the one on the right that {@link #secondaryLineColumn} uses).
+     *
+     * @param title the axis title, or {@code null} to omit
+     * @return this config for chaining
+     * @since 0.29.0
+     */
+    public ExcelChartConfig secondaryValueAxisTitle(@Nullable String title) {
+        this.secondaryValueAxisTitle = title;
         return this;
     }
 
@@ -302,6 +355,26 @@ public class ExcelChartConfig {
                         + "') does not exist: the sheet has " + columnCount + " columns");
             }
         }
+        for (ValueSeries vs : lineSeries) {
+            if (vs.columnIndex >= columnCount) {
+                throw new ExcelWriteException("Chart line column " + vs.columnIndex + " ('" + vs.title
+                        + "') does not exist: the sheet has " + columnCount + " columns");
+            }
+        }
+        if (!lineSeries.isEmpty()) {
+            if (chartType != ChartType.BAR && chartType != ChartType.LINE && chartType != ChartType.AREA) {
+                throw new ExcelWriteException("Line series (lineColumn, secondaryLineColumn) go over a BAR, LINE or AREA chart, "
+                        + "not " + chartType);
+            }
+            if (chartType == ChartType.BAR && barDirection == BarDirection.HORIZONTAL) {
+                throw new ExcelWriteException("Line series (lineColumn, secondaryLineColumn) need vertical bars: "
+                        + "a line cannot run over horizontal ones");
+            }
+            if (valueSeries.isEmpty()) {
+                throw new ExcelWriteException("Line series (lineColumn, secondaryLineColumn) go over the main series: "
+                        + "add at least one valueColumn");
+            }
+        }
         if (valueSeries.isEmpty()) return;
         // Without data rows there is nothing to plot, and the range would be reversed.
         if (dataEndRow <= headerRow) return;
@@ -349,6 +422,8 @@ public class ExcelChartConfig {
         XDDFChartAxis categoryAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
         XDDFValueAxis valueAxis = chart.createValueAxis(AxisPosition.LEFT);
         valueAxis.setCrosses(AxisCrosses.AUTO_ZERO);
+        // The columns sit between the tick marks: with the default (on them) the first and the last one are cut in half.
+        valueAxis.setCrossBetween(AxisCrossBetween.BETWEEN);
 
         applyAxisTitles(categoryAxis, valueAxis);
 
@@ -361,6 +436,7 @@ public class ExcelChartConfig {
 
         addSeries(data, categories, sheet, dataStart, dataEnd);
         chart.plot(data);
+        addLineSeries(chart, categoryAxis, valueAxis, categories, sheet, dataStart, dataEnd);
     }
 
     private void createLineChart(XSSFChart chart, XDDFDataSource<String> categories,
@@ -376,6 +452,7 @@ public class ExcelChartConfig {
 
         addSeries(data, categories, sheet, dataStart, dataEnd);
         chart.plot(data);
+        addLineSeries(chart, categoryAxis, valueAxis, categories, sheet, dataStart, dataEnd);
     }
 
     private void createPieChart(XSSFChart chart, XDDFDataSource<String> categories,
@@ -431,6 +508,7 @@ public class ExcelChartConfig {
 
         addSeries(data, categories, sheet, dataStart, dataEnd);
         chart.plot(data);
+        addLineSeries(chart, categoryAxis, valueAxis, categories, sheet, dataStart, dataEnd);
     }
 
     private void createDoughnutChart(XSSFChart chart, XDDFDataSource<String> categories,
@@ -439,6 +517,36 @@ public class ExcelChartConfig {
 
         addSeries(data, categories, sheet, dataStart, dataEnd);
         chart.plot(data);
+    }
+
+    /**
+     * Draws the line series over the main chart: those on the primary axis share the main category and value axes; those
+     * on the secondary axis get their own value axis on the right (crossing at its maximum) and a category axis that is
+     * not shown, which is how Excel stores a chart with a second axis.
+     */
+    private void addLineSeries(XSSFChart chart, XDDFChartAxis categoryAxis, XDDFValueAxis valueAxis,
+                               XDDFDataSource<String> categories, XSSFSheet sheet, int dataStart, int dataEnd) {
+        List<ValueSeries> primary = lineSeries.stream().filter(s -> !s.secondaryAxis()).toList();
+        List<ValueSeries> secondary = lineSeries.stream().filter(ValueSeries::secondaryAxis).toList();
+        if (!primary.isEmpty()) {
+            XDDFLineChartData lines = (XDDFLineChartData) chart.createData(ChartTypes.LINE, categoryAxis, valueAxis);
+            addSeries(lines, primary, categories, sheet, dataStart, dataEnd);
+            chart.plot(lines);
+        }
+        if (!secondary.isEmpty()) {
+            XDDFCategoryAxis secondCategoryAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
+            secondCategoryAxis.setVisible(false);
+            XDDFValueAxis secondValueAxis = chart.createValueAxis(AxisPosition.RIGHT);
+            secondValueAxis.setCrosses(AxisCrosses.MAX);
+            // like the main axis, so that the points of a line fall in the middle of the columns
+            secondValueAxis.setCrossBetween(chartType == ChartType.BAR ? AxisCrossBetween.BETWEEN : AxisCrossBetween.MIDPOINT_CATEGORY);
+            if (secondaryValueAxisTitle != null) secondValueAxis.setTitle(secondaryValueAxisTitle);
+            secondCategoryAxis.crossAxis(secondValueAxis);
+            secondValueAxis.crossAxis(secondCategoryAxis);
+            XDDFLineChartData lines = (XDDFLineChartData) chart.createData(ChartTypes.LINE, secondCategoryAxis, secondValueAxis);
+            addSeries(lines, secondary, categories, sheet, dataStart, dataEnd);
+            chart.plot(lines);
+        }
     }
 
     private void applyAxisTitles(XDDFChartAxis categoryAxis, XDDFValueAxis valueAxis) {
@@ -547,7 +655,12 @@ public class ExcelChartConfig {
 
     private void addSeries(XDDFChartData chartData, XDDFDataSource<String> categories,
                            XSSFSheet sheet, int dataStart, int dataEnd) {
-        for (ValueSeries vs : valueSeries) {
+        addSeries(chartData, valueSeries, categories, sheet, dataStart, dataEnd);
+    }
+
+    private void addSeries(XDDFChartData chartData, List<ValueSeries> seriesList, XDDFDataSource<String> categories,
+                           XSSFSheet sheet, int dataStart, int dataEnd) {
+        for (ValueSeries vs : seriesList) {
             XDDFNumericalDataSource<Double> values = XDDFDataSourcesFactory.fromNumericCellRange(
                     sheet,
                     new CellRangeAddress(
@@ -555,9 +668,11 @@ public class ExcelChartConfig {
                             vs.columnIndex, vs.columnIndex));
             XDDFChartData.Series series = chartData.addSeries(categories, values);
             series.setTitle(vs.title, null);
+            // A smoothed line bends past the points (the growth of a month shows below its real value).
+            if (series instanceof XDDFLineChartData.Series line) line.setSmooth(false);
         }
     }
 
-    private record ValueSeries(int columnIndex, String title) {
+    private record ValueSeries(int columnIndex, String title, boolean secondaryAxis) {
     }
 }

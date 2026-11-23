@@ -300,7 +300,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 | Reading | `uniqueKey(...)` fails rows whose key repeats, `fillMergedCells()` reads a hand-merged region's value in every row |
 | Upload errors | `ExcelErrorReport`: failed rows of an upload as an Excel file (row number, uploaded values, shaded cells with comments, messages) |
 | Content | Formulas, hyperlinks, rich text, images (byte[] or URL, custom size), cell comments |
-| Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |
+| Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT; combination charts (`lineColumn`, `secondaryLineColumn` with a second value axis) |
 | Protection | Sheet/workbook protection, per-column lock, password encryption (AES-256), `ExcelHandler.isPasswordSet()` to tell whether the writer already set one |
 | Multi-sheet | `ExcelWorkbook` for typed multi-sheet (each sheet an `ExcelSheetWriter`), auto-rollover via `maxRows()`; a chart is drawn on every rolled-over sheet |
 | Callbacks | `beforeHeader`, `afterData`, `afterAll` with `SheetContext` |

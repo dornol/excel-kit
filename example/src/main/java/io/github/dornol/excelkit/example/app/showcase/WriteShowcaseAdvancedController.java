@@ -210,6 +210,37 @@ public class WriteShowcaseAdvancedController {
                 .body(handler::writeTo);
     }
 
+    /** A combination chart: columns, a line on the same axis and a line on a second axis (fixed data, checkable by eye). */
+    record MonthSales(String month, int revenue, int target, double growth) {}
+
+    @GetMapping("/chart-combo")
+    public ResponseEntity<StreamingResponseBody> downloadChartCombo() {
+        var months = List.of(new MonthSales("Jan", 100, 110, 0.05), new MonthSales("Feb", 120, 110, 0.20),
+                new MonthSales("Mar", 90, 120, -0.25), new MonthSales("Apr", 150, 130, 0.67),
+                new MonthSales("May", 170, 150, 0.13), new MonthSales("Jun", 160, 170, -0.06));
+        var handler = ExcelWriter.<MonthSales>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Combo Chart")
+                .column("Month", MonthSales::month)
+                .column("Revenue", MonthSales::revenue, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Target", MonthSales::target, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Growth", MonthSales::growth, c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .chart(chart -> chart
+                        .type(ExcelChartConfig.ChartType.BAR)
+                        .title("Revenue, target and growth")
+                        .categoryColumn(0)
+                        .valueColumn(1, "Revenue")
+                        .lineColumn(2, "Target")
+                        .secondaryLineColumn(3, "Growth")
+                        .valueAxisTitle("Revenue")
+                        .secondaryValueAxisTitle("Growth")
+                        .legendPosition(ExcelChartConfig.LegendPosition.BOTTOM)
+                        .position(5, 1, 14, 18))
+                .write(months.stream());
+
+        return ExcelKitResponse.excel("chart-combo-demo")
+                .body(handler::writeTo);
+    }
+
     @GetMapping("/map-writer")
     public ResponseEntity<StreamingResponseBody> downloadMapWriter() {
         var maps = sampleProducts().stream()

@@ -237,6 +237,10 @@ With `maxRows()` rollover each sheet gets its own chart over that sheet's rows. 
 backwards column pair and two given rows that run upwards; a category or value column that is not among the columns fails
 with `ExcelWriteException`.
 
+Combination chart: `.lineColumn(col, title)` draws a line over a vertical `BAR`/`LINE`/`AREA` chart on the same value axis;
+`.secondaryLineColumn(col, title)` on a second axis on the right (`.secondaryValueAxisTitle("Growth")`). Needs at least one
+`valueColumn`; refused with pie, doughnut, scatter and horizontal bars.
+
 ## Summary/Footer Rows
 
 ```java

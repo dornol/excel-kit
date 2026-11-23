@@ -56,7 +56,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(30, samples.size());
+        assertEquals(31, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -310,6 +310,17 @@ class ExcelSamplesTest {
             assertEquals("A1:C7", filter(sheet));
             assertEquals(2, sheet.getDataValidations().size());
             assertEquals(1, sheet.getSheetConditionalFormatting().getNumConditionalFormattings());
+        }
+    }
+
+    @Test
+    void theComboChartSampleHasABarGroupAndTwoLineGroupsOnTwoPairsOfAxes() throws Exception {
+        try (XSSFWorkbook wb = open("31-combo-chart.xlsx")) {
+            var plot = wb.getSheet("Sales").getDrawingPatriarch().getCharts().get(0).getCTChart().getPlotArea();
+            assertEquals(1, plot.sizeOfBarChartArray());
+            assertEquals(2, plot.sizeOfLineChartArray());
+            assertEquals(2, plot.sizeOfCatAxArray());
+            assertEquals(2, plot.sizeOfValAxArray());
         }
     }
 

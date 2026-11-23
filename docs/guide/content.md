@@ -132,6 +132,30 @@ With `maxRows()` rollover each sheet gets its own chart over that sheet's rows. 
 backwards column pair and two given rows that run upwards; a category or value column that is not among the columns fails
 with `ExcelWriteException`.
 
+**Combination chart:** a line over the main series, on the same value axis (`lineColumn`) or on a second axis on the
+right (`secondaryLineColumn`), for a quantity with another unit (columns of revenue, a line of the growth rate):
+
+```java
+writer
+    .column("Month", Sale::month)
+    .column("Revenue", Sale::revenue, c -> c.type(ExcelDataType.INTEGER))
+    .column("Target", Sale::target, c -> c.type(ExcelDataType.INTEGER))
+    .column("Growth", Sale::growth, c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+    .chart(chart -> chart
+        .type(ExcelChartConfig.ChartType.BAR)
+        .categoryColumn(0)
+        .valueColumn(1, "Revenue")              // the columns
+        .lineColumn(2, "Target")                // a line on the same axis
+        .secondaryLineColumn(3, "Growth")       // a line on the right axis
+        .valueAxisTitle("Revenue")
+        .secondaryValueAxisTitle("Growth"))
+    .write(data);
+```
+
+The lines go over a vertical `BAR`, a `LINE` or an `AREA` chart that has at least one `valueColumn`; a pie, doughnut,
+scatter or horizontal-bar chart refuses them with `ExcelWriteException`. Lines are drawn straight (not smoothed), and
+columns sit between the tick marks, so the first and the last one are not cut in half.
+
 **Bar options:** `barDirection(VERTICAL | HORIZONTAL)`, `barGrouping(STANDARD | STACKED | PERCENT_STACKED)`
 
 **Legend positions:** `BOTTOM`, `LEFT`, `RIGHT`, `TOP`, `TOP_RIGHT`

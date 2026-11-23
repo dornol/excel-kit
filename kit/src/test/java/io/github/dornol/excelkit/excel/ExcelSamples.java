@@ -317,6 +317,9 @@ public final class ExcelSamples {
     private record Order(String dept, String item, int qty) {
     }
 
+    private record Month(String name, int revenue, int target, double growth) {
+    }
+
     private void writeFormSamples() throws Exception {
         // 18. the list validations: the in-cell arrow, the tooltip, blank cells
         try (ExcelWorkbook book = ExcelWorkbook.create()) {
@@ -547,6 +550,27 @@ public final class ExcelSamples {
                 "filterRows sheet=Report column=1 criteria=\"A\" expectVisibleDataRows=3 (rows 2, 3 and the subtotal row 4, which holds the key A in Dept: an exact filter keeps it); then cell sheet=Report cell=C8 value=30 (SUBTOTAL skips the rows the filter hides and the visible subtotal cell); ShowAllData and cell C8 value=65 again; info sheet=Report cell=A8: report whether row 8 (the total, empty in Dept) is hidden by the filter",
                 "conditionalFormats sheet=Report range=C2:C7 countAtLeast=1; fill sheet=Report cells=C3,C6 rgb=FFEB9C (the rule's color, see info); info sheet=Report cell=C4: report the fill of the subtotal cell (the rule may show over the gray)",
                 "validation sheet=Report cell=A2 type=3; validation sheet=Report cell=C2 type=1; info sheet=Report cell=C4: report Validation.Type of the subtotal cell (the validation runs below the header, through the subtotal rows)");
+
+        // 31. a combination chart: columns, a line on the same axis and a line on a second axis
+        save("31-combo-chart.xlsx", ExcelWriter.<Month>create().sheetName("Sales")
+                .column("Month", Month::name)
+                .column("Revenue", Month::revenue, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Target", Month::target, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Growth", Month::growth, c -> c.type(ExcelDataType.DOUBLE_PERCENT))
+                .chart(c -> c.type(ExcelChartConfig.ChartType.BAR).title("Revenue, target and growth")
+                        .categoryColumn(0).valueColumn(1, "Revenue").lineColumn(2, "Target").secondaryLineColumn(3, "Growth")
+                        .valueAxisTitle("Revenue").secondaryValueAxisTitle("Growth")
+                        .legendPosition(ExcelChartConfig.LegendPosition.BOTTOM).position(5, 1, 14, 18))
+                .write(List.of(new Month("Jan", 100, 110, 0.05), new Month("Feb", 120, 110, 0.20), new Month("Mar", 90, 120, -0.25),
+                        new Month("Apr", 150, 130, 0.67), new Month("May", 170, 150, 0.13), new Month("Jun", 160, 170, -0.06))));
+        add("31-combo-chart.xlsx", "a combination chart: columns, a line on the same axis, a line on a second axis",
+                "Six months. Columns of Revenue, a line of Target over them on the same left axis (\"Revenue\"), and a line of Growth (percent) on its own axis on the right (\"Growth\"), which is a different scale: the growth line must not sit flat at the bottom of the revenue scale. The legend is below; the chart is right of the data.",
+                "opens: no repair prompt (three chart groups on two pairs of axes, one category axis hidden)",
+                "chart sheet=Sales count=1",
+                "chartSeries sheet=Sales index=1 chartType=xlColumnClustered(51) axisGroup=1; chartSeries sheet=Sales index=2 chartType=xlLine or xlLineMarkers axisGroup=1; chartSeries sheet=Sales index=3 chartType=xlLine or xlLineMarkers axisGroup=2 (the secondary axis)",
+                "chartAxis sheet=Sales hasSecondaryValueAxis=True; chartAxis sheet=Sales hasSecondaryCategoryAxis=False (it is stored but not shown)",
+                "chartAxisTitle sheet=Sales primary=Revenue secondary=Growth",
+                "visual: export the chart to a PNG (Chart.Export) and look: three series, a left and a right value axis");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {

@@ -56,6 +56,18 @@ class ExampleApplicationSmokeTest {
     }
 
     @Test
+    void comboChartShowcase_writesAChartWithALineGroupOnASecondAxis() throws Exception {
+        MvcResult started = mockMvc.perform(get("/showcase/chart-combo")).andExpect(request().asyncStarted()).andReturn();
+        MvcResult result = mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn();
+        try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()))) {
+            var plot = workbook.getSheetAt(0).getDrawingPatriarch().getCharts().get(0).getCTChart().getPlotArea();
+            assertEquals(1, plot.sizeOfBarChartArray());
+            assertEquals(2, plot.sizeOfLineChartArray(), "a line on the main axis and a line on the second one");
+            assertEquals(2, plot.sizeOfValAxArray());
+        }
+    }
+
+    @Test
     void groupSubtotalShowcases_writeWorkbooksWithSubtotalFormulas() throws Exception {
         for (String path : new String[]{"subtotal", "subtotal-functions", "subtotal-layout", "subtotal-rollover",
                 "subtotal-protection", "subtotal-rules", "subtotal-workbook", "subtotal-products", "subtotal-unsorted"}) {
