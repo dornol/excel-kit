@@ -52,6 +52,11 @@ the options of `"A"`; the parent holds `"B"`, it offers those of `"B"`.
 
 - `parentColumn` is the name (header) of another column of the same sheet; an unknown name fails when the sheet is written.
 - The options go to a hidden sheet (`_excelkit_dep_1`, ...). Equal option sets share one sheet, also across rollover sheets.
+- An option that is a plain number (`"1"`, `"-2"`, `"3.5"`; no leading zero, no trailing zero after the point, at most 15 digits) is written to that
+  sheet as a **number**, the others as text. Excel compares a list entry with the cell by type: a list of the text `"1"` refuses the
+  number 1 that a person types or picks into a General cell, a list of the number 1 accepts it (checked on Excel). A fixed list
+  (`dropdown(...)`, `ExcelValidation.list(...)`) accepts both. A cell your own writer filled with the text `"1"` is not
+  checked until it is edited, and typing the number then matches.
 - The parent value is matched as text, case-insensitively; a numeric parent cell (a code column) matches the key written as text (`Map.of("1", ...)`). A row whose parent value is not a key (or is empty) offers no options.
 - Excel checks a value when it is typed, so a child left over after the parent changes stays: validate the combination when reading the upload.
 - A column has one data validation: combining it with `dropdown(...)` throws `IllegalArgumentException`, and a `validation(...)` set after it replaces it (it is itself a validation: `ExcelValidation.dependentList(...)` takes the options of one, see above).

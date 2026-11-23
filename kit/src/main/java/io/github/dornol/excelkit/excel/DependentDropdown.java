@@ -94,6 +94,15 @@ record DependentDropdown(String parentColumn, Map<String, List<String>> options)
         return formula;
     }
 
+    /**
+     * Whether the option reads back unchanged as a number: no sign other than a leading minus, no leading zero, no
+     * trailing zero after a decimal point, at most 15 digits (the precision of a double).
+     */
+    static boolean isPlainNumber(String text) {
+        return text.matches("-?(0|[1-9][0-9]{0,14})(\\.[0-9]{0,13}[1-9])?") && !text.equals("-0")
+                && text.replace("-", "").replace(".", "").length() <= 15;
+    }
+
     /** Writes the parent values and their options to a new hidden sheet and returns its name. */
     private String writeHelperSheet(SXSSFWorkbook wb) {
         int n = 1;
@@ -109,7 +118,12 @@ record DependentDropdown(String parentColumn, Map<String, List<String>> options)
             header.createCell(c).setCellValue(entry.getKey());
             List<String> children = entry.getValue();
             for (int r = 0; r < children.size(); r++) {
-                rows.get(r).createCell(c).setCellValue(children.get(r));
+                var cell = rows.get(r).createCell(c);
+                String child = children.get(r);
+                // Excel compares a list entry with the cell by type: a number typed into a cell is refused by a list of
+                // text "1" and accepted by a list of the number 1, so an option that is a plain number is written as one
+                if (isPlainNumber(child)) cell.setCellValue(Double.parseDouble(child));
+                else cell.setCellValue(child);
             }
             c++;
         }

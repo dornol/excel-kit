@@ -50,7 +50,7 @@ class DependentDropdownTest {
                 assertEquals("가", helper.getRow(0).getCell(0).getStringCellValue());
                 assertEquals("나", helper.getRow(0).getCell(1).getStringCellValue());
                 assertEquals("다", helper.getRow(0).getCell(2).getStringCellValue());
-                assertEquals("3", helper.getRow(3).getCell(0).getStringCellValue());
+                assertEquals(3.0, helper.getRow(3).getCell(0).getNumericCellValue(), "a plain-number option is a number");
                 assertNull(helper.getRow(3).getCell(1), "a parent with fewer options leaves the rest empty");
 
                 var validations = wb.getSheetAt(0).getDataValidations();
@@ -243,6 +243,63 @@ class DependentDropdownTest {
                 assertEquals("z", header.getCell(0).getStringCellValue());
                 assertEquals("m", header.getCell(1).getStringCellValue());
                 assertEquals("a", header.getCell(2).getStringCellValue());
+            }
+        }
+    }
+
+    @Nested
+    class OptionTypes {
+        @Test
+        void optionsThatArePlainNumbersAreWrittenAsNumbersAndTheRestAsText() throws IOException {
+            var options = new LinkedHashMap<String, List<String>>();
+            options.put("k", List.of("1", "-2", "0", "3.5", "007", "1.50", "+4", "-0", "12abc", "1234567890123456", "x"));
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Row>create()
+                    .column("Category", Row::category)
+                    .column("Item", Row::item, c -> c.dependentDropdown("Category", options))
+                    .write(Stream.of(new Row("k", "1"))).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var helper = wb.getSheet("_excelkit_dep_1");
+                var kinds = new java.util.ArrayList<String>();
+                for (int r = 1; r <= 11; r++) kinds.add(helper.getRow(r).getCell(0).getCellType().name());
+                assertEquals(List.of("NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC",   // 1, -2, 0, 3.5
+                        "STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING"), kinds,
+                        "007, 1.50, +4, -0, 12abc, 16 digits and x stay text");
+                assertEquals(3.5, helper.getRow(4).getCell(0).getNumericCellValue());
+                assertEquals("007", helper.getRow(5).getCell(0).getStringCellValue());
+            }
+        }
+
+        @Test
+        void theParentKeysStayTextWhateverTheyLookLike() throws IOException {
+            var options = new LinkedHashMap<String, List<String>>();
+            options.put("1", List.of("a"));
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Row>create()
+                    .column("Category", Row::category)
+                    .column("Item", Row::item, c -> c.dependentDropdown("Category", options))
+                    .write(Stream.of(new Row("1", "a"))).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                assertEquals(org.apache.poi.ss.usermodel.CellType.STRING,
+                        wb.getSheet("_excelkit_dep_1").getRow(0).getCell(0).getCellType());
+            }
+        }
+
+        @Test
+        void theNumbersAreStillCountedAsOptions() throws IOException {
+            var options = new LinkedHashMap<String, List<String>>();
+            options.put("가", List.of("1", "2", "3"));
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Row>create()
+                    .column("Category", Row::category)
+                    .column("Item", Row::item, c -> c.dependentDropdown("Category", options))
+                    .write(Stream.of(new Row("가", "1"))).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                String formula = wb.getSheetAt(0).getDataValidations().get(0).getValidationConstraint().getFormula1();
+                var evaluator = wb.getCreationHelper().createFormulaEvaluator();
+                var cell = wb.getSheetAt(0).createRow(10).createCell(0);
+                cell.setCellFormula("COUNT(" + formula + ")");   // COUNT counts numbers only
+                assertEquals(3, (int) evaluator.evaluate(cell).getNumberValue());
             }
         }
     }

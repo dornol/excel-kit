@@ -233,7 +233,8 @@ The default is 10 seconds. Upload helpers use `ExcelKitUpload.excel/csv`.
 `c.dependentDropdown("Category", Map.of("A", List.of("1", "2"), "B", List.of("3")))` makes a cascading dropdown:
 the cell offers the options of the value the named parent column holds in the same row. The options go to a hidden
 helper sheet (`_excelkit_dep_N`); equal option sets share one sheet. The parent value is matched as text; use a
-`LinkedHashMap` to keep the parent order (a numeric parent cell matches its key written as text). It is a validation
+`LinkedHashMap` to keep the parent order (a numeric parent cell matches its key written as text; an option that is a plain number is
+written as a number to the helper sheet, because Excel refuses a typed number against a list of text). It is a validation
 of the column: it cannot be combined with `dropdown(...)`, a `validation(...)` set after it replaces it, and an unknown
 parent column fails when the sheet is written. `ExcelValidation.list("A","B")` and `ExcelValidation.dependentList(parent,
 options)` are the same lists as validations, so `inputMessage(..)` / `allowBlank(false)` apply to them.
