@@ -114,13 +114,15 @@ class ExcelValidationTest {
 
         @Test
         void allTypesExist() {
-            assertEquals(6, ExcelValidation.ValidationType.values().length);
+            assertEquals(8, ExcelValidation.ValidationType.values().length);
             assertNotNull(ExcelValidation.ValidationType.INTEGER);
             assertNotNull(ExcelValidation.ValidationType.DECIMAL);
             assertNotNull(ExcelValidation.ValidationType.TEXT_LENGTH);
             assertNotNull(ExcelValidation.ValidationType.DATE);
             assertNotNull(ExcelValidation.ValidationType.FORMULA);
             assertNotNull(ExcelValidation.ValidationType.LIST_FORMULA);
+            assertNotNull(ExcelValidation.ValidationType.LIST);
+            assertNotNull(ExcelValidation.ValidationType.DEPENDENT_LIST);
         }
 
         @Test

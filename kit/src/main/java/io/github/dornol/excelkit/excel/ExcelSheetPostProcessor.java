@@ -92,13 +92,13 @@ final class ExcelSheetPostProcessor {
                 DataValidationConstraint constraint = helper.createExplicitListConstraint(column.getDropdownOptions());
                 DataValidation validation = helper.createValidation(constraint,
                         new CellRangeAddressList(header + 1, ExcelLimits.EXCEL_MAX_ROWS, i, i));
-                validation.setSuppressDropDownArrow(false);
                 validation.setShowErrorBox(true);
                 sheet.addValidationData(validation);
             }
-            if (column.getValidation() != null) column.getValidation().apply(helper, sheet, i, header);
-            DependentDropdown dependent = column.getDependentDropdown();
-            if (dependent != null) dependent.apply(sheet, i, parentIndex(columns, i, dependent.parentColumn()), header);
+            if (column.getValidation() != null) {
+                int self = i;
+                column.getValidation().apply(helper, sheet, i, header, parent -> parentIndex(columns, self, parent));
+            }
         }
     }
 

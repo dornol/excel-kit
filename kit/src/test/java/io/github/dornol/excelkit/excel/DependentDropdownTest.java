@@ -87,6 +87,32 @@ class DependentDropdownTest {
         }
 
         @Test
+        void aNumericParentValueFindsItsOptions() throws IOException {
+            var numeric = new LinkedHashMap<String, List<String>>();
+            numeric.put("1", List.of("a", "b", "c"));
+            numeric.put("2", List.of("d"));
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Row>create()
+                    .column("Code", Row::category)
+                    .column("Item", Row::item, c -> c.dependentDropdown("Code", numeric))
+                    .write(Stream.of(new Row("1", "a"))).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                String formula = wb.getSheetAt(0).getDataValidations().get(0).getValidationConstraint().getFormula1();
+                var sheet = wb.getSheetAt(0);
+                var evaluator = wb.getCreationHelper().createFormulaEvaluator();
+                var row = sheet.createRow(10);
+                // the parent cell holds a number, as a numeric code column does
+                for (var expected : Map.of(1, 3, 2, 1).entrySet()) {
+                    sheet.getRow(1).getCell(0).setCellValue((double) expected.getKey());
+                    var cell = row.createCell(0);
+                    cell.setCellFormula("COUNTA(" + formula + ")");
+                    evaluator.clearAllCachedResultValues();
+                    assertEquals(expected.getValue(), (int) evaluator.evaluate(cell).getNumberValue(), "code " + expected.getKey());
+                }
+            }
+        }
+
+        @Test
         void aWriterWithRolloverAndAChartKeepsTheHelperSheetOutOfTheProcessing() throws IOException {
             var out = new ByteArrayOutputStream();
             ExcelWriter.<Row>create().maxRows(2)
@@ -143,14 +169,23 @@ class DependentDropdownTest {
         }
 
         @Test
-        void aDropdownOrAValidationOnTheSameColumnIsRejected() {
+        void aDropdownOnTheSameColumnIsRejected() {
             assertThrows(IllegalArgumentException.class, () -> ExcelWriter.<Row>create()
                     .column("Category", Row::category)
                     .column("Item", Row::item, c -> c.dropdown("x").dependentDropdown("Category", options())));
-            assertThrows(IllegalArgumentException.class, () -> ExcelWriter.<Row>create()
+        }
+
+        @Test
+        void aValidationSetAfterTheDependentDropdownReplacesIt() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Row>create()
                     .column("Category", Row::category)
                     .column("Item", Row::item, c -> c
-                            .validation(ExcelValidation.textLength(1, 5)).dependentDropdown("Category", options())));
+                            .dependentDropdown("Category", options()).validation(ExcelValidation.textLength(1, 5)))
+                    .write(Stream.of(new Row("가", "1"))).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                assertEquals(1, wb.getNumberOfSheets(), "no helper sheet: the dependent dropdown was replaced");
+            }
         }
 
         @Test

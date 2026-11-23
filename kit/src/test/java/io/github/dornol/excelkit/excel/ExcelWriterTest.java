@@ -849,7 +849,7 @@ class ExcelWriterTest {
         List<? extends DataValidation> validations = sheet.getDataValidations();
         assertEquals(1, validations.size(), "Should have one data validation");
         DataValidation validation = validations.get(0);
-        assertFalse(validation.getSuppressDropDownArrow(), "Dropdown arrow should not be suppressed");
+        // the in-cell arrow is checked on the written XML in ListValidationOptionsTest
         assertTrue(validation.getShowErrorBox(), "Error box should be shown");
 
         // consume

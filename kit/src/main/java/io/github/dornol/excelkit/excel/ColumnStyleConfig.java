@@ -74,10 +74,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable ExcelBorderStyle borderRight;
 
     // ── Validation & interaction ──
-    private static final int MAX_DROPDOWN_LENGTH = 255;
     String @Nullable [] dropdownOptions;
     @Nullable ExcelValidation validation;
-    @Nullable DependentDropdown dependentDropdown;
     @Nullable Function<T, @Nullable String> commentFunction;
     @Nullable ExcelCellComment headerComment;
     int commentWidth;
@@ -228,25 +226,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      *         limit
      */
     public SELF dropdown(String... options) {
-        Objects.requireNonNull(options, "options cannot be null");
-        if (options.length == 0) {
-            throw new IllegalArgumentException("A dropdown needs at least one option");
-        }
-        String[] escaped = new String[options.length];
-        for (int i = 0; i < options.length; i++) {
-            String option = Objects.requireNonNull(options[i], "a dropdown option cannot be null");
-            if (option.indexOf(',') >= 0) {
-                throw new IllegalArgumentException("The dropdown option '" + option + "' contains a comma, which "
-                        + "Excel reads as the end of an option; use ExcelValidation.listFromRange(...) for such values");
-            }
-            // inside the quoted list a quote is written twice
-            escaped[i] = option.replace("\"", "\"\"");
-        }
-        int length = String.join(",", escaped).length();
-        if (length > MAX_DROPDOWN_LENGTH) {
-            throw new IllegalArgumentException("Dropdown options total " + length
-                    + " characters (comma-joined); Excel allows at most " + MAX_DROPDOWN_LENGTH);
-        }
+        String[] escaped = ExcelValidation.escapeListOptions(options);
         this.dropdownOptions = escaped;
         return self();
     }
@@ -275,7 +255,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      * @since 0.29.0
      */
     public SELF dependentDropdown(String parentColumn, Map<String, ? extends List<String>> options) {
-        this.dependentDropdown = new DependentDropdown(parentColumn, new java.util.LinkedHashMap<>(Objects.requireNonNull(options, "options cannot be null")));
+        this.validation = ExcelValidation.dependentList(parentColumn, options);
         return self();
     }
 
@@ -806,7 +786,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         if (this.cellColorFunction == null) this.cellColorFunction = (CellColorFunction<T>) defaults.cellColorFunction;
         // A column that chose a dropdown or a validation of its own keeps it, and the default of the other kind
         // is not added: a cell has one data validation.
-        if (this.dropdownOptions == null && this.validation == null && this.dependentDropdown == null) {
+        if (this.dropdownOptions == null && this.validation == null) {
             this.dropdownOptions = defaults.dropdownOptions;
             this.validation = defaults.validation;
         }

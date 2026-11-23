@@ -24,8 +24,19 @@ Excel limits the comma-joined option text to 255 characters; `dropdown(...)` thr
 ```
 
 Excel rejects *typing* an empty value into an `allowBlank(false)` cell but does not flag a cell that was never filled,
-so check required values when reading the upload. A plain `dropdown(...)` has neither option; use
-`ExcelValidation.listFromRange(...)` when a list needs them.
+so check required values when reading the upload.
+
+A plain `dropdown(...)` has neither option; use `ExcelValidation.list(...)` for the same fixed list with them, and
+`ExcelValidation.dependentList(parent, options)` for a dependent one:
+
+```java
+.column("Status", p -> p.status(), cfg -> cfg.validation(
+    ExcelValidation.list("Active", "Inactive").allowBlank(false).inputMessage("Pick one")))
+.column("Item", p -> p.item(), cfg -> cfg.validation(
+    ExcelValidation.dependentList("Category", options).allowBlank(false)))
+```
+
+`list(...)` follows the rules of `dropdown(...)` (no comma in an option, 255 characters in all).
 
 ## Dependent Dropdown
 
@@ -41,9 +52,9 @@ the options of `"A"`; the parent holds `"B"`, it offers those of `"B"`.
 
 - `parentColumn` is the name (header) of another column of the same sheet; an unknown name fails when the sheet is written.
 - The options go to a hidden sheet (`_excelkit_dep_1`, ...). Equal option sets share one sheet, also across rollover sheets.
-- The parent value is matched as text, case-insensitively. A row whose parent value is not a key (or is empty) offers no options.
+- The parent value is matched as text, case-insensitively; a numeric parent cell (a code column) matches the key written as text (`Map.of("1", ...)`). A row whose parent value is not a key (or is empty) offers no options.
 - Excel checks a value when it is typed, so a child left over after the parent changes stays: validate the combination when reading the upload.
-- A column has one data validation: combining it with `dropdown(...)` or `validation(...)` throws `IllegalArgumentException`.
+- A column has one data validation: combining it with `dropdown(...)` throws `IllegalArgumentException`, and a `validation(...)` set after it replaces it (it is itself a validation: `ExcelValidation.dependentList(...)` takes the options of one, see above).
 
 ## Advanced Data Validation
 

@@ -8,7 +8,10 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.ToIntFunction;
 
 /**
  * Advanced data validation configuration for Excel columns.
@@ -41,12 +44,17 @@ public class ExcelValidation {
         /** Custom formula validation. */
         FORMULA,
         /** List from cell range validation. */
-        LIST_FORMULA
+        LIST_FORMULA,
+        /** List of fixed options. */
+        LIST,
+        /** List whose options follow the value of another column of the same row. */
+        DEPENDENT_LIST
     }
 
     /** Excel's limits for the title and the text of the error box. */
     private static final int MAX_ERROR_TITLE = 32;
     private static final int MAX_ERROR_MESSAGE = 255;
+    private static final int MAX_DROPDOWN_LENGTH = 255;
 
     private static void requireOrdered(double min, double max, String method) {
         if (min > max) {
@@ -71,12 +79,22 @@ public class ExcelValidation {
     private @Nullable String inputMessage;
     private boolean allowBlank = true;
 
+    private final String @Nullable [] listOptions;
+    private final @Nullable DependentDropdown dependent;
+
     private ExcelValidation(ValidationType type, int operator,
                             @Nullable String value1, @Nullable String value2) {
+        this(type, operator, value1, value2, null, null);
+    }
+
+    private ExcelValidation(ValidationType type, int operator, @Nullable String value1, @Nullable String value2,
+                            String @Nullable [] listOptions, @Nullable DependentDropdown dependent) {
         this.type = type;
         this.operator = operator;
         this.value1 = value1;
         this.value2 = value2;
+        this.listOptions = listOptions;
+        this.dependent = dependent;
     }
 
     /**
@@ -181,6 +199,70 @@ public class ExcelValidation {
         requireText(range, "range");
         return new ExcelValidation(ValidationType.LIST_FORMULA,
                 DataValidationConstraint.OperatorType.BETWEEN, range, null);
+    }
+
+    /**
+     * Creates a dropdown of fixed options, the same list as {@code dropdown(...)} on a column but with the options of
+     * a validation: {@link #inputMessage(String) input message}, {@link #allowBlank(boolean) allowBlank} and the error
+     * box.
+     * <pre>{@code
+     * .column("Status", p -> p.status(), c -> c.validation(
+     *     ExcelValidation.list("Active", "Inactive").allowBlank(false).inputMessage("Pick one")))
+     * }</pre>
+     *
+     * @param options the allowed values
+     * @return the validation instance
+     * @throws IllegalArgumentException if there is no option, an option contains a comma (use
+     *         {@link #listFromRange(String)}), or the comma-joined options exceed Excel's 255-character limit
+     * @since 0.29.0
+     */
+    public static ExcelValidation list(String... options) {
+        return new ExcelValidation(ValidationType.LIST, DataValidationConstraint.OperatorType.BETWEEN, null, null,
+                escapeListOptions(options), null);
+    }
+
+    /**
+     * Creates a dropdown whose options depend on the value of another column of the same row, with the options of a
+     * validation; see {@code ColumnStyleConfig#dependentDropdown(String, java.util.Map)} for how it works.
+     *
+     * @param parentColumn the name (header) of the parent column, another column of the same sheet
+     * @param options      the options per parent value, in the order they are offered
+     * @return the validation instance
+     * @throws IllegalArgumentException if {@code parentColumn} is blank, {@code options} is empty, a parent value
+     *         is empty, or a parent value has no option
+     * @since 0.29.0
+     */
+    public static ExcelValidation dependentList(String parentColumn, Map<String, ? extends List<String>> options) {
+        Objects.requireNonNull(options, "options cannot be null");
+        return new ExcelValidation(ValidationType.DEPENDENT_LIST, DataValidationConstraint.OperatorType.BETWEEN,
+                null, null, null, new DependentDropdown(parentColumn, new java.util.LinkedHashMap<>(options)));
+    }
+
+    /**
+     * The options of an explicit list as Excel keeps them: a quote is written twice, and the joined text may not
+     * pass 255 characters. Shared by {@code dropdown(...)} and {@link #list(String...)}.
+     */
+    static String[] escapeListOptions(String... options) {
+        Objects.requireNonNull(options, "options cannot be null");
+        if (options.length == 0) {
+            throw new IllegalArgumentException("A dropdown needs at least one option");
+        }
+        String[] escaped = new String[options.length];
+        for (int i = 0; i < options.length; i++) {
+            String option = Objects.requireNonNull(options[i], "a dropdown option cannot be null");
+            if (option.indexOf(',') >= 0) {
+                throw new IllegalArgumentException("The dropdown option '" + option + "' contains a comma, which "
+                        + "Excel reads as the end of an option; use ExcelValidation.listFromRange(...) for such values");
+            }
+            // inside the quoted list a quote is written twice
+            escaped[i] = option.replace("\"", "\"\"");
+        }
+        int length = String.join(",", escaped).length();
+        if (length > MAX_DROPDOWN_LENGTH) {
+            throw new IllegalArgumentException("Dropdown options total " + length
+                    + " characters (comma-joined); Excel allows at most " + MAX_DROPDOWN_LENGTH);
+        }
+        return escaped;
     }
 
     /**
@@ -290,8 +372,12 @@ public class ExcelValidation {
     /**
      * Applies this validation to the specified column range on the sheet.
      */
-    void apply(DataValidationHelper helper, SXSSFSheet sheet, int col, int headerRow) {
-        DataValidationConstraint constraint = createConstraint(helper);
+    void apply(DataValidationHelper helper, SXSSFSheet sheet, int col, int headerRow,
+               ToIntFunction<String> parentColumnIndex) {
+        DataValidationConstraint constraint = dependent != null
+                ? helper.createFormulaListConstraint(dependent.formula(sheet,
+                        parentColumnIndex.applyAsInt(dependent.parentColumn()), headerRow))
+                : createConstraint(helper);
         CellRangeAddressList range = new CellRangeAddressList(
                 headerRow + 1, ExcelLimits.EXCEL_MAX_ROWS, col, col);
         DataValidation validation = helper.createValidation(constraint, range);
@@ -324,6 +410,8 @@ public class ExcelValidation {
                     "yyyy-MM-dd");
             case FORMULA -> helper.createCustomConstraint(value1 != null ? value1 : "TRUE");
             case LIST_FORMULA -> helper.createFormulaListConstraint(value1 != null ? value1 : "");
+            case LIST -> helper.createExplicitListConstraint(listOptions != null ? listOptions : new String[0]);
+            case DEPENDENT_LIST -> throw new IllegalStateException("a dependent list is built from its helper sheet");
         };
     }
 }

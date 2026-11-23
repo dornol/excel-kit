@@ -156,6 +156,10 @@ Also: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights.
 // Dropdown
 .column("Status", p -> p.status(), c -> c.dropdown("Active", "Inactive", "Pending"))
 
+// A list with the options of a validation (tooltip, allowBlank), fixed or dependent
+.validation(ExcelValidation.list("Active", "Inactive").allowBlank(false).inputMessage("Pick one"))
+.validation(ExcelValidation.dependentList("Category", options).allowBlank(false))
+
 // Tooltip on selection and required cell (Excel limits: title 32, message 255 chars)
 .validation(ExcelValidation.integerBetween(0, 150).inputTitle("Age").inputMessage("Enter 0-150").allowBlank(false))
 
@@ -258,7 +262,7 @@ writer.afterData(ctx -> {
 
 ```java
 writer.printSetup(p -> p
-    .landscape()
+    .orientation(ExcelPrintSetup.Orientation.LANDSCAPE)
     .paperSize(ExcelPrintSetup.PaperSize.A4)
     .fitToPage(1, 0)
     .repeatRows(0, 0))

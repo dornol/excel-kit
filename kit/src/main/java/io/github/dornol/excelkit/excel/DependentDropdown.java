@@ -1,9 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
-import org.apache.poi.ss.usermodel.DataValidation;
-import org.apache.poi.ss.usermodel.DataValidationHelper;
 import org.apache.poi.ss.usermodel.SheetVisibility;
-import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
@@ -69,12 +66,13 @@ record DependentDropdown(String parentColumn, Map<String, List<String>> options)
     }
 
     /**
-     * Applies this dropdown to the column {@code col} of {@code sheet}.
+     * Writes the options to a hidden helper sheet and returns the list formula for a cell whose parent value is
+     * in column {@code parentCol}.
      *
      * @param parentCol the 0-based index of the parent column
      * @param headerRow the 0-based index of the header row
      */
-    void apply(SXSSFSheet sheet, int col, int parentCol, int headerRow) {
+    String formula(SXSSFSheet sheet, int parentCol, int headerRow) {
         SXSSFWorkbook wb = sheet.getWorkbook();
         String helperName = HELPER_SHEETS.computeIfAbsent(wb, k -> new java.util.HashMap<>())
                 .computeIfAbsent(options, k -> writeHelperSheet(wb));
@@ -84,7 +82,8 @@ record DependentDropdown(String parentColumn, Map<String, List<String>> options)
         String ref = "'" + helperName + "'!";
         String lastKeyCol = SheetContext.columnLetter(keys - 1);
         // The row of the first data cell, 1-based; relative so that every row reads the parent value of its own row.
-        String parentCell = "$" + SheetContext.columnLetter(parentCol) + (headerRow + 2);
+        // The parent is turned into text (&""): the keys are text, and MATCH does not equate the number 1 with "1".
+        String parentCell = "$" + SheetContext.columnLetter(parentCol) + (headerRow + 2) + "&\"\"";
         String offset = "MATCH(" + parentCell + "," + ref + "$A$1:$" + lastKeyCol + "$1,0)-1";
         String formula = "OFFSET(" + ref + "$A$2,0," + offset + ",COUNTA(OFFSET(" + ref + "$A$2,0," + offset + ","
                 + maxChildren + ",1)),1)";
@@ -92,13 +91,7 @@ record DependentDropdown(String parentColumn, Map<String, List<String>> options)
             throw new IllegalArgumentException("The dependent dropdown formula is " + formula.length()
                     + " characters, over Excel's limit of " + MAX_FORMULA_LENGTH);
         }
-
-        DataValidationHelper helper = sheet.getDataValidationHelper();
-        DataValidation validation = helper.createValidation(helper.createFormulaListConstraint(formula),
-                new CellRangeAddressList(headerRow + 1, ExcelLimits.EXCEL_MAX_ROWS, col, col));
-        validation.setSuppressDropDownArrow(false); // keep the in-cell arrow
-        validation.setShowErrorBox(true);
-        sheet.addValidationData(validation);
+        return formula;
     }
 
     /** Writes the parent values and their options to a new hidden sheet and returns its name. */

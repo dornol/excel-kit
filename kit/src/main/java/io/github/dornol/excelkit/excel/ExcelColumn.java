@@ -59,7 +59,6 @@ public class ExcelColumn<T> {
     private final boolean requiredMark;
     private final boolean mergeSameValues;
     private final @Nullable ExcelValidation validation;
-    private final @Nullable DependentDropdown dependentDropdown;
     private final int @Nullable [] headerFontColor;
     private final int @Nullable [] headerBackgroundColor;
     private final @Nullable ExcelCellComment headerComment;
@@ -101,12 +100,7 @@ public class ExcelColumn<T> {
             throw new IllegalArgumentException("Column '" + name + "' has both a dropdown and a validation; "
                     + "a cell has one data validation, so use one of them (listFromRange(...) makes a list)");
         }
-        if (config.dependentDropdown != null && (config.dropdownOptions != null || config.validation != null)) {
-            throw new IllegalArgumentException("Column '" + name + "' has a dependent dropdown and also a dropdown or a validation; "
-                    + "a cell has one data validation, so use one of them");
-        }
         this.validation = config.validation;
-        this.dependentDropdown = config.dependentDropdown;
         this.headerFontColor = config.headerFontColor;
         this.headerBackgroundColor = config.headerBackgroundColor;
         this.headerComment = config.headerComment;
@@ -345,10 +339,6 @@ public class ExcelColumn<T> {
 
     boolean isRequiredMark() {
         return requiredMark;
-    }
-
-    @Nullable DependentDropdown getDependentDropdown() {
-        return dependentDropdown;
     }
 
     @Nullable CellColorFunction<T> getCellColorFunction() {
