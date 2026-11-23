@@ -57,6 +57,7 @@ public class ExcelColumn<T> {
     private final @Nullable Boolean locked;
     private final boolean hidden;
     private final boolean requiredMark;
+    private final boolean mergeSameValues;
     private final @Nullable ExcelValidation validation;
     private final @Nullable DependentDropdown dependentDropdown;
     private final int @Nullable [] headerFontColor;
@@ -95,6 +96,7 @@ public class ExcelColumn<T> {
         this.locked = config.locked;
         this.hidden = config.hidden;
         this.requiredMark = config.requiredMark;
+        this.mergeSameValues = config.mergeSameValues;
         if (config.validation != null && config.dropdownOptions != null) {
             throw new IllegalArgumentException("Column '" + name + "' has both a dropdown and a validation; "
                     + "a cell has one data validation, so use one of them (listFromRange(...) makes a list)");
@@ -335,6 +337,10 @@ public class ExcelColumn<T> {
 
     String @Nullable [] getDropdownOptions() {
         return dropdownOptions != null ? dropdownOptions.clone() : null;
+    }
+
+    boolean isMergeSameValues() {
+        return mergeSameValues;
     }
 
     boolean isRequiredMark() {

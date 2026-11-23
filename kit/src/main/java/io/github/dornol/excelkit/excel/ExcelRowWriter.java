@@ -18,6 +18,15 @@ final class ExcelRowWriter {
 
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
                           SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook) {
+        write(sheet, cursor, row, columns, config, styleCache, workbook, null);
+    }
+
+    /**
+     * @param merges merges the runs of equal values of the columns that asked for it, or {@code null}
+     */
+    static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
+                          SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook,
+                          @Nullable MergeRunTracker<T> merges) {
         if (cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY) {
             throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: Excel sheets hold at most "
                     + ExcelLimits.SHEET_ROW_CAPACITY + " rows. Lower maxRows(...) so the writer rolls over to a "
@@ -26,6 +35,7 @@ final class ExcelRowWriter {
         }
         SXSSFRow target = sheet.createRow(cursor.getRowOfSheet());
         target.setHeightInPoints(config.rowHeightInPoints);
+        if (merges != null) merges.startRow(sheet, target.getRowNum());
         cursor.plusRow();
 
         ExcelColor rowColor = config.rowColorFunction == null ? null : config.rowColorFunction.apply(row);
@@ -34,6 +44,7 @@ final class ExcelRowWriter {
             SXSSFCell cell = target.createCell(i);
             ExcelColumn<T> column = columns.get(i);
             @Nullable Object value = column.applyFunction(row, cursor, config.writeErrorPolicy);
+            if (merges != null && merges.ordinal(i) >= 0) merges.value(merges.ordinal(i), value);
             CellStyle baseStyle = column.setColumnData(cell, value, config.writeErrorPolicy);
 
             ExcelColor color = effectiveColor(column, value, row, rowStyle, rowColor);

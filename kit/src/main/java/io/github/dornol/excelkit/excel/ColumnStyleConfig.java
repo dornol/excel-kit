@@ -87,6 +87,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable Boolean locked;
     boolean hidden;
     boolean requiredMark;
+    boolean mergeSameValues;
 
     // ── Grouping ──
     /** Group header levels from outermost to innermost. Empty = no grouping. */
@@ -505,6 +506,42 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     }
 
     /**
+     * Merges runs of equal values of this column vertically: the rows of one department show the department once,
+     * in a cell spanning them (the rows must be sorted so that equal values are next to each other).
+     * <pre>{@code
+     * .column("Department", Emp::department, c -> c.mergeSameValues())
+     * .column("Team", Emp::team, c -> c.mergeSameValues())   // merges only inside a department
+     * .column("Name", Emp::name)
+     * }</pre>
+     * A run ends where the value changes or is empty. A column merges only within the merged regions of the merge
+     * columns before it (a team never spans two departments), and a rolled-over sheet starts its runs again. The
+     * cells below the first of a region keep their values, so unmerging in Excel shows them and a reader that does
+     * not use {@code fillMergedCells()} still reads every row.
+     * <p>
+     * Merged cells do not combine with a {@code table(...)} (Excel repairs such a file), so a writer with both
+     * fails when written; {@code TemplateListWriter} does not merge. Excel cannot sort or filter a range with
+     * merged cells of different sizes.
+     *
+     * @return this instance for chaining
+     * @since 0.29.0
+     */
+    public SELF mergeSameValues() {
+        return mergeSameValues(true);
+    }
+
+    /**
+     * Sets whether runs of equal values of this column are merged; see {@link #mergeSameValues()}.
+     *
+     * @param mergeSameValues whether to merge
+     * @return this instance for chaining
+     * @since 0.29.0
+     */
+    public SELF mergeSameValues(boolean mergeSameValues) {
+        this.mergeSameValues = mergeSameValues;
+        return self();
+    }
+
+    /**
      * Marks this column as hidden in the Excel output.
      *
      * @return this instance for chaining
@@ -763,6 +800,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         this.fixedWidth |= defaults.fixedWidth;
         this.hidden |= defaults.hidden;
         this.requiredMark |= defaults.requiredMark;
+        this.mergeSameValues |= defaults.mergeSameValues;
         if (this.headerFontColor == null) this.headerFontColor = defaults.headerFontColor;
         if (this.headerBackgroundColor == null) this.headerBackgroundColor = defaults.headerBackgroundColor;
         if (this.cellColorFunction == null) this.cellColorFunction = (CellColorFunction<T>) defaults.cellColorFunction;

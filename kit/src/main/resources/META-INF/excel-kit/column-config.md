@@ -70,6 +70,7 @@ All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`
 ### Header
 | Method | Description |
 |--------|-------------|
+| `.mergeSameValues()` / `.mergeSameValues(boolean)` | Merge runs of equal values vertically (sorted rows; nested inside the merge columns to its left; not with `table(...)`) |
 | `.requiredMark()` / `.requiredMark(boolean)` | Show `*` after the header text (a cell number format; the cell value stays the plain name) |
 | `.headerFontColor(ExcelColor)` | Override header font color for this column |
 | `.headerFontColor(int r, int g, int b)` | Override header font color (RGB) |

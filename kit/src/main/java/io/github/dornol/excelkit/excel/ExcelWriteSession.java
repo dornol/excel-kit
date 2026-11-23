@@ -3,6 +3,8 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -13,16 +15,19 @@ final class ExcelWriteSession<T> {
     private final Map<SXSSFSheet, Integer> dataEndRows = new LinkedHashMap<>();
     private final Map<SXSSFSheet, Integer> nextFreeRows = new LinkedHashMap<>();
     private final PageBreakTracker<T> pageBreaks;
+    private final @Nullable MergeRunTracker<T> merges;
     private SXSSFSheet sheet;
     private Cursor cursor;
 
     ExcelWriteSession(ExcelWriteOptions<T> options) {
         this.options = options;
         this.pageBreaks = new PageBreakTracker<>(options.sheetConfig().pageBreakWhen);
+        this.merges = MergeRunTracker.of(options.columns());
     }
 
     ExcelWriteOptions<T> options() { return options; }
     PageBreakTracker<T> pageBreaks() { return pageBreaks; }
+    @Nullable MergeRunTracker<T> merges() { return merges; }
     SXSSFSheet sheet() { return sheet; }
     void sheet(SXSSFSheet sheet) { this.sheet = sheet; }
     Cursor cursor() { return cursor; }

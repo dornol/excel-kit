@@ -35,6 +35,25 @@ Excel: the Sum and Average rows stay visible while a filter is applied). A sheet
 its filter buttons from the table itself, since a second filter over the same cells would overlap it: `autoFilter(true)`
 turns them on, and without it the table has none.
 
+## Merging Equal Values
+
+`mergeSameValues()` merges runs of equal values of a column vertically, as reports do for a department over its rows.
+The rows must be sorted so that equal values are neighbours.
+
+```java
+writer.column("Department", Emp::department, c -> c.mergeSameValues())
+      .column("Team", Emp::team, c -> c.mergeSameValues())    // merges only inside a department
+      .column("Name", Emp::name);
+```
+
+- A run ends where the value changes or is empty (empty values are not merged), and a run of one row is not merged.
+- A column merges only within the merged regions of the merge columns before it: a team never spans two departments.
+- A rolled-over sheet starts its runs again.
+- The cells below the first one of a region keep their values: unmerging in Excel shows them, and a reader without
+  `fillMergedCells()` still reads every row. With `fillMergedCells()` the first cell's value is read for all of them.
+- Merged cells do not combine with `table(...)` (Excel repairs such a file): a writer with both fails when written.
+  `TemplateListWriter` does not merge. Excel cannot sort or filter a range with merged cells of different sizes.
+
 ## Column Outline (Grouping)
 
 Group columns for collapse/expand:

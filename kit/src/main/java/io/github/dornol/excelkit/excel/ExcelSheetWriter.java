@@ -203,6 +203,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
             throw new ExcelWriteException("columns setting required");
         }
         ExcelWriteSupport.validateUniqueColumnNames(columns);
+        ExcelWriteSupport.validateMergeColumns(columns, cfg.tableOptions, true);
 
         List<SXSSFSheet> allSheets = new ArrayList<>();
         List<Integer> dataEndRows = new ArrayList<>();
@@ -222,6 +223,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
         SXSSFSheet activeSheet = this.sheet;
         var pageBreaks = new PageBreakTracker<T>(cfg.pageBreakWhen);
+        var merges = MergeRunTracker.of(columns);
 
         {
             Iterator<T> it = stream.iterator();
@@ -232,6 +234,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                         && (cursor.getCurrentTotal() - 1) % cfg.maxRows == 0) {
                     StructuredTableWriter.requireRolloverAllowed(cfg.tableOptions);
                     dataEndRows.add(cursor.getRowOfSheet() - 1);
+                    if (merges != null) merges.closeRuns(cursor.getRowOfSheet() - 1);
                     nextFreeRows.add(ExcelWriteSupport.writeAfterDataAndSummary(
                             activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg));
                     activeSheet = createRolloverSheet(allSheets.size());
@@ -246,12 +249,13 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
                     ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.freezePaneCols, cfg.freezePaneRows);
                 }
                 pageBreaks.beforeRow(activeSheet, cursor.getRowOfSheet(), rowData);
-                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
+                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb, merges);
                 ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
             }
         }
 
         dataEndRows.add(cursor.getRowOfSheet() - 1);
+        if (merges != null) merges.closeRuns(cursor.getRowOfSheet() - 1);
         int nextFreeRow = ExcelWriteSupport.writeAfterDataAndSummary(
                 activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
         nextFreeRows.add(nextFreeRow);

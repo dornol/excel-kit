@@ -324,6 +324,7 @@ public class TemplateListWriter<T> {
             throw new ExcelWriteException("columns setting required");
         }
         ExcelWriteSupport.validateUniqueColumnNames(columns);
+        ExcelWriteSupport.validateMergeColumns(columns, null, false);
 
         Cursor cursor = new Cursor(startRow);
         // The header row is the one this writer writes, or else the template's own, just above the data. A summary

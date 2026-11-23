@@ -242,6 +242,10 @@ same column, and an unknown parent column fails when the sheet is written.
 Page breaks: `printSetup(p -> p.rowBreakEvery(n))`, and `pageBreakOnChange(keyFn)` / `pageBreakWhen((previous, current) -> bool)`
 on `ExcelWriter` / `ExcelSheetWriter` (a new printed page where the data changes; at most 1026 breaks per sheet).
 
+`c.mergeSameValues()` merges runs of equal values of a column vertically (a department over its rows; rows sorted). A column
+merges only inside the merged regions of the merge columns to its left; empty values and one-row runs are not merged;
+the cells below the first keep their values; rejected with `table(...)` and on `TemplateListWriter`.
+
 `reader.uniqueKey("Employee ID")` (`ExcelReader`, `CsvReader`, also `ReaderOptions`) fails every row whose key (one or several
 headers) was seen in an earlier row: `VALIDATION` `RowError` `Duplicate key [..]; first seen at row N`, key cells in
 `cellErrors()`. Empty key cells are not checked; keys are held in memory.

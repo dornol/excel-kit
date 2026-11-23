@@ -593,6 +593,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             throw new ExcelWriteException("columns setting required");
         }
         ExcelWriteSupport.validateUniqueColumnNames(options.columns());
+        ExcelWriteSupport.validateMergeColumns(options.columns(), options.sheetConfig().tableOptions, true);
     }
 
     /** Creates the first sheet and writes its preamble, header and sheet options. */
@@ -610,12 +611,19 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         applySheetOptions();
     }
 
+    /** Merges the runs of equal values still open at the end of the data of the current sheet. */
+    private void closeMergeRuns() {
+        var merges = execution().merges();
+        if (merges != null) merges.closeRuns(cursor().getRowOfSheet() - 1);
+    }
+
     /**
      * Runs everything that follows the last data row: after-data and summary rows, the
      * {@code afterAll} callback, per-sheet post-processing, workbook protection, the chart and tables.
      */
     private void finishWorkbook(ExcelWriteOptions<T> options) {
         execution().dataEndRow(cursor().getRowOfSheet() - 1);
+        closeMergeRuns();
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
                 options.columns(), headerRowIndex(), options.sheetConfig());
         execution().nextFreeRow(nextRow);
@@ -682,6 +690,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         if (isOverMaxRows()) {
             StructuredTableWriter.requireRolloverAllowed(options.sheetConfig().tableOptions);
             execution().dataEndRow(cursor().getRowOfSheet() - 1);
+            closeMergeRuns();
             execution().nextFreeRow(ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
                     options.columns(), headerRowIndex(), options.sheetConfig()));
             turnOverSheet();
@@ -694,7 +703,8 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             applySheetOptions();
         }
         execution().pageBreaks().beforeRow(sheet(), cursor().getRowOfSheet(), rowData);
-        ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb);
+        ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb,
+                execution().merges());
         ExcelWriteSupport.checkProgress(cursor(), options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
     }
 

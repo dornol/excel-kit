@@ -200,6 +200,24 @@ class ExcelWriteSupport {
         return currentRow;
     }
 
+    /**
+     * Rejects a column that merges equal values where the sheet cannot hold merged cells: in a table (Excel repairs
+     * the file) or in a list written into a template.
+     */
+    static <T> void validateMergeColumns(List<ExcelColumn<T>> columns, @Nullable TableOptions tableOptions, boolean supported) {
+        for (ExcelColumn<T> col : columns) {
+            if (!col.isMergeSameValues()) continue;
+            if (!supported) {
+                throw new ExcelWriteException("Column '" + col.getName() + "' asks for mergeSameValues(), "
+                        + "which a template list writer does not apply");
+            }
+            if (tableOptions != null) {
+                throw new ExcelWriteException("Column '" + col.getName() + "' asks for mergeSameValues(), but "
+                        + "the sheet is a table(...): Excel does not allow merged cells in a table");
+            }
+        }
+    }
+
     static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
         Set<String> seen = new HashSet<>();
         for (ExcelColumn<T> col : columns) {

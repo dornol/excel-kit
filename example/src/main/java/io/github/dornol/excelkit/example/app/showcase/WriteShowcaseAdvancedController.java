@@ -426,6 +426,22 @@ public class WriteShowcaseAdvancedController {
                 .body(handler::writeTo);
     }
 
+    @GetMapping("/merge-same-values")
+    public ResponseEntity<StreamingResponseBody> downloadMergeSameValues() {
+        // Sorted so that equal values are neighbours: the category is shown once over its rows
+        var products = sampleProducts().stream()
+                .sorted(java.util.Comparator.comparing(ProductDto::category).thenComparing(ProductDto::name)).toList();
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Merge Demo")
+                .freezeRows(1)
+                .column("Category", ProductDto::category, c -> c.mergeSameValues())
+                .column("Name", ProductDto::name)
+                .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .write(products);
+        return ExcelKitResponse.excel("merge-same-values-demo")
+                .body(handler::writeTo);
+    }
+
     @GetMapping("/data-bar")
     public ResponseEntity<StreamingResponseBody> downloadDataBar() {
         var writer = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
