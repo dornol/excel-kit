@@ -56,6 +56,30 @@ class ExampleApplicationSmokeTest {
     }
 
     @Test
+    void groupSubtotalShowcases_writeWorkbooksWithSubtotalFormulas() throws Exception {
+        for (String path : new String[]{"subtotal", "subtotal-functions", "subtotal-layout", "subtotal-rollover",
+                "subtotal-protection", "subtotal-rules", "subtotal-workbook", "subtotal-products", "subtotal-unsorted"}) {
+            MvcResult started = mockMvc.perform(get("/showcase/" + path))
+                    .andExpect(request().asyncStarted())
+                    .andReturn();
+            MvcResult result = mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn();
+            try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()))) {
+                boolean subtotal = false;
+                for (Row row : workbook.getSheetAt(0)) {
+                    for (var cell : row) {
+                        if (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.FORMULA
+                                && cell.getCellFormula().startsWith("SUBTOTAL(")) subtotal = true;
+                    }
+                }
+                assertTrue(subtotal, path + " has a SUBTOTAL formula");
+            }
+        }
+        mockMvc.perform(get("/showcase/subtotal-rejected"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("cannot be combined with table")));
+    }
+
+    @Test
     void downloadExcel_returnsWorkbookResponse() throws Exception {
         MvcResult result = mockMvc.perform(get("/download-excel"))
                 .andExpect(request().asyncStarted())

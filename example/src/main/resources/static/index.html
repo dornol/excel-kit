@@ -16,6 +16,61 @@
 </div>
 
 <!-- ============================== -->
+<h2>Group Subtotals</h2>
+<p><code>groupSubtotal(key, ...)</code> writes a <code>SUBTOTAL</code> formula row after every run of rows with an equal key. Sales data is fixed (East, North, South, West: 6 rows each) so the numbers can be checked by hand. Rows must be sorted by the key.</p>
+
+<div class="section">
+    <p><strong>Basics</strong> - A <code>SUBTOTAL</code> row below every region and a grand total that does not count the subtotals twice. Edit a Units/Amount cell in Excel: the subtotals and the total follow</p>
+    <a href="/showcase/subtotal" target="_blank"><button class="showcase">Download Subtotal Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Every function</strong> - sum, average, count, min and max per column, in the subtotal rows and in the summary</p>
+    <a href="/showcase/subtotal-functions" target="_blank"><button class="showcase">Download Subtotal Functions Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Layout</strong> - Merged region cell, zebra stripes, a page per region, filter, freeze and a custom subtotal style</p>
+    <a href="/showcase/subtotal-layout" target="_blank"><button class="showcase">Download Subtotal Layout Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Rollover</strong> - 24 rows over sheets of 10 (<code>maxRows</code>): each sheet closes its last region and has its own total; row numbers skip the subtotal rows</p>
+    <a href="/showcase/subtotal-rollover" target="_blank"><button class="showcase">Download Subtotal Rollover Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Sheet protection</strong> - Data columns are editable, the subtotal rows stay locked (password: 1234)</p>
+    <a href="/showcase/subtotal-protection" target="_blank"><button class="showcase">Download Subtotal Protection Demo (pw: 1234)</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Rules over subtotal rows</strong> - Conditional format (&gt; 2,500), a region dropdown and a Units validation also run over the subtotal rows</p>
+    <a href="/showcase/subtotal-rules" target="_blank"><button class="showcase">Download Subtotal Rules Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Workbook</strong> - A sheet with subtotals next to a plain sheet of the same data in one <code>ExcelWorkbook</code></p>
+    <a href="/showcase/subtotal-workbook" target="_blank"><button class="showcase">Download Subtotal Workbook Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Product data</strong> - Random products sorted by category, subtotal of price and quantity per category</p>
+    <a href="/showcase/subtotal-products" target="_blank"><button class="showcase">Download Subtotal Products Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Unsorted input (contract)</strong> - The rows are not sorted by the key, so every run gets its own subtotal: sort the data by the key first</p>
+    <a href="/showcase/subtotal-unsorted" target="_blank"><button class="showcase">Download Subtotal Unsorted Demo</button></a>
+</div>
+
+<div class="section">
+    <p><strong>Refused combination</strong> - <code>table(...)</code>, <code>chart(...)</code> and <code>namedRange(...)</code> cannot be combined with subtotals: shows the error message</p>
+    <a href="/showcase/subtotal-rejected" target="_blank"><button class="showcase">Show the refusal (table + subtotal)</button></a>
+</div>
+
+<hr>
+<!-- ============================== -->
 <h2>Showcase (New Features)</h2>
 
 <div class="section">
