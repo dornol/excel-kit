@@ -208,4 +208,42 @@ class DependentDropdownTest {
             assertTrue(tooMany.getMessage().contains("columns"));
         }
     }
+
+    @Nested
+    class Limits {
+        @Test
+        void moreOptionsThanASheetHasRowsAreRejectedAndTheLimitIsExact() {
+            int max = 1_048_575; // the rows below the header
+            var c = new ColumnStyleConfig.DefaultStyleConfig<Row>();
+            assertDoesNotThrow(() -> c.dependentDropdown("P", Map.of("a", java.util.Collections.nCopies(max, "x"))));
+            var e = assertThrows(IllegalArgumentException.class,
+                    () -> c.dependentDropdown("P", Map.of("a", java.util.Collections.nCopies(max + 1, "x"))));
+            assertTrue(e.getMessage().contains("options"), e.getMessage());
+        }
+
+        @Test
+        void aNullOptionOrAnEmptyListIsRejected() {
+            var c = new ColumnStyleConfig.DefaultStyleConfig<Row>();
+            assertThrows(NullPointerException.class,
+                    () -> c.dependentDropdown("P", Map.of("a", java.util.Arrays.asList("x", null))));
+            assertThrows(IllegalArgumentException.class, () -> c.dependentDropdown("P", Map.of("a", List.of())));
+        }
+
+        @Test
+        void theParentValuesKeepTheOrderGiven() throws IOException {
+            var ordered = new LinkedHashMap<String, List<String>>();
+            for (String key : List.of("z", "m", "a")) ordered.put(key, List.of("1"));
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Row>create()
+                    .column("Category", Row::category)
+                    .column("Item", Row::item, c -> c.dependentDropdown("Category", ordered))
+                    .write(Stream.of(new Row("z", "1"))).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                var header = wb.getSheet("_excelkit_dep_1").getRow(0);
+                assertEquals("z", header.getCell(0).getStringCellValue());
+                assertEquals("m", header.getCell(1).getStringCellValue());
+                assertEquals("a", header.getCell(2).getStringCellValue());
+            }
+        }
+    }
 }

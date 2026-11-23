@@ -153,4 +153,70 @@ class MergeSameValuesTest {
             }
         }
     }
+
+    @Nested
+    class Interactions {
+        @Test
+        void blankTextEndsARunLikeNull() throws IOException {
+            var rows = List.of(new Emp("A", "x", "1"), new Emp("A", "x", "2"), new Emp("", "x", "3"),
+                    new Emp("  ", "x", "4"), new Emp("A", "x", "5"), new Emp("A", "x", "6"));
+            assertEquals(List.of("A2:A3", "A6:A7", "B2:B3", "B6:B7"), regions(bytes(writer().write(rows)), 0));
+        }
+
+        @Test
+        void theRegionsFollowAPreambleAGroupHeaderAndStayAboveTheSummary() throws IOException {
+            var rows = List.of(new Emp("A", "x", "1"), new Emp("A", "x", "2"), new Emp("A", "x", "3"),
+                    new Emp("B", "y", "4"), new Emp("B", "y", "5"));
+            var file = bytes(ExcelWriter.<Emp>create()
+                    .beforeHeader(ctx -> {
+                        ctx.getSheet().createRow(0).createCell(0).setCellValue("Title");
+                        return 2;
+                    })
+                    .column("Dept", Emp::dept, c -> c.mergeSameValues().group("G"))
+                    .column("Name", Emp::name, c -> c.group("G"))
+                    .summary(s -> s.label("Total").count("Name"))
+                    .write(rows));
+            // row 1 title, row 3 group header, row 4 names, data on rows 5-9, the summary below
+            var dataRegions = regions(file, 0).stream().filter(r -> r.startsWith("A") && !r.equals("A3:B3")).toList();
+            assertEquals(List.of("A5:A7", "A8:A9"), dataRegions);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(file))) {
+                var sheet = wb.getSheetAt(0);
+                assertEquals("Dept", sheet.getRow(3).getCell(0).getStringCellValue());
+                assertEquals("A", sheet.getRow(4).getCell(0).getStringCellValue());
+                for (var region : sheet.getMergedRegions()) {
+                    if (region.getFirstColumn() == 0 && region.getFirstRow() >= 4) {
+                        assertTrue(region.getLastRow() <= 8, "no region reaches the summary: " + region.formatAsString());
+                    }
+                }
+            }
+        }
+
+        @Test
+        void theRowCallbackOverloadMergesToo() throws IOException {
+            var rows = List.of(new Emp("A", "x", "1"), new Emp("A", "x", "2"));
+            var seen = new ArrayList<String>();
+            var out = new ByteArrayOutputStream();
+            writer().write(rows.stream(), (row, cursor) -> seen.add(row.name())).writeTo(out);
+            assertEquals(List.of("1", "2"), seen);
+            assertEquals(List.of("A2:A3", "B2:B3"), regions(out.toByteArray(), 0));
+        }
+
+        @Test
+        void aMergeColumnToTheRightMergesAloneWhenTheLeftOneDoesNot() throws IOException {
+            var rows = List.of(new Emp("A", "x", "1"), new Emp("B", "x", "2"), new Emp("C", "x", "3"));
+            var file = bytes(ExcelWriter.<Emp>create()
+                    .column("Dept", Emp::dept)
+                    .column("Team", Emp::team, c -> c.mergeSameValues())
+                    .write(rows));
+            assertEquals(List.of("B2:B4"), regions(file, 0), "no merge column on its left, so it runs freely");
+        }
+
+        @Test
+        void aDefaultStyleCanTurnItOnForEveryColumn() throws IOException {
+            var rows = List.of(new Emp("A", "x", "1"), new Emp("A", "x", "2"));
+            var file = bytes(ExcelWriter.<Emp>create().defaultStyle(d -> d.mergeSameValues())
+                    .column("Dept", Emp::dept).column("Team", Emp::team).write(rows));
+            assertEquals(List.of("A2:A3", "B2:B3"), regions(file, 0));
+        }
+    }
 }

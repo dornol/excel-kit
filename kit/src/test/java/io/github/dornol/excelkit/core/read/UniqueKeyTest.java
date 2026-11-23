@@ -224,4 +224,97 @@ class UniqueKeyTest {
             assertDoesNotThrow(() -> reader.uniqueKey("A").uniqueKey());
         }
     }
+
+    @Nested
+    class Reading {
+        private byte[] twoSheets() throws IOException {
+            try (var wb = new XSSFWorkbook(); var out = new ByteArrayOutputStream()) {
+                for (String name : new String[]{"First", "Second"}) {
+                    var sheet = wb.createSheet(name);
+                    sheet.createRow(0).createCell(0).setCellValue("ID");
+                    sheet.createRow(1).createCell(0).setCellValue("1");
+                    sheet.createRow(2).createCell(0).setCellValue(name.equals("Second") ? "1" : "2");
+                }
+                wb.write(out);
+                return out.toByteArray();
+            }
+        }
+
+        @Test
+        void theHeadersAreMatchedLikeOtherHeadersThroughTheNormalizer() throws IOException {
+            var out = new ByteArrayOutputStream();
+            try (var wb = new XSSFWorkbook()) {
+                var sheet = wb.createSheet("S");
+                sheet.createRow(0).createCell(0).setCellValue("  Emp ID ");
+                sheet.createRow(1).createCell(0).setCellValue("7");
+                sheet.createRow(2).createCell(0).setCellValue("7");
+                wb.write(out);
+            }
+            var results = new ArrayList<ReadResult<Emp>>();
+            ExcelReader.setter(Emp::new).headerNormalizer(h -> h.trim().toLowerCase())
+                    .column("emp id", (e, c) -> e.id = c.asString())
+                    .uniqueKey("EMP ID")
+                    .read(new ByteArrayInputStream(out.toByteArray()), results::add);
+            assertEquals(List.of(true, false), results.stream().map(r -> r.success()).toList());
+        }
+
+        @Test
+        void onlyTheSelectedSheetIsRead() throws IOException {
+            var results = new ArrayList<ReadResult<Emp>>();
+            ExcelReader.setter(Emp::new).column("ID", (e, c) -> e.id = c.asString()).sheetIndex(1).uniqueKey("ID")
+                    .read(new ByteArrayInputStream(twoSheets()), results::add);
+            assertEquals(List.of(true, false), results.stream().map(r -> r.success()).toList());
+        }
+
+        @Test
+        void eachSheetOfAWorkbookReaderKeepsItsOwnKeys() throws IOException {
+            var first = new ArrayList<ReadResult<Emp>>();
+            var second = new ArrayList<ReadResult<Emp>>();
+            io.github.dornol.excelkit.excel.read.ExcelWorkbookReader.create()
+                    .sheet("First", ExcelReader.setter(Emp::new).column("ID", (e, c) -> e.id = c.asString()).uniqueKey("ID"), first::add)
+                    .sheet("Second", ExcelReader.setter(Emp::new).column("ID", (e, c) -> e.id = c.asString()).uniqueKey("ID"), second::add)
+                    .read(new ByteArrayInputStream(twoSheets()));
+            assertEquals(List.of(true, true), first.stream().map(r -> r.success()).toList(), "1 and 2");
+            assertEquals(List.of(true, false), second.stream().map(r -> r.success()).toList(),
+                    "1 and 1; the 1 of the first sheet does not count");
+        }
+
+        @Test
+        void theFileRowNumbersFollowAHeaderThatIsNotOnTheFirstRow() throws IOException {
+            var out = new ByteArrayOutputStream();
+            try (var wb = new XSSFWorkbook()) {
+                var sheet = wb.createSheet("S");
+                sheet.createRow(0).createCell(0).setCellValue("Report title");
+                sheet.createRow(2).createCell(0).setCellValue("ID");
+                sheet.createRow(3).createCell(0).setCellValue("9");
+                sheet.createRow(4).createCell(0).setCellValue("8");
+                sheet.createRow(5).createCell(0).setCellValue("9");
+                wb.write(out);
+            }
+            var results = new ArrayList<ReadResult<Emp>>();
+            ExcelReader.setter(Emp::new).headerRowIndex(2).column("ID", (e, c) -> e.id = c.asString()).uniqueKey("ID")
+                    .read(new ByteArrayInputStream(out.toByteArray()), results::add);
+            assertEquals(3, results.size());
+            assertEquals("Duplicate key [ID=9]; first seen at row 4", results.get(2).messages().get(0));
+            assertEquals(6, results.get(2).fileRowNum());
+        }
+
+        @Test
+        void blankRowsSkippedByTheReaderDoNotTakePartInTheKeys() throws IOException {
+            var csv = "ID,Name\n1,a\n,\n,\n2,b\n";
+            var results = new ArrayList<ReadResult<Emp>>();
+            CsvReader.setter(Emp::new).skipBlankRows().column("ID", (e, c) -> e.id = c.asString()).uniqueKey("ID")
+                    .read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), results::add);
+            assertEquals(List.of(true, true), results.stream().map(r -> r.success()).toList());
+        }
+
+        @Test
+        void theSplitCallbacksSeeNoDuplicateOnASuccessAndTheSummaryCountsIt() throws IOException {
+            var summary = excelReader().uniqueKey("ID").readWithSummary(new ByteArrayInputStream(excel(
+                    new String[]{"A", "1", "x"}, new String[]{"A", "1", "y"}, new String[]{"A", "2", "z"})), r -> { });
+            assertEquals(3, summary.totalRows());
+            assertEquals(2, summary.successRows());
+            assertEquals(1, summary.errorRows());
+        }
+    }
 }

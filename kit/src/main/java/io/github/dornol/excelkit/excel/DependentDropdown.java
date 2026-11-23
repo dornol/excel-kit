@@ -52,9 +52,9 @@ record DependentDropdown(String parentColumn, Map<String, List<String>> options)
             if (children.isEmpty()) {
                 throw new IllegalArgumentException("Parent value '" + key + "' needs at least one option");
             }
-            if (children.size() > ExcelLimits.EXCEL_MAX_ROWS - 1) {
+            if (children.size() > ExcelLimits.EXCEL_MAX_ROWS) {
                 throw new IllegalArgumentException("Parent value '" + key + "' has " + children.size()
-                        + " options; a sheet has at most " + (ExcelLimits.EXCEL_MAX_ROWS - 1) + " rows below the header");
+                        + " options; a sheet has at most " + ExcelLimits.EXCEL_MAX_ROWS + " rows below the header");
             }
             var childCopy = new ArrayList<String>(children.size());
             for (String child : children) {

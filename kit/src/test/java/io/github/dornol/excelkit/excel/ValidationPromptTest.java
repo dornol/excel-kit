@@ -67,4 +67,26 @@ class ValidationPromptTest {
             assertFalse(write(ExcelValidation.integerBetween(1, 150).allowBlank(false)).getEmptyCellAllowed());
         }
     }
+
+    @Nested
+    class MoreCases {
+        @Test
+        void aTitleAloneIsEnoughAndNullClearsTheTooltip() throws IOException {
+            var v = write(ExcelValidation.integerBetween(1, 150).inputTitle("Only a title"));
+            assertTrue(v.getShowPromptBox());
+            assertEquals("Only a title", v.getPromptBoxTitle());
+
+            var cleared = write(ExcelValidation.integerBetween(1, 150).inputTitle("t").inputMessage("m")
+                    .inputTitle(null).inputMessage(null));
+            assertFalse(cleared.getShowPromptBox());
+        }
+
+        @Test
+        void theErrorBoxAndTheTooltipAreIndependent() throws IOException {
+            var v = write(ExcelValidation.integerBetween(1, 150).inputMessage("hint").errorTitle("Oops").errorMessage("Out of range"));
+            assertEquals("hint", v.getPromptBoxText());
+            assertEquals("Oops", v.getErrorBoxTitle());
+            assertEquals("Out of range", v.getErrorBoxText());
+        }
+    }
 }

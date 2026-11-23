@@ -120,4 +120,27 @@ class SheetVisibilityZoomTest {
             assertDoesNotThrow(() -> zoom.accept(400));
         }
     }
+
+    @Nested
+    class MoreCases {
+        @Test
+        void aWorkbookWithoutSheetsIsNotRejectedForHavingNoVisibleSheet() throws IOException {
+            try (var workbook = ExcelWorkbook.create()) {
+                assertDoesNotThrow(workbook::finish);
+            }
+        }
+
+        @Test
+        void aHiddenSheetAfterTheVisibleOneKeepsTheFirstAsTheActiveSheet() throws IOException {
+            try (var workbook = ExcelWorkbook.create()) {
+                sheet(workbook, "Main").write(Stream.of("a"));
+                sheet(workbook, "Codes").hideSheet().write(Stream.of("x"));
+                try (var wb = open(workbook.finish())) {
+                    assertEquals(0, wb.getActiveSheetIndex());
+                    assertTrue(wb.getSheetAt(0).isSelected());
+                    assertFalse(wb.getSheetAt(1).isSelected());
+                }
+            }
+        }
+    }
 }

@@ -127,4 +127,50 @@ class StripedRowsTest {
             assertThrows(NullPointerException.class, () -> ExcelWriter.<Integer>create().stripedRows(null));
         }
     }
+
+    @Nested
+    class MoreCases {
+        @Test
+        void aRowStyleBackgroundWinsOverTheStripe() throws IOException {
+            try (var wb = open(ExcelWriter.<Integer>create().column("N", n -> n)
+                    .rowStyle(n -> n == 1 || n == 2, s -> s.backgroundColor(ExcelColor.LIGHT_GREEN))
+                    .stripedRows().write(rows(4)))) {
+                var fill = fills(wb, 0);
+                assertEquals("-", fill.get(0));
+                assertNotEquals("F2F2F2", fill.get(1), "row 1 is a stripe row but its rowStyle wins");
+                assertNotEquals("-", fill.get(1));
+                assertNotEquals("F2F2F2", fill.get(2), "row 2 has the rowStyle color");
+                assertEquals("F2F2F2", fill.get(3));
+            }
+        }
+
+        @Test
+        void theRowCallbackOverloadStripesToo() throws IOException {
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Integer>create().column("N", n -> n).stripedRows()
+                    .write(rows(3).stream(), (row, cursor) -> { }).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                assertEquals(List.of("-", "F2F2F2", "-"), fills(wb, 0));
+            }
+        }
+
+        @Test
+        void stripesDoNotColorTheSummaryRows() throws IOException {
+            try (var wb = open(ExcelWriter.<Integer>create().column("N", n -> n, c -> c.type(ExcelDataType.INTEGER))
+                    .stripedRows().summary(s -> s.sum("N")).write(rows(4)))) {
+                var sheet = wb.getSheetAt(0);
+                for (int r = 5; r <= sheet.getLastRowNum(); r++) {
+                    if (sheet.getRow(r) == null || sheet.getRow(r).getCell(0) == null) continue;
+                    assertNotEquals("F2F2F2", fill((XSSFCell) sheet.getRow(r).getCell(0)), "row " + r + " is below the data");
+                }
+            }
+        }
+
+        private String fill(XSSFCell cell) {
+            var style = cell.getCellStyle();
+            if (style.getFillPattern() != FillPatternType.SOLID_FOREGROUND) return "-";
+            byte[] rgb = style.getFillForegroundColorColor().getRGB();
+            return String.format("%02X%02X%02X", rgb[0] & 0xFF, rgb[1] & 0xFF, rgb[2] & 0xFF);
+        }
+    }
 }

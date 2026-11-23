@@ -140,4 +140,38 @@ class RequiredMarkTest {
             }
         }
     }
+
+    @Nested
+    class MoreCases {
+        @Test
+        void aTableHeaderKeepsTheColumnNameAndTheMark() throws IOException {
+            var file = bytes(ExcelWriter.<Person>create().table("People")
+                    .column("Name", Person::getName, c -> c.requiredMark())
+                    .column("Age", Person::getAge)
+                    .write(Stream.of(person("Ann", 30))));
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(file))) {
+                var sheet = wb.getSheetAt(0);
+                assertEquals("Name", sheet.getRow(0).getCell(0).getStringCellValue());
+                assertEquals(MARK, sheet.getRow(0).getCell(0).getCellStyle().getDataFormatString());
+                var table = sheet.getTables().get(0);
+                assertEquals("Name", table.getCTTable().getTableColumns().getTableColumnArray(0).getName(),
+                        "the table column name is the plain name, as Excel requires of the header cell");
+            }
+        }
+
+        @Test
+        void aColumnWithItsOwnHeaderColorsKeepsThemWithTheMark() throws IOException {
+            var file = bytes(ExcelWriter.<Person>create()
+                    .column("Name", Person::getName, c -> c.requiredMark()
+                            .headerBackgroundColor(io.github.dornol.excelkit.excel.style.ExcelColor.LIGHT_YELLOW)
+                            .headerFontColor(io.github.dornol.excelkit.excel.style.ExcelColor.RED))
+                    .write(Stream.of(person("Ann", 30))));
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(file))) {
+                var style = wb.getSheetAt(0).getRow(0).getCell(0).getCellStyle();
+                assertEquals(MARK, style.getDataFormatString());
+                assertEquals(255, style.getFillForegroundColorColor().getRGB()[0] & 0xFF);
+                assertEquals(255, ((org.apache.poi.xssf.usermodel.XSSFFont) style.getFont()).getXSSFColor().getRGB()[0] & 0xFF);
+            }
+        }
+    }
 }

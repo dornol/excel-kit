@@ -138,4 +138,48 @@ class PageBreakTest {
     private static final class OutputStreamNull {
         static final java.io.OutputStream INSTANCE = java.io.OutputStream.nullOutputStream();
     }
+
+    @Nested
+    class Positions {
+        @Test
+        void rowBreakEveryCountsFromTheHeaderRowNotFromTheTopOfTheSheet() throws IOException {
+            // a preamble row and a header: the header is row index 2, so the data starts at 3 and breaks fall at 6 and 9
+            try (var wb = open(ExcelWriter.<Emp>create()
+                    .beforeHeader(ctx -> { ctx.getSheet().createRow(0).createCell(0).setCellValue("Title"); return 2; })
+                    .column("No", Emp::no).printSetup(p -> p.rowBreakEvery(3)).write(emps("a", 8)))) {
+                assertArrayEquals(new int[]{6, 9}, wb.getSheetAt(0).getRowBreaks());
+            }
+        }
+
+        @Test
+        void noBreakFallsOnTheSummaryRowsBelowTheData() throws IOException {
+            // header 0, data 1-6, summary below: a break every 3 rows would be above row 4 and above row 7 (the summary)
+            try (var wb = open(ExcelWriter.<Emp>create().column("No", Emp::no, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s.sum("No")).printSetup(p -> p.rowBreakEvery(3)).write(emps("a", 6)))) {
+                assertArrayEquals(new int[]{4}, wb.getSheetAt(0).getRowBreaks());
+            }
+        }
+
+        @Test
+        void theRowCallbackOverloadBreaksToo() throws IOException {
+            var rows = new ArrayList<Emp>(emps("a", 2));
+            rows.addAll(emps("b", 2));
+            var out = new ByteArrayOutputStream();
+            ExcelWriter.<Emp>create().column("Dept", Emp::dept).pageBreakOnChange(Emp::dept)
+                    .write(rows.stream(), (row, cursor) -> { }).writeTo(out);
+            try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
+                assertArrayEquals(new int[]{3}, wb.getSheetAt(0).getRowBreaks());
+            }
+        }
+
+        @Test
+        void theLastPageBreakingRuleWinsWhenSetTwice() throws IOException {
+            var rows = new ArrayList<Emp>(emps("a", 2));
+            rows.addAll(emps("b", 2));
+            try (var wb = open(ExcelWriter.<Emp>create().column("Dept", Emp::dept)
+                    .pageBreakOnChange(Emp::dept).pageBreakWhen((p, c) -> false).write(rows))) {
+                assertEquals(0, wb.getSheetAt(0).getRowBreaks().length);
+            }
+        }
+    }
 }

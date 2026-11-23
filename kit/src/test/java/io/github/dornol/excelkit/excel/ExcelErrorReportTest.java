@@ -174,4 +174,46 @@ class ExcelErrorReportTest {
             assertThrows(NullPointerException.class, () -> report.errorColor(null));
         }
     }
+
+    @Nested
+    class MoreCases {
+        @Test
+        void writesTheErrorsOfAReadReportInOrder() throws IOException {
+            var errors = List.of(
+                    error(3, List.of("first"), List.of(), List.of("a")),
+                    error(9, List.of("second"), List.of(), List.of("b")));
+            var report = new io.github.dornol.excelkit.core.read.ReadReport(
+                    new io.github.dornol.excelkit.core.read.ReadSummary(10, 8, 2, false, java.time.Duration.ZERO), errors, true);
+            try (var wb = open(ExcelErrorReport.create(List.of("A")).write(report))) {
+                var sheet = wb.getSheet("Errors");
+                assertEquals(3, sheet.getPhysicalNumberOfRows(), "header and the two errors the report kept");
+                assertEquals(3, (long) sheet.getRow(1).getCell(0).getNumericCellValue());
+                assertEquals("second", sheet.getRow(2).getCell(2).getStringCellValue());
+            }
+        }
+
+        @Test
+        void aNullHeaderIsNamedByItsPosition() throws IOException {
+            try (var wb = open(ExcelErrorReport.create(java.util.Arrays.asList("Name", null)).write(List.<RowError>of()))) {
+                var header = wb.getSheet("Errors").getRow(0);
+                assertEquals("Column 2", header.getCell(2).getStringCellValue());
+            }
+        }
+
+        @Test
+        void aCellMessageWithoutAHeaderIsWrittenBare() throws IOException {
+            var errors = List.of(error(2, List.of(), List.of(new CellError(0, null, "x", "bad value"),
+                    new CellError(1, "Age", "y", "not a number")), List.of("x", "y")));
+            try (var wb = open(ExcelErrorReport.create(List.of("A", "Age")).write(errors))) {
+                assertEquals("bad value\nAge: not a number", wb.getSheet("Errors").getRow(1).getCell(3).getStringCellValue());
+            }
+        }
+
+        @Test
+        void aReportWithoutErrorsHoldsOnlyTheHeader() throws IOException {
+            try (var wb = open(ExcelErrorReport.create(List.of("A")).write(List.<RowError>of()))) {
+                assertEquals(1, wb.getSheet("Errors").getPhysicalNumberOfRows());
+            }
+        }
+    }
 }
