@@ -163,4 +163,83 @@ class FillMergedCellsTest {
             }
         }
     }
+
+    @Nested
+    class Horizontal {
+        @Test
+        void aRegionOverTwoColumnsOfOneRowGivesBothTheValue() throws IOException {
+            try (var wb = new XSSFWorkbook(); var out = new ByteArrayOutputStream()) {
+                var sheet = wb.createSheet("S");
+                sheet.createRow(0).createCell(0).setCellValue("Dept");
+                sheet.getRow(0).createCell(1).setCellValue("Name");
+                sheet.getRow(0).createCell(2).setCellValue("Note");
+                var row = sheet.createRow(1);
+                row.createCell(0).setCellValue("Sales");      // merged over A2:B2: B2 holds nothing
+                row.createCell(2).setCellValue("n");
+                sheet.addMergedRegion(CellRangeAddress.valueOf("A2:B2"));
+                wb.write(out);
+                var results = new ArrayList<String>();
+                ExcelReader.setter(Row::new)
+                        .column((r, c) -> r.dept = c.asString())
+                        .column((r, c) -> r.name = c.asString())
+                        .fillMergedCells()
+                        .read(new ByteArrayInputStream(out.toByteArray()), r -> results.add(r.data().dept + "|" + r.data().name));
+                assertEquals(List.of("Sales|Sales"), results);
+            }
+        }
+    }
+
+    @Nested
+    class Numbers {
+        static class Amount {
+            java.math.BigDecimal raw;
+            String shown;
+        }
+
+        @Test
+        void aMergedNumberKeepsItsStoredValueNotJustTheDisplayedText() throws IOException {
+            try (var wb = new XSSFWorkbook(); var out = new ByteArrayOutputStream()) {
+                var sheet = wb.createSheet("S");
+                sheet.createRow(0).createCell(0).setCellValue("Amount");
+                var cell = sheet.createRow(1).createCell(0);
+                cell.setCellValue(12.3456);
+                var style = wb.createCellStyle();
+                style.setDataFormat(wb.createDataFormat().getFormat("0.00"));
+                cell.setCellStyle(style);
+                sheet.createRow(2);
+                sheet.getRow(2).createCell(1).setCellValue("x");   // keeps the row in the file
+                sheet.addMergedRegion(CellRangeAddress.valueOf("A2:A3"));
+                wb.write(out);
+                var read = new ArrayList<Amount>();
+                ExcelReader.setter(Amount::new).fillMergedCells()
+                        .column((a, c) -> { a.raw = c.rawNumber(); a.shown = c.formattedValue(); })
+                        .read(new ByteArrayInputStream(out.toByteArray()), r -> read.add(r.data()));
+                assertEquals(2, read.size());
+                for (var a : read) {
+                    assertEquals("12.35", a.shown);
+                    assertEquals(0, new java.math.BigDecimal("12.3456").compareTo(a.raw), "stored value: " + a.raw);
+                }
+            }
+        }
+    }
+
+    @Nested
+    class Limits {
+        @Test
+        void aSheetWithMoreMergedRegionsThanTheLimitIsRefused() throws IOException {
+            try (var wb = new XSSFWorkbook(); var out = new ByteArrayOutputStream()) {
+                var sheet = wb.createSheet("S");
+                sheet.createRow(0).createCell(0).setCellValue("Dept");
+                // the check of addMergedRegion grows with every region; the unsafe variant is what a big file needs
+                for (int i = 0; i <= 200_000; i++) {
+                    sheet.addMergedRegionUnsafe(new CellRangeAddress(i + 1, i + 1, 0, 1));
+                }
+                wb.write(out);
+                var e = assertThrows(RuntimeException.class, () -> reader().fillMergedCells()
+                        .read(new ByteArrayInputStream(out.toByteArray()), r -> { }));
+                assertTrue(String.valueOf(e.getMessage()).contains("200000") || String.valueOf(e.getCause()).contains("200000"),
+                        "the message names the limit: " + e.getMessage());
+            }
+        }
+    }
 }

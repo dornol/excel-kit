@@ -159,8 +159,10 @@ class MergeSameValuesTest {
         @Test
         void blankTextEndsARunLikeNull() throws IOException {
             var rows = List.of(new Emp("A", "x", "1"), new Emp("A", "x", "2"), new Emp("", "x", "3"),
-                    new Emp("  ", "x", "4"), new Emp("A", "x", "5"), new Emp("A", "x", "6"));
-            assertEquals(List.of("A2:A3", "A6:A7", "B2:B3", "B6:B7"), regions(bytes(writer().write(rows)), 0));
+                    new Emp("", "x", "4"), new Emp(" ", "x", "5"), new Emp(" ", "x", "6"),
+                    new Emp("A", "x", "7"), new Emp("A", "x", "8"));
+            assertEquals(List.of("A2:A3", "A8:A9", "B2:B3", "B8:B9"), regions(bytes(writer().write(rows)), 0),
+                    "equal empty or blank values are not merged");
         }
 
         @Test
@@ -217,6 +219,24 @@ class MergeSameValuesTest {
             var file = bytes(ExcelWriter.<Emp>create().defaultStyle(d -> d.mergeSameValues())
                     .column("Dept", Emp::dept).column("Team", Emp::team).write(rows));
             assertEquals(List.of("A2:A3", "B2:B3"), regions(file, 0));
+        }
+    }
+
+    @Nested
+    class WorkbookSheets {
+        @Test
+        void aRolledOverWorkbookSheetStartsItsRunsAgainAndClosesThemAtTheEnd() throws IOException {
+            try (var workbook = ExcelWorkbook.create()) {
+                var rows = new ArrayList<Emp>();
+                for (int i = 0; i < 6; i++) rows.add(new Emp("Sales", "East", "n" + i));
+                workbook.<Emp>sheet("S").maxRows(4)
+                        .column("Dept", Emp::dept, c -> c.mergeSameValues())
+                        .column("Name", Emp::name)
+                        .write(rows.stream());
+                var file = bytes(workbook.finish());
+                assertEquals(List.of("A2:A5"), regions(file, 0));
+                assertEquals(List.of("A2:A3"), regions(file, 1));
+            }
         }
     }
 }

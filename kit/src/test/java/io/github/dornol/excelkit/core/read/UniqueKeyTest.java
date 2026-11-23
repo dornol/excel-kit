@@ -317,4 +317,14 @@ class UniqueKeyTest {
             assertEquals(1, summary.errorRows());
         }
     }
+
+    @Nested
+    class Composite {
+        @Test
+        void keysThatOnlyLookAlikeWhenJoinedAreNotDuplicates() throws IOException {
+            var results = read(excelReader().uniqueKey("Dept", "ID"), excel(
+                    new String[]{"ab", "c", "1"}, new String[]{"a", "bc", "2"}, new String[]{"ab", "c", "3"}));
+            assertEquals(List.of(true, true, false), results.stream().map(r -> r.success()).toList());
+        }
+    }
 }
