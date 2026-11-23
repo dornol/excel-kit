@@ -36,7 +36,7 @@ class PageBreakTest {
             try (var wb = open(ExcelWriter.<Emp>create().column("No", Emp::no)
                     .printSetup(p -> p.rowBreakEvery(3))
                     .write(emps("a", 10)))) {
-                assertArrayEquals(new int[]{4, 7, 10}, wb.getSheetAt(0).getRowBreaks());
+                assertArrayEquals(new int[]{3, 6, 9}, wb.getSheetAt(0).getRowBreaks());
             }
         }
 
@@ -53,7 +53,7 @@ class PageBreakTest {
             try (var wb = open(ExcelWriter.<Emp>create().maxRows(4).column("No", Emp::no)
                     .printSetup(p -> p.rowBreakEvery(2)).write(emps("a", 8)))) {
                 assertEquals(2, wb.getNumberOfSheets());
-                for (int i = 0; i < 2; i++) assertArrayEquals(new int[]{3}, wb.getSheetAt(i).getRowBreaks(), "sheet " + i);
+                for (int i = 0; i < 2; i++) assertArrayEquals(new int[]{2}, wb.getSheetAt(i).getRowBreaks(), "sheet " + i);
             }
         }
 
@@ -79,7 +79,7 @@ class PageBreakTest {
             rows.addAll(emps("c", 1));   // row 6
             try (var wb = open(ExcelWriter.<Emp>create().column("Dept", Emp::dept)
                     .pageBreakOnChange(Emp::dept).write(rows))) {
-                assertArrayEquals(new int[]{4, 6}, wb.getSheetAt(0).getRowBreaks());
+                assertArrayEquals(new int[]{3, 5}, wb.getSheetAt(0).getRowBreaks());
             }
         }
 
@@ -103,7 +103,7 @@ class PageBreakTest {
                 rows.addAll(emps("b", 2));
                 workbook.<Emp>sheet("S").column("Dept", Emp::dept).pageBreakOnChange(Emp::dept).write(rows);
                 try (var wb = open(workbook.finish())) {
-                    assertArrayEquals(new int[]{3}, wb.getSheetAt(0).getRowBreaks());
+                    assertArrayEquals(new int[]{2}, wb.getSheetAt(0).getRowBreaks());
                 }
             }
         }
@@ -114,7 +114,7 @@ class PageBreakTest {
             rows.addAll(emps("b", 3));   // data rows 1..6; the key changes above row 4; every 3 rows also breaks above 4
             try (var wb = open(ExcelWriter.<Emp>create().column("Dept", Emp::dept)
                     .printSetup(p -> p.rowBreakEvery(3)).pageBreakOnChange(Emp::dept).write(rows))) {
-                assertArrayEquals(new int[]{4}, wb.getSheetAt(0).getRowBreaks());
+                assertArrayEquals(new int[]{3}, wb.getSheetAt(0).getRowBreaks());
             }
         }
 
@@ -147,7 +147,7 @@ class PageBreakTest {
             try (var wb = open(ExcelWriter.<Emp>create()
                     .beforeHeader(ctx -> { ctx.getSheet().createRow(0).createCell(0).setCellValue("Title"); return 2; })
                     .column("No", Emp::no).printSetup(p -> p.rowBreakEvery(3)).write(emps("a", 8)))) {
-                assertArrayEquals(new int[]{6, 9}, wb.getSheetAt(0).getRowBreaks());
+                assertArrayEquals(new int[]{5, 8}, wb.getSheetAt(0).getRowBreaks());
             }
         }
 
@@ -156,7 +156,7 @@ class PageBreakTest {
             // header 0, data 1-6, summary below: a break every 3 rows would be above row 4 and above row 7 (the summary)
             try (var wb = open(ExcelWriter.<Emp>create().column("No", Emp::no, c -> c.type(ExcelDataType.INTEGER))
                     .summary(s -> s.sum("No")).printSetup(p -> p.rowBreakEvery(3)).write(emps("a", 6)))) {
-                assertArrayEquals(new int[]{4}, wb.getSheetAt(0).getRowBreaks());
+                assertArrayEquals(new int[]{3}, wb.getSheetAt(0).getRowBreaks());
             }
         }
 
@@ -168,7 +168,7 @@ class PageBreakTest {
             ExcelWriter.<Emp>create().column("Dept", Emp::dept).pageBreakOnChange(Emp::dept)
                     .write(rows.stream(), (row, cursor) -> { }).writeTo(out);
             try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
-                assertArrayEquals(new int[]{3}, wb.getSheetAt(0).getRowBreaks());
+                assertArrayEquals(new int[]{2}, wb.getSheetAt(0).getRowBreaks());
             }
         }
 
@@ -179,6 +179,35 @@ class PageBreakTest {
             try (var wb = open(ExcelWriter.<Emp>create().column("Dept", Emp::dept)
                     .pageBreakOnChange(Emp::dept).pageBreakWhen((p, c) -> false).write(rows))) {
                 assertEquals(0, wb.getSheetAt(0).getRowBreaks().length);
+            }
+        }
+    }
+
+    @Nested
+    class WhereThePageStarts {
+        /**
+         * What Excel reports (checked on a real Excel with sample 21): the break is stored below the last row of a page,
+         * so the file holds 1-based row numbers of the LAST row of each page, 5 and 8 for pages that start on rows 6 and 9.
+         */
+        @Test
+        void aBreakIsStoredBelowTheLastRowOfAPage() throws IOException {
+            try (var wb = open(ExcelWriter.<Emp>create().column("No", Emp::no)
+                    .printSetup(p -> p.rowBreakEvery(4)).write(emps("a", 9)))) {
+                var breaks = wb.getSheetAt(0).getCTWorksheet().getRowBreaks().getBrkArray();
+                // header row 1 + 4 data rows = rows 1-5 on page 1, rows 6-9 on page 2: the first page ends on row 5
+                assertEquals(List.of(5L, 9L), java.util.Arrays.stream(breaks).map(b -> b.getId()).toList());
+            }
+        }
+
+        @Test
+        void aDataBreakIsStoredBelowTheLastRowOfTheGroupAbove() throws IOException {
+            var rows = new ArrayList<Emp>(emps("a", 3));    // Excel rows 2-4
+            rows.addAll(emps("b", 2));                      // Excel rows 5-6
+            try (var wb = open(ExcelWriter.<Emp>create().column("Dept", Emp::dept)
+                    .pageBreakOnChange(Emp::dept).write(rows))) {
+                var breaks = wb.getSheetAt(0).getCTWorksheet().getRowBreaks().getBrkArray();
+                assertEquals(List.of(4L), java.util.Arrays.stream(breaks).map(b -> b.getId()).toList(),
+                        "group a ends on row 4: the break is stored as 4 and the next page starts on row 5");
             }
         }
     }

@@ -29,7 +29,7 @@ final class PageBreakTracker<T> {
             previous = null;
         }
         T before = previous;
-        if (before != null && when.test(before, row)) sheet.setRowBreak(rowIndex);
+        if (before != null && when.test(before, row)) sheet.setRowBreak(rowIndex - 1); // POI breaks below the row it is given: below the row before this one
         previous = row;
     }
 }

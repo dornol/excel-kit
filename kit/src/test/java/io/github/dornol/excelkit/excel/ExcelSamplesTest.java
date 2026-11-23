@@ -327,9 +327,10 @@ class ExcelSamplesTest {
     @Test
     void thePageBreakSampleBreaksWhereTheManifestSays() throws Exception {
         try (XSSFWorkbook wb = open("21-page-breaks.xlsx")) {
-            // a break id is the 0-based index of the first row of the next page: Excel row = id + 1
-            assertArrayEquals(new int[]{4, 7}, wb.getSheet("EveryThree").getRowBreaks());
-            assertArrayEquals(new int[]{3, 6}, wb.getSheet("ByDept").getRowBreaks());
+            // POI reports the 0-based index of the last row ABOVE a break, so the first row of the next page is
+            // Excel row (value + 2): {3, 6} are the pages that start on rows 5 and 8, as Excel's HPageBreaks says
+            assertArrayEquals(new int[]{3, 6}, wb.getSheet("EveryThree").getRowBreaks());
+            assertArrayEquals(new int[]{2, 5}, wb.getSheet("ByDept").getRowBreaks());
         }
     }
 

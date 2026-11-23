@@ -395,7 +395,7 @@ public class ExcelPrintSetup {
         if (footerRight != null) sheet.getFooter().setRight(footerRight);
 
         for (int row = headerRowIndex + 1 + rowBreakEvery; rowBreakEvery > 0 && row <= dataEndRow; row += rowBreakEvery) {
-            sheet.setRowBreak(row);
+            sheet.setRowBreak(row - 1); // POI breaks below the row it is given; 'row' is the first row of the new page
         }
 
         if (repeatHeader) {
