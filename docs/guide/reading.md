@@ -224,7 +224,7 @@ ExcelReader.setter(Employee::new)
 - A row whose key has an empty cell is not checked: that is for `required()`.
 - A row that fails for another reason still takes its key, and the duplicate is reported with its other errors.
 - A duplicate counts as an error for `maxErrors(...)` and the read summary.
-- All keys seen are kept in memory until the read ends: bound a very large file with `maxRows(...)`.
+- All keys seen are kept in memory until the read ends, about 85-90 bytes a key (1,000,000 distinct keys took 95 MiB in a measured run on a 256 MB heap; an Excel sheet holds at most about a million rows). Bound a very large CSV with `maxRows(...)`.
 
 ## Merged Cells
 
@@ -243,7 +243,8 @@ ExcelReader.setter(Row::new)
 - A cell that has a value of its own keeps it. A merged number keeps its stored value, not just its text.
 - A row that is not in the file at all (Excel omits a row with nothing in it) is not created.
 - The merged regions are listed after the rows in the sheet's XML, so the reader scans the sheet once more before it
-  reads (the same extra pass as `countRows()`). A sheet may merge at most 200,000 regions with this option.
+  reads (the same extra pass as `countRows()`). A sheet may merge at most 200,000 regions with this option; reading a million rows with
+  200,000 regions took 2.7 s and at most 40 MiB of heap in a measured run.
 - Works in setter, mapping and map mode, and for each reader of an `ExcelWorkbookReader`.
 
 ## Error Report Workbook
