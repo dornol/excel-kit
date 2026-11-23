@@ -82,7 +82,17 @@ final class ExcelSheetPostProcessor {
                 sheet.addValidationData(validation);
             }
             if (column.getValidation() != null) column.getValidation().apply(helper, sheet, i, header);
+            DependentDropdown dependent = column.getDependentDropdown();
+            if (dependent != null) dependent.apply(sheet, i, parentIndex(columns, i, dependent.parentColumn()), header);
         }
+    }
+
+    private static <T> int parentIndex(List<ExcelColumn<T>> columns, int self, String parentColumn) {
+        for (int j = 0; j < columns.size(); j++) {
+            if (j != self && columns.get(j).getName().equals(parentColumn)) return j;
+        }
+        throw new ExcelWriteException("The dependent dropdown of column '" + columns.get(self).getName()
+                + "' names the parent column '" + parentColumn + "', which is not another column of the sheet");
     }
 
     private static <T> void applyColumnHidden(SXSSFSheet sheet, List<ExcelColumn<T>> columns) {

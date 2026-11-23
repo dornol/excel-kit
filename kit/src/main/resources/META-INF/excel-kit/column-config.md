@@ -85,6 +85,7 @@ All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`
 | `.type(ExcelDataType)` | Cell data type |
 | `.format(String)` | Excel number/date format |
 | `.dropdown(String...)` | Dropdown validation options |
+| `.dependentDropdown(String parentColumn, Map<String, List<String>>)` | Dropdown whose options depend on the parent column's value in the same row |
 | `.validation(ExcelValidation)` | Advanced data validation |
 | `.cellColor(CellColorFunction)` | Per-cell conditional background |
 | `.comment(Function<T, String>)` | Per-cell comment/note |

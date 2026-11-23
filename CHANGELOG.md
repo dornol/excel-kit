@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `dependentDropdown(parentColumn, options)` on columns (`ExcelColumnBuilder`, `ColumnConfig`) makes a cascading dropdown: the cell offers the options of the value the parent column holds in the same row (`"A"` → `1, 2, 3`, `"B"` → `4, 5, 6`). The options are written to a hidden helper sheet (`_excelkit_dep_N`, shared by equal option sets, also across rollover sheets) and the column gets a list validation over its data rows. An unknown parent column fails when the sheet is written; combining it with `dropdown(...)` or `validation(...)` on one column is rejected.
+
 ## [0.28.0] - 2026-11-23
 
 ### Added

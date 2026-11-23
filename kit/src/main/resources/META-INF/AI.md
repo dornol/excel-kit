@@ -227,3 +227,11 @@ Spring responses accept an explicit `Duration` for cache max-age through
 For example, `ExcelKitResponse.excel("report", Duration.ofMinutes(1))`
 returns a builder whose `.body(handler::writeTo)` streams the download.
 The default is 10 seconds. Upload helpers use `ExcelKitUpload.excel/csv`.
+
+## Key API Notes (Unreleased) — Dependent dropdown
+
+`c.dependentDropdown("Category", Map.of("A", List.of("1", "2"), "B", List.of("3")))` makes a cascading dropdown:
+the cell offers the options of the value the named parent column holds in the same row. The options go to a hidden
+helper sheet (`_excelkit_dep_N`); equal option sets share one sheet. The parent value is matched as text; use a
+`LinkedHashMap` to keep the parent order. It cannot be combined with `dropdown(...)` or `validation(...)` on the
+same column, and an unknown parent column fails when the sheet is written.

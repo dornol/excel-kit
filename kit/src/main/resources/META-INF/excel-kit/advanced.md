@@ -156,6 +156,9 @@ Also: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights.
 // Dropdown
 .column("Status", p -> p.status(), c -> c.dropdown("Active", "Inactive", "Pending"))
 
+// Dependent dropdown: options follow the parent column's value (hidden helper sheet)
+.column("Item", p -> p.item(), c -> c.dependentDropdown("Category", Map.of("A", List.of("1", "2"), "B", List.of("3"))))
+
 // Advanced validations
 .validation(ExcelValidation.integerBetween(0, 150))
 .validation(ExcelValidation.decimalBetween(0.0, 4.0))

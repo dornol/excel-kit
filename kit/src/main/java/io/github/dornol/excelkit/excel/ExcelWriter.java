@@ -623,18 +623,19 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
         }
 
+        int writtenSheets = wb.getNumberOfSheets();
         applyPostProcessingAllSheets();
         ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
 
         // One chart per sheet over that sheet's own rows: a chart of only the last sheet would plot just the remainder.
         if (options.sheetConfig().chartConfig != null) {
-            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            for (int i = 0; i < writtenSheets; i++) {
                 SXSSFSheet target = wb.getSheetAt(i);
                 ExcelWriteSupport.applyChart(target, options.sheetConfig().chartConfig, execution().headerRow(target),
                         execution().dataEndRow(target), execution().nextFreeRow(target), options.columns().size());
             }
         }
-        applyTables();
+        applyTables(writtenSheets);
     }
 
     /**
@@ -753,7 +754,9 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      * protection, conditional formatting, print setup, tab color) to every sheet.
      */
     private void applyPostProcessingAllSheets() {
-        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+        // post-processing can add a hidden helper sheet (dependent dropdowns); only the sheets written so far are processed
+        int sheets = wb.getNumberOfSheets();
+        for (int i = 0; i < sheets; i++) {
             SXSSFSheet target = wb.getSheetAt(i);
             ExcelWriteOptions<T> options = executionOptions();
             ExcelSheetPostProcessor.apply(target, options.columns(), execution().headerRow(target),
@@ -761,10 +764,9 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         }
     }
 
-    private void applyTables() {
+    private void applyTables(int sheets) {
         TableOptions tableOptions = executionOptions().sheetConfig().tableOptions;
         if (tableOptions == null) return;
-        int sheets = wb.getNumberOfSheets();
         List<String> headers = executionOptions().columns().stream().map(ExcelColumn::getName).toList();
         for (int i = 0; i < sheets; i++) {
             SXSSFSheet target = wb.getSheetAt(i);

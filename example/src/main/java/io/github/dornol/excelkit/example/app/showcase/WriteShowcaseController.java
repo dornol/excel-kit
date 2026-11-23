@@ -345,4 +345,30 @@ public class WriteShowcaseController {
                 .body(handler::writeTo);
     }
 
+    // ========================================================================
+    // Dependent (cascading) dropdown - the options of "Option" follow the "Group" of the same row
+    // ========================================================================
+    private record UploadRow(String group, String option) {}
+
+    @GetMapping("/dependent-dropdown")
+    public ResponseEntity<StreamingResponseBody> downloadDependentDropdown() {
+        // In a real app this map comes from the database
+        var optionsByGroup = new java.util.LinkedHashMap<String, List<String>>();
+        optionsByGroup.put("가", List.of("1", "2", "3"));
+        optionsByGroup.put("나", List.of("4", "5", "6"));
+        optionsByGroup.put("다", List.of("7", "8"));
+
+        var handler = ExcelWriter.<UploadRow>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Upload Form")
+                .freezeRows(1)
+                .column("Group", UploadRow::group, cfg -> cfg
+                        .dropdown(optionsByGroup.keySet().toArray(String[]::new)))
+                .column("Option", UploadRow::option, cfg -> cfg
+                        .dependentDropdown("Group", optionsByGroup))
+                .write(Stream.of(new UploadRow("가", "1"), new UploadRow("나", "5")));
+
+        return ExcelKitResponse.excel("dependent-dropdown")
+                .body(handler::writeTo);
+    }
+
 }

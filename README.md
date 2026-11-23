@@ -296,7 +296,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 | Styling | Row/cell conditional colors (`cellColor`, `rowColor`), conditional row style (`rowStyle`: bold/font/color), borders (per-side), bold, strikethrough, underline; `maxCellStyles(int)` caps the styles those colors may create |
 | Layout | Auto-filter, freeze panes (row + column), multi-level group headers, column outline, hiding |
 | Header | Global/per-column header color, per-column header background, header row height, header style config, group header comments, row-number column |
-| Validation | Dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
+| Validation | Dropdown, dependent (cascading) dropdown, integer/decimal ranges, text length, date ranges, custom formulas |
 | Content | Formulas, hyperlinks, rich text, images (byte[] or URL, custom size), cell comments |
 | Charts | BAR, LINE, PIE, SCATTER, AREA, DOUGHNUT |
 | Protection | Sheet/workbook protection, per-column lock, password encryption (AES-256), `ExcelHandler.isPasswordSet()` to tell whether the writer already set one |

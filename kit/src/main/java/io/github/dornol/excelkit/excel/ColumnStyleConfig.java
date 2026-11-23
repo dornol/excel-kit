@@ -8,6 +8,8 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -75,6 +77,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     private static final int MAX_DROPDOWN_LENGTH = 255;
     String @Nullable [] dropdownOptions;
     @Nullable ExcelValidation validation;
+    @Nullable DependentDropdown dependentDropdown;
     @Nullable Function<T, @Nullable String> commentFunction;
     @Nullable ExcelCellComment headerComment;
     int commentWidth;
@@ -243,6 +246,34 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
                     + " characters (comma-joined); Excel allows at most " + MAX_DROPDOWN_LENGTH);
         }
         this.dropdownOptions = escaped;
+        return self();
+    }
+
+    /**
+     * Makes this column a dropdown whose options depend on the value of another column of the same row:
+     * if the parent column holds {@code "A"} the cell offers the options of {@code "A"}, if it holds {@code "B"}
+     * those of {@code "B"}.
+     * <pre>{@code
+     * .column("Category", Item::category, c -> c.dropdown("A", "B"))
+     * .column("Item", Item::item, c -> c.dependentDropdown("Category", Map.of(
+     *         "A", List.of("1", "2", "3"),
+     *         "B", List.of("4", "5", "6"))))
+     * }</pre>
+     * The options are written to a hidden sheet of the workbook ({@code _excelkit_dep_1}, ...). The parent value is
+     * matched as text, case-insensitively, so write the parent column's values as the map keys; a row whose parent
+     * value is not a key (or is empty) has an empty list. Excel checks a value only when it is typed, so a child
+     * left over after the parent changes is not removed: validate the combination when reading the upload.
+     *
+     * @param parentColumn the name (header) of the parent column; it must be a column of the same sheet other than this one
+     * @param options      the options per parent value, in the order they are offered
+     * @return this instance for chaining
+     * @throws IllegalArgumentException if {@code parentColumn} is blank, {@code options} is empty, a parent value
+     *         is empty, or a parent value has no option. A parent column that does not exist is rejected when the
+     *         sheet is written
+     * @since 0.29.0
+     */
+    public SELF dependentDropdown(String parentColumn, Map<String, ? extends List<String>> options) {
+        this.dependentDropdown = new DependentDropdown(parentColumn, new java.util.LinkedHashMap<>(Objects.requireNonNull(options, "options cannot be null")));
         return self();
     }
 
@@ -707,7 +738,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         if (this.cellColorFunction == null) this.cellColorFunction = (CellColorFunction<T>) defaults.cellColorFunction;
         // A column that chose a dropdown or a validation of its own keeps it, and the default of the other kind
         // is not added: a cell has one data validation.
-        if (this.dropdownOptions == null && this.validation == null) {
+        if (this.dropdownOptions == null && this.validation == null && this.dependentDropdown == null) {
             this.dropdownOptions = defaults.dropdownOptions;
             this.validation = defaults.validation;
         }

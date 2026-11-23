@@ -15,7 +15,7 @@ infrastructure concerns.
 | [Reading](reading.md) | Setter/Mapping/Map mode, CellData, stream reading | `ExcelReader.setter()`, `mapping()`, `forMap()`, `CellData` |
 | [Styling](styling.md) | Font, color, border, alignment, rotation | `fontColor()`, `border()`, `backgroundColor()`, `bold()` |
 | [Headers](headers.md) | Header color/font, group headers, comments | `headerColor()`, `group()`, `headerComment()`, `groupComment()` |
-| [Validation](validation.md) | Dropdown, data validation, conditional formatting | `dropdown()`, `validation()`, `conditionalFormatting()` |
+| [Validation](validation.md) | Dropdown, data validation, conditional formatting | `dropdown()`, `dependentDropdown()`, `validation()`, `conditionalFormatting()` |
 | [Layout](layout.md) | Freeze, filter, outline, print, summary rows | `freezeRows()`, `autoFilter()`, `outline()`, `summary()` |
 | [Content](content.md) | Formula, hyperlink, rich text, image, chart | `ExcelDataType.FORMULA`, `HYPERLINK`, `RICH_TEXT`, `IMAGE` |
 | [Multi-Sheet](multi-sheet.md) | ExcelWorkbook, auto-rollover, tab color | `ExcelWorkbook.create()`, `maxRows()`, `tabColor()` |

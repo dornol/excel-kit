@@ -14,6 +14,24 @@ Applied to all data rows across all sheets (including rollover).
 Excel limits the comma-joined option text to 255 characters; `dropdown(...)` throws
 `IllegalArgumentException` beyond that. Use `listFromRange(range)` for longer lists.
 
+## Dependent Dropdown
+
+A cell whose options depend on another column of the same row: the parent column holds `"A"`, the cell offers
+the options of `"A"`; the parent holds `"B"`, it offers those of `"B"`.
+
+```java
+.column("Category", p -> p.category(), cfg -> cfg.dropdown("A", "B"))
+.column("Item", p -> p.item(), cfg -> cfg.dependentDropdown("Category", Map.of(
+        "A", List.of("1", "2", "3"),
+        "B", List.of("4", "5", "6"))))   // use a LinkedHashMap to keep the parent order
+```
+
+- `parentColumn` is the name (header) of another column of the same sheet; an unknown name fails when the sheet is written.
+- The options go to a hidden sheet (`_excelkit_dep_1`, ...). Equal option sets share one sheet, also across rollover sheets.
+- The parent value is matched as text, case-insensitively. A row whose parent value is not a key (or is empty) offers no options.
+- Excel checks a value when it is typed, so a child left over after the parent changes stays: validate the combination when reading the upload.
+- A column has one data validation: combining it with `dropdown(...)` or `validation(...)` throws `IllegalArgumentException`.
+
 ## Advanced Data Validation
 
 ```java
