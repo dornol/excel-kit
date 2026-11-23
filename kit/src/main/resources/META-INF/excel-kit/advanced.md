@@ -249,6 +249,9 @@ writer
 
 Operations: `sum`, `average`, `count`, `min`, `max`
 
+A summary covers its own sheet only: over rolled-over sheets each one gets a summary of its own rows (no total over all
+sheets); the same holds for `groupSubtotal(...)`.
+
 ## Group Subtotals
 
 ```java

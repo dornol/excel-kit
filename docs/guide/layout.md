@@ -106,6 +106,9 @@ With several operations each row needs its own name, so a label is followed by t
 `sum` and `average` gives the rows `Total - Sum` and `Total - Average`. With one operation the row carries the label as
 it is, and without a label a row is named after its operation (`Sum`, `Average`).
 
+A summary covers the rows of its own sheet: when the data rolls over (`maxRows`, or a full sheet), every sheet ends with a
+summary of its own rows, and there is no total over all the sheets. The same holds for `groupSubtotal(...)`.
+
 ## Group Subtotals
 
 ```java
