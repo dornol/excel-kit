@@ -48,6 +48,7 @@ class SheetConfig<T> {
         printSetup = source.printSetup;
         tabColor = source.tabColor == null ? null : source.tabColor.clone();
         zoom = source.zoom;
+        stripeColor = source.stripeColor;
         pageBreakWhen = source.pageBreakWhen;
         visibility = source.visibility;
         defaultStyleConfig = source.defaultStyleConfig;
@@ -83,6 +84,8 @@ class SheetConfig<T> {
     int @Nullable [] tabColor;
     /** The zoom in percent, or 0 for Excel's default (100). */
     int zoom;
+    /** The background of every second data row, or {@code null} for no stripes. */
+    @Nullable ExcelColor stripeColor;
     /** Whether a page break goes above a row, given the row before it and the row itself. */
     @Nullable BiPredicate<T, T> pageBreakWhen;
     /** {@code HIDDEN} or {@code VERY_HIDDEN}; {@code null} keeps the sheet visible. Set by a workbook's sheet writer only. */

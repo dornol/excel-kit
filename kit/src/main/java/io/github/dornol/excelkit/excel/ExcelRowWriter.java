@@ -39,6 +39,10 @@ final class ExcelRowWriter {
         cursor.plusRow();
 
         ExcelColor rowColor = config.rowColorFunction == null ? null : config.rowColorFunction.apply(row);
+        // every second data row of the sheet: the total counts rows over all sheets, a sheet takes maxRows of them
+        if (rowColor == null && config.stripeColor != null && (cursor.getCurrentTotal() - 1) % config.maxRows % 2 == 1) {
+            rowColor = config.stripeColor;
+        }
         @Nullable RowStyleConfig rowStyle = matchingStyle(row, config.rowStyleEntries);
         for (int i = 0; i < columns.size(); i++) {
             SXSSFCell cell = target.createCell(i);

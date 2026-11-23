@@ -442,6 +442,21 @@ public class WriteShowcaseAdvancedController {
                 .body(handler::writeTo);
     }
 
+    @GetMapping("/striped-rows")
+    public ResponseEntity<StreamingResponseBody> downloadStripedRows() {
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Striped Rows")
+                .freezeRows(1)
+                .stripedRows()
+                .column("Name", ProductDto::name)
+                .column("Category", ProductDto::category)
+                .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
+                .write(sampleProducts().stream());
+        return ExcelKitResponse.excel("striped-rows-demo")
+                .body(handler::writeTo);
+    }
+
     @GetMapping("/data-bar")
     public ResponseEntity<StreamingResponseBody> downloadDataBar() {
         var writer = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)

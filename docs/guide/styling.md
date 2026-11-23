@@ -136,6 +136,22 @@ writer
     .write(data);
 ```
 
+## Striped Rows
+
+`stripedRows()` shades every second data row light gray, so long rows are easier to follow across a wide sheet;
+`stripedRows(color)` takes the color. The first data row is not shaded, and a rolled-over sheet starts the pattern again.
+
+```java
+writer
+    .stripedRows()                    // or stripedRows(ExcelColor.LIGHT_YELLOW)
+    .column("Name", p -> p.name())
+    .write(data);
+```
+
+A stripe has the lowest priority of the row backgrounds: `cellColor`, a `rowStyle` color and `rowColor` win over it, and on
+a shaded row it replaces a column's static `backgroundColor`. For the stripes of an Excel table use `table(...)`, which
+brings its own. With `mergeSameValues()` a merged cell shows the color of its first row.
+
 ## Cell-Level Conditional Styling
 
 Per-cell background via `CellColorFunction`:

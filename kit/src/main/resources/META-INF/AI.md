@@ -242,6 +242,9 @@ same column, and an unknown parent column fails when the sheet is written.
 Page breaks: `printSetup(p -> p.rowBreakEvery(n))`, and `pageBreakOnChange(keyFn)` / `pageBreakWhen((previous, current) -> bool)`
 on `ExcelWriter` / `ExcelSheetWriter` (a new printed page where the data changes; at most 1026 breaks per sheet).
 
+`writer.stripedRows()` / `stripedRows(color)` (also on `ExcelSheetWriter`) shades every second data row without a `table(...)`; it is the
+lowest-priority row background (`cellColor`, `rowStyle`, `rowColor` win).
+
 `c.mergeSameValues()` merges runs of equal values of a column vertically (a department over its rows; rows sorted). A column
 merges only inside the merged regions of the merge columns to its left; empty values and one-row runs are not merged;
 the cells below the first keep their values; rejected with `table(...)` and on `TemplateListWriter`.

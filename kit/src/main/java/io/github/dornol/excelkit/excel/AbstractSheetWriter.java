@@ -353,6 +353,37 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+    // ── Striped rows ──
+
+    /** The default stripe: a light gray that stays readable under black text. */
+    private static final ExcelColor DEFAULT_STRIPE = ExcelColor.of(242, 242, 242);
+
+    /**
+     * Shades every second data row (the second, the fourth, ...) light gray, so that long rows are easier to follow
+     * across a wide sheet. The first data row is not shaded. A rolled-over sheet starts the pattern again.
+     * <p>
+     * A stripe is the lowest-priority background: {@code cellColor}, a {@code rowStyle} color and {@code rowColor}
+     * all win over it. For the stripes of an Excel table use {@code table(...)}, which brings its own.
+     *
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public SELF stripedRows() {
+        return stripedRows(DEFAULT_STRIPE);
+    }
+
+    /**
+     * Shades every second data row with the given color; see {@link #stripedRows()}.
+     *
+     * @param color the background of the shaded rows
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public SELF stripedRows(ExcelColor color) {
+        cfg.stripeColor = Objects.requireNonNull(color, "color cannot be null");
+        return self();
+    }
+
     // ── Page breaks ──
 
     /**
