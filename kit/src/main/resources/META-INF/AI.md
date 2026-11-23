@@ -235,3 +235,6 @@ the cell offers the options of the value the named parent column holds in the sa
 helper sheet (`_excelkit_dep_N`); equal option sets share one sheet. The parent value is matched as text; use a
 `LinkedHashMap` to keep the parent order. It cannot be combined with `dropdown(...)` or `validation(...)` on the
 same column, and an unknown parent column fails when the sheet is written.
+
+`ExcelValidation` also takes `inputTitle(..)` / `inputMessage(..)` (the tooltip shown when the cell is selected) and
+`allowBlank(false)` (an empty cell no longer passes; default is allowed).

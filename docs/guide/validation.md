@@ -14,6 +14,19 @@ Applied to all data rows across all sheets (including rollover).
 Excel limits the comma-joined option text to 255 characters; `dropdown(...)` throws
 `IllegalArgumentException` beyond that. Use `listFromRange(range)` for longer lists.
 
+### Input message and required cells
+
+```java
+.column("Age", p -> p.age(), cfg -> cfg.validation(ExcelValidation.integerBetween(0, 150)
+    .inputTitle("Age")                       // tooltip shown when the cell is selected (title <= 32 chars)
+    .inputMessage("Enter a whole number 0-150") // (text <= 255 chars)
+    .allowBlank(false)))                      // an empty cell no longer passes (default: allowed)
+```
+
+Excel rejects *typing* an empty value into an `allowBlank(false)` cell but does not flag a cell that was never filled,
+so check required values when reading the upload. A plain `dropdown(...)` has neither option; use
+`ExcelValidation.listFromRange(...)` when a list needs them.
+
 ## Dependent Dropdown
 
 A cell whose options depend on another column of the same row: the parent column holds `"A"`, the cell offers

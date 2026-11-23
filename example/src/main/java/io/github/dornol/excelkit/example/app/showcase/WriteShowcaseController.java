@@ -348,7 +348,7 @@ public class WriteShowcaseController {
     // ========================================================================
     // Dependent (cascading) dropdown - the options of "Option" follow the "Group" of the same row
     // ========================================================================
-    private record UploadRow(String group, String option) {}
+    private record UploadRow(String group, String option, Integer age) {}
 
     @GetMapping("/dependent-dropdown")
     public ResponseEntity<StreamingResponseBody> downloadDependentDropdown() {
@@ -365,7 +365,13 @@ public class WriteShowcaseController {
                         .dropdown(optionsByGroup.keySet().toArray(String[]::new)))
                 .column("Option", UploadRow::option, cfg -> cfg
                         .dependentDropdown("Group", optionsByGroup))
-                .write(Stream.of(new UploadRow("가", "1"), new UploadRow("나", "5")));
+                .column("Age", UploadRow::age, cfg -> cfg
+                        .type(ExcelDataType.INTEGER)
+                        .validation(ExcelValidation.integerBetween(0, 150)
+                                .inputTitle("Age")
+                                .inputMessage("Enter a whole number from 0 to 150")
+                                .allowBlank(false)))
+                .write(Stream.of(new UploadRow("가", "1", 30), new UploadRow("나", "5", 41)));
 
         return ExcelKitResponse.excel("dependent-dropdown")
                 .body(handler::writeTo);

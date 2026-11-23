@@ -156,6 +156,9 @@ Also: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights.
 // Dropdown
 .column("Status", p -> p.status(), c -> c.dropdown("Active", "Inactive", "Pending"))
 
+// Tooltip on selection and required cell (Excel limits: title 32, message 255 chars)
+.validation(ExcelValidation.integerBetween(0, 150).inputTitle("Age").inputMessage("Enter 0-150").allowBlank(false))
+
 // Dependent dropdown: options follow the parent column's value (hidden helper sheet)
 .column("Item", p -> p.item(), c -> c.dependentDropdown("Category", Map.of("A", List.of("1", "2"), "B", List.of("3"))))
 

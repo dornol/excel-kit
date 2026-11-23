@@ -67,6 +67,9 @@ public class ExcelValidation {
     private @Nullable String errorTitle;
     private @Nullable String errorMessage;
     private boolean showError = true;
+    private @Nullable String inputTitle;
+    private @Nullable String inputMessage;
+    private boolean allowBlank = true;
 
     private ExcelValidation(ValidationType type, int operator,
                             @Nullable String value1, @Nullable String value2) {
@@ -235,6 +238,56 @@ public class ExcelValidation {
     }
 
     /**
+     * Sets the title of the input message, the tooltip Excel shows when a cell of the column is selected.
+     * The tooltip is shown when a title or a message is set.
+     *
+     * @param inputTitle the tooltip title (at most 32 characters), or {@code null} for none
+     * @return this instance for chaining
+     * @throws IllegalArgumentException if the title is over Excel's limit of 32 characters
+     * @since 0.29.0
+     */
+    public ExcelValidation inputTitle(@Nullable String inputTitle) {
+        if (inputTitle != null && inputTitle.length() > MAX_ERROR_TITLE) {
+            throw new IllegalArgumentException("The input title is " + inputTitle.length()
+                    + " characters; Excel allows at most " + MAX_ERROR_TITLE);
+        }
+        this.inputTitle = inputTitle;
+        return this;
+    }
+
+    /**
+     * Sets the input message, the tooltip Excel shows when a cell of the column is selected
+     * (for example {@code "Enter the date as YYYY-MM-DD"}). The tooltip is shown when a title or a message is set.
+     *
+     * @param inputMessage the tooltip text (at most 255 characters), or {@code null} for none
+     * @return this instance for chaining
+     * @throws IllegalArgumentException if the message is over Excel's limit of 255 characters
+     * @since 0.29.0
+     */
+    public ExcelValidation inputMessage(@Nullable String inputMessage) {
+        if (inputMessage != null && inputMessage.length() > MAX_ERROR_MESSAGE) {
+            throw new IllegalArgumentException("The input message is " + inputMessage.length()
+                    + " characters; Excel allows at most " + MAX_ERROR_MESSAGE);
+        }
+        this.inputMessage = inputMessage;
+        return this;
+    }
+
+    /**
+     * Sets whether an empty cell passes the validation. It does by default; {@code allowBlank(false)} marks a
+     * required column: Excel rejects clearing the cell by typing, but it does not flag a cell that was never filled,
+     * so check required values when reading the upload.
+     *
+     * @param allowBlank {@code true} to let an empty cell pass
+     * @return this instance for chaining
+     * @since 0.29.0
+     */
+    public ExcelValidation allowBlank(boolean allowBlank) {
+        this.allowBlank = allowBlank;
+        return this;
+    }
+
+    /**
      * Applies this validation to the specified column range on the sheet.
      */
     void apply(DataValidationHelper helper, SXSSFSheet sheet, int col, int headerRow) {
@@ -243,6 +296,11 @@ public class ExcelValidation {
                 headerRow + 1, ExcelLimits.EXCEL_MAX_ROWS, col, col);
         DataValidation validation = helper.createValidation(constraint, range);
         validation.setShowErrorBox(showError);
+        validation.setEmptyCellAllowed(allowBlank);
+        if (inputTitle != null || inputMessage != null) {
+            validation.setShowPromptBox(true);
+            validation.createPromptBox(inputTitle != null ? inputTitle : "", inputMessage != null ? inputMessage : "");
+        }
         if (errorTitle != null) {
             validation.createErrorBox(
                     errorTitle,
