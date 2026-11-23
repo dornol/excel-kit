@@ -22,6 +22,7 @@ Not annotation-based — columns are defined programmatically via builder chains
 | Write Excel (typed) | `ExcelWriter<T>` | `.column("Name", T::getName).write(stream).writeTo(path)` |
 | Write Excel (map) | `ExcelWriter.forMap(...)` | `ExcelWriter.forMap("Name", "Age").write(stream).writeTo(path)` |
 | Write Excel (multi-sheet) | `ExcelWorkbook` | `wb.<T>sheet("Sheet1").column(...).write(stream)` → `wb.finish().writeTo(path)` |
+| Say so when there are no rows | `emptyMessage` | `.emptyMessage("No data")` (a centered gray italic line below the header; not a data row; not with `table`) |
 | Subtotal rows per group | `ExcelSubtotal` | `.groupSubtotal(T::dept, s -> s.label("Name", k -> k + " total").keyColumn("Dept").sum("Amount"))` (rows sorted by the key; `SUBTOTAL` formulas; not with `table`/`chart`/`namedRange`) |
 | Write Excel (template) | `ExcelTemplateWriter` | `new ExcelTemplateWriter(template).list(...).write(stream, out)` |
 | Read Excel (setter) | `ExcelReader<T>` | `ExcelReader.setter(T::new).validator(validator).column("Name", T::setName).required().read(in, r -> ...)` |

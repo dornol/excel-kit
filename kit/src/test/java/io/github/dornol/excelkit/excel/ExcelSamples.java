@@ -571,6 +571,28 @@ public final class ExcelSamples {
                 "chartAxis sheet=Sales hasSecondaryValueAxis=True; chartAxis sheet=Sales hasSecondaryCategoryAxis=False (it is stored but not shown)",
                 "chartAxisTitle sheet=Sales primary=Revenue secondary=Growth",
                 "visual: export the chart to a PNG (Chart.Export) and look: three series, a left and a right value axis");
+
+        // 32. an empty sheet that says so, next to a sheet with rows
+        try (ExcelWorkbook book = ExcelWorkbook.create()) {
+            book.<Item>sheet("Empty").autoFilter().freezeRows(1).emptyMessage("No data")
+                    .column("Name", Item::name).column("Qty", Item::qty, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Note", i -> "")
+                    .summary(s -> s.label("Name", "Total").sum("Qty"))
+                    .write(List.of());
+            book.<Item>sheet("Rows").autoFilter().emptyMessage("No data")
+                    .column("Name", Item::name).column("Qty", Item::qty, c -> c.type(ExcelDataType.INTEGER))
+                    .column("Note", i -> "")
+                    .write(items(3));
+            save("32-empty-message.xlsx", book.finish());
+        }
+        add("32-empty-message.xlsx", "an empty sheet says so; a sheet with rows is untouched",
+                "Sheet Empty: the header, and in row 2 \"No data\" centered over A:C in gray italics (one merged cell); below it a summary row \"Total\" with no formulas (nothing to add up). Sheet Rows asked for the same message but has rows: the header and three rows, no message, no merged cell.",
+                "opens: no repair prompt (a merged line under a filter, with a summary below it)",
+                "merged sheet=Empty cell=A2 mergeArea=A2:C2; merged sheet=Rows cell=A2 mergeArea=A2",
+                "cellText sheet=Empty cell=A2 text=\"No data\"; cellText sheet=Empty cell=A3 text=Total; cellText sheet=Rows cell=A2 text=\"item 0\"",
+                "cellFormat sheet=Empty cell=A2 horizontalAlignment=xlCenter(-4108) fontItalic=True fontColor=808080",
+                "autoFilter sheet=Empty range=A1:C1 (the header only; Excel may extend it over the rows directly below it, so report the range it shows); freezePanes sheet=Empty rows=1",
+                "cell sheet=Empty cell=B3 value=(empty): no SUM over the line of text");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {

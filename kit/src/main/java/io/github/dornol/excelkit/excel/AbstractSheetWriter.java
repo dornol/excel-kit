@@ -476,6 +476,25 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+    // ── Empty data ──
+
+    /**
+     * Writes a line below the header when there are no rows, so that an empty export says so instead of looking like a
+     * broken file: the text is centered over the width of the sheet in gray italics. It is not a data row: the filter,
+     * conditional formatting and charts do not cover it, and a summary below it counts nothing. A sheet with rows is
+     * not touched. Cannot be combined with {@code table(...)} (the line is a merged cell, which Excel does not allow in
+     * a table): the write fails with {@link ExcelWriteException}. A file with the line reads back with it as a data row,
+     * so leave it off a sheet that people fill in and upload.
+     *
+     * @param text what the empty sheet says, for example {@code "No data"}
+     * @return this writer for chaining
+     * @since 0.29.0
+     */
+    public SELF emptyMessage(String text) {
+        cfg.emptyMessage = Objects.requireNonNull(text, "text cannot be null");
+        return self();
+    }
+
     // ── Group subtotals ──
 
     /**

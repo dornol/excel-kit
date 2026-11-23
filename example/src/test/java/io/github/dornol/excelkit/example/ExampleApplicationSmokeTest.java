@@ -56,6 +56,18 @@ class ExampleApplicationSmokeTest {
     }
 
     @Test
+    void emptyMessageShowcase_saysSoOnTheEmptySheetOnly() throws Exception {
+        MvcResult started = mockMvc.perform(get("/showcase/empty-message")).andExpect(request().asyncStarted()).andReturn();
+        MvcResult result = mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn();
+        try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()))) {
+            assertEquals("No data", workbook.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
+            assertEquals(1, workbook.getSheetAt(0).getNumMergedRegions());
+            assertEquals(0, workbook.getSheetAt(1).getNumMergedRegions());
+            assertTrue(workbook.getSheetAt(1).getLastRowNum() >= 5, "the rows and the summary");
+        }
+    }
+
+    @Test
     void comboChartShowcase_writesAChartWithALineGroupOnASecondAxis() throws Exception {
         MvcResult started = mockMvc.perform(get("/showcase/chart-combo")).andExpect(request().asyncStarted()).andReturn();
         MvcResult result = mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn();

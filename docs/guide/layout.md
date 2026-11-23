@@ -109,6 +109,26 @@ it is, and without a label a row is named after its operation (`Sum`, `Average`)
 A summary covers the rows of its own sheet: when the data rolls over (`maxRows`, or a full sheet), every sheet ends with a
 summary of its own rows, and there is no total over all the sheets. The same holds for `groupSubtotal(...)`.
 
+## Empty Sheet Message
+
+```java
+ExcelWriter.<Order>create()
+    .column("Name", Order::name)
+    .column("Qty", Order::qty)
+    .emptyMessage("No data")
+    .write(orders);      // no orders: the header and a line that says "No data"
+```
+
+When no row is written, `emptyMessage(text)` puts the text below the header, centered over all the columns in gray
+italics (one merged cell), so an empty export says so instead of looking like a broken file. A sheet with rows is not
+touched, and every sheet of an `ExcelWorkbook` decides for itself.
+
+- The line is not a data row: the auto filter covers the header only, a chart and a named range have nothing to cover,
+  and a `summary(...)` below it counts nothing (its rows keep their labels, without formulas).
+- Cannot be combined with `table(...)` (a merged cell has no place in an Excel table): the write fails with
+  `ExcelWriteException`.
+- A file with the line reads back with it as a data row: leave it off a sheet that people fill in and upload.
+
 ## Group Subtotals
 
 ```java

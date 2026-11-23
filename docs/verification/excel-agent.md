@@ -18,7 +18,7 @@ excel-kit 의 테스트는 파일을 POI 로 읽거나 XML 로 검사한다. 그
 - 업로드 양식 기능(18~26번): 드롭다운 **화살표**(`showDropDown` 을 더 이상 쓰지 않는다 — OOXML 에서 `true` 는 화살표를
   숨긴다), 부모 값에 따라 바뀌는 목록(숫자 부모 포함), 검증 안내 메시지·빈 값, 숨김·완전 숨김 시트와 열리는 시트, 확대 비율,
   페이지 나누기 위치, 같은 값 병합, 줄무늬와 헤더 필수 표시(`@" *"` 서식), 셀 주석이 달린 오류 리포트, 그리고 표 헤더의
-  필수 표시, 시트가 롤오버될 때 병합·페이지 나누기·의존 드롭다운(숨김 헬퍼 시트 공유)·필터·확대의 조합(25, 26번), 그룹 소계(`groupSubtotal`)가 `SUBTOTAL` 수식으로 계산되고 총계가 소계를 다시 더하지 않는지(27번), 롤오버·병합·줄무늬·페이지 나누기·필터와의 조합(28번), 보호된 시트에서 소계 셀이 잠겨 있는지(29번), 필터 아래의 총계·조건부 서식·유효성 검사(30번), 막대 위에 선을 겹치고 보조 축을 쓰는 콤보 차트(31번).
+  필수 표시, 시트가 롤오버될 때 병합·페이지 나누기·의존 드롭다운(숨김 헬퍼 시트 공유)·필터·확대의 조합(25, 26번), 그룹 소계(`groupSubtotal`)가 `SUBTOTAL` 수식으로 계산되고 총계가 소계를 다시 더하지 않는지(27번), 롤오버·병합·줄무늬·페이지 나누기·필터와의 조합(28번), 보호된 시트에서 소계 셀이 잠겨 있는지(29번), 필터 아래의 총계·조건부 서식·유효성 검사(30번), 막대 위에 선을 겹치고 보조 축을 쓰는 콤보 차트(31번), 데이터가 없을 때 병합된 안내 행(32번).
 
 ## 하지 말 것
 
@@ -28,7 +28,7 @@ excel-kit 의 테스트는 파일을 POI 로 읽거나 XML 로 검사한다. 그
 
 ## 1. 준비
 
-샘플 파일(`01-…xlsx` ~ `31-…xlsx`, `manifest.json`, `CHECKLIST.md`)을 구한다. 둘 중 하나:
+샘플 파일(`01-…xlsx` ~ `32-…xlsx`, `manifest.json`, `CHECKLIST.md`)을 구한다. 둘 중 하나:
 
 **A. CI 아티팩트 (JDK 불필요, 권장)**
 
@@ -88,6 +88,7 @@ Excel 이 보는 것을 직접 읽어 판정한다. 화면은 필요한 경우�
 | `table sheet name range showAutoFilter [column1=이름]` | `ListObjects(name)` 의 `Range.Address($false,$false)` 와 `ShowAutoFilter`(True/False). `column1` 이 있으면 `ListColumns(1).Name` 도 그 이름과 같아야 한다(헤더 셀에 서식이 있어도 표의 열 이름은 순수한 이름). |
 | `cell … value=` / `cell … text=` | 먼저 `Application.Calculate()`. `Value2` 가 값과 같은가. `text=` 는 `.Text`(화면에 보이는 문자열). |
 | `cellText … text=` | `.Text` 가 정확히 같은가(표시 형식 확인). |
+| `cellFormat sheet cell horizontalAlignment fontItalic fontColor` | `Range(cell).HorizontalAlignment`(가운데=-4108), `Font.Italic`, `Font.Color`(R + G*256 + B*65536, 회색 808080 = 8421504). |
 | `chartSeries sheet index chartType axisGroup` | `ChartObjects(1).Chart.SeriesCollection(index)` 의 `ChartType`(xlColumnClustered=51, xlLine=4, xlLineMarkers=65)과 `AxisGroup`(주축=1, 보조 축=2). |
 | `chartAxis …` / `chartAxisTitle …` | `Chart.HasAxis(xlValue=2, xlSecondary=2)` 등과 `Chart.Axes(2, 1).AxisTitle.Text`(주), `Chart.Axes(2, 2).AxisTitle.Text`(보조). |
 | `chart sheet count topLeftRowGreaterThan` | `ChartObjects().Count` 와 각 차트의 `TopLeftCell.Row` 가 값보다 큰가(요약 행 아래에 놓였는가). |

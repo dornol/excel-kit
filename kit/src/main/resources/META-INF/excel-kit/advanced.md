@@ -256,6 +256,15 @@ Operations: `sum`, `average`, `count` (numbers only), `countA` (every non-empty 
 A summary covers its own sheet only: over rolled-over sheets each one gets a summary of its own rows (no total over all
 sheets); the same holds for `groupSubtotal(...)`.
 
+## Empty Sheet Message
+
+```java
+.emptyMessage("No data")    // with no rows: a centered gray italic line below the header (one merged cell)
+```
+
+Not a data row (filter, chart, named range and summary ignore it); a sheet with rows is untouched. Refused with `table(...)`.
+Read back as a row: leave it off sheets people upload.
+
 ## Group Subtotals
 
 ```java

@@ -5,7 +5,9 @@ import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ProgressCallback;
 import io.github.dornol.excelkit.core.read.RowFunction;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFCell;
+import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
@@ -62,6 +64,17 @@ class ExcelWriteSupport {
     static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
                                              List<ExcelColumn<T>> columns, int headerRowIndex,
                                              SheetConfig<T> cfg, @Nullable FormulaValues values) {
+        return writeAfterDataAndSummary(sheet, wb, startRow, columns, headerRowIndex, cfg, values, startRow);
+    }
+
+    /**
+     * @param dataEndRow the 1-based last data row, which is where the summary ranges end: {@code startRow} when the
+     *                   rows below the data are the next ones, less when something that is not data (the empty
+     *                   message) sits between
+     */
+    static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
+                                             List<ExcelColumn<T>> columns, int headerRowIndex,
+                                             SheetConfig<T> cfg, @Nullable FormulaValues values, int dataEndRow) {
         int row = startRow;
         if (cfg.afterDataWriter != null) {
             row = cfg.afterDataWriter.write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
@@ -69,9 +82,50 @@ class ExcelWriteSupport {
         if (cfg.summaryConfig != null) {
             // The summary covers the data rows only, not whatever afterData wrote below them.
             row = cfg.summaryConfig.toAfterDataWriter(cfg.subtotalKey != null, values).write(
-                    new SheetContext(sheet, wb, row, columns, headerRowIndex, startRow));
+                    new SheetContext(sheet, wb, row, columns, headerRowIndex, dataEndRow));
         }
         return row;
+    }
+
+    /** Rejects what the empty message would corrupt: a merged line has no place in a table. */
+    static <T> void validateEmptyMessage(SheetConfig<T> cfg) {
+        if (cfg.emptyMessage != null && cfg.tableOptions != null) {
+            throw new ExcelWriteException("emptyMessage(...) cannot be combined with table(...): the message is a merged "
+                    + "cell, and Excel does not allow merged cells in a table");
+        }
+    }
+
+    /**
+     * Writes the line of an empty sheet below the header: the text centered over all the columns, in gray italics.
+     * It takes a row of the sheet but is no data row.
+     */
+    static <T> void writeEmptyMessage(SXSSFSheet sheet, SXSSFWorkbook wb, Cursor cursor, List<ExcelColumn<T>> columns,
+                                      SheetConfig<T> cfg, Map<DerivedStyleKey, CellStyle> styleCache) {
+        String text = cfg.emptyMessage;
+        if (text == null) return;
+        int rowIndex = cursor.getRowOfSheet();
+        if (rowIndex >= ExcelLimits.SHEET_ROW_CAPACITY) {
+            throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: no room for the empty message");
+        }
+        CellStyle style = styleCache.computeIfAbsent(new DerivedStyleKey(-1, -1, "empty-message"), k -> {
+            CellStyle created = createDerivedStyle(wb, cfg.maxCellStyles);
+            XSSFFont font = (XSSFFont) wb.createFont();
+            font.setItalic(true);
+            font.setColor(new XSSFColor(new byte[]{(byte) 128, (byte) 128, (byte) 128}));
+            created.setFont(font);
+            created.setAlignment(HorizontalAlignment.CENTER);
+            created.setVerticalAlignment(VerticalAlignment.CENTER);
+            return created;
+        });
+        SXSSFRow row = sheet.createRow(rowIndex);
+        row.setHeightInPoints(cfg.rowHeightInPoints);
+        cursor.plusRow();
+        for (int i = 0; i < columns.size(); i++) {
+            SXSSFCell cell = row.createCell(i);
+            if (i == 0) ExcelCellText.write(cell, text);
+            cell.setCellStyle(style);
+        }
+        if (columns.size() > 1) sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, columns.size() - 1));
     }
 
     /** What a sheet needs as soon as its header is written. The filter waits for the data: see {@code ExcelSheetPostProcessor}. */
@@ -348,10 +402,10 @@ class ExcelWriteSupport {
      * rollover get {@code name_2}, {@code name_3}, ... (the first keeps {@code name}), as tables do.
      */
     static void applyNamedRanges(SXSSFSheet sheet, @Nullable Map<String, Integer> namedRanges,
-                                  int headerRowIndex, int sheetIndex) {
+                                  int headerRowIndex, int dataEndRow, int sheetIndex) {
         if (namedRanges == null || namedRanges.isEmpty()) return;
         int lastRow = sheet.getLastRowNum();
-        if (lastRow <= headerRowIndex) return; // no data rows
+        if (dataEndRow <= headerRowIndex) return; // no data rows
         String sheetName = sheet.getSheetName();
         var wb = sheet.getWorkbook();
         for (var entry : namedRanges.entrySet()) {

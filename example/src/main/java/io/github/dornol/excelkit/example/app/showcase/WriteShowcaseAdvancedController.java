@@ -22,6 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Controller
 @RequestMapping("/showcase")
@@ -239,6 +240,30 @@ public class WriteShowcaseAdvancedController {
 
         return ExcelKitResponse.excel("chart-combo-demo")
                 .body(handler::writeTo);
+    }
+
+    @GetMapping("/empty-message")
+    public ResponseEntity<StreamingResponseBody> downloadEmptyMessage() {
+        try (ExcelWorkbook wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
+            wb.<ProductDto>sheet("No rows")
+                    .autoFilter().freezeRows(1)
+                    .emptyMessage("No data")
+                    .column("Name", ProductDto::name)
+                    .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                    .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s.label("Name", "Total").sum("Price"))
+                    .write(Stream.<ProductDto>empty());
+            wb.<ProductDto>sheet("With rows")
+                    .autoFilter().freezeRows(1)
+                    .emptyMessage("No data")
+                    .column("Name", ProductDto::name)
+                    .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"))
+                    .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
+                    .summary(s -> s.label("Name", "Total").sum("Price"))
+                    .write(sampleProducts().stream().limit(5));
+            var handler = wb.finish();
+            return ExcelKitResponse.excel("empty-message-demo").body(handler::writeTo);
+        }
     }
 
     @GetMapping("/map-writer")

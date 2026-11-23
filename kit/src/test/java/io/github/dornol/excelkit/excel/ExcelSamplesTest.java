@@ -56,7 +56,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(31, samples.size());
+        assertEquals(32, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -321,6 +321,20 @@ class ExcelSamplesTest {
             assertEquals(2, plot.sizeOfLineChartArray());
             assertEquals(2, plot.sizeOfCatAxArray());
             assertEquals(2, plot.sizeOfValAxArray());
+        }
+    }
+
+    @Test
+    void theEmptyMessageSampleSaysSoOnTheEmptySheetOnly() throws Exception {
+        try (XSSFWorkbook wb = open("32-empty-message.xlsx")) {
+            XSSFSheet empty = wb.getSheet("Empty");
+            assertEquals("No data", empty.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("A2:C2", empty.getMergedRegion(0).formatAsString());
+            assertEquals("Total", empty.getRow(2).getCell(0).getStringCellValue());
+            XSSFSheet rows = wb.getSheet("Rows");
+            assertEquals("item 0", rows.getRow(1).getCell(0).getStringCellValue());
+            assertEquals(0, rows.getNumMergedRegions());
+            assertEquals(3, rows.getLastRowNum());
         }
     }
 

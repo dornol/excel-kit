@@ -40,7 +40,7 @@ final class ExcelSheetPostProcessor {
         ExcelWriteSupport.applyTabColor(sheet, config.tabColor);
         if (config.zoom > 0) sheet.setZoom(config.zoom);
         ExcelWriteSupport.applyVisibility(sheet, config.visibility);
-        ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, sheetIndex);
+        ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, dataEndRow, sheetIndex);
     }
 
     /** Excel keeps at most 1026 horizontal page breaks per sheet and repairs a file that holds more. */

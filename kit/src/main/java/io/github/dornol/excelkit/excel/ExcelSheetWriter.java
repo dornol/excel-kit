@@ -205,6 +205,7 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         ExcelWriteSupport.validateUniqueColumnNames(columns);
         ExcelWriteSupport.validateMergeColumns(columns, cfg.tableOptions, true);
         SubtotalTracker.validate(cfg);
+        ExcelWriteSupport.validateEmptyMessage(cfg);
 
         List<SXSSFSheet> allSheets = new ArrayList<>();
         List<Integer> dataEndRows = new ArrayList<>();
@@ -264,8 +265,13 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         if (subtotals != null) subtotals.close(activeSheet, cursor, cfg, merges, rowStyleCache, wb);
         dataEndRows.add(cursor.getRowOfSheet() - 1);
         if (merges != null) merges.closeRuns(cursor.getRowOfSheet() - 1);
+        // With no row at all the sheet says so; the line is no data row, so a summary below it still ends at the header.
+        int lastDataRow = cursor.getRowOfSheet();
+        if (cursor.getCurrentTotal() == 0) {
+            ExcelWriteSupport.writeEmptyMessage(activeSheet, wb, cursor, columns, cfg, rowStyleCache);
+        }
         int nextFreeRow = ExcelWriteSupport.writeAfterDataAndSummary(
-                activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values);
+                activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values, lastDataRow);
         nextFreeRows.add(nextFreeRow);
 
         for (int i = 0; i < allSheets.size(); i++) {

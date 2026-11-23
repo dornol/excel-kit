@@ -595,6 +595,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         ExcelWriteSupport.validateUniqueColumnNames(options.columns());
         ExcelWriteSupport.validateMergeColumns(options.columns(), options.sheetConfig().tableOptions, true);
         SubtotalTracker.validate(options.sheetConfig());
+        ExcelWriteSupport.validateEmptyMessage(options.sheetConfig());
     }
 
     /** Creates the first sheet and writes its preamble, header and sheet options. */
@@ -633,8 +634,13 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         closeSubtotal();
         execution().dataEndRow(cursor().getRowOfSheet() - 1);
         closeMergeRuns();
+        // With no row at all the sheet says so; the line is no data row, so a summary below it still ends at the header.
+        int lastDataRow = cursor().getRowOfSheet();
+        if (cursor().getCurrentTotal() == 0) {
+            ExcelWriteSupport.writeEmptyMessage(sheet(), wb, cursor(), options.columns(), options.sheetConfig(), rowStyleCache);
+        }
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                options.columns(), headerRowIndex(), options.sheetConfig(), execution().values());
+                options.columns(), headerRowIndex(), options.sheetConfig(), execution().values(), lastDataRow);
         execution().nextFreeRow(nextRow);
         if (this.afterAllWriter != null) {
             this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
