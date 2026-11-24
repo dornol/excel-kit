@@ -355,7 +355,8 @@ public class ExcelKitSchema<T> {
          */
         public Builder<T> column(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter,
                                   Consumer<ColumnConfig<T>> writeConfigurer) {
-            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer));
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter,
+                    Objects.requireNonNull(writeConfigurer, "writeConfigurer cannot be null")));
             return this;
         }
 
@@ -373,7 +374,8 @@ public class ExcelKitSchema<T> {
                                  Function<T, @Nullable Object> writeFunction,
                                  BiConsumer<T, CellData> readSetter,
                                  Consumer<ColumnConfig<T>> writeConfigurer) {
-            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, false));
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter,
+                    Objects.requireNonNull(writeConfigurer, "writeConfigurer cannot be null"), readAliases, false));
             return this;
         }
 
@@ -389,7 +391,8 @@ public class ExcelKitSchema<T> {
         public Builder<T> requiredColumn(String name, Function<T, @Nullable Object> writeFunction,
                                          BiConsumer<T, CellData> readSetter,
                                          Consumer<ColumnConfig<T>> writeConfigurer) {
-            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, List.of(name), true));
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter,
+                    Objects.requireNonNull(writeConfigurer, "writeConfigurer cannot be null"), List.of(name), true));
             return this;
         }
 
@@ -407,7 +410,8 @@ public class ExcelKitSchema<T> {
                                          Function<T, @Nullable Object> writeFunction,
                                          BiConsumer<T, CellData> readSetter,
                                          Consumer<ColumnConfig<T>> writeConfigurer) {
-            columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, true));
+            columns.add(new SchemaColumn<>(name, writeFunction, readSetter,
+                    Objects.requireNonNull(writeConfigurer, "writeConfigurer cannot be null"), readAliases, true));
             return this;
         }
 
@@ -424,36 +428,71 @@ public class ExcelKitSchema<T> {
             return new ExcelKitSchema<>(new ArrayList<>(columns), this);
         }
 
+        /**
+         * Requires every positional and index-based column of the readers to resolve to a header of the file, as {@code strictHeaders()} of a reader does.
+         *
+         * @return This builder for chaining
+         */
         public Builder<T> strictHeaders() {
             readSettings.strictHeaders();
             return this;
         }
 
+        /**
+         * Sets how the readers treat a header that appears twice, as {@code duplicateHeaderPolicy(...)} of a reader does.
+         *
+         * @return This builder for chaining
+         */
         public Builder<T> duplicateHeaderPolicy(DuplicateHeaderPolicy policy) {
             readSettings.duplicateHeaderPolicy(policy);
             return this;
         }
 
+        /**
+         * Sets the conversion settings of the readers' {@link CellData}, as {@code cellConversion(...)} of a reader does.
+         *
+         * @return This builder for chaining
+         */
         public Builder<T> cellConversion(CellConversionConfig config) {
             readSettings.cellConversion(config);
             return this;
         }
 
+        /**
+         * Sets what the writers do when a column function throws, as {@code writeErrorPolicy(...)} of a writer does.
+         *
+         * @return This builder for chaining
+         */
         public Builder<T> writeErrorPolicy(WriteErrorPolicy policy) {
             this.writeErrorPolicy = Objects.requireNonNull(policy, "policy cannot be null");
             return this;
         }
 
+        /**
+         * Limits the data rows the readers emit, as {@code maxRows(...)} of a reader does.
+         *
+         * @return This builder for chaining
+         */
         public Builder<T> maxRows(long maxRows) {
             readSettings.maxRows(maxRows);
             return this;
         }
 
+        /**
+         * Makes the readers skip rows in which every cell is blank, as {@code skipBlankRows()} of a reader does.
+         *
+         * @return This builder for chaining
+         */
         public Builder<T> skipBlankRows() {
             readSettings.skipBlankRows();
             return this;
         }
 
+        /**
+         * Makes the readers stop after the given number of consecutive blank rows (0 turns it off), as {@code stopAtBlankRows(...)} of a reader does.
+         *
+         * @return This builder for chaining
+         */
         public Builder<T> stopAtBlankRows(int count) {
             readSettings.stopAtBlankRows(count);
             return this;

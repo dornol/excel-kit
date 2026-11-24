@@ -396,7 +396,6 @@ public class ExcelChartConfig {
         }
 
         int dataStartRow = headerRow + 1;
-        String sheetName = xssfSheet.getSheetName();
 
         XDDFDataSource<String> categories = XDDFDataSourcesFactory.fromStringCellRange(
                 xssfSheet,

@@ -88,6 +88,10 @@ public class ExcelColumn<T> {
         this.explicitDataFormat = config.dataFormat != null;
         this.minWidth = config.minWidth;
         this.maxWidth = config.maxWidth;
+        if (!config.fixedWidth && config.maxWidth > 0 && config.minWidth > config.maxWidth) {
+            throw new IllegalArgumentException("minWidth (" + config.minWidth + ") of column '" + name
+                    + "' is more than its maxWidth (" + config.maxWidth + ")");
+        }
         this.fixedWidth = config.fixedWidth;
         this.dropdownOptions = config.dropdownOptions;
         this.cellColorFunction = config.cellColorFunction;

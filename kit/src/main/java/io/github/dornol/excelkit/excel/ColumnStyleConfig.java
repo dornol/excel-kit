@@ -47,6 +47,9 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     @Nullable Short rotation;
     @Nullable Boolean wrapText;
     @Nullable Short indentation;
+    /** The widest column Excel allows: 255 characters, in 256ths of a character. */
+    static final int MAX_WIDTH = 255 * 256;
+
     int minWidth;
     int maxWidth;
     boolean fixedWidth;
@@ -181,13 +184,25 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         return self();
     }
 
+    private static void requireWidth(String name, int value) {
+        if (value < 0 || value > MAX_WIDTH) {
+            throw new IllegalArgumentException(name + " must be between 0 and " + MAX_WIDTH
+                    + " (Excel's limit of 255 characters, in 256ths of a character), but was " + value);
+        }
+    }
+
     /**
      * Sets a fixed column width. The column will not auto-resize.
+     * <p>
+     * The unit is a 256th of a character width, as in POI's {@code setColumnWidth}: {@code 20 * 256} is about
+     * twenty characters wide, and {@code width(20)} is almost invisible.
      *
-     * @param fixedWidth Fixed width value (in Excel internal units)
+     * @param fixedWidth Fixed width value (in Excel internal units, 0 to {@value #MAX_WIDTH})
      * @return this instance for chaining
+     * @throws IllegalArgumentException if the width is negative or more than Excel's limit of 255 characters
      */
     public SELF width(int fixedWidth) {
+        requireWidth("width", fixedWidth);
         this.fixedWidth = true;
         this.minWidth = fixedWidth;
         return self();
@@ -196,10 +211,12 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     /**
      * Sets the minimum column width. Auto-resize will not shrink below this value.
      *
-     * @param minWidth Minimum width value (in Excel internal units)
+     * @param minWidth Minimum width value (in Excel internal units, 0 to {@value #MAX_WIDTH}; see {@link #width(int)})
      * @return this instance for chaining
+     * @throws IllegalArgumentException if the width is negative or more than Excel's limit of 255 characters
      */
     public SELF minWidth(int minWidth) {
+        requireWidth("minWidth", minWidth);
         this.minWidth = minWidth;
         return self();
     }
@@ -207,10 +224,12 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     /**
      * Sets the maximum column width. Auto-resize will not grow beyond this value.
      *
-     * @param maxWidth Maximum width value (in Excel internal units)
+     * @param maxWidth Maximum width value (in Excel internal units, 0 to {@value #MAX_WIDTH}; 0 sets no maximum)
      * @return this instance for chaining
+     * @throws IllegalArgumentException if the width is negative or more than Excel's limit of 255 characters
      */
     public SELF maxWidth(int maxWidth) {
+        requireWidth("maxWidth", maxWidth);
         this.maxWidth = maxWidth;
         return self();
     }
