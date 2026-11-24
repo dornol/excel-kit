@@ -6,7 +6,9 @@ import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -117,6 +119,27 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
 
     void addColumn(ReadColumn<T> column) {
         columns.add(column);
+    }
+
+    /**
+     * The mapper of a map reader: one entry per header (a header that repeats keeps its first column), limited to
+     * {@code selectedColumns} when given, each value the {@code text} of its cell.
+     */
+    protected static Function<RowData, Map<String, String>> rowToMap(@Nullable Set<String> selectedColumns,
+                                                                    Function<CellData, String> text) {
+        return row -> {
+            Map<String, String> map = new LinkedHashMap<>();
+            List<String> headers = row.headerNames();
+            int bound = headers.size();
+            for (int i = 0; i < bound; i++) {
+                String header = headers.get(i);
+                if (header == null) continue;
+                if (selectedColumns != null && !selectedColumns.contains(header)) continue;
+                if (row.headerIndexOf(header) != i) continue;
+                map.put(header, text.apply(row.get(i)));
+            }
+            return map;
+        };
     }
 
     protected final void enableMapMode(@Nullable Set<String> selectedColumns) {

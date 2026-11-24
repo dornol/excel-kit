@@ -104,6 +104,11 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         }
     }
 
+    @FunctionalInterface
+    private interface RowProcessor<T> {
+        ReadResult<T> process(String[] line, long fileRowNum, List<String> rawValues);
+    }
+
     private void readRecords(Consumer<ReadResult<T>> guardedConsumer, long totalRows, @Nullable Cursor cursor) {
         try (CsvRecordReader reader = buildCsvReader()) {
             skipToHeader(reader);
@@ -111,45 +116,33 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             prepareColumnHeaders(headerLine);
             prepareUniqueKey(headerNames);
 
-            String[] line;
-            long rowCount = 0;
-
+            // What turns one record into a result differs by mode (a mapper over the whole row, or columns set one by one);
+            // the loop around it is the same.
+            RowProcessor<T> processor;
             if (rowMapper != null) {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
-                while ((line = reader.readNext()) != null) {
-                    List<String> rawValues = rawValues(line);
-                    int rowDecision = evaluateRow(rawValues);
-                    if (rowDecision == STOP_READING) break;
-                    // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
-                    if (rowDecision == SKIP_ROW) continue;
-                    guardedConsumer.accept(applyUniqueKey(
-                            processRowMapping(line, headerIndexMap, reader.recordStartLine(), rawValues)));
-                    recordEmittedRow();
-                    rowCount++;
-                    notifyLegacyProgress(rowCount, cursor);
-                    if (readOptions.readProgressInterval() > 0
-                            && rowCount % readOptions.readProgressInterval() == 0) {
-                        notifyReadProgress(rowCount, -1, totalRows);
-                    }
-                }
+                processor = (line, startLine, rawValues) -> processRowMapping(line, headerIndexMap, startLine, rawValues);
             } else {
                 int[] resolvedIndices = resolveIndices();
-                while ((line = reader.readNext()) != null) {
-                    List<String> rawValues = rawValues(line);
-                    int rowDecision = evaluateRow(rawValues);
-                    if (rowDecision == STOP_READING) break;
-                    // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
-                    if (rowDecision == SKIP_ROW) continue;
-                    guardedConsumer.accept(applyUniqueKey(
-                            processRow(line, resolvedIndices, reader.recordStartLine(), rawValues)));
-                    recordEmittedRow();
-                    rowCount++;
-                    notifyLegacyProgress(rowCount, cursor);
-                    if (readOptions.readProgressInterval() > 0
-                            && rowCount % readOptions.readProgressInterval() == 0) {
-                        notifyReadProgress(rowCount, -1, totalRows);
-                    }
+                processor = (line, startLine, rawValues) -> processRow(line, resolvedIndices, startLine, rawValues);
+            }
+
+            String[] line;
+            long rowCount = 0;
+            while ((line = reader.readNext()) != null) {
+                List<String> rawValues = rawValues(line);
+                int rowDecision = evaluateRow(rawValues);
+                if (rowDecision == STOP_READING) break;
+                // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
+                if (rowDecision == SKIP_ROW) continue;
+                guardedConsumer.accept(applyUniqueKey(processor.process(line, reader.recordStartLine(), rawValues)));
+                recordEmittedRow();
+                rowCount++;
+                notifyLegacyProgress(rowCount, cursor);
+                if (readOptions.readProgressInterval() > 0
+                        && rowCount % readOptions.readProgressInterval() == 0) {
+                    notifyReadProgress(rowCount, -1, totalRows);
                 }
             }
         } catch (ReadStoppedException e) {

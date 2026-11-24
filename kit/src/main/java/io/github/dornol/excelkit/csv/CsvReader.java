@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.csv;
 
 import com.opencsv.ICSVParser;
 import io.github.dornol.excelkit.core.read.AbstractReader;
+import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.read.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
@@ -178,19 +179,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private static CsvReader<Map<String, String>> forMap(@Nullable Set<String> selectedColumns) {
-        Function<RowData, Map<String, String>> mapMapper = row -> {
-            Map<String, String> map = new LinkedHashMap<>();
-            List<String> headers = row.headerNames();
-            int bound = headers.size();
-            for (int i = 0; i < bound; i++) {
-                String header = headers.get(i);
-                if (header == null) continue;
-                if (selectedColumns != null && !selectedColumns.contains(header)) continue;
-                if (row.headerIndexOf(header) != i) continue;
-                map.put(header, row.get(i).formattedValue());
-            }
-            return map;
-        };
+        Function<RowData, Map<String, String>> mapMapper = rowToMap(selectedColumns, CellData::formattedValue);
         CsvReader<Map<String, String>> reader = CsvReader.mapping(mapMapper);
         reader.enableMapMode(selectedColumns);
         return reader;
