@@ -209,8 +209,4 @@ final class SheetWriteEngine<T> {
         return cursor;
     }
 
-    /** The sheets written so far, in order. */
-    List<SXSSFSheet> sheets() {
-        return sheets;
-    }
 }

@@ -138,7 +138,7 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
                 rowStyleCache, cellStyleCache, this::createRolloverSheet);
         engine.start(firstSheet());
         try {
-            Iterator<T> it = stream.sequential().iterator();
+            Iterator<T> it = stream.iterator();
             while (it.hasNext()) {
                 T rowData = it.next();
                 engine.row(rowData);
@@ -190,10 +190,6 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
             throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
         }
         return wb.createSheet(name);
-    }
-
-    List<ExcelColumn<T>> columns() {
-        return columns;
     }
 
     @Override

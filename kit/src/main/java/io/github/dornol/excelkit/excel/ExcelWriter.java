@@ -302,12 +302,5 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements Wo
         return book.wb();
     }
 
-    Map<String, CellStyle> getCellStyleCache() {
-        return book.cellStyleCache();
-    }
-
-    ColumnStyleConfig.@Nullable DefaultStyleConfig<T> getDefaultStyleConfig() {
-        return cfg.defaultStyleConfig;
-    }
 
 }

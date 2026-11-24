@@ -165,10 +165,6 @@ public class ExcelWorkbook implements AutoCloseable, WorkbookOptions<ExcelWorkbo
         return wb;
     }
 
-    Map<String, CellStyle> cellStyleCache() {
-        return cellStyleCache;
-    }
-
     /**
      * Finishes the workbook and returns an {@link ExcelHandler} for output.
      * <p>
