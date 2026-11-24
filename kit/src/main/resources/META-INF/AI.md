@@ -100,7 +100,7 @@ try (var wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
 }
 ```
 
-All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.column("Name", fn, cfg -> cfg.type().bold())` pattern. `ExcelWriter` and `ExcelSheetWriter` share one base type, `SheetWriter<T, SELF>`, so a setting written once applies to both: `static <T, W extends SheetWriter<T, W>> W standardLook(W w) { return w.stripedRows().autoFilter(true); }`. The column configurer is always a `Consumer<ColumnConfig<T>>` (`style(CellStyle)` included), so `Consumer<ColumnConfig<Row>> money = c -> c.type(ExcelDataType.INTEGER)` can be reused.
+The Excel writers (`ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter`) use the same `.column("Name", fn, cfg -> cfg.type().bold())` pattern; `CsvWriter` has no styling, so its `.column("Name", fn)` takes no configurer (format a value in the function). `ExcelWriter` and `ExcelSheetWriter` share one base type, `SheetWriter<T, SELF>`, so a setting written once applies to both: `static <T, W extends SheetWriter<T, W>> W standardLook(W w) { return w.stripedRows().autoFilter(true); }`. The column configurer is always a `Consumer<ColumnConfig<T>>` (`style(CellStyle)` included), so `Consumer<ColumnConfig<Row>> money = c -> c.type(ExcelDataType.INTEGER)` can be reused.
 
 ## Key API Notes (v0.16.0+)
 

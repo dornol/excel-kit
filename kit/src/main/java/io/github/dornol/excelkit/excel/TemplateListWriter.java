@@ -348,6 +348,11 @@ public class TemplateListWriter<T> {
 
         stream.sequential().forEach(rowData -> {
             cursor.plusTotal();
+            if (cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY) {
+                throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: Excel sheets hold at most "
+                        + ExcelLimits.SHEET_ROW_CAPACITY + " rows, and a list written into a template stays on its sheet. "
+                        + "Write fewer rows into it, or use ExcelWriter, which rolls over to new sheets.");
+            }
             ExcelRowWriter.write(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
             ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
         });
