@@ -132,6 +132,11 @@ With `maxRows()` rollover each sheet gets its own chart over that sheet's rows. 
 backwards column pair and two given rows that run upwards; a category or value column that is not among the columns fails
 with `ExcelWriteException`.
 
+**Heap for many chart sheets.** The rows of a sheet are streamed, but Apache POI keeps the chart of every sheet in memory
+until the workbook is written: about 90 KB of heap per sheet with a chart, against about 30 KB per sheet without one
+(measured with `ExcelWorkbook`, which is the same as plain Apache POI). A workbook of thousands of chart sheets therefore
+needs a larger heap: 256 MB held about 2,700 chart sheets, and the number of rows does not matter.
+
 **Combination chart:** a line over the main series, on the same value axis (`lineColumn`) or on a second axis on the
 right (`secondaryLineColumn`), for a quantity with another unit (columns of revenue, a line of the growth rate):
 
