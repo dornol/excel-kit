@@ -344,8 +344,32 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
                             ReadAbortReason.MAX_ERRORS_EXCEEDED, readOptions.maxErrors(), count);
                 }
             } else lifecycle.record(true);
-            consumer.accept(result);
+            try {
+                consumer.accept(result);
+            } catch (ReadStoppedException | ReadAbortException | ReadLimitExceededException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                // The caller's own failure, told apart from the parser's, so that it reaches the caller as it was thrown.
+                throw new CallbackFailure(e);
+            }
         };
+    }
+
+    /**
+     * Carries an exception the caller's callback threw through the read, so that it can be told from a failure of
+     * the read itself. A handler unwraps it with {@link #original()} and throws that.
+     */
+    protected static final class CallbackFailure extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        CallbackFailure(RuntimeException original) {
+            super(original);
+        }
+
+        /** The exception the callback threw. */
+        public RuntimeException original() {
+            return (RuntimeException) getCause();
+        }
     }
 
     protected void notifyReadProgress(long processedRows, int sheetIndex, long totalRows) {
@@ -375,7 +399,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
      * mapping, or cell-conversion errors) are described in a {@link RowError}
      * and passed to {@code onError}. The library buffers nothing — memory
      * management is entirely up to the caller. Reading continues past errors.
-     * To abort, throw from {@code onError}.
+     * To abort, throw from {@code onError}: the exception reaches the caller as it was thrown.
      *
      * @param onSuccess callback for each successfully parsed and validated row
      * @param onError   callback for each failed row

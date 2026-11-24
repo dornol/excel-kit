@@ -151,6 +151,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             body.run();
         } catch (ReadStoppedException ignored) {
             stoppedEarly = true;
+        } catch (CallbackFailure e) {
+            throw e.original();
         } catch (ReadLimitExceededException | ReadSecurityException | ExcelReadException | ReadAbortException e) {
             throw e;
         } catch (Exception e) {

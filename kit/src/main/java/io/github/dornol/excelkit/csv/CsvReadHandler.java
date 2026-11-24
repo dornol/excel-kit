@@ -137,6 +137,8 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         } catch (ReadStoppedException e) {
             // Normal early completion requested by readWhile.
             stoppedEarly = true;
+        } catch (CallbackFailure e) {
+            throw e.original();
         } catch (ReadLimitExceededException e) {
             throw e;
         } catch (CsvReadException | ReadAbortException e) {
