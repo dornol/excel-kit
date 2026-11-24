@@ -53,6 +53,16 @@ class CallbackExceptionTest {
         }
 
         @Test
+        void anOnSuccessExceptionIsThrownAsItWas() {
+            assertThrows(Abort.class, () -> CsvReader.forMap().read(csv(), row -> { throw new Abort(); }, error -> { }));
+        }
+
+        @Test
+        void aReadStrictConsumerExceptionIsThrownAsItWas() {
+            assertThrows(Abort.class, () -> CsvReader.forMap().readStrict(csv(), row -> { throw new Abort(); }));
+        }
+
+        @Test
         void aFailureOfTheReadItselfIsStillACsvReadException() {
             assertThrows(CsvReadException.class, () -> CsvReader.forMap("Missing").strictHeaders().read(csv(), r -> { }));
         }
@@ -63,6 +73,16 @@ class CallbackExceptionTest {
         @Test
         void aResultCallbackExceptionIsThrownAsItWas() {
             assertThrows(Abort.class, () -> ExcelReader.forMap().read(xlsx(), r -> { throw new Abort(); }));
+        }
+
+        @Test
+        void anOnSuccessExceptionIsThrownAsItWas() {
+            assertThrows(Abort.class, () -> ExcelReader.forMap().read(xlsx(), row -> { throw new Abort(); }, error -> { }));
+        }
+
+        @Test
+        void aReadStrictConsumerExceptionIsThrownAsItWas() {
+            assertThrows(Abort.class, () -> ExcelReader.forMap().readStrict(xlsx(), row -> { throw new Abort(); }));
         }
 
         @Test
