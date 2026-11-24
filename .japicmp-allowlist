@@ -20,3 +20,5 @@ io.github.dornol.excelkit.csv.CsvHandler
 # ExcelWriteErrorPolicy moved to core as WriteErrorPolicy, shared by every writer; CsvWriter.failOnColumnError(boolean) became writeErrorPolicy(WriteErrorPolicy).
 io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy
 io.github.dornol.excelkit.csv.CsvWriter#failOnColumnError(boolean)
+# The schema builder's writeErrorPolicy(...) takes the shared WriteErrorPolicy.
+io.github.dornol.excelkit.schema.ExcelKitSchema$Builder#writeErrorPolicy(io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy)
