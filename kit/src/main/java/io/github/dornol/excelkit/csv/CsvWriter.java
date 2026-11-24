@@ -439,7 +439,9 @@ public class CsvWriter<T> {
 
     /**
      * Controls whether extraction errors abort writing. Defaults to {@code true}.
-     * When disabled, failed fields are written as empty fields.
+     * When disabled, failed fields are written as empty fields (or as the {@link CsvColumnConfig#nullValue(Object)
+     * nullValue} of the column). This is what {@code ExcelWriteErrorPolicy.LENIENT} does for the Excel writers, which
+     * fail fast by default as well; CSV has no cell types, so a failure to convert a value is not a case here.
      *
      * @param enabled whether to abort writing when a column extractor throws
      * @return this writer

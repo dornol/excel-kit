@@ -65,7 +65,8 @@ selected charset. With formula-injection defense enabled, numeric objects keep
 their signs and formula-like text is prefixed with a single quote.
 NUL characters and exceptions from value extractors raise a
 `CsvWriteException`. Use `.failOnColumnError(false)` to write an empty field
-when an extractor fails. Null and empty string values both write as empty CSV fields.
+(or the column's `nullValue`) when an extractor fails: the same as `writeErrorPolicy(LENIENT)` of the Excel writers, which
+fail fast by default as well. Null and empty string values both write as empty CSV fields unless a column has a `nullValue`.
 
 ## Data Types
 
