@@ -16,4 +16,4 @@ record CsvReadSessionConfig<T>(@Nullable List<ReadColumn<T>> columns,
         @Nullable Supplier<T> supplier, @Nullable Function<RowData,T> mapper,
         @Nullable Validator validator, int headerRowIndex, char delimiter, Charset charset,
         @Nullable Set<String> selectedColumns, char quoteChar, char escapeChar,
-        boolean strictQuotes, boolean ignoreLeadingWhiteSpace, ReadOptions options) {}
+        boolean strictQuotes, boolean ignoreLeadingWhiteSpace, boolean countRows, ReadOptions options) {}

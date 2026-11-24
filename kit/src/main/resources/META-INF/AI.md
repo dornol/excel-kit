@@ -133,7 +133,7 @@ The Excel writers (`ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter`) use 
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time
 - `ExcelImage.size(w, h)` sets cell span; `ExcelImage.fromUrl(url)` downloads and auto-detects type
 - `rowStyle(predicate, config)` — conditional row-level bold/font/color (first match wins)
-- `countRows()` on `ExcelReader` — opt-in pre-scan; `cursor.getTotalRows()` in progress callback
+- `countRows()` on `ExcelReader` and `CsvReader` — opt-in pre-scan; `cursor.getTotalRows()` in the progress callback and `ReadProgress.totalRows()` in `onReadProgress` (every event, completion included)
 - CSV injection defense covers leading whitespace + formula characters (e.g., `" =cmd"`)
 
 ## Key API Notes (v0.16.9+)

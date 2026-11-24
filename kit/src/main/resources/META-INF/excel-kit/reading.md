@@ -113,11 +113,13 @@ reader
     .headerRows(1)          // default: 1 — total header row count (v0.16.13+, Excel only)
     .strictHeaders()        // fail fast when configured headers are missing
     .onProgress(10_000, (count, cursor) -> log.info("Read {} rows", count))
-    .countRows()            // opt-in pre-scan for total row count (v0.16.15+, Excel only)
+    .countRows()            // opt-in pre-scan for total row count (v0.16.15+; CsvReader too since 0.29.0)
     .read(inputStream, result -> { ... });
 ```
 
-With `countRows()`, `cursor.getTotalRows()` returns the total data row count in the progress callback (otherwise `-1`).
+With `countRows()`, `cursor.getTotalRows()` returns the total data row count in the progress callback (otherwise `-1`); the
+newer `onReadProgress(...)` callback gets it as `ReadProgress.totalRows()` on every event, the completion event included.
+`CsvReader` has `countRows()` too (the records after the header, a quoted line break being inside one record).
 
 ### Multi-row headers (v0.16.13+, Excel)
 
