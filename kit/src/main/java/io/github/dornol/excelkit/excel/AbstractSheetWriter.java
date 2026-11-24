@@ -491,7 +491,12 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @since 0.29.0
      */
     public SELF emptyMessage(String text) {
-        cfg.emptyMessage = Objects.requireNonNull(text, "text cannot be null");
+        Objects.requireNonNull(text, "text cannot be null");
+        if (text.length() > ExcelLimits.MAX_CELL_TEXT) {
+            throw new IllegalArgumentException("emptyMessage(...) has " + text.length() + " characters; a cell holds at most "
+                    + ExcelLimits.MAX_CELL_TEXT);
+        }
+        cfg.emptyMessage = text;
         return self();
     }
 
@@ -517,7 +522,8 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      *     .sum("Salary").average("Salary"));
      * }</pre>
      *
-     * @param key        the group of a row; consecutive rows with equal keys form a group
+     * @param key        the group of a row; consecutive rows with equal keys form a group; keys are compared with {@code equals}, so {@code 1} and {@code 1L}, or two
+     *                   arrays, are different keys (return a value that compares as you mean, such as a {@code String})
      * @param configurer sets the subtotal columns and the style of the subtotal rows
      * @return this writer for chaining
      * @since 0.29.0

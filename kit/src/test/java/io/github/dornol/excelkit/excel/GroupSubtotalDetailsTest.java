@@ -729,6 +729,40 @@ class GroupSubtotalDetailsTest {
         }
 
         @Test
+        void aLabelLongerThanACellNamesItsKey() {
+            var w = base().groupSubtotal(Row::dept, s -> s.label("Name", k -> "L".repeat(32768)).sum("Amount"));
+            var e = assertThrows(ExcelWriteException.class, () -> w.write(ROWS).writeTo(OutputStream.nullOutputStream()));
+            assertTrue(e.getMessage().contains("key A") && e.getMessage().contains("32768") && e.getMessage().contains("32767"), e.getMessage());
+        }
+
+        @Test
+        void aLabelOfTheLimitIsWritten() throws IOException {
+            var w = base().groupSubtotal(Row::dept, s -> s.label("Name", k -> "L".repeat(32767)).sum("Amount"));
+            try (var wb = open(w.write(ROWS))) {
+                assertEquals(32767, wb.getSheetAt(0).getRow(4).getCell(1).getStringCellValue().length());
+            }
+        }
+
+        @Test
+        void keysThatPrintAlikeButAreNotEqualAreSeparateGroups() throws IOException {
+            record K(Object key, int amount) {}
+            var w = ExcelWriter.<K>create().column("Key", K::key).column("Amount", K::amount)
+                    .groupSubtotal(K::key, s -> s.label("Key", k -> "total").sum("Amount"));
+            try (var wb = open(w.write(List.of(new K(1, 1), new K(1L, 1), new K(1, 1))))) {
+                assertEquals(6, wb.getSheetAt(0).getLastRowNum(), "three keys by equals(): 1, 1L, 1 again: each gets its subtotal row");
+            }
+        }
+
+        @Test
+        void aColumnLeftOutByColumnIfIsAnUnknownColumnAndNamed() {
+            var w = ExcelWriter.<Row>create().column("Dept", Row::dept).column("Name", Row::name)
+                    .columnIf("Amount", false, Row::amount)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> "t").sum("Amount"));
+            var e = assertThrows(ExcelWriteException.class, () -> w.write(ROWS));
+            assertTrue(e.getMessage().contains("Amount"), e.getMessage());
+        }
+
+        @Test
         void unknownAndClashingColumnsAreNamed() {
             var unknownOp = ExcelWriter.<Row>create().column("Dept", Row::dept)
                     .groupSubtotal(Row::dept, s -> s.sum("Nope"));

@@ -144,7 +144,8 @@ ExcelWriter.<Employee>create()
     .write(sortedByDepartment);
 ```
 
-A subtotal row follows every run of rows with the same key. It is an Excel `SUBTOTAL` formula over the rows of its
+A subtotal row follows every run of rows with the same key (compared with `equals`: `1` and `1L`, or two arrays, are
+different keys, so return a `String` or another value that compares as you mean). It is an Excel `SUBTOTAL` formula over the rows of its
 group, so it follows the data when a person edits the file, and a `summary(...)` over the sheet counts every row once
 (it switches to `SUBTOTAL` too). `sum`, `average`, `count`, `countA`, `min` and `max` are available; `style(...)` changes the
 default bold-on-gray look; `label(column, key -> text)` sets the column of the text (the first column by default).

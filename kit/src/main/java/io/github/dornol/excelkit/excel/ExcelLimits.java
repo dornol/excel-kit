@@ -30,6 +30,9 @@ final class ExcelLimits {
      */
     static final int MAX_CELL_STYLES = SpreadsheetVersion.EXCEL2007.getMaxCellStyles();
 
+    /** The most characters a cell of an .xlsx workbook holds (32,767). */
+    static final int MAX_CELL_TEXT = SpreadsheetVersion.EXCEL2007.getMaxTextLength();
+
     /**
      * Validates a {@code maxRows} setting: positive, and small enough that a sheet can hold that many
      * data rows below its header row.

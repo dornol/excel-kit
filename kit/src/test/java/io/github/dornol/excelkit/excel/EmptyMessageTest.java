@@ -221,6 +221,20 @@ class EmptyMessageTest {
         }
 
         @Test
+        void aTextLongerThanACellIsRefusedWhereItIsGiven() {
+            assertDoesNotThrow(() -> writer().emptyMessage("x".repeat(32767)));
+            var e = assertThrows(IllegalArgumentException.class, () -> writer().emptyMessage("x".repeat(32768)));
+            assertTrue(e.getMessage().contains("32768") && e.getMessage().contains("32767"), e.getMessage());
+        }
+
+        @Test
+        void aTextOfTheLimitIsWritten() throws IOException {
+            try (var wb = open(writer().emptyMessage("x".repeat(32767)).write(NONE))) {
+                assertEquals(32767, wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue().length());
+            }
+        }
+
+        @Test
         void theTextMustNotBeNull() {
             assertThrows(NullPointerException.class, () -> ExcelWriter.<Row>create().emptyMessage(null));
         }

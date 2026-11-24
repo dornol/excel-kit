@@ -152,6 +152,10 @@ final class SubtotalTracker<T> {
             CellStyle base = columns.get(i).getStyle();
             if (i == labelIndex) {
                 String text = config.labelText().apply(groupKey);
+                if (text.length() > ExcelLimits.MAX_CELL_TEXT) {
+                    throw new ExcelWriteException("The subtotal label for key " + groupKey + " has " + text.length()
+                            + " characters; a cell holds at most " + ExcelLimits.MAX_CELL_TEXT);
+                }
                 ExcelCellText.write(cell, text);
                 // a label wider than the data of its column widens it, within the rows the width is sampled from
                 if (cfg.autoWidthSampleRows > 0 && cursor.getCurrentTotal() <= cfg.autoWidthSampleRows) {
