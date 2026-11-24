@@ -563,6 +563,21 @@ CsvReader.<Person>mapping(row -> new Person(
 
 CSV-specific options: see [CSV](csv.md).
 
+## Files that are not an .xlsx
+
+Only `.xlsx` workbooks (and CSV, with `CsvReader`) are read. A file that is something else fails with an
+`ExcelReadException` that says what it is, from every way of reading (the readers, `ExcelWorkbookInspector`,
+`ExcelWorkbookReader`), judged by the content of the file and not by its name:
+
+| The file is | The message says |
+|---|---|
+| an Excel 97-2003 workbook (`.xls`) | it is an `.xls`, which excel-kit does not read: save it as `.xlsx` and read that |
+| a password-protected `.xlsx` read without `password(...)` | it is password-protected: give the password with `password(...)` |
+| another OLE2 document, text, a CSV, an image | it is not an Excel workbook (and why: an `.xlsx` is a ZIP archive) |
+| empty | it is empty |
+
+`TabularFileDetector` tells the same kinds apart by signature when you want to check before reading.
+
 ## External workbook compatibility
 
 Workbook-specific 1900/1904 date systems are applied to formatted numeric cells and

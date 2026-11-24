@@ -54,6 +54,7 @@ class ExcelReadSupport {
     }
 
     static void decrypt(Path encrypted, String password, Path target) throws Exception {
+        ExcelFileFormat.requireXlsx(encrypted, true);
         try (POIFSFileSystem fs =
                      new POIFSFileSystem(encrypted.toFile(), true)) {
             EncryptionInfo info = new EncryptionInfo(fs);

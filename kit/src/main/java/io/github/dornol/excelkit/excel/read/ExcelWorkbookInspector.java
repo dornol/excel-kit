@@ -252,6 +252,7 @@ public final class ExcelWorkbookInspector {
     // Each sheet stream is opened only to advance the iterator and is closed right away.
     @SuppressWarnings("try")
     private static List<ExcelSheetInfo> readSheetNames(Path path) {
+        ExcelFileFormat.requireXlsx(path, false);
         try (OPCPackage pkg = OPCPackage.open(path.toFile(), PackageAccess.READ)) {
             XSSFReader reader = new XSSFReader(pkg);
             XSSFReader.SheetIterator sheets = (XSSFReader.SheetIterator) reader.getSheetsData();
@@ -270,6 +271,7 @@ public final class ExcelWorkbookInspector {
     }
 
     private static List<String> readHeaders(Path path, int sheetIndex, int headerRowIndex, int headerRows) {
+        ExcelFileFormat.requireXlsx(path, false);
         try (OPCPackage pkg = OPCPackage.open(path.toFile(), PackageAccess.READ)) {
             XSSFReader reader = new XSSFReader(pkg);
             SharedStrings sharedStrings = reader.getSharedStringsTable();
