@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
@@ -106,6 +107,22 @@ public final class ExcelKitMultipartFile {
      * @since 0.19.0
      */
     public static MultipartFile requireExcelOrCsvContent(MultipartFile file) {
+        return requireExcelOrCsvContent(file, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Like {@link #requireExcelOrCsvContent(MultipartFile)}, for a CSV that is not UTF-8 (for example the
+     * CP949 a Korean Excel saves as "CSV"). The CSV content must decode in {@code csvCharset} without errors;
+     * pass the same charset to the reader ({@code CsvReader.charset(...)}). The encoding is not guessed:
+     * a short file can be valid in several encodings. It has no effect on an {@code .xlsx}/{@code .xlsm} upload.
+     *
+     * @param file       upload file
+     * @param csvCharset the encoding the CSV content must have
+     * @return the same file for fluent validation before passing it to {@link ExcelKitUpload}
+     * @since 0.29.0
+     */
+    public static MultipartFile requireExcelOrCsvContent(MultipartFile file, Charset csvCharset) {
+        Objects.requireNonNull(csvCharset, "csvCharset must not be null");
         requireExcelOrCsv(file);
         String extension = extensionOf(file.getOriginalFilename());
         byte[] prefix = readPrefix(file, CONTENT_PREFIX_BYTES);
@@ -118,7 +135,7 @@ public final class ExcelKitMultipartFile {
         }
         if (extension.equals("csv")) {
             // A prefix shorter than the limit is the whole file; otherwise it may end inside a character.
-            requireTextCsv(prefix, prefix.length < CONTENT_PREFIX_BYTES);
+            requireTextCsv(prefix, prefix.length < CONTENT_PREFIX_BYTES, csvCharset);
             return file;
         }
         throw new ExcelKitUploadException("Unsupported upload file extension: " + extension);
@@ -132,22 +149,23 @@ public final class ExcelKitMultipartFile {
         }
     }
 
-    private static void requireTextCsv(byte[] prefix, boolean wholeFile) {
+    private static void requireTextCsv(byte[] prefix, boolean wholeFile, Charset charset) {
         if (prefix.length == 0) {
             throw new ExcelKitUploadException("Upload file is empty");
         }
         // A workbook (or any binary) with a .csv name is not text CSV; the detector knows the signatures and
         // tells text from binary by its share of control characters.
-        if (TabularFileDetector.detect(new ByteArrayInputStream(prefix)) != TabularFileType.CSV) {
+        if (TabularFileDetector.detectDetailed(new ByteArrayInputStream(prefix),
+                TabularFileDetector.DEFAULT_SAMPLE_BYTES, charset, '"', '\0').type() != TabularFileType.CSV) {
             throw new ExcelKitUploadException("Upload file content is not text CSV");
         }
-        var decoder = StandardCharsets.UTF_8.newDecoder()
+        var decoder = charset.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);
         // With endOfInput=false an incomplete trailing sequence is left undecoded instead of reported.
         CoderResult result = decoder.decode(ByteBuffer.wrap(prefix), CharBuffer.allocate(prefix.length), wholeFile);
         if (result.isError()) {
-            throw new ExcelKitUploadException("Upload file content is not UTF-8 CSV");
+            throw new ExcelKitUploadException("Upload file content is not " + charset.name() + " CSV");
         }
     }
 

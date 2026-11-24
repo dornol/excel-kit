@@ -119,6 +119,32 @@ class ExcelKitMultipartFileTest {
     }
 
     @Test
+    void requireExcelOrCsvContent_acceptsCp949CsvOnlyWhenTheCharsetIsGiven() {
+        java.nio.charset.Charset cp949 = java.nio.charset.Charset.forName("MS949");
+        for (int pad = 0; pad < 2; pad++) {
+            String csv = "a".repeat(pad) + "이름,값\n" + "가나다,1\n".repeat(2000);
+            MockMultipartFile file = new MockMultipartFile("file", "data.csv", "text/csv", csv.getBytes(cp949));
+
+            assertSame(file, ExcelKitMultipartFile.requireExcelOrCsvContent(file, cp949), "pad=" + pad);
+            assertThrows(ExcelKitUploadException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(file));
+        }
+    }
+
+    @Test
+    void requireExcelOrCsvContent_withCharset_rejectsUtf8BytesAndNull() {
+        java.nio.charset.Charset cp949 = java.nio.charset.Charset.forName("MS949");
+        MockMultipartFile utf8 = new MockMultipartFile("file", "data.csv", "text/csv",
+                "이름,값\n가나다,1\n".getBytes(StandardCharsets.UTF_8));
+        MockMultipartFile utf16 = new MockMultipartFile("file", "data.csv", "text/csv",
+                "a,b\n1,2\n".getBytes(StandardCharsets.UTF_16));
+
+        // UTF-8 Korean text is not valid MS949 here (a lead byte followed by an invalid trail byte)
+        assertThrows(ExcelKitUploadException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(utf8, cp949));
+        assertSame(utf16, ExcelKitMultipartFile.requireExcelOrCsvContent(utf16, StandardCharsets.UTF_16));
+        assertThrows(NullPointerException.class, () -> ExcelKitMultipartFile.requireExcelOrCsvContent(utf8, null));
+    }
+
+    @Test
     void requireExcelOrCsvContent_rejectsInvalidUtf8EvenInsideALargeFile() {
         byte[] head = ("Name\n" + "x".repeat(100) + "\n").getBytes(StandardCharsets.UTF_8);
         byte[] bytes = new byte[head.length + 3];

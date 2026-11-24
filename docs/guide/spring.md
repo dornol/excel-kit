@@ -94,6 +94,10 @@ before reading, so a file whose content is not XLSX (or CSV) is rejected with
 content; call `ExcelKitMultipartFile.requireExcelOrCsvContent(file)` first, or use
 `ExcelKitUpload.readDetected(...)`, when you need the same guarantee.
 
+`requireExcelOrCsvContent(file)` accepts a CSV only if it is valid UTF-8. For another encoding (the CP949 that a
+Korean Excel saves as "CSV") pass it: `requireExcelOrCsvContent(file, Charset.forName("MS949"))`, and give the same
+charset to `CsvReader.charset(...)`. The encoding is not guessed, as a short file can be valid in several.
+
 `UploadResult.summary()` includes total rows, success/error counts, duration,
 filename, and file size. `UploadError.rawValues()` carries the source row values
 for correction screens.
