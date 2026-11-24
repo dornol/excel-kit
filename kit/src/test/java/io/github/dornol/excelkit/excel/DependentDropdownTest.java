@@ -75,10 +75,10 @@ class DependentDropdownTest {
                 // Evaluate the validation formula the way Excel does for a cell of row 2, 3 and 4 (parent in column A)
                 var row = sheet.createRow(10);
                 for (var expected : Map.of("가", 3, "나", 2, "다", 1).entrySet()) {
-                    sheet.getRow(1).getCell(0).setCellValue(expected.getKey());
+                    sheet.getRow(1).createCell(0).setCellValue(expected.getKey()); // a new cell: POI 5 ignores setCellValue on a cell it has read from a file
                     var cell = row.createCell(0);
                     cell.setCellFormula("COUNTA(" + formula + ")");
-                    evaluator.clearAllCachedResultValues();
+                    evaluator = wb.getCreationHelper().createFormulaEvaluator(); // a new one: POI 5 keeps the value of a changed cell it has already read
                     var value = evaluator.evaluate(cell);
                     assertEquals(CellType.NUMERIC, value.getCellType());
                     assertEquals(expected.getValue(), (int) value.getNumberValue(), expected.getKey());
@@ -103,10 +103,10 @@ class DependentDropdownTest {
                 var row = sheet.createRow(10);
                 // the parent cell holds a number, as a numeric code column does
                 for (var expected : Map.of(1, 3, 2, 1).entrySet()) {
-                    sheet.getRow(1).getCell(0).setCellValue((double) expected.getKey());
+                    sheet.getRow(1).createCell(0).setCellValue((double) expected.getKey()); // a new cell: POI 5 ignores setCellValue on a cell it has read from a file
                     var cell = row.createCell(0);
                     cell.setCellFormula("COUNTA(" + formula + ")");
-                    evaluator.clearAllCachedResultValues();
+                    evaluator = wb.getCreationHelper().createFormulaEvaluator(); // a new one: POI 5 keeps the value of a changed cell it has already read
                     assertEquals(expected.getValue(), (int) evaluator.evaluate(cell).getNumberValue(), "code " + expected.getKey());
                 }
             }

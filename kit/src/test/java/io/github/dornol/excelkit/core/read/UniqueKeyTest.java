@@ -251,7 +251,7 @@ class UniqueKeyTest {
                 wb.write(out);
             }
             var results = new ArrayList<ReadResult<Emp>>();
-            ExcelReader.setter(Emp::new).headerNormalizer(h -> h.trim().toLowerCase())
+            ExcelReader.setter(Emp::new).headerNormalizer(h -> h.trim().toLowerCase(java.util.Locale.ROOT))
                     .column("emp id", (e, c) -> e.id = c.asString())
                     .uniqueKey("EMP ID")
                     .read(new ByteArrayInputStream(out.toByteArray()), results::add);

@@ -54,7 +54,7 @@ class DataRowsWriterTest {
 
     private static String dump(XSSFWorkbook wb) {
         var sheet = wb.getSheetAt(0);
-        var fmt = new org.apache.poi.ss.usermodel.DataFormatter();
+        var fmt = new org.apache.poi.ss.usermodel.DataFormatter(java.util.Locale.ROOT);
         var sb = new StringBuilder();
         for (int r = 0; r <= sheet.getLastRowNum(); r++) {
             var row = sheet.getRow(r);

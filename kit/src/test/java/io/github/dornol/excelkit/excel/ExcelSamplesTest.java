@@ -385,18 +385,18 @@ class ExcelSamplesTest {
 
             String itemFormula = validations.get(1).getValidationConstraint().getFormula1();
             for (var expected : java.util.Map.of("가", 3, "나", 2, "다", 1).entrySet()) {
-                sheet.getRow(1).getCell(0).setCellValue(expected.getKey());
+                sheet.getRow(1).createCell(0).setCellValue(expected.getKey()); // a new cell: POI 5 ignores setCellValue on a cell it has read from a file
                 scratch.setCellFormula("COUNTA(" + itemFormula + ")");
-                evaluator.clearAllCachedResultValues();
+                evaluator = wb.getCreationHelper().createFormulaEvaluator(); // a new one: POI 5 keeps the value of a changed cell it has already read
                 assertEquals(expected.getValue(), (int) evaluator.evaluate(scratch).getNumberValue(), expected.getKey());
             }
 
             String subFormula = validations.get(2).getValidationConstraint().getFormula1();
             assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, sheet.getRow(1).getCell(2).getCellType(), "a number, not text");
             for (var expected : java.util.Map.of(1, 3, 2, 1).entrySet()) {
-                sheet.getRow(1).getCell(2).setCellValue((double) expected.getKey());
+                sheet.getRow(1).createCell(2).setCellValue((double) expected.getKey()); // a new cell: POI 5 ignores setCellValue on a cell it has read from a file
                 scratch.setCellFormula("COUNTA(" + subFormula + ")");
-                evaluator.clearAllCachedResultValues();
+                evaluator = wb.getCreationHelper().createFormulaEvaluator(); // a new one: POI 5 keeps the value of a changed cell it has already read
                 assertEquals(expected.getValue(), (int) evaluator.evaluate(scratch).getNumberValue(), "code " + expected.getKey());
             }
         }

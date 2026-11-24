@@ -55,7 +55,7 @@ class TemplateListWriterColumnsTest {
     }
 
     private static List<List<String>> table(XSSFWorkbook wb, int firstRow) {
-        var fmt = new DataFormatter();
+        var fmt = new DataFormatter(java.util.Locale.ROOT);
         var rows = new ArrayList<List<String>>();
         var sheet = wb.getSheetAt(0);
         for (int r = firstRow; r <= sheet.getLastRowNum(); r++) {

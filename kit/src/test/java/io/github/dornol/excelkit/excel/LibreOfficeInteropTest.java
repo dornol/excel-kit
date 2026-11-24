@@ -62,7 +62,9 @@ class LibreOfficeInteropTest {
         assertTrue(!log.contains("could not be loaded"), name + ": LibreOffice cannot open the file: " + log);
 
         try (Stream<Path> files = Files.list(dir.resolve("out-" + name))) {
-            return files.sorted().map(f -> {
+            // In the order of the sheets: "Sheet", "Sheet (2)", "Sheet (3)" do not sort that way by name ('.' follows ' ')
+            return files.sorted(java.util.Comparator.comparingInt(LibreOfficeInteropTest::sheetNumber)
+                    .thenComparing(f -> f.getFileName().toString())).map(f -> {
                 try {
                     return Files.readAllLines(f, StandardCharsets.UTF_8);
                 } catch (Exception e) {
@@ -70,6 +72,12 @@ class LibreOfficeInteropTest {
                 }
             }).toList();
         }
+    }
+
+    /** The number of a rolled-over sheet from the name of its file ("rich-Sheet (3).csv" is 3); the first sheet is 1. */
+    private static int sheetNumber(Path file) {
+        var m = java.util.regex.Pattern.compile("\\((\\d+)\\)\\.csv$").matcher(file.getFileName().toString());
+        return m.find() ? Integer.parseInt(m.group(1)) : 1;
     }
 
     private static Path write(Path dir, String name, ExcelWriter<Item> writer, int rows) throws Exception {
