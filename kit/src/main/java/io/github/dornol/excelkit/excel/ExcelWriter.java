@@ -2,7 +2,6 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.read.RowFunction;
-import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -18,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -41,7 +39,6 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
     private @Nullable AfterDataWriter afterAllWriter;
     private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
-    private @Nullable ExcelWriteSession<T> execution;
     private boolean written;
 
 
@@ -389,13 +386,15 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
             throw new ExcelWriteException("write() has already been called on this writer; "
                     + "a writer builds one workbook, so create a new ExcelWriter for another file");
         }
-        ExcelWriteOptions<T> options = snapshotOptions();
-        validateColumns(options);
+        List<ExcelColumn<T>> writtenColumns = List.copyOf(columns);
+        SheetConfig<T> config = new SheetConfig<>(cfg);
+        SheetWriteEngine.validate(writtenColumns, config);
         // From here the workbook (and its temp files) is in use; columns also keep per-workbook state.
         written = true;
-        this.execution = new ExcelWriteSession<>(options);
+        SheetWriteEngine<T> engine = new SheetWriteEngine<>(wb, writtenColumns, config, settings.headerStyle(),
+                headerStyleCache, rowStyleCache, null, index -> createNamedSheet(config, index));
         try {
-            startSheet(options);
+            engine.start(createNamedSheet(config, 0));
         } catch (RuntimeException e) {
             // The first sheet may already own a temp file; release it, but keep the original exception.
             closeWorkbookQuietly();
@@ -404,10 +403,15 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
 
         try {
             stream.sequential().forEach(rowData -> {
-                this.handleRowData(rowData);
-                consumer.accept(rowData, cursor());
+                engine.row(rowData);
+                consumer.accept(rowData, engine.cursor());
             });
-            finishWorkbook(options);
+            int nextRow = engine.finishData();
+            if (this.afterAllWriter != null) {
+                this.afterAllWriter.write(new SheetContext(engine.sheet(), wb, nextRow, writtenColumns, engine.headerRow()));
+            }
+            engine.finishSheets();
+            ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
             return new ExcelHandler(this.wb, settings.password());
         } catch (ExcelWriteException e) {
             closeWorkbookQuietly();
@@ -422,78 +426,12 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
         }
     }
 
-    /** Rejects missing or duplicate columns before any sheet (and its temp file) exists. */
-    private void validateColumns(ExcelWriteOptions<T> options) {
-        if (options.columns().isEmpty()) {
-            throw new ExcelWriteException("columns setting required");
+    /** Creates a sheet of the list: the name function of the writer names it by its index, else POI does. */
+    private SXSSFSheet createNamedSheet(SheetConfig<T> config, int index) {
+        if (config.sheetNameFunction != null) {
+            return wb.createSheet(config.sheetNameFunction.apply(index));
         }
-        ExcelWriteSupport.validateUniqueColumnNames(options.columns());
-        ExcelWriteSupport.validateMergeColumns(options.columns(), options.sheetConfig().tableOptions, true);
-        SubtotalTracker.validate(options.sheetConfig());
-        ExcelWriteSupport.validateEmptyMessage(options.sheetConfig());
-    }
-
-    /** Creates the first sheet and writes its preamble, header and sheet options. */
-    private void startSheet(ExcelWriteOptions<T> options) {
-        execution().sheet(createNamedSheet());
-        int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
-        execution().cursor(new Cursor(headerStartRow));
-        execution().headerRow(headerStartRow);
-
-        ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
-                options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints,
-                options.sheetConfig().tableOptions != null);
-        // With group headers the column names sit below the group rows: that row is the header row.
-        execution().headerRow(cursor().getRowOfSheet() - 1);
-        applySheetOptions();
-    }
-
-    /** Writes the subtotal row of the group still open at the end of the data of the current sheet. */
-    private void closeSubtotal() {
-        var subtotals = execution().subtotals();
-        if (subtotals != null) subtotals.close(sheet(), cursor(), executionOptions().sheetConfig(), execution().merges(),
-                rowStyleCache, wb);
-    }
-
-    /** Merges the runs of equal values still open at the end of the data of the current sheet. */
-    private void closeMergeRuns() {
-        var merges = execution().merges();
-        if (merges != null) merges.closeRuns(cursor().getRowOfSheet() - 1);
-    }
-
-    /**
-     * Runs everything that follows the last data row: after-data and summary rows, the
-     * {@code afterAll} callback, per-sheet post-processing, workbook protection, the chart and tables.
-     */
-    private void finishWorkbook(ExcelWriteOptions<T> options) {
-        closeSubtotal();
-        execution().dataEndRow(cursor().getRowOfSheet() - 1);
-        closeMergeRuns();
-        // With no row at all the sheet says so; the line is no data row, so a summary below it still ends at the header.
-        int lastDataRow = cursor().getRowOfSheet();
-        if (cursor().getCurrentTotal() == 0) {
-            ExcelWriteSupport.writeEmptyMessage(sheet(), wb, cursor(), options.columns(), options.sheetConfig(), rowStyleCache, null);
-        }
-        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                options.columns(), headerRowIndex(), options.sheetConfig(), execution().values(), lastDataRow);
-        execution().nextFreeRow(nextRow);
-        if (this.afterAllWriter != null) {
-            this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
-        }
-
-        int writtenSheets = wb.getNumberOfSheets();
-        applyPostProcessingAllSheets();
-        ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
-
-        // One chart per sheet over that sheet's own rows: a chart of only the last sheet would plot just the remainder.
-        if (options.sheetConfig().chartConfig != null) {
-            for (int i = 0; i < writtenSheets; i++) {
-                SXSSFSheet target = wb.getSheetAt(i);
-                ExcelWriteSupport.applyChart(target, options.sheetConfig().chartConfig, execution().headerRow(target),
-                        execution().dataEndRow(target), execution().nextFreeRow(target), options.columns().size());
-            }
-        }
-        applyTables(writtenSheets);
+        return wb.createSheet();
     }
 
     /**
@@ -517,134 +455,6 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
     public ExcelHandler write(Iterable<T> rows) {
         Objects.requireNonNull(rows, "rows cannot be null");
         return write(StreamSupport.stream(rows.spliterator(), false));
-    }
-
-    /**
-     * Applies the sheet-level settings that belong at the header, such as freeze panes.
-     */
-    private void applySheetOptions() {
-        ExcelWriteOptions<T> options = executionOptions();
-        int headerRowIdx = cursor().getRowOfSheet() - 1;
-        ExcelWriteSupport.applySheetOptions(sheet(), headerRowIdx,
-                options.sheetConfig().freezePaneCols, options.sheetConfig().freezePaneRows);
-    }
-
-    /**
-     * Handles the logic of writing a single row to the sheet, including value mapping and style.
-     *
-     * @param rowData A row of data
-     */
-    void handleRowData(T rowData) {
-        ExcelWriteOptions<T> options = executionOptions();
-        cursor().plusTotal();
-        if (isOverMaxRows()) {
-            StructuredTableWriter.requireRolloverAllowed(options.sheetConfig().tableOptions);
-            closeSubtotal();
-            execution().dataEndRow(cursor().getRowOfSheet() - 1);
-            closeMergeRuns();
-            execution().nextFreeRow(ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                    options.columns(), headerRowIndex(), options.sheetConfig(), execution().values()));
-            if (execution().values() != null) execution().values().resetSheet();
-            turnOverSheet();
-            int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
-            cursor().setRowOfSheet(preambleRow);
-            ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
-                    options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints,
-                    options.sheetConfig().tableOptions != null);
-            execution().headerRow(cursor().getRowOfSheet() - 1);
-            applySheetOptions();
-        }
-        var subtotals = execution().subtotals();
-        if (subtotals != null) subtotals.beforeRow(sheet(), cursor(), rowData, options.sheetConfig(), execution().merges(),
-                rowStyleCache, wb);
-        execution().pageBreaks().beforeRow(sheet(), cursor().getRowOfSheet(), rowData);
-        ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb,
-                execution().merges(), subtotals, execution().values());
-        ExcelWriteSupport.checkProgress(cursor(), options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
-    }
-
-    /**
-     * Creates a new sheet with a name determined by the sheet name function (if set).
-     *
-     * @return the newly created sheet
-     */
-    private SXSSFSheet createNamedSheet() {
-        int index = wb.getNumberOfSheets();
-        SheetConfig<T> sheetConfig = execution == null ? cfg : execution.options().sheetConfig();
-        if (sheetConfig.sheetNameFunction != null) {
-            return wb.createSheet(sheetConfig.sheetNameFunction.apply(index));
-        }
-        return wb.createSheet();
-    }
-
-    /**
-     * Creates a new sheet and resets the row index when the current sheet exceeds row limit.
-     */
-    private void turnOverSheet() {
-        execution().sheet(createNamedSheet());
-        cursor().initRow();
-    }
-
-    /**
-     * Checks whether the current sheet has exceeded its max row limit.
-     *
-     * @return true if a sheet needs to turn over; otherwise false
-     */
-    private boolean isOverMaxRows() {
-        int limit = executionOptions().sheetConfig().maxRows;
-        // The total already counts the row about to be written: it starts a new sheet when it is the first
-        // one past a full sheet. (A "% limit == 1" test never holds for limit 1.)
-        long total = cursor().getCurrentTotal();
-        if (total > limit && (total - 1) % limit == 0) return true;
-        // subtotal rows are not data rows: a sheet short of maxRows can still be out of room for them
-        var subtotals = execution().subtotals();
-        return total > 1 && subtotals != null && subtotals.sheetNearlyFull(cursor());
-    }
-
-    private ExcelWriteOptions<T> snapshotOptions() {
-        return new ExcelWriteOptions<>(List.copyOf(columns), new SheetConfig<>(cfg));
-    }
-
-    private ExcelWriteOptions<T> executionOptions() {
-        return execution().options();
-    }
-
-    private ExcelWriteSession<T> execution() {
-        if (execution == null) throw new IllegalStateException("write execution has not started");
-        return execution;
-    }
-
-    private SXSSFSheet sheet() { return execution().sheet(); }
-    private Cursor cursor() { return execution().cursor(); }
-    private int headerRowIndex() { return execution().headerRow(); }
-
-    /**
-     * Applies all post-processing steps (column widths, validations, outlines, hiding,
-     * protection, conditional formatting, print setup, tab color) to every sheet.
-     */
-    private void applyPostProcessingAllSheets() {
-        // post-processing can add a hidden helper sheet (dependent dropdowns); only the sheets written so far are processed
-        int sheets = wb.getNumberOfSheets();
-        for (int i = 0; i < sheets; i++) {
-            SXSSFSheet target = wb.getSheetAt(i);
-            ExcelWriteOptions<T> options = executionOptions();
-            ExcelSheetPostProcessor.apply(target, options.columns(), execution().headerRow(target),
-                    execution().dataEndRow(target), options.sheetConfig(), i);
-        }
-    }
-
-    private void applyTables(int sheets) {
-        TableOptions tableOptions = executionOptions().sheetConfig().tableOptions;
-        if (tableOptions == null) return;
-        List<String> headers = executionOptions().columns().stream().map(ExcelColumn::getName).toList();
-        for (int i = 0; i < sheets; i++) {
-            SXSSFSheet target = wb.getSheetAt(i);
-            int headerRowIndex = execution().headerRow(target);
-            if (target.getLastRowNum() <= headerRowIndex) continue;
-            String name = sheets == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
-            StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), headers,
-                    tableOptions.style(), tableOptions.showRowStripes(), executionOptions().sheetConfig().autoFilter);
-        }
     }
 
     private void closeWorkbookQuietly() {

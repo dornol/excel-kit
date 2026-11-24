@@ -1,7 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.read.RowFunction;
-import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -9,14 +8,12 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -119,102 +116,16 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
             throw new ExcelWriteException("write() has already been called on this sheet");
         }
         written = true;
-        if (columns.isEmpty()) {
-            throw new ExcelWriteException("columns setting required");
+        SheetWriteEngine.validate(columns, cfg);
+        SheetWriteEngine<T> engine = new SheetWriteEngine<>(wb, columns, cfg, headerStyle, headerStyleCache, rowStyleCache,
+                cellStyleCache, this::createRolloverSheet);
+        engine.start(this.sheet);
+        Iterator<T> it = stream.iterator();
+        while (it.hasNext()) {
+            engine.row(it.next());
         }
-        ExcelWriteSupport.validateUniqueColumnNames(columns);
-        ExcelWriteSupport.validateMergeColumns(columns, cfg.tableOptions, true);
-        SubtotalTracker.validate(cfg);
-        ExcelWriteSupport.validateEmptyMessage(cfg);
-
-        List<SXSSFSheet> allSheets = new ArrayList<>();
-        List<Integer> dataEndRows = new ArrayList<>();
-        List<Integer> nextFreeRows = new ArrayList<>();
-        allSheets.add(this.sheet);
-
-        int currentRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
-        Cursor cursor = new Cursor(currentRow);
-        int headerRowIndex = currentRow;
-
-        ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints,
-                cfg.tableOptions != null);
-        int headerRowIdx = cursor.getRowOfSheet() - 1;
-        // With group headers the column names sit below the group rows: that row is the header row.
-        headerRowIndex = headerRowIdx;
-        ExcelWriteSupport.applySheetOptions(sheet, headerRowIdx, cfg.freezePaneCols, cfg.freezePaneRows);
-
-        SXSSFSheet activeSheet = this.sheet;
-        var pageBreaks = new PageBreakTracker<T>(cfg.pageBreakWhen);
-        var merges = MergeRunTracker.of(columns);
-        var values = FormulaValues.of(cfg, columns);
-        var subtotals = SubtotalTracker.of(cfg, columns, values);
-
-        {
-            Iterator<T> it = stream.iterator();
-            while (it.hasNext()) {
-                T rowData = it.next();
-                cursor.plusTotal();
-                if (cursor.getCurrentTotal() > 1 && ((cursor.getCurrentTotal() > cfg.maxRows
-                        && (cursor.getCurrentTotal() - 1) % cfg.maxRows == 0)
-                        || (subtotals != null && subtotals.sheetNearlyFull(cursor)))) {
-                    StructuredTableWriter.requireRolloverAllowed(cfg.tableOptions);
-                    if (subtotals != null) subtotals.close(activeSheet, cursor, cfg, merges, rowStyleCache, wb);
-                    dataEndRows.add(cursor.getRowOfSheet() - 1);
-                    if (merges != null) merges.closeRuns(cursor.getRowOfSheet() - 1);
-                    nextFreeRows.add(ExcelWriteSupport.writeAfterDataAndSummary(
-                            activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values));
-                    if (values != null) values.resetSheet();
-                    activeSheet = createRolloverSheet(allSheets.size());
-                    allSheets.add(activeSheet);
-                    cursor.initRow();
-                    int preambleRow = ExcelWriteSupport.initSheetPreamble(activeSheet, wb, columns, cfg.beforeHeaderWriter);
-                    cursor.setRowOfSheet(preambleRow);
-                    ExcelHeaderWriter.write(activeSheet, cursor, columns, headerStyle, wb, headerStyleCache, cfg.groupComments, cfg.headerRowHeightInPoints,
-                            cfg.tableOptions != null);
-                    int hdrIdx = cursor.getRowOfSheet() - 1;
-                    headerRowIndex = hdrIdx;
-                    ExcelWriteSupport.applySheetOptions(activeSheet, hdrIdx, cfg.freezePaneCols, cfg.freezePaneRows);
-                }
-                if (subtotals != null) subtotals.beforeRow(activeSheet, cursor, rowData, cfg, merges, rowStyleCache, wb);
-                pageBreaks.beforeRow(activeSheet, cursor.getRowOfSheet(), rowData);
-                ExcelRowWriter.write(activeSheet, cursor, rowData, columns, cfg, rowStyleCache, wb, merges, subtotals, values);
-                ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
-            }
-        }
-
-        if (subtotals != null) subtotals.close(activeSheet, cursor, cfg, merges, rowStyleCache, wb);
-        dataEndRows.add(cursor.getRowOfSheet() - 1);
-        if (merges != null) merges.closeRuns(cursor.getRowOfSheet() - 1);
-        // With no row at all the sheet says so; the line is no data row, so a summary below it still ends at the header.
-        int lastDataRow = cursor.getRowOfSheet();
-        if (cursor.getCurrentTotal() == 0) {
-            ExcelWriteSupport.writeEmptyMessage(activeSheet, wb, cursor, columns, cfg, rowStyleCache, cellStyleCache);
-        }
-        int nextFreeRow = ExcelWriteSupport.writeAfterDataAndSummary(
-                activeSheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values, lastDataRow);
-        nextFreeRows.add(nextFreeRow);
-
-        for (int i = 0; i < allSheets.size(); i++) {
-            ExcelSheetPostProcessor.apply(allSheets.get(i), columns, headerRowIndex, dataEndRows.get(i), cfg, i);
-        }
-        TableOptions tableOptions = cfg.tableOptions;
-        if (tableOptions != null) {
-            for (int i = 0; i < allSheets.size(); i++) {
-                SXSSFSheet target = allSheets.get(i);
-                if (target.getLastRowNum() <= headerRowIndex) continue;
-                String name = allSheets.size() == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
-                StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), columns.stream().map(ExcelColumn::getName).toList(),
-                        tableOptions.style(), tableOptions.showRowStripes(), cfg.autoFilter);
-            }
-        }
-
-        // One chart per sheet over that sheet's own rows: a chart of only the last sheet would plot just the remainder.
-        if (cfg.chartConfig != null) {
-            for (int i = 0; i < allSheets.size(); i++) {
-                ExcelWriteSupport.applyChart(allSheets.get(i), cfg.chartConfig, headerRowIndex, dataEndRows.get(i),
-                        nextFreeRows.get(i), columns.size());
-            }
-        }
+        engine.finishData();
+        engine.finishSheets();
     }
 
     /** Writes rows from an Iterable without copying them. */
