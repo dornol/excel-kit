@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -122,7 +123,7 @@ class SheetWriterSharedApiTest {
                 w.column("Position+", (row, cursor) -> cursor.getCurrentTotal(), c -> c.type(ExcelDataType.LONG));
                 w.columnIf("Shown", true, Row::name);
                 w.columnIf("Hidden", false, Row::name);
-                w.columnIf("ShownCfg", true, Row::amount, c -> c.type(ExcelDataType.INTEGER));
+                w.columnIf("ShownCfg", true, Row::amount, c -> c.type(ExcelDataType.INTEGER).bold(true));
                 w.columnIf("PositionIf", true, (row, cursor) -> cursor.getCurrentTotal());
                 w.columnIf("PositionIf+", true, (row, cursor) -> cursor.getCurrentTotal(), c -> c.bold(true));
                 w.columnIf("HiddenRow", false, (row, cursor) -> cursor.getCurrentTotal());
@@ -133,6 +134,13 @@ class SheetWriterSharedApiTest {
                 w.constColumnIf("ConstOff", false, "never");
             };
             try (var a = open(viaWriter(columns)); var b = new XSSFWorkbook(new ByteArrayInputStream(viaSheet(columns)))) {
+                for (var wb : List.of(a, b)) {
+                    // Name Amount Position Position+ Shown ShownCfg PositionIf PositionIf+ Const Const+ ConstIf ConstIf+
+                    var bold = new ArrayList<Boolean>();
+                    for (var cell : wb.getSheetAt(0).getRow(1)) bold.add(wb.getFontAt(cell.getCellStyle().getFontIndex()).getBold());
+                    assertEquals(List.of(false, false, false, false, false, true, false, true, false, true, false, true), bold,
+                            "bold exactly where a configurer asked for it");
+                }
                 var expected = table(a);
                 assertEquals(expected, table(b));
                 assertEquals(List.of("Name", "Amount", "Position", "Position+", "Shown", "ShownCfg", "PositionIf", "PositionIf+",

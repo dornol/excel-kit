@@ -43,7 +43,7 @@ class TemplateListWriterColumnsTest {
         w.column("Pos+", (row, cursor) -> cursor.getCurrentTotal() * 10, c -> c.bold(true));
         w.columnIf("On", true, Row::name);
         w.columnIf("Off", false, Row::name);
-        w.columnIf("OnCfg", true, Row::amount, MONEY);
+        w.columnIf("OnCfg", true, Row::amount, c -> c.bold(true));
         w.columnIf("OnRow", true, (row, cursor) -> cursor.getCurrentTotal());
         w.columnIf("OffRow", false, (row, cursor) -> cursor.getCurrentTotal());
         w.constColumn("K", "k");
@@ -65,11 +65,19 @@ class TemplateListWriterColumnsTest {
         return rows;
     }
 
+    /** Which cells of a row are bold: the column settings that were really applied. */
+    private static List<Boolean> bold(XSSFWorkbook wb, int row) {
+        var cells = new ArrayList<Boolean>();
+        for (var cell : wb.getSheetAt(0).getRow(row)) cells.add(wb.getFontAt(cell.getCellStyle().getFontIndex()).getBold());
+        return cells;
+    }
+
     @Nested
     class SameAsASheetOfAWorkbook {
         @Test
         void everyColumnMethodGivesTheSameCellsInATemplateAndInAWorkbook() throws IOException {
             List<List<String>> viaTemplate;
+            List<Boolean> boldViaTemplate;
             try (var w = new ExcelTemplateWriter(new ByteArrayInputStream(template()))) {
                 var list = w.<Row>list(0, 1);
                 columns(list);
@@ -79,9 +87,11 @@ class TemplateListWriterColumnsTest {
                 try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                     assertEquals("Title", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue(), "the template stays");
                     viaTemplate = table(wb, 1);
+                    boldViaTemplate = bold(wb, 2);
                 }
             }
             List<List<String>> viaSheet;
+            List<Boolean> boldViaSheet;
             try (var workbook = ExcelWorkbook.create()) {
                 var sheet = workbook.<Row>sheet("S");
                 columns(sheet);
@@ -90,9 +100,14 @@ class TemplateListWriterColumnsTest {
                 workbook.finish().writeTo(out);
                 try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                     viaSheet = table(wb, 0);
+                    boldViaSheet = bold(wb, 1);
                 }
             }
             assertEquals(viaSheet, viaTemplate);
+            assertEquals(boldViaSheet, boldViaTemplate, "the column settings are applied the same way");
+            // No. Name Amount Pos Pos+ On OnCfg OnRow K K+ KIf KIf+
+            assertEquals(List.of(false, false, false, false, true, false, true, false, false, true, false, true), boldViaTemplate,
+                    "bold exactly where a configurer asked for it");
             assertEquals(List.of("No.", "Name", "Amount", "Pos", "Pos+", "On", "OnCfg", "OnRow", "K", "K+", "KIf", "KIf+"), viaTemplate.get(0),
                     "false conditions add no column");
             assertEquals(List.of("1", "a", "1", "10", "10", "a", "1", "1", "k", "k2", "k3", "k4"), viaTemplate.get(1));
