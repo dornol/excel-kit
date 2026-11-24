@@ -51,7 +51,7 @@ public class ExcelWorkbook implements AutoCloseable, WorkbookOptions<ExcelWorkbo
     // Styles derived from a column style (headers, row colors, stripes, subtotal rows) are keyed by what they are
     // made of, so the sheets of a workbook share them instead of adding the same styles once per sheet.
     private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
-    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
+    private final Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
     private final Set<String> usedSheetNames = new HashSet<>();
     private boolean finished = false;
 
@@ -176,7 +176,7 @@ public class ExcelWorkbook implements AutoCloseable, WorkbookOptions<ExcelWorkbo
         if (finished) {
             throw new ExcelWriteException("Workbook is already finished");
         }
-        ExcelWriteSupport.requireVisibleSheet(wb);
+        ExcelWorkbookSupport.requireVisibleSheet(wb);
         finished = true;
         ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
         return new ExcelHandler(wb, settings.password());

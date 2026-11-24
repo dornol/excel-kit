@@ -44,14 +44,14 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
 
     // Per-sheet settings
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache;
+    private final Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> rowStyleCache;
     private final Map<String, CellStyle> headerStyleCache;
     private boolean written = false;
 
     ExcelSheetWriter(SXSSFWorkbook wb, @Nullable SXSSFSheet sheet, String baseName,
                      Supplier<CellStyle> headerStyle, Map<String, CellStyle> cellStyleCache,
                      Map<String, CellStyle> headerStyleCache,
-                     Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache,
+                     Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> rowStyleCache,
                      Set<String> usedSheetNames) {
         super(new SheetConfig<>());
         this.headerStyleCache = headerStyleCache;
@@ -184,7 +184,7 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
         if (cfg.sheetNameFunction != null) {
             name = cfg.sheetNameFunction.apply(rolloverIndex);
         } else {
-            name = ExcelWriteSupport.rolloverSheetName(baseName, rolloverIndex);
+            name = ExcelWorkbookSupport.rolloverSheetName(baseName, rolloverIndex);
         }
         if (!usedSheetNames.add(name)) {
             throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
@@ -200,7 +200,7 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
     @Override
     ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
                                @Nullable ColumnConfig<T> config) {
-        return ExcelWriteSupport.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
+        return ColumnsWriter.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
     }
 
 }

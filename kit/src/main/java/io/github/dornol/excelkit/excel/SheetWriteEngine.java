@@ -1,5 +1,17 @@
 package io.github.dornol.excelkit.excel;
 
+import java.util.Set;
+
+import java.util.HashSet;
+
+import org.apache.poi.xssf.streaming.SXSSFRow;
+
+import org.apache.poi.xssf.streaming.SXSSFCell;
+
+import org.apache.poi.ss.util.CellRangeAddress;
+
+import io.github.dornol.excelkit.core.ProgressCallback;
+
 import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
@@ -24,12 +36,14 @@ import java.util.function.IntFunction;
  * @param <T> the row type
  */
 final class SheetWriteEngine<T> {
+    private static final String EMPTY_MESSAGE_STYLE = "excel-kit:empty-message";
+
     private final SXSSFWorkbook wb;
     private final List<ExcelColumn<T>> columns;
     private final SheetConfig<T> cfg;
     private final CellStyle headerStyle;
     private final Map<String, CellStyle> headerStyleCache;
-    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache;
+    private final Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> rowStyleCache;
     private final @Nullable Map<String, CellStyle> sharedStyles;
     private final IntFunction<SXSSFSheet> nextSheet;
     private final PageBreakTracker<T> pageBreaks;
@@ -51,7 +65,7 @@ final class SheetWriteEngine<T> {
      *                        rolled-over sheet is 1); the writer decides how it is named
      */
     SheetWriteEngine(SXSSFWorkbook wb, List<ExcelColumn<T>> columns, SheetConfig<T> cfg, CellStyle headerStyle,
-                     Map<String, CellStyle> headerStyleCache, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache,
+                     Map<String, CellStyle> headerStyleCache, Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> rowStyleCache,
                      @Nullable Map<String, CellStyle> sharedStyles, IntFunction<SXSSFSheet> nextSheet) {
         this.wb = wb;
         this.columns = columns;
@@ -72,10 +86,10 @@ final class SheetWriteEngine<T> {
         if (columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
-        ExcelWriteSupport.validateUniqueColumnNames(columns);
-        ExcelWriteSupport.validateMergeColumns(columns, cfg.tableOptions, true);
+        SheetWriteEngine.validateUniqueColumnNames(columns);
+        SheetWriteEngine.validateMergeColumns(columns, cfg.tableOptions, true);
         SubtotalTracker.validate(cfg);
-        ExcelWriteSupport.validateEmptyMessage(cfg);
+        SheetWriteEngine.validateEmptyMessage(cfg);
     }
 
     /** Writes the preamble, the header and the sheet options of the first sheet. */
@@ -87,7 +101,8 @@ final class SheetWriteEngine<T> {
 
     /** Writes the preamble and header of the current sheet and applies what belongs at the header (frozen panes). */
     private void beginSheet(boolean rolledOver) {
-        int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet, wb, columns, cfg.beforeHeaderWriter);
+        int preambleRow = cfg.beforeHeaderWriter == null ? 0
+                : cfg.beforeHeaderWriter.write(new SheetContext(sheet, wb, 0, columns));
         if (rolledOver) {
             cursor.setRowOfSheet(preambleRow);
         } else {
@@ -98,7 +113,7 @@ final class SheetWriteEngine<T> {
         // With group headers the column names sit below the group rows: that row is the header row.
         int headerRow = cursor.getRowOfSheet() - 1;
         setCurrent(headerRows, headerRow);
-        ExcelWriteSupport.applySheetOptions(sheet, headerRow, cfg.freezePaneCols, cfg.freezePaneRows);
+        ExcelSheetPostProcessor.applySheetOptions(sheet, headerRow, cfg.freezePaneCols, cfg.freezePaneRows);
     }
 
     /** The entry of the current sheet in a per-sheet list (the list grows with the sheets). */
@@ -114,7 +129,7 @@ final class SheetWriteEngine<T> {
         if (isOverMaxRows()) {
             StructuredTableWriter.requireRolloverAllowed(cfg.tableOptions);
             closeData();
-            setCurrent(nextFreeRows, ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns,
+            setCurrent(nextFreeRows, SheetWriteEngine.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns,
                     headerRow(), cfg, values));
             if (values != null) values.resetSheet();
             sheet = nextSheet.apply(sheets.size());
@@ -125,7 +140,7 @@ final class SheetWriteEngine<T> {
         if (subtotals != null) subtotals.beforeRow(sheet, cursor, rowData, cfg, merges, rowStyleCache, wb);
         pageBreaks.beforeRow(sheet, cursor.getRowOfSheet(), rowData);
         ExcelRowWriter.write(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb, merges, subtotals, values);
-        ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
+        SheetWriteEngine.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
     }
 
     /**
@@ -157,9 +172,9 @@ final class SheetWriteEngine<T> {
         // With no row at all the sheet says so; the line is no data row, so a summary below it still ends at the header.
         int lastDataRow = cursor.getRowOfSheet();
         if (cursor.getCurrentTotal() == 0) {
-            ExcelWriteSupport.writeEmptyMessage(sheet, wb, cursor, columns, cfg, rowStyleCache, sharedStyles);
+            SheetWriteEngine.writeEmptyMessage(sheet, wb, cursor, columns, cfg, rowStyleCache, sharedStyles);
         }
-        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRow(),
+        int nextRow = SheetWriteEngine.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRow(),
                 cfg, values, lastDataRow);
         setCurrent(nextFreeRows, nextRow);
         return nextRow;
@@ -188,7 +203,7 @@ final class SheetWriteEngine<T> {
         }
         if (cfg.chartConfig != null) {
             for (int i = 0; i < sheets.size(); i++) {
-                ExcelWriteSupport.applyChart(sheets.get(i), cfg.chartConfig, headerRows.get(i), dataEndRows.get(i),
+                cfg.chartConfig.apply(sheets.get(i), headerRows.get(i), dataEndRows.get(i),
                         nextFreeRows.get(i), columns.size());
             }
         }
@@ -209,4 +224,99 @@ final class SheetWriteEngine<T> {
         return cursor;
     }
 
+    /** @param values what the summary formulas calculate for the sheet, or {@code null} when they are not tracked */
+    static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
+                                             List<ExcelColumn<T>> columns, int headerRowIndex,
+                                             SheetConfig<T> cfg, @Nullable FormulaValues values) {
+        return writeAfterDataAndSummary(sheet, wb, startRow, columns, headerRowIndex, cfg, values, startRow);
+    }
+
+    /**
+     * @param dataEndRow the 1-based last data row, which is where the summary ranges end: {@code startRow} when the
+     *                   rows below the data are the next ones, less when something that is not data (the empty
+     *                   message) sits between
+     */
+    static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
+                                             List<ExcelColumn<T>> columns, int headerRowIndex,
+                                             SheetConfig<T> cfg, @Nullable FormulaValues values, int dataEndRow) {
+        int row = startRow;
+        if (cfg.afterDataWriter != null) {
+            row = cfg.afterDataWriter.write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
+        }
+        if (cfg.summaryConfig != null) {
+            // The summary covers the data rows only, not whatever afterData wrote below them.
+            row = cfg.summaryConfig.toAfterDataWriter(cfg.subtotalKey != null, values).write(
+                    new SheetContext(sheet, wb, row, columns, headerRowIndex, dataEndRow));
+        }
+        return row;
+    }
+
+    /** Rejects what the empty message would corrupt: a merged line has no place in a table. */
+    static <T> void validateEmptyMessage(SheetConfig<T> cfg) {
+        if (cfg.emptyMessage != null && cfg.tableOptions != null) {
+            throw new ExcelWriteException("emptyMessage(...) cannot be combined with table(...): the message is a merged "
+                    + "cell, and Excel does not allow merged cells in a table");
+        }
+    }
+
+    /**
+     * Writes the line of an empty sheet below the header: the text centered over all the columns, in gray italics.
+     * It takes a row of the sheet but is no data row.
+     */
+    static <T> void writeEmptyMessage(SXSSFSheet sheet, SXSSFWorkbook wb, Cursor cursor, List<ExcelColumn<T>> columns,
+                                      SheetConfig<T> cfg, Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache,
+                                      @Nullable Map<String, CellStyle> workbookStyles) {
+        String text = cfg.emptyMessage;
+        if (text == null) return;
+        int rowIndex = cursor.getRowOfSheet();
+        if (rowIndex >= ExcelLimits.SHEET_ROW_CAPACITY) {
+            throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: no room for the empty message");
+        }
+        // The style does not depend on the columns, so the sheets of a workbook share one.
+        CellStyle style = workbookStyles != null
+                ? workbookStyles.computeIfAbsent(EMPTY_MESSAGE_STYLE, k -> ExcelStyleSupporter.emptyMessageStyle(wb, cfg))
+                : styleCache.computeIfAbsent(new ExcelStyleSupporter.DerivedStyleKey(-1, -1, "empty-message"), k -> ExcelStyleSupporter.emptyMessageStyle(wb, cfg));
+        SXSSFRow row = sheet.createRow(rowIndex);
+        row.setHeightInPoints(cfg.rowHeightInPoints);
+        cursor.plusRow();
+        for (int i = 0; i < columns.size(); i++) {
+            SXSSFCell cell = row.createCell(i);
+            if (i == 0) ExcelCellText.write(cell, text);
+            cell.setCellStyle(style);
+        }
+        if (columns.size() > 1) sheet.addMergedRegion(new CellRangeAddress(rowIndex, rowIndex, 0, columns.size() - 1));
+    }
+
+    /**
+     * Rejects a column that merges equal values where the sheet cannot hold merged cells: in a table (Excel repairs
+     * the file) or in a list written into a template.
+     */
+    static <T> void validateMergeColumns(List<ExcelColumn<T>> columns, @Nullable TableOptions tableOptions, boolean supported) {
+        for (ExcelColumn<T> col : columns) {
+            if (!col.isMergeSameValues()) continue;
+            if (!supported) {
+                throw new ExcelWriteException("Column '" + col.getName() + "' asks for mergeSameValues(), "
+                        + "which a template list writer does not apply");
+            }
+            if (tableOptions != null) {
+                throw new ExcelWriteException("Column '" + col.getName() + "' asks for mergeSameValues(), but "
+                        + "the sheet is a table(...): Excel does not allow merged cells in a table");
+            }
+        }
+    }
+
+    static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
+        Set<String> seen = new HashSet<>();
+        for (ExcelColumn<T> col : columns) {
+            if (!seen.add(col.getName())) {
+                throw new ExcelWriteException("Duplicate column name: '" + col.getName() + "'");
+            }
+        }
+    }
+
+    static void checkProgress(Cursor cursor, int interval, @Nullable ProgressCallback callback) {
+        if (callback != null && interval > 0 && cursor.getCurrentTotal() % interval == 0) {
+            callback.onProgress(cursor.getCurrentTotal(), cursor);
+        }
+    }
 }

@@ -225,8 +225,8 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements Wo
      */
     public ExcelWriter<T> sheetName(String name) {
         Objects.requireNonNull(name, "name cannot be null");
-        ExcelWriteSupport.requireValidSheetName(name);
-        this.cfg.sheetNameFunction = index -> ExcelWriteSupport.rolloverSheetName(name, index);
+        ExcelWorkbookSupport.requireValidSheetName(name);
+        this.cfg.sheetNameFunction = index -> ExcelWorkbookSupport.rolloverSheetName(name, index);
         return this;
     }
 

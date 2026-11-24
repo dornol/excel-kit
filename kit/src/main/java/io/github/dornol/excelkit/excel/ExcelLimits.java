@@ -4,7 +4,7 @@ import org.apache.poi.ss.SpreadsheetVersion;
 
 /**
  * The limits of an .xlsx file and the defaults the writers derive from them. Kept apart from
- * {@link ExcelWriteSupport}, which works on {@link SheetConfig}, so the configuration and option classes can use
+ * {@link SheetWriteEngine}, which works on {@link SheetConfig}, so the configuration and option classes can use
  * these numbers without depending on the write logic.
  *
  * @author dhkim

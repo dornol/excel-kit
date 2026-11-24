@@ -53,7 +53,7 @@ public class TemplateListWriter<T> extends DataRowsWriter<T, TemplateListWriter<
     private final int sheetIndex;
 
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
+    private final Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
 
     TemplateListWriter(ExcelTemplateWriter parent, SXSSFWorkbook wb, SXSSFSheet sheet,
                        int startRow, Map<String, CellStyle> cellStyleCache, int sheetIndex) {
@@ -148,8 +148,8 @@ public class TemplateListWriter<T> extends DataRowsWriter<T, TemplateListWriter<
         if (columns.isEmpty()) {
             throw new ExcelWriteException("columns setting required");
         }
-        ExcelWriteSupport.validateUniqueColumnNames(columns);
-        ExcelWriteSupport.validateMergeColumns(columns, null, false);
+        SheetWriteEngine.validateUniqueColumnNames(columns);
+        SheetWriteEngine.validateMergeColumns(columns, null, false);
 
         Cursor cursor = new Cursor(startRow);
         // The header row is the one this writer writes, or else the template's own, just above the data. A summary
@@ -181,10 +181,10 @@ public class TemplateListWriter<T> extends DataRowsWriter<T, TemplateListWriter<
                         + "Write fewer rows into it, or use ExcelWriter, which rolls over to new sheets.");
             }
             ExcelRowWriter.write(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb, null, null, values);
-            ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
+            SheetWriteEngine.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
         });
 
-        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values);
+        int nextRow = SheetWriteEngine.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values);
 
         if (tableOptions != null) {
             int tableHeaderRow = writeHeaders ? startRow : startRow - 1;
@@ -212,7 +212,7 @@ public class TemplateListWriter<T> extends DataRowsWriter<T, TemplateListWriter<
     @Override
     ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
                                        @Nullable ColumnConfig<T> config) {
-        return ExcelWriteSupport.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
+        return ColumnsWriter.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
     }
 
 }

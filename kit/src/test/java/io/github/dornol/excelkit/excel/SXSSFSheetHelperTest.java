@@ -71,7 +71,7 @@ class SXSSFSheetHelperTest {
             var sheet = workbook.createSheet("Removed");
             workbook.removeSheetAt(0);
             assertAll(
-                () -> assertThrows(ExcelWriteException.class, () -> ExcelWriteSupport.applyTabColor(sheet, new int[]{1, 2, 3})),
+                () -> assertThrows(ExcelWriteException.class, () -> ExcelSheetPostProcessor.applyTabColor(sheet, new int[]{1, 2, 3})),
                 () -> assertThrows(ExcelWriteException.class, () -> StructuredTableWriter.apply(sheet, "DataTable", 0, 2, java.util.List.of("Name", "Value"), "TableStyleMedium2", true, false)),
                 () -> assertThrows(ExcelWriteException.class, () -> StructuredTableWriter.validateExistingHeaders(sheet, 0, 2)),
                 () -> assertThrows(ExcelWriteException.class, () -> new ExcelChartConfig().categoryColumn(0).valueColumn(1, "Value").apply(sheet, 0, 2, 3, 2)),

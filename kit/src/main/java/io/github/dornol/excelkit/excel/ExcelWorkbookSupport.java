@@ -110,4 +110,68 @@ final class ExcelWorkbookSupport {
             }
         }
     }
+
+    /**
+     * Checks that a workbook keeps a visible sheet (Excel cannot open one with none) and that it opens on one.
+     *
+     * @throws ExcelWriteException if every sheet is hidden
+     */
+    static void requireVisibleSheet(org.apache.poi.xssf.streaming.SXSSFWorkbook wb) {
+        int first = -1;
+        for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+            if (wb.getSheetVisibility(i) == org.apache.poi.ss.usermodel.SheetVisibility.VISIBLE) {
+                first = i;
+                break;
+            }
+        }
+        if (first < 0) {
+            if (wb.getNumberOfSheets() == 0) return;
+            throw new ExcelWriteException("Every sheet of the workbook is hidden; Excel cannot open a workbook "
+                    + "without a visible sheet, so leave at least one sheet visible");
+        }
+        if (wb.getSheetVisibility(wb.getActiveSheetIndex()) != org.apache.poi.ss.usermodel.SheetVisibility.VISIBLE) {
+            wb.setActiveSheet(first);
+            SXSSFSheetHelper.getXSSFSheet(wb.getSheetAt(first)).setSelected(true);
+        }
+    }
+
+    /**
+     * Rejects a sheet name Excel cannot hold, so a mistake surfaces where the name is given instead of
+     * when the first sheet is created. The length is not checked here: a long base name is shortened for
+     * the sheets that roll over.
+     */
+    static String requireValidSheetName(String name) {
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Sheet name must not be empty");
+        }
+        for (int i = 0; i < name.length(); i++) {
+            if ("\\/?*[]:".indexOf(name.charAt(i)) >= 0) {
+                throw new IllegalArgumentException("Invalid char (" + name.charAt(i) + ") found at index (" + i
+                        + ") in sheet name '" + name + "'");
+            }
+        }
+        if (name.charAt(0) == '\'' || name.charAt(name.length() - 1) == '\'') {
+            throw new IllegalArgumentException("Invalid sheet name '" + name
+                    + "'. Sheet names must not begin or end with (').");
+        }
+        return name;
+    }
+
+    private static final int MAX_SHEET_NAME_LENGTH = 31;
+
+    /**
+     * Name of the {@code index}-th sheet (0-based) of a rolled-over write: the first keeps the base
+     * name, later ones get a " (n)" suffix. Excel limits sheet names to 31 characters, so the base is
+     * shortened to keep the suffix and the names unique.
+     */
+    static String rolloverSheetName(String baseName, int index) {
+        if (index == 0) return baseName;
+        String suffix = " (" + (index + 1) + ")";
+        int baseLength = Math.min(baseName.length(), Math.max(0, MAX_SHEET_NAME_LENGTH - suffix.length()));
+        if (baseLength > 0 && baseLength < baseName.length()
+                && Character.isHighSurrogate(baseName.charAt(baseLength - 1))) {
+            baseLength--; // do not split a surrogate pair
+        }
+        return baseName.substring(0, baseLength) + suffix;
+    }
 }

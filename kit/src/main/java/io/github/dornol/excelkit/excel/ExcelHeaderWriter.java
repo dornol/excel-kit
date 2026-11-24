@@ -111,7 +111,7 @@ final class ExcelHeaderWriter {
         if (hc == null) return;
         int w = hc.width() > 0 ? hc.width() : col.getCommentWidth();
         int h = hc.height() > 0 ? hc.height() : col.getCommentHeight();
-        ExcelWriteSupport.addCellComment(cell, hc.text(), hc.author(), w, h, wb);
+        ExcelRowWriter.addCellComment(cell, hc.text(), hc.author(), w, h, wb);
     }
 
     /**
@@ -211,7 +211,7 @@ final class ExcelHeaderWriter {
                     if (valid) {
                         ExcelCellComment ec = groupComments.get(path);
                         if (ec != null) {
-                            ExcelWriteSupport.addCellComment(rows[r].getCell(start), ec.text(), ec.author(),
+                            ExcelRowWriter.addCellComment(rows[r].getCell(start), ec.text(), ec.author(),
                                     ec.width(), ec.height(), sheet.getWorkbook());
                         }
                     }

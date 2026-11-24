@@ -1,5 +1,15 @@
 package io.github.dornol.excelkit.excel;
 
+import java.util.Map;
+
+import org.jspecify.annotations.Nullable;
+
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+
+import org.apache.poi.xssf.usermodel.XSSFColor;
+
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.ss.usermodel.DataValidation;
@@ -37,10 +47,10 @@ final class ExcelSheetPostProcessor {
             rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow);
         if (config.printSetup != null) config.printSetup.apply(sheet, headerRowIndex, dataEndRow);
         requirePageBreaksWithinLimit(sheet);
-        ExcelWriteSupport.applyTabColor(sheet, config.tabColor);
+        ExcelSheetPostProcessor.applyTabColor(sheet, config.tabColor);
         if (config.zoom > 0) sheet.setZoom(config.zoom);
-        ExcelWriteSupport.applyVisibility(sheet, config.visibility);
-        ExcelWriteSupport.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, dataEndRow, sheetIndex);
+        ExcelSheetPostProcessor.applyVisibility(sheet, config.visibility);
+        ExcelSheetPostProcessor.applyNamedRanges(sheet, config.namedRanges, headerRowIndex, dataEndRow, sheetIndex);
     }
 
     /** Excel keeps at most 1026 horizontal page breaks per sheet and repairs a file that holds more. */
@@ -122,6 +132,53 @@ final class ExcelSheetPostProcessor {
             int start = i;
             while (i < columns.size() && columns.get(i).getOutlineLevel() == level) i++;
             sheet.groupColumn(start, i - 1);
+        }
+    }
+
+    /** What a sheet needs as soon as its header is written. The filter waits for the data: see {@code ExcelSheetPostProcessor}. */
+    static void applySheetOptions(SXSSFSheet sheet, int headerRowIdx, int freezePaneCols, int freezePaneRows) {
+        if (freezePaneCols > 0 || freezePaneRows > 0) {
+            sheet.createFreezePane(freezePaneCols, headerRowIdx + freezePaneRows);
+        }
+    }
+
+    /**
+     * Hides the sheet. A hidden sheet is not the one the workbook opens on: it is also deselected, since a selected
+     * hidden sheet would make Excel type into it together with the visible one.
+     */
+    static void applyVisibility(SXSSFSheet sheet, org.apache.poi.ss.usermodel.@Nullable SheetVisibility visibility) {
+        if (visibility == null || visibility == org.apache.poi.ss.usermodel.SheetVisibility.VISIBLE) return;
+        var wb = sheet.getWorkbook();
+        wb.setSheetVisibility(wb.getSheetIndex(sheet), visibility);
+        SXSSFSheetHelper.getXSSFSheet(sheet).setSelected(false);
+    }
+
+    static void applyTabColor(SXSSFSheet sheet, int @Nullable [] tabColor) {
+        if (tabColor == null) return;
+        XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
+        xssfSheet.setTabColor(new XSSFColor(new byte[]{
+                (byte) tabColor[0], (byte) tabColor[1], (byte) tabColor[2]}));
+    }
+
+    /**
+     * Defines the named ranges of one sheet. A workbook cannot hold two names alike, so the sheets of a
+     * rollover get {@code name_2}, {@code name_3}, ... (the first keeps {@code name}), as tables do.
+     */
+    static void applyNamedRanges(SXSSFSheet sheet, @Nullable Map<String, Integer> namedRanges,
+                                  int headerRowIndex, int dataEndRow, int sheetIndex) {
+        if (namedRanges == null || namedRanges.isEmpty()) return;
+        int lastRow = sheet.getLastRowNum();
+        if (dataEndRow <= headerRowIndex) return; // no data rows
+        String sheetName = sheet.getSheetName();
+        var wb = sheet.getWorkbook();
+        for (var entry : namedRanges.entrySet()) {
+            String col = SheetContext.columnLetter(entry.getValue());
+            int dataStart = headerRowIndex + 2; // 1-based, after header
+            // Concatenation, not String.format: %d writes the digits of the default locale (Arabic-Indic, ...)
+            String ref = "'" + sheetName.replace("'", "''") + "'!$" + col + "$" + dataStart + ":$" + col + "$" + (lastRow + 1);
+            var name = wb.createName();
+            name.setNameName(sheetIndex == 0 ? entry.getKey() : entry.getKey() + "_" + (sheetIndex + 1));
+            name.setRefersToFormula(ref);
         }
     }
 }

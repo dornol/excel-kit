@@ -110,7 +110,7 @@ final class SubtotalTracker<T> {
      * of {@code row} when none is open.
      */
     void beforeRow(SXSSFSheet sheet, Cursor cursor, T row, SheetConfig<T> cfg, @Nullable MergeRunTracker<T> merges,
-                   Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook wb) {
+                   Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook wb) {
         Object current = key.apply(row);
         if (sheet != currentSheet) {
             currentSheet = sheet;
@@ -133,7 +133,7 @@ final class SubtotalTracker<T> {
 
     /** Ends the open group, if any, with its subtotal row: at a key change, at the end of a sheet and of the data. */
     void close(SXSSFSheet sheet, Cursor cursor, SheetConfig<T> cfg, @Nullable MergeRunTracker<T> merges,
-               Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook wb) {
+               Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook wb) {
         if (!open) return;
         open = false;
         int endRow = cursor.getRowOfSheet() - 1;
@@ -171,7 +171,7 @@ final class SubtotalTracker<T> {
             } else {
                 cell.setBlank();
             }
-            cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(base, style.backgroundColor,
+            cell.setCellStyle(ExcelStyleSupporter.resolveRowStyle(base, style.backgroundColor,
                     style, styleCache, wb, cfg.maxCellStyles));
         }
         if (values != null) values.resetGroup();

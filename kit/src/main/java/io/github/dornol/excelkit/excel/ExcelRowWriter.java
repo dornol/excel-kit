@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import org.apache.poi.ss.usermodel.*;
+
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -17,7 +19,7 @@ final class ExcelRowWriter {
     private ExcelRowWriter() { }
 
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
-                          SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook) {
+                          SheetConfig<T> config, Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook) {
         write(sheet, cursor, row, columns, config, styleCache, workbook, null, null, null);
     }
 
@@ -28,7 +30,7 @@ final class ExcelRowWriter {
      *                  because a sheet can turn over before {@code maxRows} when the subtotal rows take its room
      */
     static <T> void write(SXSSFSheet sheet, Cursor cursor, T row, List<ExcelColumn<T>> columns,
-                          SheetConfig<T> config, Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook,
+                          SheetConfig<T> config, Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache, SXSSFWorkbook workbook,
                           @Nullable MergeRunTracker<T> merges, @Nullable SubtotalTracker<T> subtotals,
                           @Nullable FormulaValues values) {
         if (cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY) {
@@ -59,10 +61,10 @@ final class ExcelRowWriter {
 
             ExcelColor color = effectiveColor(column, value, row, rowStyle, rowColor);
             if (rowStyle != null && rowStyle.hasAnyStyle())
-                cell.setCellStyle(ExcelWriteSupport.resolveRowStyle(baseStyle, color, rowStyle,
+                cell.setCellStyle(ExcelStyleSupporter.resolveRowStyle(baseStyle, color, rowStyle,
                         styleCache, workbook, config.maxCellStyles));
             else if (color != null)
-                cell.setCellStyle(ExcelWriteSupport.resolveColorStyle(baseStyle, color, styleCache, workbook,
+                cell.setCellStyle(ExcelStyleSupporter.resolveColorStyle(baseStyle, color, styleCache, workbook,
                         config.maxCellStyles));
             else cell.setCellStyle(baseStyle);
 
@@ -92,7 +94,30 @@ final class ExcelRowWriter {
         Function<T, @Nullable String> function = column.getCommentFunction();
         if (function == null) return;
         String text = function.apply(row);
-        if (text != null) ExcelWriteSupport.addCellComment(cell, text, null,
+        if (text != null) ExcelRowWriter.addCellComment(cell, text, null,
                 column.getCommentWidth(), column.getCommentHeight(), workbook);
+    }
+
+    static void addCellComment(SXSSFCell cell, String text, SXSSFWorkbook wb) {
+        addCellComment(cell, text, null, 0, 0, wb);
+    }
+
+    static void addCellComment(SXSSFCell cell, String text, @Nullable String author,
+                                int width, int height, SXSSFWorkbook wb) {
+        Drawing<?> drawing = cell.getSheet().createDrawingPatriarch();
+        CreationHelper factory = wb.getCreationHelper();
+        ClientAnchor anchor = factory.createClientAnchor();
+        int w = width > 0 ? width : 2;
+        int h = height > 0 ? height : 3;
+        anchor.setCol1(cell.getColumnIndex());
+        anchor.setCol2(cell.getColumnIndex() + w);
+        anchor.setRow1(cell.getRowIndex());
+        anchor.setRow2(cell.getRowIndex() + h);
+        Comment comment = drawing.createCellComment(anchor);
+        comment.setString(factory.createRichTextString(text));
+        if (author != null) {
+            comment.setAuthor(author);
+        }
+        cell.setCellComment(comment);
     }
 }

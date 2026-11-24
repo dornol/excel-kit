@@ -23,7 +23,7 @@ class StyleLimitTest {
         SXSSFWorkbook workbook = new DisposingSxssfWorkbook();
         try {
             int before = workbook.getNumCellStyles();
-            assertDoesNotThrow(() -> ExcelWriteSupport.createDerivedStyle(workbook, before + 1));
+            assertDoesNotThrow(() -> ExcelStyleSupporter.createDerivedStyle(workbook, before + 1));
             assertEquals(before + 1, workbook.getNumCellStyles());
         } finally {
             workbook.dispose();
@@ -36,7 +36,7 @@ class StyleLimitTest {
         try {
             int existing = workbook.getNumCellStyles();
             ExcelWriteException error = assertThrows(ExcelWriteException.class,
-                    () -> ExcelWriteSupport.createDerivedStyle(workbook, existing));
+                    () -> ExcelStyleSupporter.createDerivedStyle(workbook, existing));
             assertTrue(error.getMessage().contains("Too many distinct cell styles"), error.getMessage());
             assertTrue(error.getMessage().contains("cellColor"), error.getMessage());
             assertEquals(existing, workbook.getNumCellStyles());
@@ -50,7 +50,7 @@ class StyleLimitTest {
         SXSSFWorkbook workbook = new DisposingSxssfWorkbook();
         try {
             ExcelWriteException custom = assertThrows(ExcelWriteException.class,
-                    () -> ExcelWriteSupport.createDerivedStyle(workbook, 1));
+                    () -> ExcelStyleSupporter.createDerivedStyle(workbook, 1));
             assertTrue(custom.getMessage().contains("maxCellStyles(1)"), custom.getMessage());
         } finally {
             workbook.dispose();

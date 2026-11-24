@@ -1,5 +1,11 @@
 package io.github.dornol.excelkit.excel;
 
+import java.util.Map;
+
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+
+import org.apache.poi.ss.usermodel.CellStyle;
+
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.read.RowFunction;
 import org.jspecify.annotations.Nullable;
@@ -210,5 +216,28 @@ public abstract class ColumnsWriter<T, SELF extends ColumnsWriter<T, SELF>> {
      */
     public SELF rowNumberColumn(String name) {
         return column(name, (row, cursor) -> cursor.getCurrentTotal(), c -> c.type(ExcelDataType.LONG));
+    }
+
+    /**
+     * Builds a column from a function and an optional configuration: applies the sheet's default style, resolves
+     * the data format and the cell style (shared through {@code cellStyleCache}) and picks the setter of the data
+     * type, which is plain text when none was given.
+     */
+    static <T> ExcelColumn<T> buildColumn(SXSSFWorkbook wb, Map<String, CellStyle> cellStyleCache,
+                                          ColumnStyleConfig.@Nullable DefaultStyleConfig<T> defaultStyle, String name,
+                                          RowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
+        Objects.requireNonNull(function, "function cannot be null");
+        ColumnStyleConfig<T, ?> c = config != null ? config : new ColumnConfig<>();
+        if (defaultStyle != null) {
+            c.applyDefaults(defaultStyle);
+        }
+        ExcelDataType dataType = c.dataType;
+        CellStyle style = config != null && config.customStyle != null
+                ? config.customStyle
+                : ExcelStyleSupporter.cellStyle(wb, c.styleParams(), cellStyleCache);
+
+        return new ExcelColumn<>(name, function, style,
+                dataType != null ? dataType.getSetter() : ExcelDataType.STRING.getSetter(), c)
+                .sharingStylesOf(cellStyleCache);
     }
 }

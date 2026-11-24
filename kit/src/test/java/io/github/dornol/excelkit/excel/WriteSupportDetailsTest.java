@@ -143,17 +143,17 @@ class WriteSupportDetailsTest {
         // the cut falls between the two halves of the emoji at index 26/27: the whole emoji goes
         String base = "a".repeat(26) + emoji + "bbb";
         assertEquals(31, base.length());
-        assertEquals("a".repeat(26) + " (2)", ExcelWriteSupport.rolloverSheetName(base, 1));
+        assertEquals("a".repeat(26) + " (2)", ExcelWorkbookSupport.rolloverSheetName(base, 1));
         // the cut falls after the pair: it stays
         String roomy = "a".repeat(25) + emoji + "bbbbb";
-        assertEquals("a".repeat(25) + emoji + " (2)", ExcelWriteSupport.rolloverSheetName(roomy, 1));
+        assertEquals("a".repeat(25) + emoji + " (2)", ExcelWorkbookSupport.rolloverSheetName(roomy, 1));
         // the first sheet keeps its name, even a long one
-        assertEquals(base, ExcelWriteSupport.rolloverSheetName(base, 0));
+        assertEquals(base, ExcelWorkbookSupport.rolloverSheetName(base, 0));
         // a short name is not cut
-        assertEquals("Data (3)", ExcelWriteSupport.rolloverSheetName("Data", 2));
+        assertEquals("Data (3)", ExcelWorkbookSupport.rolloverSheetName("Data", 2));
         // the longest name still fits with the suffix
-        assertEquals(31, ExcelWriteSupport.rolloverSheetName("x".repeat(40), 1).length());
-        assertEquals(31, ExcelWriteSupport.rolloverSheetName("x".repeat(40), 99).length());
+        assertEquals(31, ExcelWorkbookSupport.rolloverSheetName("x".repeat(40), 1).length());
+        assertEquals(31, ExcelWorkbookSupport.rolloverSheetName("x".repeat(40), 99).length());
     }
 
     // ---- where a CSV write failed
