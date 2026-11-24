@@ -18,15 +18,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This class holds a temporary CSV file and writes its content to a provided {@link OutputStream}.
  * It ensures the file is only consumed once, and automatically cleans up temporary files afterward.
  * <p>
- * A handler that will not be written must be released with {@link #discard()} (or {@link #close()},
- * which does the same). As a safety net, a handler that is garbage collected without being consumed
- * deletes its temp files then; that happens at a time of the garbage collector's choosing, so do not
- * rely on it.
+ * A handler that will not be written must be released with {@link #discard()}. As a safety net, a handler that is
+ * garbage collected without being consumed deletes its temp files then; that happens at a time of the garbage
+ * collector's choosing, so do not rely on it.
+ * <p>
+ * It is not {@link AutoCloseable}, like {@link io.github.dornol.excelkit.excel.ExcelHandler}: the handler is usually
+ * written after the method that made it has returned (a {@code StreamingResponseBody}), and {@code try (handler)}
+ * would release the file before that.
  *
  * @author dhkim
  * @since 0.1.2
  */
-public final class CsvHandler extends TempResourceContainer implements FileHandler {
+public final class CsvHandler implements FileHandler {
+    /** Deletes the staged file and its directory; the one place that owns that knowledge. */
+    private static final class Staging extends TempResourceContainer {
+        Staging(Path dir, Path file) {
+            setTempDir(dir);
+            setTempFile(file);
+        }
+
+        Path file() {
+            return getTempFile();
+        }
+
+        static void delete(Path file, Path dir) {
+            releaseQuietly(file, dir);
+        }
+    }
+
     /** What must be released. Holds paths only, never the handler, so the handler can be collected. */
     private static final class Release implements Runnable {
         private final AtomicBoolean consumed = new AtomicBoolean(false);
@@ -45,11 +64,12 @@ public final class CsvHandler extends TempResourceContainer implements FileHandl
         @Override
         public void run() {
             if (claim()) {
-                releaseQuietly(tempFile, tempDir);
+                Staging.delete(tempFile, tempDir);
             }
         }
     }
 
+    private final Staging staging;
     private final Release release;
     private final Cleaner.Cleanable cleanable;
 
@@ -60,8 +80,7 @@ public final class CsvHandler extends TempResourceContainer implements FileHandl
      * @param tempFile The path to the CSV file to be output
      */
     CsvHandler(Path tempDir, Path tempFile) {
-        setTempFile(tempFile);
-        setTempDir(tempDir);
+        this.staging = new Staging(tempDir, tempFile);
         this.release = new Release(tempDir, tempFile);
         this.cleanable = TempResourceCleaner.register(this, release);
     }
@@ -72,14 +91,9 @@ public final class CsvHandler extends TempResourceContainer implements FileHandl
      *
      * @since 0.26.0
      */
+    @Override
     public void discard() {
         cleanable.clean();
-    }
-
-    /** Same as {@link #discard()}. */
-    @Override
-    public void close() {
-        discard();
     }
 
     /**
@@ -101,13 +115,13 @@ public final class CsvHandler extends TempResourceContainer implements FileHandl
             throw new CsvWriteException("Already consumed");
         }
         try {
-            try (InputStream is = Files.newInputStream(getTempFile())) {
+            try (InputStream is = Files.newInputStream(staging.file())) {
                 is.transferTo(outputStream);
             }
         } catch (IOException e) {
             throw new CsvWriteException("Failed to write CSV", e);
         } finally {
-            super.close();
+            staging.close();
             cleanable.clean();
         }
     }

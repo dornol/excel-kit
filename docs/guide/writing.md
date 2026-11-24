@@ -47,7 +47,15 @@ if (!stillWanted()) {
 handler.writeTo(out);
 ```
 
-After `discard()` the `writeTo` methods throw. As a safety net a handler that is garbage collected
+`discard()` is on the shared `FileHandler` interface, so code that holds either handler releases it the same way.
+After `discard()` the `writeTo` methods throw.
+
+**Neither handler is `AutoCloseable`, on purpose.** A handler is usually written after the method that made it has
+returned: a Spring `StreamingResponseBody` runs once the controller is done. `try (var handler = ...) { return
+ResponseEntity.ok(handler::writeTo); }` would release the file when the block ends, and the download would fail. Call
+`discard()` yourself where a handler is dropped.
+
+As a safety net a handler that is garbage collected
 without being consumed releases its temp files too, but only when the garbage collector runs, so do
 not rely on it. `ExcelKitResponse` in the Spring module discards the handler it was given when it
 rejects a blank password.

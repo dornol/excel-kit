@@ -14,3 +14,6 @@ io.github.dornol.excelkit.excel.ExcelColumn$ExcelColumnBuilder
 io.github.dornol.excelkit.core.read.ReadOptions
 # ExcelValidation gained list(...)/dependentList(...) and can no longer be extended (its constructor is private); use the static factories.
 io.github.dornol.excelkit.excel.ExcelValidation
+# CsvHandler is no longer AutoCloseable (close() removed, TempResourceContainer no longer its superclass): a handler is written after
+# the method that made it returns, so try-with-resources released it too early. Use discard().
+io.github.dornol.excelkit.csv.CsvHandler
