@@ -360,6 +360,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         private @Nullable List<String> messages;
         private @Nullable List<CellError> cellErrors;
         private boolean mappingFailure;
+        private boolean headerComplete;
         private int @Nullable [] resolvedIndices;
         private @Nullable Map<String, Integer> headerIndexMap;
         private long dataRowCount;
@@ -410,17 +411,15 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             if (rowNum >= firstHeaderRow && rowNum <= headerRowIndex) {
                 accumulateHeaderRow();
                 if (rowNum == headerRowIndex) {
-                    finalizeHeaderNames();
-                    prepareUniqueKey(headerNames);
-                    if (rowMapper != null) {
-                        buildHeaderIndex();
-                    } else {
-                        resolveColumnIndices();
-                    }
+                    completeHeader();
                 }
                 return;
             }
 
+            // A header row without a cell is not in the file at all, so no row ever reached headerRowIndex.
+            if (!headerComplete) {
+                completeHeader();
+            }
             fillMergedCells(rowNum);
             List<String> rawValues = rawValues(currentRow);
             int rowDecision = evaluateRow(rawValues);
@@ -433,8 +432,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
             ReadResult<T> result;
             if (rowMapper != null) {
-            RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap,
-                    readOptions.headerNormalizer());
+                RowData rowData = new RowData(new ArrayList<>(currentRow), headerNames, headerIndexMap,
+                        readOptions.headerNormalizer());
                 result = mapWithRowMapper(rowData, rowNum + 1L, rawValues);
             } else {
                 boolean mappingSuccess = mapValuesToInstance();
@@ -456,6 +455,18 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             if (readOptions.readProgressInterval() > 0
                     && dataRowCount % readOptions.readProgressInterval() == 0) {
                 notifyReadProgress(dataRowCount, sheetIndex, countedRows);
+            }
+        }
+
+        /** Settles the header names, and with them the columns, once the header rows are over (or found missing). */
+        private void completeHeader() {
+            headerComplete = true;
+            finalizeHeaderNames();
+            prepareUniqueKey(headerNames);
+            if (rowMapper != null) {
+                buildHeaderIndex();
+            } else {
+                resolveColumnIndices();
             }
         }
 

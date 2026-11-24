@@ -36,6 +36,47 @@ class ReadHeaderOptionsTest {
         assertEquals(30, results.get(0).age);
     }
 
+    /** A sheet whose header row has no cell at all: the row is absent from the file, not just blank. */
+    private static byte[] workbookWithoutHeaderRow() throws Exception {
+        var out = new ByteArrayOutputStream();
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("S");
+            sheet.createRow(1).createCell(0).setCellValue("x");
+            sheet.createRow(2).createCell(0).setCellValue("y");
+            wb.write(out);
+        }
+        return out.toByteArray();
+    }
+
+    @Test
+    void excelReader_headerRowAbsentFromTheFile_positionalColumnsStillRead() throws Exception {
+        List<String> values = new ArrayList<>();
+
+        ExcelReader.<String[]>setter(() -> new String[1])
+                .column((p, c) -> p[0] = c.asString())
+                .read(new ByteArrayInputStream(workbookWithoutHeaderRow()), r -> values.add(r.data()[0]));
+
+        assertEquals(List.of("x", "y"), values);
+    }
+
+    @Test
+    void excelReader_headerRowAbsentFromTheFile_namedColumnFailsWithAHeaderMessage() throws Exception {
+        ExcelReadException e = assertThrows(ExcelReadException.class, () -> ExcelReader.<String[]>setter(() -> new String[1])
+                .column("Name", (p, c) -> p[0] = c.asString())
+                .read(new ByteArrayInputStream(workbookWithoutHeaderRow()), r -> { }));
+
+        assertFalse(e.getCause() instanceof IllegalStateException, String.valueOf(e.getCause()));
+    }
+
+    @Test
+    void excelReader_headerRowAbsentFromTheFile_mapModeReadsEmptyMaps() throws Exception {
+        List<Map<String, String>> rows = new ArrayList<>();
+
+        ExcelReader.forMap().read(new ByteArrayInputStream(workbookWithoutHeaderRow()), r -> rows.add(r.data()));
+
+        assertEquals(2, rows.size());
+    }
+
     @Test
     void csvReader_strictHeaders_failsWhenPositionalColumnHasNoHeader() {
         String csv = "Name\nAlice\n";
