@@ -74,7 +74,7 @@ class CsvColumnConfigTest {
 
         @Test
         void aToleratedFailureIsAMissingValueToo() {
-            var csv = lines(CsvWriter.<Item>create().failOnColumnError(false)
+            var csv = lines(CsvWriter.<Item>create().writeErrorPolicy(io.github.dornol.excelkit.core.WriteErrorPolicy.LENIENT)
                     .column("Qty", i -> { if (i.qty() == null) throw new IllegalStateException("boom"); return i.qty(); },
                             c -> c.nullValue("?")).write(ITEMS));
             assertEquals(List.of("Qty", "1", "?", "3"), csv);
@@ -82,7 +82,7 @@ class CsvColumnConfigTest {
 
         @Test
         void aFailureStillFailsWhenTheWriterIsToldTo() {
-            var writer = CsvWriter.<Item>create().failOnColumnError(true)
+            var writer = CsvWriter.<Item>create().writeErrorPolicy(io.github.dornol.excelkit.core.WriteErrorPolicy.FAIL_FAST)
                     .column("Qty", i -> { throw new IllegalStateException("boom"); }, c -> c.nullValue("?"));
             assertThrows(CsvWriteException.class, () -> writer.write(ITEMS).writeTo(new ByteArrayOutputStream()));
         }

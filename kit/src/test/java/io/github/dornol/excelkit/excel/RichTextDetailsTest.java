@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -130,7 +131,7 @@ class RichTextDetailsTest {
     @Test
     void theLenientPolicyWritesThePlainText() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ExcelWriter.<Row>create().writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
+        ExcelWriter.<Row>create().writeErrorPolicy(WriteErrorPolicy.LENIENT)
                 .column("v", row -> new ExcelRichText().text("a ").bold("b"), c -> c.type(ExcelDataType.RICH_TEXT))
                 .write(List.of(new Row(1))).writeTo(out);
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.io.TempWorkspace;
@@ -78,7 +79,7 @@ public class CsvWriter<T> {
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private boolean csvInjectionDefense = true;
-    private boolean failOnColumnError = true;
+    private WriteErrorPolicy writeErrorPolicy = WriteErrorPolicy.FAIL_FAST;
     private CsvQuoting quoting = CsvQuoting.MINIMAL;
     private String lineSeparator = "\r\n";
 
@@ -438,16 +439,18 @@ public class CsvWriter<T> {
     }
 
     /**
-     * Controls whether extraction errors abort writing. Defaults to {@code true}.
-     * When disabled, failed fields are written as empty fields (or as the {@link CsvColumnConfig#nullValue(Object)
-     * nullValue} of the column). This is what {@code ExcelWriteErrorPolicy.LENIENT} does for the Excel writers, which
-     * fail fast by default as well; CSV has no cell types, so a failure to convert a value is not a case here.
+     * Sets what happens when a column function throws. Defaults to {@link WriteErrorPolicy#FAIL_FAST}: the write fails
+     * with {@link CsvWriteException}. With {@link WriteErrorPolicy#LENIENT} the field is written empty (or as the
+     * {@link CsvColumnConfig#nullValue(Object) nullValue} of the column) and the failure is logged. It is the same
+     * setting as {@code writeErrorPolicy(...)} of the Excel writers; CSV has no cell types, so only the failure of a
+     * column function is a case here.
      *
-     * @param enabled whether to abort writing when a column extractor throws
+     * @param policy what to do with a value that cannot be taken from a row
      * @return this writer
+     * @since 0.29.0
      */
-    public CsvWriter<T> failOnColumnError(boolean enabled) {
-        this.failOnColumnError = enabled;
+    public CsvWriter<T> writeErrorPolicy(WriteErrorPolicy policy) {
+        this.writeErrorPolicy = Objects.requireNonNull(policy, "policy cannot be null");
         return this;
     }
 
@@ -552,7 +555,7 @@ public class CsvWriter<T> {
                 line.setLength(0);
                 for (int i = 0; i < columns.size(); i++) {
                     CsvColumn<T> col = columns.get(i);
-                    String field = escapeCsv(col.applyFunction(row, cursor, options.failOnColumnError()), options);
+                    String field = escapeCsv(col.applyFunction(row, cursor, options.writeErrorPolicy()), options);
                     if (probe != null && !probe.canEncode(field)) {
                         checkEncodable(field, probe, options,
                                 "column '" + col.getName() + "' at row " + cursor.getRowOfSheet());
@@ -682,7 +685,7 @@ public class CsvWriter<T> {
 
     private CsvWriteOptions<T> snapshotOptions() {
         return new CsvWriteOptions<>(List.copyOf(columns), delimiter, charset, bom, afterDataWriter,
-                progressCallback, progressInterval, csvInjectionDefense, failOnColumnError, quoting, lineSeparator);
+                progressCallback, progressInterval, csvInjectionDefense, writeErrorPolicy, quoting, lineSeparator);
     }
 
     private record CsvWriteOptions<T>(
@@ -694,7 +697,7 @@ public class CsvWriter<T> {
             @Nullable ProgressCallback progressCallback,
             int progressInterval,
             boolean csvInjectionDefense,
-            boolean failOnColumnError,
+            WriteErrorPolicy writeErrorPolicy,
             CsvQuoting quoting,
             String lineSeparator
     ) {}

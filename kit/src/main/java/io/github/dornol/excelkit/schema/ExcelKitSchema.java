@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.schema;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.core.read.CellConversionConfig;
 import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.read.DuplicateHeaderPolicy;
@@ -9,7 +10,6 @@ import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ColumnConfig;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
-import io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy;
 import io.github.dornol.excelkit.excel.ExcelWriter;
 import jakarta.validation.Validator;
 
@@ -50,7 +50,7 @@ public class ExcelKitSchema<T> {
 
     private final List<SchemaColumn<T>> columns;
     private final ReaderOptions readOptions;
-    private final @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
+    private final @Nullable WriteErrorPolicy writeErrorPolicy;
 
     private ExcelKitSchema(List<SchemaColumn<T>> columns, Builder<T> builder) {
         this.columns = Collections.unmodifiableList(columns);
@@ -270,7 +270,7 @@ public class ExcelKitSchema<T> {
         private final List<SchemaColumn<T>> columns = new ArrayList<>();
         /** The readers' common settings; the same code, defaults and checks as a reader's own chaining. */
         private final ReaderOptions.Builder readSettings = ReaderOptions.builder();
-        private @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
+        private @Nullable WriteErrorPolicy writeErrorPolicy;
 
         private Builder() {}
 
@@ -438,7 +438,7 @@ public class ExcelKitSchema<T> {
             return this;
         }
 
-        public Builder<T> writeErrorPolicy(ExcelWriteErrorPolicy policy) {
+        public Builder<T> writeErrorPolicy(WriteErrorPolicy policy) {
             this.writeErrorPolicy = Objects.requireNonNull(policy, "policy cannot be null");
             return this;
         }

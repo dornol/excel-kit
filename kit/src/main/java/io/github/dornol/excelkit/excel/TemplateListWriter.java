@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.read.RowFunction;
@@ -72,13 +73,13 @@ public class TemplateListWriter<T> extends ColumnsWriter<T, TemplateListWriter<T
 
     /**
      * Sets how row value extraction and cell value write failures are handled.
-     * Defaults to {@link ExcelWriteErrorPolicy#FAIL_FAST}.
+     * Defaults to {@link WriteErrorPolicy#FAIL_FAST}.
      *
      * @param policy what to do with a value that cannot be written
      * @return this writer for chaining
      * @since 0.29.0
      */
-    public TemplateListWriter<T> writeErrorPolicy(ExcelWriteErrorPolicy policy) {
+    public TemplateListWriter<T> writeErrorPolicy(WriteErrorPolicy policy) {
         cfg.writeErrorPolicy = Objects.requireNonNull(policy, "policy must not be null");
         return this;
     }

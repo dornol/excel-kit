@@ -64,9 +64,9 @@ CSV writes report a `CsvWriteException` when a value cannot be encoded in the
 selected charset. With formula-injection defense enabled, numeric objects keep
 their signs and formula-like text is prefixed with a single quote.
 NUL characters and exceptions from value extractors raise a
-`CsvWriteException`. Use `.failOnColumnError(false)` to write an empty field
-(or the column's `nullValue`) when an extractor fails: the same as `writeErrorPolicy(LENIENT)` of the Excel writers, which
-fail fast by default as well. Null and empty string values both write as empty CSV fields unless a column has a `nullValue`.
+`CsvWriteException`. Use `.writeErrorPolicy(WriteErrorPolicy.LENIENT)` to write an empty field
+(or the column's `nullValue`) when an extractor fails: the same setting, with the same two values and the same default
+(`FAIL_FAST`), as on the Excel writers. Null and empty string values both write as empty CSV fields unless a column has a `nullValue`.
 
 ## Data Types
 
@@ -133,7 +133,7 @@ cell should become a blank cell (extraction failure) or text (type mismatch) ins
 
 ```java
 ExcelWriter.<Product>create()
-    .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
+    .writeErrorPolicy(WriteErrorPolicy.LENIENT)
     .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
     .write(products);
 ```

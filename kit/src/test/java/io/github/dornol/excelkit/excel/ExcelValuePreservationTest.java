@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.core.read.CellData;
@@ -138,7 +139,7 @@ class ExcelValuePreservationTest {
         var first = base.withNano(123_400_000);
         var second = base.withNano(123_800_000);
         var output = new ByteArrayOutputStream();
-        ExcelWriter.<LocalDateTime>create().writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT).column("Time", time -> time)
+        ExcelWriter.<LocalDateTime>create().writeErrorPolicy(WriteErrorPolicy.LENIENT).column("Time", time -> time)
                 .write(List.of(first, second, base.withNano(123_000_000))).writeTo(output);
         var cells = ExcelReader.mapping(row -> row.get("Time"))
                 .readAll(new ByteArrayInputStream(output.toByteArray()));
@@ -273,7 +274,7 @@ class ExcelValuePreservationTest {
     @Test
     void timeWithSubMillisecondPrecisionIsKeptAsTextInsteadOfTruncated() {
         var output = new ByteArrayOutputStream();
-        ExcelWriter.<LocalTime>create().writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT).column("Time", value -> value)
+        ExcelWriter.<LocalTime>create().writeErrorPolicy(WriteErrorPolicy.LENIENT).column("Time", value -> value)
                 .write(List.of(LocalTime.of(10, 0, 0, 123_456_789))).writeTo(output);
         var rows = ExcelReader.mapping(row -> row).readAll(new ByteArrayInputStream(output.toByteArray()));
         assertEquals("10:00:00.123456789", rows.get(0).get("Time").formattedValue());

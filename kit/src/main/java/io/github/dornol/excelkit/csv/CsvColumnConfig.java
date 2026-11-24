@@ -25,7 +25,7 @@ public final class CsvColumnConfig {
 
     /**
      * Sets what is written when the column's function returns {@code null} (or fails and the writer tolerates it, see
-     * {@link CsvWriter#failOnColumnError(boolean)}). Without it a missing value is an empty field.
+     * {@link CsvWriter#writeErrorPolicy(io.github.dornol.excelkit.core.WriteErrorPolicy)}). Without it a missing value is an empty field.
      * <p>
      * The value goes through the same rules as any other value: it is quoted when it has to be, and with
      * {@link CsvWriter#csvInjectionDefense(boolean) CSV injection defense} on (the default) a text that starts with

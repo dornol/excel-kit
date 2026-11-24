@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,15 +61,15 @@ public class CsvColumn<T> {
      *
      * @param rowData The current row object
      * @param cursor  The cursor tracking current row index
-     * @param failOnColumnError whether to throw when value extraction fails
+     * @param policy  whether a failure of the function aborts the write ({@code FAIL_FAST}) or leaves a missing value
      * @return The column's value for this row; the null value of the column when there is none or when tolerated extraction fails
      */
-    @Nullable Object applyFunction(T rowData, Cursor cursor, boolean failOnColumnError) {
+    @Nullable Object applyFunction(T rowData, Cursor cursor, WriteErrorPolicy policy) {
         try {
             Object value = function.apply(rowData, cursor);
             return value != null ? value : nullValue;
         } catch (RuntimeException e) {
-            if (failOnColumnError) {
+            if (policy == WriteErrorPolicy.FAIL_FAST) {
                 throw new CsvWriteException("Failed to extract CSV column '" + name
                         + "' at row " + cursor.getRowOfSheet(), e);
             }

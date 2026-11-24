@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.ProgressCallback;
@@ -221,11 +222,11 @@ public abstract class SheetWriter<T, SELF extends SheetWriter<T, SELF>> extends 
 
     /**
      * Sets how row value extraction and cell value write failures are handled.
-     * Defaults to {@link ExcelWriteErrorPolicy#FAIL_FAST}.
+     * Defaults to {@link WriteErrorPolicy#FAIL_FAST}.
      *
      * @since 0.19.0
      */
-    public SELF writeErrorPolicy(ExcelWriteErrorPolicy policy) {
+    public SELF writeErrorPolicy(WriteErrorPolicy policy) {
         cfg.writeErrorPolicy = Objects.requireNonNull(policy, "policy must not be null");
         return self();
     }

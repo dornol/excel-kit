@@ -17,3 +17,6 @@ io.github.dornol.excelkit.excel.ExcelValidation
 # CsvHandler is no longer AutoCloseable (close() removed, TempResourceContainer no longer its superclass): a handler is written after
 # the method that made it returns, so try-with-resources released it too early. Use discard().
 io.github.dornol.excelkit.csv.CsvHandler
+# ExcelWriteErrorPolicy moved to core as WriteErrorPolicy, shared by every writer; CsvWriter.failOnColumnError(boolean) became writeErrorPolicy(WriteErrorPolicy).
+io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy
+io.github.dornol.excelkit.csv.CsvWriter#failOnColumnError(boolean)

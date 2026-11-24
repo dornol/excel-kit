@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.ProgressCallback;
@@ -105,7 +106,7 @@ class SheetConfig<T> {
     @Nullable Map<List<String>, ExcelCellComment> groupComments;
     /** Named ranges: name → column index. Applied after data is written. */
     @Nullable Map<String, Integer> namedRanges;
-    ExcelWriteErrorPolicy writeErrorPolicy = ExcelWriteErrorPolicy.FAIL_FAST;
+    WriteErrorPolicy writeErrorPolicy = WriteErrorPolicy.FAIL_FAST;
     int maxRows = ExcelLimits.DEFAULT_MAX_ROWS;
     @Nullable TableOptions tableOptions;
 

@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.feature.ExcelHyperlink;
 import io.github.dornol.excelkit.excel.feature.ExcelImage;
 import org.apache.poi.ss.usermodel.Cell;
@@ -42,7 +43,7 @@ class ExcelAutomaticTypeInferenceTest {
     @Test
     void historicalDatesRemainDistinctAndTimesAreDayFractions() throws IOException {
         var values = List.of(LocalDate.of(1850, 1, 1), LocalDate.of(1899, 1, 1), LocalDate.of(1900, 1, 1));
-        var writer = ExcelWriter.<LocalDate>create().writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT).column("Date", value -> value)
+        var writer = ExcelWriter.<LocalDate>create().writeErrorPolicy(WriteErrorPolicy.LENIENT).column("Date", value -> value)
                 .column("Time", value -> LocalTime.NOON);
         try (var workbook = read(writer.write(values))) {
             var sheet = workbook.getSheetAt(0);
@@ -59,7 +60,7 @@ class ExcelAutomaticTypeInferenceTest {
                 Map.of("Long", 9_007_199_254_740_993L, "Decimal", new BigDecimal("0.123456789012345678901"), "Mixed", 1),
                 Map.of("Mixed", new BigDecimal("2.75")));
         var writer = ExcelWriter.forMap("Long", "Decimal", "Mixed")
-                .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT);
+                .writeErrorPolicy(WriteErrorPolicy.LENIENT);
         try (XSSFWorkbook workbook = read(writer.write(rows))) {
             var sheet = workbook.getSheetAt(0);
             assertEquals("9007199254740993", sheet.getRow(1).getCell(0).getStringCellValue());
@@ -73,7 +74,7 @@ class ExcelAutomaticTypeInferenceTest {
     void failFastRejectsLossyIntegerConversion() {
         var writer = ExcelWriter.<Number>create()
                 .column("Value", value -> value, column -> column.type(ExcelDataType.INTEGER))
-                .writeErrorPolicy(ExcelWriteErrorPolicy.FAIL_FAST);
+                .writeErrorPolicy(WriteErrorPolicy.FAIL_FAST);
 
         assertThrows(ExcelWriteException.class, () -> writer.write(List.of(1, 2.75)));
     }

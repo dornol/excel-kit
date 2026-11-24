@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Nested;
@@ -180,7 +181,7 @@ class TemplateListWriterColumnsTest {
         @Test
         void lenientLeavesTheCellBlankAndGoesOn() throws IOException {
             try (var w = new ExcelTemplateWriter(new ByteArrayInputStream(template()))) {
-                w.<Row>list(0, 1).writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT).column("N", FAILS_ON_B).write(ROWS);
+                w.<Row>list(0, 1).writeErrorPolicy(WriteErrorPolicy.LENIENT).column("N", FAILS_ON_B).write(ROWS);
                 var out = new ByteArrayOutputStream();
                 w.finish().writeTo(out);
                 try (var wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
