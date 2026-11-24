@@ -314,7 +314,8 @@ class ExcelWriteSupport {
         CellStyle style = ExcelStyleSupporter.cellStyle(wb, c.styleParams(), cellStyleCache);
 
         return new ExcelColumn<>(name, function, style,
-                dataType != null ? dataType.getSetter() : ExcelDataType.STRING.getSetter(), c);
+                dataType != null ? dataType.getSetter() : ExcelDataType.STRING.getSetter(), c)
+                .sharingStylesOf(cellStyleCache);
     }
 
     /**

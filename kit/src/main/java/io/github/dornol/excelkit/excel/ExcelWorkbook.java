@@ -48,6 +48,10 @@ public class ExcelWorkbook implements AutoCloseable {
     private final SXSSFWorkbook wb;
     private final WorkbookSettings settings;
     private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
+    // Styles derived from a column style (headers, row colors, stripes, subtotal rows) are keyed by what they are
+    // made of, so the sheets of a workbook share them instead of adding the same styles once per sheet.
+    private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
+    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
     private final Set<String> usedSheetNames = new HashSet<>();
     private boolean finished = false;
 
@@ -230,7 +234,7 @@ public class ExcelWorkbook implements AutoCloseable {
         if (!usedSheetNames.add(name)) {
             throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
         }
-        return new ExcelSheetWriter<>(wb, wb.createSheet(name), name, settings.headerStyle(), cellStyleCache, usedSheetNames);
+        return new ExcelSheetWriter<>(wb, wb.createSheet(name), name, settings.headerStyle(), cellStyleCache, headerStyleCache, rowStyleCache, usedSheetNames);
     }
 
     /**

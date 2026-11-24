@@ -68,6 +68,8 @@ public class ExcelColumn<T> {
     private int columnWidth = 1;
     private boolean extractionFailureLogged;
     private boolean cellWriteFailureLogged;
+    /** The styles of the workbook, shared by its sheets: the style a type inferred from the data is looked up here. */
+    private @Nullable Map<String, CellStyle> sharedStyles;
 
     static <T> ExcelColumn<T> of(String name, RowFunction<T, @Nullable Object> function,
                                   @Nullable CellStyle style, ExcelColumnSetter columnSetter) {
@@ -210,11 +212,19 @@ public class ExcelColumn<T> {
                 columnSetter = dataType.getSetter();
                 if (!explicitDataFormat && dataType.getDefaultFormat() != null) {
                     var workbook = cell.getSheet().getWorkbook();
-                    CellStyle inferredStyle = workbook.createCellStyle();
-                    inferredStyle.cloneStyleFrom(style);
-                    inferredStyle.setDataFormat(workbook.createDataFormat()
-                            .getFormat(dataType.getDefaultFormat()));
-                    style = inferredStyle;
+                    CellStyle base = style;
+                    String format = dataType.getDefaultFormat();
+                    java.util.function.Supplier<CellStyle> create = () -> {
+                        CellStyle inferredStyle = workbook.createCellStyle();
+                        inferredStyle.cloneStyleFrom(base);
+                        inferredStyle.setDataFormat(workbook.createDataFormat().getFormat(format));
+                        return inferredStyle;
+                    };
+                    // Columns of the same look share the style: the sheets of a workbook and the columns of a sheet
+                    // that infer the same type would otherwise add one cell style each.
+                    style = sharedStyles != null && base != null
+                            ? sharedStyles.computeIfAbsent("inferred:" + base.getIndex() + ":" + format, k -> create.get())
+                            : create.get();
                 }
             }
         }
@@ -313,6 +323,11 @@ public class ExcelColumn<T> {
         return name;
     }
 
+
+    ExcelColumn<T> sharingStylesOf(Map<String, CellStyle> styles) {
+        this.sharedStyles = styles;
+        return this;
+    }
 
     CellStyle getStyle() {
         return style;
@@ -444,7 +459,8 @@ public class ExcelColumn<T> {
                 this.columnSetter = this.dataType != null
                         ? this.dataType.getSetter() : ExcelDataType.STRING.getSetter();
             }
-            return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter, this);
+            return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter, this)
+                    .sharingStylesOf(writer.getCellStyleCache());
         }
 
     }

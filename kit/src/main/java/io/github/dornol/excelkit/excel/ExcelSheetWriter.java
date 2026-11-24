@@ -48,13 +48,17 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
 
     // Per-sheet settings
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
-    private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
+    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache;
+    private final Map<String, CellStyle> headerStyleCache;
     private boolean written = false;
 
     ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
                      CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
+                     Map<String, CellStyle> headerStyleCache,
+                     Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache,
                      Set<String> usedSheetNames) {
+        this.headerStyleCache = headerStyleCache;
+        this.rowStyleCache = rowStyleCache;
         this.wb = wb;
         this.sheet = sheet;
         this.baseName = baseName;
