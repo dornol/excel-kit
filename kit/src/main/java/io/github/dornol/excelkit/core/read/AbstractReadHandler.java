@@ -6,8 +6,6 @@ import io.github.dornol.excelkit.core.io.TempResourceContainer;
 import io.github.dornol.excelkit.core.io.TempResourceCreator;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,9 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,8 +44,6 @@ import java.util.function.Supplier;
  * @since 0.2.0
  */
 public abstract class AbstractReadHandler<T> extends TempResourceContainer implements ReadSession<T> {
-    private static final Logger log = LoggerFactory.getLogger(AbstractReadHandler.class);
-
     /** Supplier for creating new row instances (setter mode). */
     protected final @Nullable Supplier<T> instanceSupplier;
     /** Function for mapping row data to instances (mapping mode). */
@@ -129,7 +126,7 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
 
     private int @Nullable [] uniqueKeyColumns;
     private List<String> uniqueKeyHeaders = List.of();
-    private final java.util.Map<String, Long> seenKeys = new java.util.HashMap<>();
+    private final Map<String, Long> seenKeys = new HashMap<>();
 
     /**
      * Resolves the {@code uniqueKey} headers against the file's headers; call it once they are known.

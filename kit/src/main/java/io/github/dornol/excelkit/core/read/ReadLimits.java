@@ -11,6 +11,10 @@ package io.github.dornol.excelkit.core.read;
  */
 public record ReadLimits(long maxInputBytes, int maxSheets, int maxColumns, int maxCellCharacters,
                          long maxTotalCells) {
+    /**
+     * No bound at all, not even on the input size. Never use it for a file from an untrusted source (an upload):
+     * the whole input is copied to a temp file and read to the end.
+     */
     public static final ReadLimits UNLIMITED = new ReadLimits(-1, -1, -1, -1, -1);
 
     /**
