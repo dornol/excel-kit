@@ -147,7 +147,39 @@ failures also throw `ExcelWriteException` rather than being logged or ignored.
     .fontSize(12))
 ```
 
-All column configuration methods are documented in [Styling](styling.md).
+All column configuration methods are documented in [Styling](styling.md). The configurer is a
+`Consumer<ColumnConfig<T>>` for every writer, so a setting can be kept in a variable and used on any of them:
+
+```java
+Consumer<ColumnConfig<Order>> money = c -> c.type(ExcelDataType.INTEGER).format("#,##0").alignment(HorizontalAlignment.RIGHT);
+
+ExcelWriter.<Order>create().column("Total", Order::total, money);
+workbook.<Order>sheet("Orders").column("Total", Order::total, money);
+```
+
+`style(CellStyle)` gives a column a cell style built by hand (it must belong to the same workbook); the other
+settings of the column still apply.
+
+## Settings shared by `ExcelWriter` and `ExcelSheetWriter`
+
+`ExcelWriter` (one sheet, rolled over when full) and `ExcelSheetWriter` (a sheet of an `ExcelWorkbook`) have the same
+columns and sheet settings: they extend `SheetWriter<T, SELF>`, which is public so that a setting is written once. For
+example a standard look for the reports of a team:
+
+```java
+static <T, W extends SheetWriter<T, W>> W standardLook(W writer) {
+    return writer.stripedRows().autoFilter(true).freezePane(0, 1).emptyMessage("No data");
+}
+
+standardLook(ExcelWriter.<Order>create()).column("Id", Order::id).write(orders);
+
+try (var workbook = ExcelWorkbook.create()) {
+    standardLook(workbook.<Order>sheet("Orders")).column("Id", Order::id).write(orders);
+    standardLook(workbook.<Order>sheet("Returns")).column("Id", Order::id).write(returns);
+}
+```
+
+`SheetWriter` cannot be extended outside the library.
 
 ## Map-Based Writing
 

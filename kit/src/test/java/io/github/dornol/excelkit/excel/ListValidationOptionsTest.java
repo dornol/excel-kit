@@ -23,7 +23,7 @@ class ListValidationOptionsTest {
         return new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()));
     }
 
-    private static ExcelWriter<Row> writer(java.util.function.Consumer<ExcelColumn.ExcelColumnBuilder<Row>> second) {
+    private static ExcelWriter<Row> writer(java.util.function.Consumer<ColumnConfig<Row>> second) {
         return ExcelWriter.<Row>create()
                 .column("Category", Row::category, c -> c.dropdown("A", "B"))
                 .column("Item", Row::item, second);

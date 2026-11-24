@@ -16,11 +16,24 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * Shared sheet-level configuration methods for {@link ExcelWriter} and {@link ExcelSheetWriter}.
+ * What {@link ExcelWriter} (one sheet, rolled over to more when it is full) and {@link ExcelSheetWriter} (a sheet of an
+ * {@link ExcelWorkbook}) have in common: the columns and everything that configures a sheet (layout, callbacks, styling,
+ * protection, charts, print setup, subtotals...). Only writing differs between the two.
  * <p>
- * Contains all methods that delegate to {@link SheetConfig} — layout, callbacks, styling,
- * protection, charting, print setup, etc. Column registration and write logic remain in
- * the concrete subclasses because they differ between the two writers.
+ * The type is public so that a setting can be written once for both, for example a standard look for the reports of a
+ * company:
+ *
+ * <pre>{@code
+ * static <T, W extends SheetWriter<T, W>> W standardLook(W writer) {
+ *     return writer.stripedRows().autoFilter(true).freezePane(0, 1);
+ * }
+ *
+ * standardLook(ExcelWriter.<Order>create()).column("Id", Order::id);
+ * standardLook(workbook.<Order>sheet("Orders")).column("Id", Order::id);
+ * }</pre>
+ *
+ * A column setting written as a {@code Consumer<ColumnConfig<T>>} takes both as well. It cannot be extended outside
+ * this package: use {@link ExcelWriter} or {@link ExcelSheetWriter}.
  *
  * @param <T>    the row data type
  * @param <SELF> the concrete writer type, for fluent method chaining
@@ -28,15 +41,36 @@ import java.util.function.Predicate;
  * @since 0.17.0
  */
 @SuppressWarnings("unchecked")
-abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>> {
+public abstract class SheetWriter<T, SELF extends SheetWriter<T, SELF>> {
+
+    SheetWriter() { }
 
     final SheetConfig<T> cfg = new SheetConfig<>();
 
-    private SELF self() {
+    SELF self() {
         return (SELF) this;
     }
 
-    // ── Columns shared by every sheet writer ──
+    // ── Columns ──
+
+    /** Builds the column the writer will write: its styles come from the writer's workbook. */
+    abstract ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
+                                        @Nullable ColumnConfig<T> config);
+
+    /** Adds a built column to the sheet. */
+    abstract void addColumn(ExcelColumn<T> column);
+
+    private SELF register(String name, RowFunction<T, @Nullable Object> function, @Nullable Consumer<ColumnConfig<T>> configurer) {
+        Objects.requireNonNull(name, "name cannot be null");
+        Objects.requireNonNull(function, "function cannot be null");
+        ColumnConfig<T> config = null;
+        if (configurer != null) {
+            config = new ColumnConfig<>();
+            configurer.accept(config);
+        }
+        addColumn(buildColumn(name, function, config));
+        return self();
+    }
 
     /**
      * Adds a column using a simple function.
@@ -45,16 +79,49 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @param function function to extract the cell value
      * @return this writer for chaining
      */
-    public abstract SELF column(String name, Function<T, @Nullable Object> function);
+    public SELF column(String name, Function<T, @Nullable Object> function) {
+        return column(name, function, (Consumer<ColumnConfig<T>>) null);
+    }
 
     /**
-     * Adds a column whose function also receives the row's {@link Cursor}.
+     * Adds a column using a simple function, with settings such as type, format, width or color.
+     *
+     * <pre>{@code
+     * writer.column("Price", Book::price, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
+     * }</pre>
+     *
+     * @param name       the column header
+     * @param function   function to extract the cell value
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return this writer for chaining
+     */
+    public SELF column(String name, Function<T, @Nullable Object> function, @Nullable Consumer<ColumnConfig<T>> configurer) {
+        Objects.requireNonNull(function, "function cannot be null");
+        return register(name, (r, c) -> function.apply(r), configurer);
+    }
+
+    /**
+     * Adds a column whose function also receives the row's {@link Cursor}, for a value that depends on the position.
      *
      * @param name     the column header
      * @param function function to extract the cell value
      * @return this writer for chaining
      */
-    public abstract SELF column(String name, RowFunction<T, @Nullable Object> function);
+    public SELF column(String name, RowFunction<T, @Nullable Object> function) {
+        return column(name, function, (Consumer<ColumnConfig<T>>) null);
+    }
+
+    /**
+     * Adds a column whose function also receives the row's {@link Cursor}, with settings.
+     *
+     * @param name       the column header
+     * @param function   function to extract the cell value
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return this writer for chaining
+     */
+    public SELF column(String name, RowFunction<T, @Nullable Object> function, @Nullable Consumer<ColumnConfig<T>> configurer) {
+        return register(name, function, configurer);
+    }
 
     /**
      * Conditionally adds a column using a simple function. If {@code condition} is false, nothing is added.
@@ -65,10 +132,47 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @return this writer for chaining
      */
     public SELF columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
-        if (condition) {
-            column(name, function);
-        }
-        return self();
+        return condition ? column(name, function) : self();
+    }
+
+    /**
+     * Conditionally adds a column using a simple function, with settings. If {@code condition} is false, nothing is added.
+     *
+     * @param name       the column header
+     * @param condition  whether to include this column
+     * @param function   function to extract the cell value
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return this writer for chaining
+     */
+    public SELF columnIf(String name, boolean condition, Function<T, @Nullable Object> function,
+                         @Nullable Consumer<ColumnConfig<T>> configurer) {
+        return condition ? column(name, function, configurer) : self();
+    }
+
+    /**
+     * Conditionally adds a column whose function also receives the row's {@link Cursor}.
+     *
+     * @param name      the column header
+     * @param condition whether to include this column
+     * @param function  function to extract the cell value
+     * @return this writer for chaining
+     */
+    public SELF columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function) {
+        return condition ? column(name, function) : self();
+    }
+
+    /**
+     * Conditionally adds a column whose function also receives the row's {@link Cursor}, with settings.
+     *
+     * @param name       the column header
+     * @param condition  whether to include this column
+     * @param function   function to extract the cell value
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return this writer for chaining
+     */
+    public SELF columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function,
+                         @Nullable Consumer<ColumnConfig<T>> configurer) {
+        return condition ? column(name, function, configurer) : self();
     }
 
     /**
@@ -79,7 +183,45 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
      * @return this writer for chaining
      */
     public SELF constColumn(String name, @Nullable Object value) {
-        return column(name, (RowFunction<T, @Nullable Object>) (r, c) -> value);
+        return constColumn(name, value, null);
+    }
+
+    /**
+     * Adds a column with a constant value for all rows, with settings.
+     *
+     * @param name       the column header
+     * @param value      the constant value written in every row
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return this writer for chaining
+     */
+    public SELF constColumn(String name, @Nullable Object value, @Nullable Consumer<ColumnConfig<T>> configurer) {
+        return column(name, (RowFunction<T, @Nullable Object>) (r, c) -> value, configurer);
+    }
+
+    /**
+     * Conditionally adds a column with a constant value for all rows. If {@code condition} is false, nothing is added.
+     *
+     * @param name      the column header
+     * @param condition whether to include this column
+     * @param value     the constant value written in every row
+     * @return this writer for chaining
+     */
+    public SELF constColumnIf(String name, boolean condition, @Nullable Object value) {
+        return condition ? constColumn(name, value) : self();
+    }
+
+    /**
+     * Conditionally adds a column with a constant value for all rows, with settings.
+     *
+     * @param name       the column header
+     * @param condition  whether to include this column
+     * @param value      the constant value written in every row
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return this writer for chaining
+     */
+    public SELF constColumnIf(String name, boolean condition, @Nullable Object value,
+                              @Nullable Consumer<ColumnConfig<T>> configurer) {
+        return condition ? constColumn(name, value, configurer) : self();
     }
 
     // ── Rows per sheet and structured table ──

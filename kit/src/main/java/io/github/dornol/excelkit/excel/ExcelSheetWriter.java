@@ -27,16 +27,14 @@ import java.util.stream.StreamSupport;
  * Rolls over automatically: once a sheet holds {@link #maxRows(int)} data rows (1,000,000 by default),
  * the writer creates an additional sheet.
  * <p>
- * Column configuration uses {@link ColumnConfig} (via {@code Consumer<ColumnConfig<T>>})
- * rather than {@link ExcelColumn.ExcelColumnBuilder}. Unlike ExcelWriter's builder, there
- * is no {@code style(CellStyle)} method — styles are derived from the declarative config
- * properties (type, bold, color, borders, etc.).
+ * Columns and sheet settings are those of {@link SheetWriter}, shared with {@link ExcelWriter}; a column is configured
+ * with a {@code Consumer<ColumnConfig<T>>}.
  *
  * @param <T> the row data type for this sheet
  * @author dhkim
  * @since 0.3.0
  */
-public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter<T>> {
+public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
 
     // Shared resources from ExcelWorkbook
     private final SXSSFWorkbook wb;
@@ -68,35 +66,6 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     /**
-     * Adds a column using a simple function.
-     *
-     * @param name the column header
-     * @param function function to extract the cell value
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function) {
-        Objects.requireNonNull(function, "function cannot be null");
-        columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
-        return this;
-    }
-
-    /**
-     * Adds a column with additional configuration.
-     *
-     * @param name the column header
-     * @param function function to extract the cell value
-     * @param cfg consumer to configure column styling
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> column(String name, Function<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
-        Objects.requireNonNull(function, "function cannot be null");
-        ColumnConfig<T> config = new ColumnConfig<>();
-        cfg.accept(config);
-        columns.add(buildColumn(name, (r, c) -> function.apply(r), config));
-        return this;
-    }
-
-    /**
      * Hides the sheet from the tab bar; the person opening the file can show it again (right-click on a tab, Unhide).
      * Use it for a sheet that only feeds the others, such as the master codes behind a dropdown
      * ({@code ExcelValidation.listFromRange("Codes!$A$2:$A$20")}). Every sheet of a rollover is hidden. The
@@ -124,33 +93,6 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     }
 
     /**
-     * Adds a column using a row function with cursor support.
-     *
-     * @param name the column header
-     * @param function function to extract the cell value
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
-        columns.add(buildColumn(name, function, null));
-        return this;
-    }
-
-    /**
-     * Adds a column using a row function with cursor support and additional configuration.
-     *
-     * @param name the column header
-     * @param function function to extract the cell value
-     * @param cfg consumer to configure column styling
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> column(String name, RowFunction<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
-        ColumnConfig<T> config = new ColumnConfig<>();
-        cfg.accept(config);
-        columns.add(buildColumn(name, function, config));
-        return this;
-    }
-
-    /**
      * Enables auto-filter on the header row (no-arg convenience).
      *
      * @return this writer for chaining
@@ -167,22 +109,6 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
     public ExcelSheetWriter<T> rowNumberColumn(String name) {
         return column(name, (row, cursor) -> cursor.getCurrentTotal(),
                 c -> c.type(ExcelDataType.LONG));
-    }
-
-    /**
-     * Conditionally adds a column with additional configuration.
-     *
-     * @param name      Column header name
-     * @param condition Whether to include this column
-     * @param function  Function to extract cell value from row
-     * @param cfg       Consumer to configure column options
-     * @return this writer for chaining
-     */
-    public ExcelSheetWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function, Consumer<ColumnConfig<T>> cfg) {
-        if (condition) {
-            column(name, function, cfg);
-        }
-        return this;
     }
 
     /**
@@ -320,8 +246,14 @@ public class ExcelSheetWriter<T> extends AbstractSheetWriter<T, ExcelSheetWriter
         return wb.createSheet(name);
     }
 
-    private ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
-                                       @Nullable ColumnConfig<T> config) {
+    @Override
+    void addColumn(ExcelColumn<T> column) {
+        columns.add(column);
+    }
+
+    @Override
+    ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
+                               @Nullable ColumnConfig<T> config) {
         return ExcelWriteSupport.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
     }
 

@@ -311,7 +311,9 @@ class ExcelWriteSupport {
             c.applyDefaults(defaultStyle);
         }
         ExcelDataType dataType = c.dataType;
-        CellStyle style = ExcelStyleSupporter.cellStyle(wb, c.styleParams(), cellStyleCache);
+        CellStyle style = config != null && config.customStyle != null
+                ? config.customStyle
+                : ExcelStyleSupporter.cellStyle(wb, c.styleParams(), cellStyleCache);
 
         return new ExcelColumn<>(name, function, style,
                 dataType != null ? dataType.getSetter() : ExcelDataType.STRING.getSetter(), c)

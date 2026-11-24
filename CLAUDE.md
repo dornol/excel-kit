@@ -62,7 +62,7 @@ Fluent API 기반 Excel/CSV 읽기·쓰기 Java 라이브러리 (Apache POI SXSS
   `ExcelWorkbook`/`ExcelTemplateWriter` 는 try-with-resources 로 닫을 것 — 임시 파일이 남으면
   `TempFileLeakGuard`(`test-support/` 에 두고 kit·excel-kit-spring 테스트에 자동 적용)가 해당 테스트를 실패시킨다. POI `SXSSFWorkbook` 을 직접 만드는
   테스트는 `DisposingSxssfWorkbook` 을 사용
-- 컬럼 설정: `ColumnStyleConfig`를 상속하는 `ExcelColumnBuilder`(체이닝)와 `ColumnConfig`(람다) 두 API 유지
+- 컬럼 설정: 모든 writer 가 `Consumer<ColumnConfig<T>>`(람다) 하나로 받는다. 컬럼·시트 설정 메서드는 공개 기반 클래스 `SheetWriter<T, SELF>` 한 곳에 두고(`ExcelWriter`/`ExcelSheetWriter` 공통), 한쪽에만 따로 만들지 않는다
 - `ExcelColumn` 생성자는 `ColumnStyleConfig`를 통째로 받음 — 새 필드 추가 시 `ColumnStyleConfig`에 필드+setter 추가 후 `ExcelColumn` 내부에서 복사
 - 패키지 구조: `core/` (공통 타입), `excel/` (Excel), `csv/` (CSV)
 - 생성 진입점: `ExcelWriter.create()` / `ExcelWriter.create(opts -> ...)`, `ExcelWorkbook.create()` / `ExcelWorkbook.create(opts -> ...)` — `InitOptions` Consumer 로 초기 설정만 받고, 그 외 설정은 fluent 메서드

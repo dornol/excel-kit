@@ -7,7 +7,7 @@ import io.github.dornol.excelkit.core.read.ReaderOptions;
 import io.github.dornol.excelkit.core.read.RowData;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.excel.ExcelColumn;
+import io.github.dornol.excelkit.excel.ColumnConfig;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy;
 import io.github.dornol.excelkit.excel.ExcelWriter;
@@ -206,7 +206,7 @@ public class ExcelKitSchema<T> {
             String name,
             Function<T, @Nullable Object> writeFunction,
             BiConsumer<T, CellData> readSetter,
-            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer,
+            @Nullable Consumer<ColumnConfig<T>> writeConfigurer,
             List<String> readHeaderNames,
             boolean required
     ) {
@@ -241,7 +241,7 @@ public class ExcelKitSchema<T> {
          */
         public SchemaColumn(String name, Function<T, @Nullable Object> writeFunction,
                             BiConsumer<T, CellData> readSetter,
-                            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                            @Nullable Consumer<ColumnConfig<T>> writeConfigurer) {
             this(name, writeFunction, readSetter, writeConfigurer, List.of(name), false);
         }
 
@@ -336,7 +336,7 @@ public class ExcelKitSchema<T> {
         /**
          * Adds a column definition with Excel write configuration.
          * <p>
-         * The configurer receives an {@link ExcelColumn.ExcelColumnBuilder} to set column properties
+         * The configurer receives an {@link ColumnConfig} to set column properties
          * such as type, format, alignment, width, etc. Only call configuration methods
          * (type, format, alignment, backgroundColor, bold, fontSize, width, minWidth, maxWidth, dropdown)
          * inside the configurer.
@@ -353,7 +353,7 @@ public class ExcelKitSchema<T> {
          * @return This builder for chaining
          */
         public Builder<T> column(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter,
-                                  Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                  Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer));
             return this;
         }
@@ -371,7 +371,7 @@ public class ExcelKitSchema<T> {
         public Builder<T> column(String name, List<String> readAliases,
                                  Function<T, @Nullable Object> writeFunction,
                                  BiConsumer<T, CellData> readSetter,
-                                 Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                 Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, false));
             return this;
         }
@@ -387,7 +387,7 @@ public class ExcelKitSchema<T> {
          */
         public Builder<T> requiredColumn(String name, Function<T, @Nullable Object> writeFunction,
                                          BiConsumer<T, CellData> readSetter,
-                                         Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                         Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, List.of(name), true));
             return this;
         }
@@ -405,7 +405,7 @@ public class ExcelKitSchema<T> {
         public Builder<T> requiredColumn(String name, List<String> readAliases,
                                          Function<T, @Nullable Object> writeFunction,
                                          BiConsumer<T, CellData> readSetter,
-                                         Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                         Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, true));
             return this;
         }

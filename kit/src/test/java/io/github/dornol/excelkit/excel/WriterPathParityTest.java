@@ -25,7 +25,7 @@ class WriterPathParityTest {
         }
     }
 
-    private static byte[] viaWriter(Function<ExcelColumn.ExcelColumnBuilder<LocalDateTime>, ?> config) {
+    private static byte[] viaWriter(Function<ColumnConfig<LocalDateTime>, ?> config) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<LocalDateTime>create().column("T", t -> t, config::apply)
                 .write(List.of(WHOLE, WITH_NANOS)).writeTo(out);
