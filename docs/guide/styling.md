@@ -176,6 +176,12 @@ machine). An .xlsx workbook holds at most 64,000 styles; past that the write fai
 `ExcelWriteException`. Return a palette of a few colors (round values into buckets) instead of a continuous
 gradient.
 
+**Many sheets count too.** Each sheet of a workbook adds cell styles of its own: about one for plain data, and about
+three more for each of `groupSubtotal`, `stripedRows` and `rowColor` you use on it (measured: 200 sheets with
+subtotals hold about 600 styles). Only the one-line message of `emptyMessage(...)` is shared by all sheets. That is
+far from the 64,000 limit unless a workbook has thousands of such sheets; if it does, the write fails with the same
+`ExcelWriteException`, and splitting the data into several workbooks is the way out.
+
 To fail fast instead of waiting, cap the styles a write may create with `maxCellStyles(n)` (default 64,000):
 
 ```java
