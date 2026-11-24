@@ -179,6 +179,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     }
 
     private void scanAndRead(Path file, Consumer<ReadResult<T>> consumer) throws Exception {
+        ExcelFileFormat.requireXlsx(file, false);
         ExcelSecurityScanner.scan(file, readOptions.securityPolicy());
         try (OPCPackage pkg = OPCPackage.open(file.toFile(), PackageAccess.READ)) {
             readPackage(pkg, consumer);

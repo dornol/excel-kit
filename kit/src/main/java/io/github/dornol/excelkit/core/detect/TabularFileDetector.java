@@ -15,6 +15,11 @@ import java.util.Objects;
 
 /**
  * Signature-based file type detection that does not depend on filename extensions.
+ * <p>
+ * An Excel 97-2003 workbook ({@code .xls}) and a password-protected {@code .xlsx} are both OLE2 containers, which this
+ * detector does not look into: both are reported as {@link TabularFileType#XLS}. A password-protected workbook is read
+ * without detection, giving the reader its {@code password(...)}; a reader that is handed an {@code .xls} says so in its
+ * {@code ExcelReadException}.
  *
  * @since 0.21.0
  */

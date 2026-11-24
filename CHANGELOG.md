@@ -33,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - `dropdown(...)` wrote `showDropDown="true"` for the list, which OOXML defines as *hiding* the in-cell arrow, so Excel could show the dropdown list without its arrow. The attribute is no longer written (as for `listFromRange`): the arrow is shown. Not checked on a real Excel.
 
 ### Changed
+- Reading a file that is not an `.xlsx` now fails with an `ExcelReadException` that says what the file is, from every way of reading (`ExcelReader`, `ExcelWorkbookInspector`, `ExcelWorkbookReader`), judged by the content and not by the name: an Excel 97-2003 workbook (`.xls`: save it as `.xlsx`), a password-protected workbook read without `password(...)`, another OLE2 document, a text or CSV file, an empty file. These failed before with a ZIP exception (`zip END header not found`) or with POI's own message about HSSF, and a password given with an `.xls` failed with "The document is really a XLS file". Reading an `.xlsx` is unchanged.
 - A column of an `ExcelKitSchema` declared with `requiredColumn(...)` now shows the required mark on its header in the Excel it writes; the column's own write configuration can turn it off with `requiredMark(false)`.
 
 ## [0.28.0] - 2026-11-23

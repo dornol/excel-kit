@@ -2,6 +2,8 @@ package io.github.dornol.excelkit.core.detect;
 
 /**
  * Supported tabular input container types.
+ * <p>
+ * {@link #XLS} stands for every OLE2 container: an Excel 97-2003 workbook and also a password-protected {@code .xlsx}.
  *
  * @since 0.21.0
  */
