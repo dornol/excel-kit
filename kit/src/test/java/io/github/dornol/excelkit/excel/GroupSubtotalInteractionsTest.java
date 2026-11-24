@@ -142,6 +142,25 @@ class GroupSubtotalInteractionsTest {
             }
             assertTrue(sampled < all, "the first subtotal comes after the single sampled row: " + sampled + " < " + all);
         }
+
+        @Test
+        void aTurnedOffWidthSampleLeavesTheLabelColumnAsTheDataSetIt() throws IOException {
+            var rows = List.of(new Row("A", "x", 1), new Row("B", "y", 1));
+            var longLabel = "a really long subtotal label of a department";
+            int off;
+            try (var wb = open(ExcelWriter.<Row>create().column("Dept", Row::dept).column("Name", Row::name)
+                    .column("Amount", Row::amount).autoWidthSampleRows(0)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> longLabel).sum("Amount")).write(rows))) {
+                off = width(wb, 1);
+            }
+            int on;
+            try (var wb = open(ExcelWriter.<Row>create().column("Dept", Row::dept).column("Name", Row::name)
+                    .column("Amount", Row::amount).autoWidthSampleRows(100)
+                    .groupSubtotal(Row::dept, s -> s.label("Name", k -> longLabel).sum("Amount")).write(rows))) {
+                on = width(wb, 1);
+            }
+            assertTrue(off < on, off + " < " + on);
+        }
     }
 
     @Nested
