@@ -1,11 +1,8 @@
 package io.github.dornol.excelkit.excel;
 
-import io.github.dornol.excelkit.core.WriteErrorPolicy;
-import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.ProgressCallback;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -18,9 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -28,9 +22,10 @@ import java.util.stream.StreamSupport;
  * Writes tabular (list) data into an existing template sheet starting at a given row.
  * <p>
  * Created by {@link ExcelTemplateWriter#list(int)} or {@link ExcelTemplateWriter#list(int, int)}.
- * The columns are those of every writer ({@link ColumnsWriter}: {@code column}, {@code columnIf}, {@code constColumn},
- * {@code rowNumberColumn}...), written with the same utilities as {@link ExcelSheetWriter}. The sheet settings of a
- * {@link SheetWriter} (frozen panes, filter, chart, rollover...) are not here: the template sheet has them already.
+ * The columns and the settings of how the rows are written are those of every writer ({@link DataRowsWriter}:
+ * {@code column}, {@code rowColor}, {@code summary}, {@code table}, {@code writeErrorPolicy}...), written with the same
+ * utilities as {@link ExcelSheetWriter}. The sheet settings of a {@link SheetWriter} (frozen panes, filter, chart,
+ * rollover...) are not here: the template sheet has them already.
  *
  * <pre>{@code
  * writer.<Item>list(5)
@@ -48,7 +43,7 @@ import java.util.stream.StreamSupport;
  * @author dhkim
  * @since 0.8.2
  */
-public class TemplateListWriter<T> extends ColumnsWriter<T, TemplateListWriter<T>> {
+public class TemplateListWriter<T> extends DataRowsWriter<T, TemplateListWriter<T>> {
 
     private final ExcelTemplateWriter parent;
     private final SXSSFWorkbook wb;
@@ -59,10 +54,10 @@ public class TemplateListWriter<T> extends ColumnsWriter<T, TemplateListWriter<T
 
     private final List<ExcelColumn<T>> columns = new ArrayList<>();
     private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
-    private final SheetConfig<T> cfg = new SheetConfig<>();
 
     TemplateListWriter(ExcelTemplateWriter parent, SXSSFWorkbook wb, SXSSFSheet sheet,
                        int startRow, Map<String, CellStyle> cellStyleCache, int sheetIndex) {
+        super(new SheetConfig<>());
         this.parent = parent;
         this.wb = wb;
         this.sheet = sheet;
@@ -71,145 +66,16 @@ public class TemplateListWriter<T> extends ColumnsWriter<T, TemplateListWriter<T
         this.sheetIndex = sheetIndex;
     }
 
-    /**
-     * Sets how row value extraction and cell value write failures are handled.
-     * Defaults to {@link WriteErrorPolicy#FAIL_FAST}.
-     *
-     * @param policy what to do with a value that cannot be written
-     * @return this writer for chaining
-     * @since 0.29.0
-     */
-    public TemplateListWriter<T> writeErrorPolicy(WriteErrorPolicy policy) {
-        cfg.writeErrorPolicy = Objects.requireNonNull(policy, "policy must not be null");
-        return this;
-    }
 
-    /**
-     * Sets the row height for data rows in points.
-     *
-     * @param rowHeightInPoints row height in points
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> rowHeight(float rowHeightInPoints) {
-        this.cfg.rowHeightInPoints = rowHeightInPoints;
-        return this;
-    }
 
-    /**
-     * Sets a function that determines the background color for each row.
-     *
-     * @param fn function returning a color per row, or null
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> rowColor(Function<T, @Nullable ExcelColor> fn) {
-        this.cfg.rowColorFunction = Objects.requireNonNull(fn, "fn cannot be null");
-        return this;
-    }
 
-    /**
-     * Adds a conditional row style that applies to all cells in a row when the predicate matches.
-     *
-     * @param predicate  condition to test each row
-     * @param configurer style configuration to apply when the condition is true
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> rowStyle(Predicate<T> predicate,
-                                           Consumer<RowStyleConfig> configurer) {
-        Objects.requireNonNull(predicate, "predicate cannot be null");
-        RowStyleConfig style = new RowStyleConfig();
-        configurer.accept(style);
-        cfg.rowStyleEntries.add(new SheetConfig.RowStyleEntry<>(predicate, style));
-        return this;
-    }
 
-    /**
-     * Registers a progress callback that fires every {@code interval} rows.
-     *
-     * @param interval rows between each callback
-     * @param callback the callback to invoke
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> onProgress(int interval, ProgressCallback callback) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("progress interval must be positive");
-        }
-        this.cfg.progressInterval = interval;
-        this.cfg.progressCallback = Objects.requireNonNull(callback, "callback cannot be null");
-        return this;
-    }
 
-    /**
-     * Sets the number of rows sampled for auto column width calculation.
-     *
-     * @param rows number of rows to sample
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> autoWidthSampleRows(int rows) {
-        if (rows < 0) {
-            throw new IllegalArgumentException("autoWidthSampleRows must be non-negative");
-        }
-        this.cfg.autoWidthSampleRows = rows;
-        return this;
-    }
 
-    /**
-     * Registers a callback that writes content after all data rows.
-     *
-     * @param writer the after-data writer callback
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> afterData(AfterDataWriter writer) {
-        this.cfg.afterDataWriter = Objects.requireNonNull(writer, "writer cannot be null");
-        return this;
-    }
 
-    /**
-     * Configures summary (footer) rows with formulas.
-     *
-     * @param configurer consumer to configure the summary
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> summary(Consumer<ExcelSummary> configurer) {
-        ExcelSummary summary = new ExcelSummary();
-        configurer.accept(summary);
-        this.cfg.summaryConfig = summary;
-        return this;
-    }
 
-    /**
-     * Turns the written range into an Excel structured table with default {@link TableOptions}.
-     *
-     * @param name the table name
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> table(String name) {
-        return table(TableOptions.defaults(name));
-    }
 
-    /**
-     * Turns the written range into an Excel structured table.
-     *
-     * @param options the table name and style
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> table(TableOptions options) {
-        StructuredTableWriter.validateName(Objects.requireNonNull(options, "options cannot be null").name());
-        this.cfg.tableOptions = options;
-        return this;
-    }
 
-    /**
-     * Sets default column styles that apply to all columns unless overridden per-column.
-     *
-     * @param configurer consumer to configure default styles
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
-        ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
-        configurer.accept(config);
-        this.cfg.defaultStyleConfig = config;
-        return this;
-    }
 
     /**
      * Writes the data stream to this sheet starting at the configured start row.
@@ -305,6 +171,8 @@ public class TemplateListWriter<T> extends ColumnsWriter<T, TemplateListWriter<T
             ExcelHeaderWriter.write(sheet, cursor, columns, headerStyle, null, null, null, 0f, false);
         }
 
+        // What the summary formulas calculate, written as their cached results so a reader that does not recalculate sees them.
+        FormulaValues values = FormulaValues.of(cfg, columns);
         stream.sequential().forEach(rowData -> {
             cursor.plusTotal();
             if (cursor.getRowOfSheet() >= ExcelLimits.SHEET_ROW_CAPACITY) {
@@ -312,11 +180,11 @@ public class TemplateListWriter<T> extends ColumnsWriter<T, TemplateListWriter<T
                         + ExcelLimits.SHEET_ROW_CAPACITY + " rows, and a list written into a template stays on its sheet. "
                         + "Write fewer rows into it, or use ExcelWriter, which rolls over to new sheets.");
             }
-            ExcelRowWriter.write(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb);
+            ExcelRowWriter.write(sheet, cursor, rowData, columns, cfg, rowStyleCache, wb, null, null, values);
             ExcelWriteSupport.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
         });
 
-        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg);
+        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values);
 
         if (tableOptions != null) {
             int tableHeaderRow = writeHeaders ? startRow : startRow - 1;

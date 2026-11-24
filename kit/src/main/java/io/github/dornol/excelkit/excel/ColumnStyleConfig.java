@@ -815,6 +815,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         if (this.fontName == null) this.fontName = defaults.fontName;
         if (this.indentation == null) this.indentation = defaults.indentation;
         if (this.nullValue == null) this.nullValue = defaults.nullValue;
+        if (this.groupNames == null) this.groupNames = defaults.groupNames;
+        if (this.outlineLevel == 0) this.outlineLevel = defaults.outlineLevel;
         if (!this.alignmentSet && defaults.alignmentSet) {
             this.alignment = defaults.alignment;
             this.alignmentSet = true;

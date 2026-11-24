@@ -208,11 +208,12 @@ What can only be decided when the workbook is created (`rowAccessWindowSize`, `c
 `streaming`) is a `WorkbookInitOptions`, the same for `ExcelWriter.create(opts -> ...)`, `ExcelWriter.forMap(opts -> ..., names)` and
 `ExcelWorkbook.create(opts -> ...)`.
 
-The columns (`column`, `columnIf`, `constColumn`, `constColumnIf`, `rowNumberColumn`) are one level higher, in
-`ColumnsWriter<T, SELF>`, which `SheetWriter` extends. `TemplateListWriter` (a list written into a sheet of a template that
-already exists, from `ExcelTemplateWriter.list(...)`) extends it as well, so it has the same columns and takes the same
+The columns (`column`, `columnIf`, `constColumn`, `constColumnIf`, `rowNumberColumn`) and the settings of how rows are
+written (`rowHeight`, `rowColor`, `rowStyle`, `onProgress`, `autoWidthSampleRows`, `afterData`, `summary`, `table`,
+`defaultStyle`, `writeErrorPolicy`) are one level higher, in `DataRowsWriter<T, SELF>`, which `SheetWriter` extends.
+`TemplateListWriter` (a list written into a sheet of a template that already exists, from `ExcelTemplateWriter.list(...)`)
+extends it as well, so it has the same columns and settings with the same checks, and takes the same
 `Consumer<ColumnConfig<T>>`; it has no sheet settings (frozen panes, filter, rollover...), the template has those already.
-It also takes `writeErrorPolicy(...)`.
 
 ## Map-Based Writing
 
