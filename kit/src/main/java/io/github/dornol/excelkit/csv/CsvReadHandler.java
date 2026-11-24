@@ -4,6 +4,7 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import io.github.dornol.excelkit.core.read.AbstractReadHandler;
 import io.github.dornol.excelkit.core.read.CellData;
+import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.ExcelKitException;
 import io.github.dornol.excelkit.core.read.ReadColumn;
 import io.github.dornol.excelkit.core.read.ReadAbortException;
@@ -68,6 +69,7 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
         this.escapeChar = config.escapeChar();
         this.strictQuotes = config.strictQuotes();
         this.ignoreLeadingWhiteSpace = config.ignoreLeadingWhiteSpace();
+        this.countRows = config.countRows();
         if (externalPath) useExternalInput(path);
         validateOrClose(this::validateReadOptions);
     }
@@ -81,56 +83,66 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private final char escapeChar;
     private final boolean strictQuotes;
     private final boolean ignoreLeadingWhiteSpace;
+    private final boolean countRows;
 
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
         markConsumed();
         Consumer<ReadResult<T>> guardedConsumer = guardedConsumer(consumer);
+        long totalRows = -1;
+        try {
+            if (countRows) totalRows = preScanRowCount();
+            Cursor cursor = null;
+            if (readOptions.progressCallback() != null) {
+                cursor = new Cursor();
+                if (totalRows >= 0) cursor.setTotalRows(totalRows);
+            }
+            readRecords(guardedConsumer, totalRows, cursor);
+        } finally {
+            notifyReadCompletion(-1, totalRows);
+            close();
+        }
+    }
+
+    @FunctionalInterface
+    private interface RowProcessor<T> {
+        ReadResult<T> process(String[] line, long fileRowNum, List<String> rawValues);
+    }
+
+    private void readRecords(Consumer<ReadResult<T>> guardedConsumer, long totalRows, @Nullable Cursor cursor) {
         try (CsvRecordReader reader = buildCsvReader()) {
             skipToHeader(reader);
             String[] headerLine = readHeaderLine(reader);
             prepareColumnHeaders(headerLine);
             prepareUniqueKey(headerNames);
 
-            String[] line;
-            long rowCount = 0;
-
+            // What turns one record into a result differs by mode (a mapper over the whole row, or columns set one by one);
+            // the loop around it is the same.
+            RowProcessor<T> processor;
             if (rowMapper != null) {
                 Map<String, Integer> headerIndexMap = buildHeaderIndexMap(headerNames, "CSV");
                 validateSelectedMapColumns(headerIndexMap, headerNames, "CSV");
-                while ((line = reader.readNext()) != null) {
-                    List<String> rawValues = rawValues(line);
-                    int rowDecision = evaluateRow(rawValues);
-                    if (rowDecision == STOP_READING) break;
-                    // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
-                    if (rowDecision == SKIP_ROW) continue;
-                    guardedConsumer.accept(applyUniqueKey(
-                            processRowMapping(line, headerIndexMap, reader.recordStartLine(), rawValues)));
-                    recordEmittedRow();
-                    rowCount++;
-                    notifyLegacyProgress(rowCount, null);
-                    if (readOptions.readProgressInterval() > 0
-                            && rowCount % readOptions.readProgressInterval() == 0) {
-                        notifyReadProgress(rowCount, -1, -1);
-                    }
-                }
+                processor = (line, startLine, rawValues) -> processRowMapping(line, headerIndexMap, startLine, rawValues);
             } else {
                 int[] resolvedIndices = resolveIndices();
-                while ((line = reader.readNext()) != null) {
-                    List<String> rawValues = rawValues(line);
-                    int rowDecision = evaluateRow(rawValues);
-                    if (rowDecision == STOP_READING) break;
-                    // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
-                    if (rowDecision == SKIP_ROW) continue;
-                    guardedConsumer.accept(applyUniqueKey(
-                            processRow(line, resolvedIndices, reader.recordStartLine(), rawValues)));
-                    recordEmittedRow();
-                    rowCount++;
-                    notifyLegacyProgress(rowCount, null);
-                    if (readOptions.readProgressInterval() > 0
-                            && rowCount % readOptions.readProgressInterval() == 0) {
-                        notifyReadProgress(rowCount, -1, -1);
-                    }
+                processor = (line, startLine, rawValues) -> processRow(line, resolvedIndices, startLine, rawValues);
+            }
+
+            String[] line;
+            long rowCount = 0;
+            while ((line = reader.readNext()) != null) {
+                List<String> rawValues = rawValues(line);
+                int rowDecision = evaluateRow(rawValues);
+                if (rowDecision == STOP_READING) break;
+                // A skipped row is not delivered, so it is not counted: progress and the final summary agree.
+                if (rowDecision == SKIP_ROW) continue;
+                guardedConsumer.accept(applyUniqueKey(processor.process(line, reader.recordStartLine(), rawValues)));
+                recordEmittedRow();
+                rowCount++;
+                notifyLegacyProgress(rowCount, cursor);
+                if (readOptions.readProgressInterval() > 0
+                        && rowCount % readOptions.readProgressInterval() == 0) {
+                    notifyReadProgress(rowCount, -1, totalRows);
                 }
             }
         } catch (ReadStoppedException e) {
@@ -142,9 +154,23 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
             throw e;
         } catch (IOException | RuntimeException e) {
             throw new CsvReadException(failureMessage(e), e);
-        } finally {
-            notifyReadCompletion(-1, -1);
-            close();
+        }
+    }
+
+    /**
+     * The records after the header row, parsed as the read will parse them. A failure is not this pass's to report:
+     * the read that follows meets the same input and reports it with its own message, so here the total is unknown.
+     */
+    private long preScanRowCount() {
+        try (CsvRecordReader scan = buildCsvReader()) {
+            for (int i = 0; i <= headerRowIndex; i++) {
+                if (scan.readNext() == null) return -1;
+            }
+            long rows = 0;
+            while (scan.readNext() != null) rows++;
+            return rows;
+        } catch (IOException | RuntimeException e) {
+            return -1;
         }
     }
 

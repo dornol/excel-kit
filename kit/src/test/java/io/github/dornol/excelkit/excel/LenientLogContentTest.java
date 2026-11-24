@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -36,7 +37,7 @@ class LenientLogContentTest {
     @Test
     void failedValueFunction_logsColumnAndRowNumberButNotTheRow() {
         String log = captureStderr(() -> ExcelWriter.<Person>create()
-                .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
+                .writeErrorPolicy(WriteErrorPolicy.LENIENT)
                 .column("Boom", p -> {
                     throw new IllegalStateException("boom");
                 })
@@ -50,7 +51,7 @@ class LenientLogContentTest {
     @Test
     void aColumnThatKeepsFailing_logsOnceAtErrorAndTheRestAtDebug() {
         String log = captureStderr(() -> ExcelWriter.<Person>create()
-                .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
+                .writeErrorPolicy(WriteErrorPolicy.LENIENT)
                 .column("Boom", p -> {
                     throw new IllegalStateException("boom");
                 })

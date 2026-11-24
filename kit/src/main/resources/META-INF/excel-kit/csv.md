@@ -14,6 +14,19 @@ CsvHandler handler = csv
 handler.writeTo(outputStream);
 ```
 
+## CSV Columns
+
+`column`, `columnIf`, `constColumn`, `constColumnIf` and `rowNumberColumn` as on `ExcelWriter`. The configurer is a
+`CsvColumnConfig` (CSV has no styles): `nullValue(...)` is what to write for `null` (empty without it; with the injection defense on, a text
+starting with `= + - @` gets a leading `'`).
+
+```java
+CsvWriter.<Item>create()
+    .rowNumberColumn("No.")
+    .column("Status", Item::status, c -> c.nullValue("N/A"))
+    .write(items);
+```
+
 ## CSV Writing Configuration
 
 ```java

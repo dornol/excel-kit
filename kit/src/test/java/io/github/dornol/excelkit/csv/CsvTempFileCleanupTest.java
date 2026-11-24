@@ -54,7 +54,7 @@ class CsvTempFileCleanupTest {
     @Test
     void write_columnFunctionError_shouldFallbackToNullAndCleanUp() {
         CsvWriter<TestItem> writer = CsvWriter.create();
-        writer.failOnColumnError(false).column("Name", item -> {
+        writer.writeErrorPolicy(io.github.dornol.excelkit.core.WriteErrorPolicy.LENIENT).column("Name", item -> {
                     throw new RuntimeException("Intentional error");
                 })
                 .column("Price", item -> item.price);

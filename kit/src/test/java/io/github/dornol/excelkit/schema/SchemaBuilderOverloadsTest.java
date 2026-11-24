@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.schema;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.core.read.CellConversionConfig;
 import io.github.dornol.excelkit.core.read.ReadResult;
 import io.github.dornol.excelkit.excel.ExcelDataType;
@@ -206,7 +207,7 @@ class SchemaBuilderOverloadsTest {
                 .column("Name", failsForBob, (p, c) -> p.name = c.asString()).build();
         ExcelKitSchema<Person> lenient = ExcelKitSchema.<Person>builder()
                 .column("Name", failsForBob, (p, c) -> p.name = c.asString())
-                .writeErrorPolicy(io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy.LENIENT).build();
+                .writeErrorPolicy(io.github.dornol.excelkit.core.WriteErrorPolicy.LENIENT).build();
         List<Person> people = List.of(person("Ann", 1), person("Bob", 2), person("Cy", 3));
 
         assertThrows(io.github.dornol.excelkit.excel.ExcelWriteException.class,

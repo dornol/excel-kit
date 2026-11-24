@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.feature.ExcelImage;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFPictureData;
@@ -112,7 +113,7 @@ class ImageTest {
     void image_nonImageValue_shouldFallbackToString() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ExcelWriter.<String>create()
-                .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
+                .writeErrorPolicy(WriteErrorPolicy.LENIENT)
                 .column("Data", s -> s, c -> c.type(ExcelDataType.IMAGE))
                 .write(Stream.of("not-an-image"))
                 .writeTo(out);

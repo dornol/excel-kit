@@ -2,3 +2,26 @@
 # against it). Add exclusions here only for intentional removals, with a comment explaining each.
 # After a release is published: raise the baseline in .github/workflows/api-compatibility.yml to that
 # version and delete the exclusions below, which then describe changes the baseline already contains.
+# SheetWriter (the package-private AbstractSheetWriter, now public) holds the column methods of ExcelWriter and
+# ExcelSheetWriter, and every writer takes a Consumer<ColumnConfig<T>> as its column configurer; ExcelColumn.ExcelColumnBuilder
+# is removed (style(CellStyle) moved to ColumnConfig). Source compatible for code that passes lambdas; code compiled
+# against 0.28.0 must be recompiled.
+io.github.dornol.excelkit.excel.ExcelWriter
+io.github.dornol.excelkit.excel.ExcelSheetWriter
+io.github.dornol.excelkit.excel.TemplateListWriter
+io.github.dornol.excelkit.excel.ExcelColumn$ExcelColumnBuilder
+# ReadOptions gained the uniqueKey component, so its canonical constructor has one more parameter (use ReaderOptions.Builder).
+io.github.dornol.excelkit.core.read.ReadOptions
+# ExcelValidation gained list(...)/dependentList(...) and can no longer be extended (its constructor is private); use the static factories.
+io.github.dornol.excelkit.excel.ExcelValidation
+# CsvHandler is no longer AutoCloseable (close() removed, TempResourceContainer no longer its superclass): a handler is written after
+# the method that made it returns, so try-with-resources released it too early. Use discard().
+io.github.dornol.excelkit.csv.CsvHandler
+# ExcelWriteErrorPolicy moved to core as WriteErrorPolicy, shared by every writer; CsvWriter.failOnColumnError(boolean) became writeErrorPolicy(WriteErrorPolicy).
+io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy
+io.github.dornol.excelkit.csv.CsvWriter#failOnColumnError(boolean)
+# The schema builder's writeErrorPolicy(...) takes the shared WriteErrorPolicy.
+io.github.dornol.excelkit.schema.ExcelKitSchema$Builder#writeErrorPolicy(io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy)
+# ExcelWriter.InitOptions and ExcelWorkbook.InitOptions became one top-level WorkbookInitOptions; the settings they share are WorkbookOptions.
+io.github.dornol.excelkit.excel.ExcelWriter$InitOptions
+io.github.dornol.excelkit.excel.ExcelWorkbook$InitOptions

@@ -54,7 +54,7 @@ class WriterFeatureCombinationTest {
 
     /** What the features need of a writer, which {@link ExcelWriter} and {@link ExcelSheetWriter} both offer. */
     private interface WriterApi {
-        AbstractSheetWriter<Row, ?> base();
+        SheetWriter<Row, ?> base();
 
         void maxRows(int maxRows);
 
@@ -307,7 +307,7 @@ class WriterFeatureCombinationTest {
             for (Feature feature : features) feature.scoreColumn().accept(c);
         });
         WriterApi api = new WriterApi() {
-            @Override public AbstractSheetWriter<Row, ?> base() { return writer; }
+            @Override public SheetWriter<Row, ?> base() { return writer; }
             @Override public void maxRows(int maxRows) { writer.maxRows(maxRows); }
             @Override public void table(String name) { writer.table(name); }
         };
@@ -327,7 +327,7 @@ class WriterFeatureCombinationTest {
                 for (Feature feature : features) feature.scoreColumn().accept(c);
             });
             WriterApi api = new WriterApi() {
-                @Override public AbstractSheetWriter<Row, ?> base() { return writer; }
+                @Override public SheetWriter<Row, ?> base() { return writer; }
                 @Override public void maxRows(int maxRows) { writer.maxRows(maxRows); }
                 @Override public void table(String name) { writer.table(name); }
             };

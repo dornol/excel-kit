@@ -59,7 +59,7 @@ class CsvColumnTest {
         CsvColumn<String> column = new CsvColumn<>(name, function);
 
         // Act
-        Object result = column.applyFunction(testData, cursor, true);
+        Object result = column.applyFunction(testData, cursor, io.github.dornol.excelkit.core.WriteErrorPolicy.FAIL_FAST);
 
         // Assert
         assertEquals("Test Data-processed", result, "applyFunction should return the result of applying the function");
@@ -77,7 +77,7 @@ class CsvColumnTest {
         CsvColumn<String> column = new CsvColumn<>(name, function);
 
         // Act
-        Object result = column.applyFunction(testData, cursor, false);
+        Object result = column.applyFunction(testData, cursor, io.github.dornol.excelkit.core.WriteErrorPolicy.LENIENT);
 
         // Assert
         assertNull(result, "applyFunction should return null when function throws an exception");

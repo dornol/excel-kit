@@ -265,7 +265,7 @@ class GroupSubtotalFeatureMixModelTest {
         return out.toByteArray();
     }
 
-    private static <W extends AbstractSheetWriter<R, W>> void configure(W w, Mix mix) {
+    private static <W extends SheetWriter<R, W>> void configure(W w, Mix mix) {
         if (mix.protect()) w.defaultStyle(d -> d.locked(false)); // applies to the columns added after it
         if (mix.leadingColumn()) w.constColumn("Src", "x");
         w.column("Dept", R::dept)

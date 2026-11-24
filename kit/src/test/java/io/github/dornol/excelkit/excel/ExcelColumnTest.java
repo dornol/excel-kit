@@ -217,152 +217,87 @@ class ExcelColumnTest {
         assertEquals(expectedWidth, result, "getColumnWidth should return the column width");
     }
 
-    // Tests for ExcelColumnBuilder inner class
-    @Test
-    void excelColumnBuilder_shouldBuildColumnWithDefaultValues() {
-        // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>create();
-        String name = "Test Column";
-        Function<String, Object> func = data -> data;
+    // Tests for the column settings (ColumnConfig) a writer turns into a column
 
-        // Act
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, name, (r, c) -> func.apply(r));
-        
-        // We need to access the private build method indirectly by calling a method that uses it
-        // Let's use reflection to call the private build method
-        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
-
-        // Assert
-        assertNotNull(column, "Builder should create a column instance");
-        assertEquals(name, column.getName(), "Column name should match");
+    private static ExcelColumn<String> columnOf(ExcelWriter<String> writer, String name, ColumnConfig<String> config) {
+        return writer.buildColumn(name, (r, c) -> r, config);
     }
 
     @Test
-    void excelColumnBuilder_shouldSetTypeAndFormat() {
-        // Arrange
+    void columnConfig_shouldBuildColumnWithDefaultValues() {
         ExcelWriter<String> writer = ExcelWriter.<String>create();
-        String name = "Test Column";
-        Function<String, Object> func = data -> data;
+        ExcelColumn<String> column = columnOf(writer, "Test Column", new ColumnConfig<>());
 
-        // Act
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, name, (r, c) -> func.apply(r))
-                .type(ExcelDataType.INTEGER)
-                .format("#,##0.00");
-        
-        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
-
-        // Assert
-        assertNotNull(column, "Builder should create a column instance with type and format");
+        assertNotNull(column, "A column is built from the default settings");
+        assertEquals("Test Column", column.getName(), "Column name should match");
     }
 
     @Test
-    void excelColumnBuilder_shouldSetAlignment() {
-        // Arrange
+    void columnConfig_shouldSetTypeAndFormat() {
         ExcelWriter<String> writer = ExcelWriter.<String>create();
-        String name = "Test Column";
-        Function<String, Object> func = data -> data;
+        ExcelColumn<String> column = columnOf(writer, "Test Column",
+                new ColumnConfig<String>().type(ExcelDataType.INTEGER).format("#,##0.00"));
 
-        // Act
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, name, (r, c) -> func.apply(r))
-                .alignment(HorizontalAlignment.LEFT);
-        
-        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
-
-        // Assert
-        assertNotNull(column, "Builder should create a column instance with alignment");
+        assertNotNull(column, "A column is built with type and format");
     }
 
     @Test
-    void excelColumnBuilder_shouldSetCustomStyle() {
-        // Arrange
+    void columnConfig_shouldSetAlignment() {
         ExcelWriter<String> writer = ExcelWriter.<String>create();
-        String name = "Test Column";
-        Function<String, Object> func = data -> data;
+        ExcelColumn<String> column = columnOf(writer, "Test Column", new ColumnConfig<String>().alignment(HorizontalAlignment.LEFT));
+
+        assertNotNull(column, "A column is built with alignment");
+    }
+
+    @Test
+    void columnConfig_shouldSetCustomStyle() {
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
         CellStyle customStyle = workbook.createCellStyle();
+        ExcelColumn<String> column = columnOf(writer, "Test Column", new ColumnConfig<String>().style(customStyle));
 
-        // Act
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, name, (r, c) -> func.apply(r))
-                .style(customStyle);
-        
-        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
-
-        // Assert
-        assertNotNull(column, "Builder should create a column instance with custom style");
+        assertNotNull(column);
         assertEquals(customStyle, column.getStyle(), "Column style should match custom style");
     }
 
     @Test
-    void builder_shouldApplyBackgroundColor() {
-        // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>create();
-
-        // Act
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
-                .backgroundColor(255, 200, 100);
-        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
-
-        // Assert
-        assertNotNull(column);
-        CellStyle style = column.getStyle();
-        assertNotNull(style, "Style should not be null");
+    void columnConfig_customStyleMustNotBeNull() {
+        assertThrows(NullPointerException.class, () -> new ColumnConfig<String>().style(null));
     }
 
     @Test
-    void builder_shouldApplyBoldFont() {
-        // Arrange
+    void columnConfig_shouldApplyBackgroundColor() {
         ExcelWriter<String> writer = ExcelWriter.<String>create();
+        ExcelColumn<String> column = columnOf(writer, "Col", new ColumnConfig<String>().backgroundColor(255, 200, 100));
 
-        // Act
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
-                .bold(true);
-        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
-
-        // Assert
         assertNotNull(column);
-        CellStyle style = column.getStyle();
-        assertNotNull(style, "Style should not be null");
+        assertNotNull(column.getStyle(), "Style should not be null");
     }
 
     @Test
-    void builder_shouldApplyFontSize() {
-        // Arrange
+    void columnConfig_shouldApplyBoldFont() {
         ExcelWriter<String> writer = ExcelWriter.<String>create();
+        ExcelColumn<String> column = columnOf(writer, "Col", new ColumnConfig<String>().bold(true));
 
-        // Act
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r)
-                .fontSize(14);
-        ExcelColumn<String> column = callBuildMethodViaReflection(builder);
-
-        // Assert
         assertNotNull(column);
-        CellStyle style = column.getStyle();
-        assertNotNull(style, "Style should not be null");
+        assertNotNull(column.getStyle(), "Style should not be null");
+    }
+
+    @Test
+    void columnConfig_shouldApplyFontSize() {
+        ExcelWriter<String> writer = ExcelWriter.<String>create();
+        ExcelColumn<String> column = columnOf(writer, "Col", new ColumnConfig<String>().fontSize(14));
+
+        assertNotNull(column);
+        assertNotNull(column.getStyle(), "Style should not be null");
     }
 
     @Test
     void fontSizeShouldThrowForNonPositive() {
-        // Arrange
-        ExcelWriter<String> writer = ExcelWriter.<String>create();
-
-        // Act & Assert
-        ExcelColumn.ExcelColumnBuilder<String> builder = new ExcelColumn.ExcelColumnBuilder<>(writer, "Col", (r, c) -> r);
-        assertThrows(IllegalArgumentException.class, () -> builder.fontSize(0),
+        ColumnConfig<String> config = new ColumnConfig<>();
+        assertThrows(IllegalArgumentException.class, () -> config.fontSize(0),
                 "fontSize(0) should throw IllegalArgumentException");
-        assertThrows(IllegalArgumentException.class, () -> builder.fontSize(-1),
+        assertThrows(IllegalArgumentException.class, () -> config.fontSize(-1),
                 "fontSize(-1) should throw IllegalArgumentException");
     }
 
-    /**
-     * Helper method to call the private build() method via reflection.
-     */
-    private ExcelColumn<String> callBuildMethodViaReflection(ExcelColumn.ExcelColumnBuilder<String> builder) {
-        try {
-            java.lang.reflect.Method buildMethod = ExcelColumn.ExcelColumnBuilder.class.getDeclaredMethod("build");
-            buildMethod.setAccessible(true);
-            return (ExcelColumn<String>) buildMethod.invoke(builder);
-        } catch (Exception e) {
-            fail("Failed to call build method via reflection: " + e.getMessage());
-            return null;
-        }
-    }
 }

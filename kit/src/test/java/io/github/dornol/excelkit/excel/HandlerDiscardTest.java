@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.FileHandler;
 import io.github.dornol.excelkit.csv.CsvHandler;
 import io.github.dornol.excelkit.csv.CsvWriteException;
 import io.github.dornol.excelkit.csv.CsvWriter;
@@ -14,6 +15,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /** A handler that will not be written is released with {@code discard()}. */
@@ -106,25 +108,49 @@ class HandlerDiscardTest {
             handler.discard();
             assertThrows(CsvWriteException.class, () -> handler.writeTo(OutputStream.nullOutputStream()));
         }
+    }
 
+    @Nested
+    class OneContract {
+        /**
+         * A handler is written after the method that made it has returned (a StreamingResponseBody), so
+         * try-with-resources would release it before that: neither handler is AutoCloseable.
+         */
         @Test
-        void closeDoesTheSameAsDiscard() throws IOException {
-            long before = TempFiles.leftoverCount();
-            CsvHandler handler = csvHandler();
-
-            handler.close();
-
-            assertEquals(before, TempFiles.leftoverCount());
-            assertThrows(CsvWriteException.class, () -> handler.writeTo(OutputStream.nullOutputStream()));
+        void neitherHandlerIsAutoCloseable() {
+            assertFalse(AutoCloseable.class.isAssignableFrom(ExcelHandler.class));
+            assertFalse(AutoCloseable.class.isAssignableFrom(CsvHandler.class));
+            assertFalse(AutoCloseable.class.isAssignableFrom(FileHandler.class));
         }
 
         @Test
-        void tryWithResourcesAfterWritingDoesNothingExtra() throws IOException {
-            long before = TempFiles.leftoverCount();
-            try (CsvHandler handler = csvHandler()) {
-                handler.writeTo(OutputStream.nullOutputStream());
+        void bothAreReleasedThroughTheInterface() throws IOException {
+            for (FileHandler handler : List.of(excelHandler(), csvHandler())) {
+                long before = TempFiles.leftoverCount();
+                handler.discard();
+                assertEquals(before - 1, TempFiles.leftoverCount(), handler.getClass().getSimpleName());
+                assertDoesNotThrow(handler::discard);
+                assertThrows(io.github.dornol.excelkit.core.ExcelKitException.class,
+                        () -> handler.writeTo(OutputStream.nullOutputStream()), handler.getClass().getSimpleName());
             }
-            assertEquals(before, TempFiles.leftoverCount());
+        }
+
+        @Test
+        void aWrittenHandlerIgnoresDiscardAfterwards() throws IOException {
+            for (FileHandler handler : List.of(excelHandler(), csvHandler())) {
+                handler.writeTo(OutputStream.nullOutputStream());
+                long before = TempFiles.leftoverCount();
+                assertDoesNotThrow(handler::discard);
+                assertEquals(before, TempFiles.leftoverCount());
+            }
+        }
+
+        @Test
+        void aHandlerWrittenLaterIsNotReleasedByTheMethodThatMadeIt() {
+            // the pattern that try-with-resources would break: the handler is made here and written afterwards
+            java.util.function.Supplier<java.util.function.Consumer<OutputStream>> controller = () -> excelHandler()::writeTo;
+            var body = controller.get();
+            assertDoesNotThrow(() -> body.accept(OutputStream.nullOutputStream()));
         }
     }
 }

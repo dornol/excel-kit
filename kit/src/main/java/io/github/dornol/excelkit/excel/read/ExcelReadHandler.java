@@ -105,6 +105,8 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
     private final @Nullable String password;
     private final boolean countRows;
     private final boolean fillMergedCells;
+    /** The data rows of the sheet, counted before the read when {@code countRows()} is on; {@code -1} when unknown. */
+    private long countedRows = -1;
 
     private static void validateHeaderRows(int headerRows) {
         if (headerRows < 1) {
@@ -163,7 +165,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
         } catch (Exception e) {
             throw new ExcelReadException(readFailureMessage("Failed to read excel", e), e);
         } finally {
-            notifyReadCompletion(sheetIndex, -1);
+            notifyReadCompletion(sheetIndex, countedRows);
             close();
         }
     }
@@ -190,6 +192,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             long totalRows = -1;
             if (countRows) {
                 totalRows = preScanRowCount(pkg);
+                countedRows = totalRows;
             }
 
             XSSFReader reader = new XSSFReader(pkg);
@@ -461,7 +464,7 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
             notifyLegacyProgress(dataRowCount, cursor);
             if (readOptions.readProgressInterval() > 0
                     && dataRowCount % readOptions.readProgressInterval() == 0) {
-                notifyReadProgress(dataRowCount, sheetIndex, cursor == null ? -1 : cursor.getTotalRows());
+                notifyReadProgress(dataRowCount, sheetIndex, countedRows);
             }
         }
 

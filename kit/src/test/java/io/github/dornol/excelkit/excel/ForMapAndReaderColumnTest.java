@@ -45,10 +45,10 @@ class ForMapAndReaderColumnTest {
         void configurers_tooMany_throws() {
             String[] names = {"Name"};
             @SuppressWarnings("unchecked")
-            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>[] cfgs =
+            Consumer<ColumnConfig<Map<String, Object>>>[] cfgs =
                     new Consumer[]{
-                            (Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>) c -> c.bold(true),
-                            (Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>) c -> c.bold(true)
+                            (Consumer<ColumnConfig<Map<String, Object>>>) c -> c.bold(true),
+                            (Consumer<ColumnConfig<Map<String, Object>>>) c -> c.bold(true)
                     };
             assertThrows(IllegalArgumentException.class,
                     () -> ExcelWriter.forMap(names, cfgs));
@@ -60,9 +60,9 @@ class ForMapAndReaderColumnTest {
             // 3 columns, only 1 configurer → columns 2 and 3 get null configurer
             String[] names = {"Name", "Age", "City"};
             @SuppressWarnings("unchecked")
-            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>[] cfgs =
+            Consumer<ColumnConfig<Map<String, Object>>>[] cfgs =
                     new Consumer[]{
-                            (Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>) c -> c.bold(true)
+                            (Consumer<ColumnConfig<Map<String, Object>>>) c -> c.bold(true)
                     };
 
             var out = new ByteArrayOutputStream();
@@ -85,10 +85,10 @@ class ForMapAndReaderColumnTest {
         void configurers_exactLength_allConfigured() throws IOException {
             String[] names = {"Name", "Age"};
             @SuppressWarnings("unchecked")
-            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>[] cfgs =
+            Consumer<ColumnConfig<Map<String, Object>>>[] cfgs =
                     new Consumer[]{
-                            (Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>) c -> c.bold(true),
-                            (Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>) c -> c.type(ExcelDataType.INTEGER)
+                            (Consumer<ColumnConfig<Map<String, Object>>>) c -> c.bold(true),
+                            (Consumer<ColumnConfig<Map<String, Object>>>) c -> c.type(ExcelDataType.INTEGER)
                     };
 
             var out = new ByteArrayOutputStream();
@@ -108,7 +108,7 @@ class ForMapAndReaderColumnTest {
         void emptyConfigurers_allPlain() throws IOException {
             String[] names = {"A", "B"};
             @SuppressWarnings("unchecked")
-            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>[] cfgs = new Consumer[]{};
+            Consumer<ColumnConfig<Map<String, Object>>>[] cfgs = new Consumer[]{};
 
             var out = new ByteArrayOutputStream();
             ExcelWriter.forMap(names, cfgs)

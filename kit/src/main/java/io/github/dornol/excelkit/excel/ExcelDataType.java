@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.feature.ExcelHyperlink;
 import io.github.dornol.excelkit.excel.feature.ExcelImage;
 import io.github.dornol.excelkit.excel.style.ExcelDataFormat;
@@ -178,7 +179,7 @@ public enum ExcelDataType {
      * <p>
      * The formatting is kept only when the workbook has shared strings
      * ({@code ExcelWriter.create(o -> o.useSharedStrings(true))}); otherwise the write fails, or, with
-     * {@link ExcelWriteErrorPolicy#LENIENT}, writes the plain text.
+     * {@link WriteErrorPolicy#LENIENT}, writes the plain text.
      */
     RICH_TEXT((cell, value) -> {
         if (value instanceof ExcelRichText rt) {

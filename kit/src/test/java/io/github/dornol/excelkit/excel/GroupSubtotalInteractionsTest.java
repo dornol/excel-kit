@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import org.apache.poi.ss.usermodel.CellType;
@@ -258,7 +259,7 @@ class GroupSubtotalInteractionsTest {
 
         @Test
         void writeErrorPoliciesDoNotChangeTheSubtotals() throws IOException {
-            for (var policy : ExcelWriteErrorPolicy.values()) {
+            for (var policy : WriteErrorPolicy.values()) {
                 try (var wb = open(base().writeErrorPolicy(policy).write(ROWS))) {
                     assertEquals("SUBTOTAL(9,C2:C3)", wb.getSheetAt(0).getRow(3).getCell(2).getCellFormula(), policy.name());
                 }

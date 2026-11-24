@@ -3,6 +3,7 @@ package io.github.dornol.excelkit.csv;
 
 import com.opencsv.ICSVParser;
 import io.github.dornol.excelkit.core.read.AbstractReader;
+import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.read.RowData;
 import jakarta.validation.Validator;
 import org.jspecify.annotations.Nullable;
@@ -47,6 +48,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char quoteChar = '"';
     private char escapeChar = ICSVParser.NULL_CHARACTER;
     private boolean strictQuotes = false;
+    private boolean countRows = false;
     private boolean ignoreLeadingWhiteSpace = true;
     private int detectionSampleBytes = TabularFileDetector.DEFAULT_SAMPLE_BYTES;
 
@@ -177,19 +179,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     private static CsvReader<Map<String, String>> forMap(@Nullable Set<String> selectedColumns) {
-        Function<RowData, Map<String, String>> mapMapper = row -> {
-            Map<String, String> map = new LinkedHashMap<>();
-            List<String> headers = row.headerNames();
-            int bound = headers.size();
-            for (int i = 0; i < bound; i++) {
-                String header = headers.get(i);
-                if (header == null) continue;
-                if (selectedColumns != null && !selectedColumns.contains(header)) continue;
-                if (row.headerIndexOf(header) != i) continue;
-                map.put(header, row.get(i).formattedValue());
-            }
-            return map;
-        };
+        Function<RowData, Map<String, String>> mapMapper = rowToMap(selectedColumns, CellData::formattedValue);
         CsvReader<Map<String, String>> reader = CsvReader.mapping(mapMapper);
         reader.enableMapMode(selectedColumns);
         return reader;
@@ -298,6 +288,34 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     }
 
     /**
+     * Counts the data rows in a first pass over the file, so that the total is known while reading: it is
+     * {@link io.github.dornol.excelkit.core.Cursor#getTotalRows()} for {@code onProgress(...)} and
+     * {@link io.github.dornol.excelkit.core.read.ReadProgress#totalRows()} for {@code onReadProgress(...)}, for
+     * progress in percent. The same as {@code ExcelReader.countRows()}.
+     * <p>
+     * The rows are the records after the header row, counted as the reader will split them (a quoted field that holds
+     * a line break is one record), whether or not a row is later skipped by the row policy, so the percentage can end
+     * below 100 when rows are skipped or {@code readWhile} stops early. The first pass parses the file once more
+     * without converting a value; if it fails (a malformed record, the wrong charset), the total stays unknown and the
+     * read itself reports the failure.
+     *
+     * <pre>{@code
+     * CsvReader.setter(Row::new)
+     *     .column((row, cell) -> row.setName(cell.asString()))
+     *     .countRows()
+     *     .onReadProgress(1000, p -> percent(p.processedRows(), p.totalRows()))
+     *     .read(inputStream, result -> { ... });
+     * }</pre>
+     *
+     * @return this reader for chaining
+     * @since 0.29.0
+     */
+    public CsvReader<T> countRows() {
+        this.countRows = true;
+        return this;
+    }
+
+    /**
      * Finalizes the configuration and builds a {@link CsvReadHandler} for parsing the given CSV stream.
      *
      * @param inputStream The input stream of the CSV file
@@ -327,7 +345,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
                 instanceSupplier, rowMapper, configuredValidator(), configuredHeaderRowIndex(),
                 sessionDelimiter, sessionCharset,
                 configuredSelectedMapColumns(), quoteChar,
-                escapeChar, strictQuotes, ignoreLeadingWhiteSpace, snapshotReadOptions());
+                escapeChar, strictQuotes, ignoreLeadingWhiteSpace, countRows, snapshotReadOptions());
     }
 
     /**

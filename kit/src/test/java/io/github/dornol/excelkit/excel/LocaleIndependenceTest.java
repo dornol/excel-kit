@@ -80,7 +80,7 @@ class LocaleIndependenceTest {
 
                 try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(out.toByteArray()))) {
                     Name name = wb.getName("Names");
-                    assertEquals("'Sheet0'!$A$2:$A$4", name.getRefersToFormula(), locale.toLanguageTag());
+                    assertEquals("'Sheet'!$A$2:$A$4", name.getRefersToFormula(), locale.toLanguageTag());
                 }
             });
         }

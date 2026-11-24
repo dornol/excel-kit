@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.csv;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
 import io.github.dornol.excelkit.core.io.TempWorkspace;
@@ -27,6 +28,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,7 +79,7 @@ public class CsvWriter<T> {
     private @Nullable ProgressCallback progressCallback;
     private int progressInterval;
     private boolean csvInjectionDefense = true;
-    private boolean failOnColumnError = true;
+    private WriteErrorPolicy writeErrorPolicy = WriteErrorPolicy.FAIL_FAST;
     private CsvQuoting quoting = CsvQuoting.MINIMAL;
     private String lineSeparator = "\r\n";
 
@@ -186,6 +188,14 @@ public class CsvWriter<T> {
         return this;
     }
 
+    private CsvWriter<T> add(String name, RowFunction<T, @Nullable Object> function, @Nullable Consumer<CsvColumnConfig> configurer) {
+        Objects.requireNonNull(function, "function cannot be null");
+        CsvColumnConfig config = new CsvColumnConfig();
+        if (configurer != null) configurer.accept(config);
+        this.columns.add(new CsvColumn<>(name, function, config.nullValue));
+        return this;
+    }
+
     /**
      * Adds a new column to the CSV output using a row+cursor-based function.
      *
@@ -194,9 +204,21 @@ public class CsvWriter<T> {
      * @return This writer instance (for chaining)
      */
     public CsvWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
-        var column = new CsvColumn<>(name, Objects.requireNonNull(function, "function cannot be null"));
-        this.columns.add(column);
-        return this;
+        return add(name, function, null);
+    }
+
+    /**
+     * Adds a new column using a row+cursor-based function, with settings.
+     *
+     * @param name       The column header
+     * @param function   A function to compute the value for each row
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return This writer instance (for chaining)
+     * @since 0.29.0
+     */
+    public CsvWriter<T> column(String name, RowFunction<T, @Nullable Object> function,
+                               @Nullable Consumer<CsvColumnConfig> configurer) {
+        return add(name, function, configurer);
     }
 
     /**
@@ -207,8 +229,26 @@ public class CsvWriter<T> {
      * @return This writer instance
      */
     public CsvWriter<T> column(String name, Function<T, @Nullable Object> function) {
+        return column(name, function, (Consumer<CsvColumnConfig>) null);
+    }
+
+    /**
+     * Adds a new column using a basic row-only function, with settings.
+     *
+     * <pre>{@code
+     * writer.column("Status", Item::status, c -> c.nullValue("N/A"));
+     * }</pre>
+     *
+     * @param name       The column header
+     * @param function   A function to compute the value from the row
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return This writer instance
+     * @since 0.29.0
+     */
+    public CsvWriter<T> column(String name, Function<T, @Nullable Object> function,
+                               @Nullable Consumer<CsvColumnConfig> configurer) {
         Objects.requireNonNull(function, "function cannot be null");
-        return column(name, (r, c) -> function.apply(r));
+        return add(name, (r, c) -> function.apply(r), configurer);
     }
 
     /**
@@ -221,10 +261,22 @@ public class CsvWriter<T> {
      * @return This writer instance
      */
     public CsvWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function) {
-        if (condition) {
-            column(name, function);
-        }
-        return this;
+        return condition ? column(name, function) : this;
+    }
+
+    /**
+     * Conditionally adds a column using a row+cursor-based function, with settings.
+     *
+     * @param name       The column header
+     * @param condition  Whether to include this column
+     * @param function   A function to compute the value for each row
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return This writer instance
+     * @since 0.29.0
+     */
+    public CsvWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function,
+                                 @Nullable Consumer<CsvColumnConfig> configurer) {
+        return condition ? column(name, function, configurer) : this;
     }
 
     /**
@@ -237,10 +289,22 @@ public class CsvWriter<T> {
      * @return This writer instance
      */
     public CsvWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
-        if (condition) {
-            column(name, function);
-        }
-        return this;
+        return condition ? column(name, function) : this;
+    }
+
+    /**
+     * Conditionally adds a column using a basic row-only function, with settings.
+     *
+     * @param name       The column header
+     * @param condition  Whether to include this column
+     * @param function   A function to compute the value from the row
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return This writer instance
+     * @since 0.29.0
+     */
+    public CsvWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function,
+                                 @Nullable Consumer<CsvColumnConfig> configurer) {
+        return condition ? column(name, function, configurer) : this;
     }
 
     /**
@@ -251,7 +315,20 @@ public class CsvWriter<T> {
      * @return This writer instance
      */
     public CsvWriter<T> constColumn(String name, @Nullable Object value) {
-        return column(name, (r, c) -> value);
+        return constColumn(name, value, null);
+    }
+
+    /**
+     * Adds a column with a constant value for all rows, with settings.
+     *
+     * @param name       The column header
+     * @param value      The constant value
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return This writer instance
+     * @since 0.29.0
+     */
+    public CsvWriter<T> constColumn(String name, @Nullable Object value, @Nullable Consumer<CsvColumnConfig> configurer) {
+        return add(name, (r, c) -> value, configurer);
     }
 
     /**
@@ -264,10 +341,33 @@ public class CsvWriter<T> {
      * @since 0.14.0
      */
     public CsvWriter<T> constColumnIf(String name, boolean condition, @Nullable Object value) {
-        if (condition) {
-            constColumn(name, value);
-        }
-        return this;
+        return condition ? constColumn(name, value) : this;
+    }
+
+    /**
+     * Conditionally adds a column with a constant value for all rows, with settings.
+     *
+     * @param name       The column header
+     * @param condition  Whether to add the column
+     * @param value      The constant value
+     * @param configurer sets the column's properties, or {@code null} for none
+     * @return This writer instance
+     * @since 0.29.0
+     */
+    public CsvWriter<T> constColumnIf(String name, boolean condition, @Nullable Object value,
+                                      @Nullable Consumer<CsvColumnConfig> configurer) {
+        return condition ? constColumn(name, value, configurer) : this;
+    }
+
+    /**
+     * Adds a 1-based sequential row-number column, the same as {@code ExcelWriter.rowNumberColumn(name)}.
+     *
+     * @param name the column header (e.g. {@code "No."})
+     * @return This writer instance
+     * @since 0.29.0
+     */
+    public CsvWriter<T> rowNumberColumn(String name) {
+        return add(name, (r, cursor) -> cursor.getCurrentTotal(), null);
     }
 
     /**
@@ -339,14 +439,18 @@ public class CsvWriter<T> {
     }
 
     /**
-     * Controls whether extraction errors abort writing. Defaults to {@code true}.
-     * When disabled, failed fields are written as empty fields.
+     * Sets what happens when a column function throws. Defaults to {@link WriteErrorPolicy#FAIL_FAST}: the write fails
+     * with {@link CsvWriteException}. With {@link WriteErrorPolicy#LENIENT} the field is written empty (or as the
+     * {@link CsvColumnConfig#nullValue(Object) nullValue} of the column) and the failure is logged. It is the same
+     * setting as {@code writeErrorPolicy(...)} of the Excel writers; CSV has no cell types, so only the failure of a
+     * column function is a case here.
      *
-     * @param enabled whether to abort writing when a column extractor throws
+     * @param policy what to do with a value that cannot be taken from a row
      * @return this writer
+     * @since 0.29.0
      */
-    public CsvWriter<T> failOnColumnError(boolean enabled) {
-        this.failOnColumnError = enabled;
+    public CsvWriter<T> writeErrorPolicy(WriteErrorPolicy policy) {
+        this.writeErrorPolicy = Objects.requireNonNull(policy, "policy cannot be null");
         return this;
     }
 
@@ -451,7 +555,7 @@ public class CsvWriter<T> {
                 line.setLength(0);
                 for (int i = 0; i < columns.size(); i++) {
                     CsvColumn<T> col = columns.get(i);
-                    String field = escapeCsv(col.applyFunction(row, cursor, options.failOnColumnError()), options);
+                    String field = escapeCsv(col.applyFunction(row, cursor, options.writeErrorPolicy()), options);
                     if (probe != null && !probe.canEncode(field)) {
                         checkEncodable(field, probe, options,
                                 "column '" + col.getName() + "' at row " + cursor.getRowOfSheet());
@@ -581,7 +685,7 @@ public class CsvWriter<T> {
 
     private CsvWriteOptions<T> snapshotOptions() {
         return new CsvWriteOptions<>(List.copyOf(columns), delimiter, charset, bom, afterDataWriter,
-                progressCallback, progressInterval, csvInjectionDefense, failOnColumnError, quoting, lineSeparator);
+                progressCallback, progressInterval, csvInjectionDefense, writeErrorPolicy, quoting, lineSeparator);
     }
 
     private record CsvWriteOptions<T>(
@@ -593,7 +697,7 @@ public class CsvWriter<T> {
             @Nullable ProgressCallback progressCallback,
             int progressInterval,
             boolean csvInjectionDefense,
-            boolean failOnColumnError,
+            WriteErrorPolicy writeErrorPolicy,
             CsvQuoting quoting,
             String lineSeparator
     ) {}

@@ -47,7 +47,15 @@ if (!stillWanted()) {
 handler.writeTo(out);
 ```
 
-After `discard()` the `writeTo` methods throw. As a safety net a handler that is garbage collected
+`discard()` is on the shared `FileHandler` interface, so code that holds either handler releases it the same way.
+After `discard()` the `writeTo` methods throw.
+
+**Neither handler is `AutoCloseable`, on purpose.** A handler is usually written after the method that made it has
+returned: a Spring `StreamingResponseBody` runs once the controller is done. `try (var handler = ...) { return
+ResponseEntity.ok(handler::writeTo); }` would release the file when the block ends, and the download would fail. Call
+`discard()` yourself where a handler is dropped.
+
+As a safety net a handler that is garbage collected
 without being consumed releases its temp files too, but only when the garbage collector runs, so do
 not rely on it. `ExcelKitResponse` in the Spring module discards the handler it was given when it
 rejects a blank password.
@@ -56,8 +64,9 @@ CSV writes report a `CsvWriteException` when a value cannot be encoded in the
 selected charset. With formula-injection defense enabled, numeric objects keep
 their signs and formula-like text is prefixed with a single quote.
 NUL characters and exceptions from value extractors raise a
-`CsvWriteException`. Use `.failOnColumnError(false)` to write an empty field
-when an extractor fails. Null and empty string values both write as empty CSV fields.
+`CsvWriteException`. Use `.writeErrorPolicy(WriteErrorPolicy.LENIENT)` to write an empty field
+(or the column's `nullValue`) when an extractor fails: the same setting, with the same two values and the same default
+(`FAIL_FAST`), as on the Excel writers. Null and empty string values both write as empty CSV fields unless a column has a `nullValue`.
 
 ## Data Types
 
@@ -124,7 +133,7 @@ cell should become a blank cell (extraction failure) or text (type mismatch) ins
 
 ```java
 ExcelWriter.<Product>create()
-    .writeErrorPolicy(ExcelWriteErrorPolicy.LENIENT)
+    .writeErrorPolicy(WriteErrorPolicy.LENIENT)
     .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
     .write(products);
 ```
@@ -147,7 +156,64 @@ failures also throw `ExcelWriteException` rather than being logged or ignored.
     .fontSize(12))
 ```
 
-All column configuration methods are documented in [Styling](styling.md).
+All column configuration methods are documented in [Styling](styling.md). The configurer is a
+`Consumer<ColumnConfig<T>>` for every writer, so a setting can be kept in a variable and used on any of them:
+
+```java
+Consumer<ColumnConfig<Order>> money = c -> c.type(ExcelDataType.INTEGER).format("#,##0").alignment(HorizontalAlignment.RIGHT);
+
+ExcelWriter.<Order>create().column("Total", Order::total, money);
+workbook.<Order>sheet("Orders").column("Total", Order::total, money);
+```
+
+`style(CellStyle)` gives a column a cell style built by hand (it must belong to the same workbook); the other
+settings of the column still apply.
+
+## Settings shared by `ExcelWriter` and `ExcelSheetWriter`
+
+`ExcelWriter` (a workbook with one sheet, rolled over when full) and `ExcelSheetWriter` (a sheet of an `ExcelWorkbook`)
+write the same way (`ExcelWriter` hands its settings to an `ExcelSheetWriter` and its workbook) and have the same
+columns and sheet settings: they extend `SheetWriter<T, SELF>`, which is public so that a setting is written once. For
+example a standard look for the reports of a team:
+
+```java
+static <T, W extends SheetWriter<T, W>> W standardLook(W writer) {
+    return writer.stripedRows().autoFilter(true).freezePane(0, 1).emptyMessage("No data");
+}
+
+standardLook(ExcelWriter.<Order>create()).column("Id", Order::id).write(orders);
+
+try (var workbook = ExcelWorkbook.create()) {
+    standardLook(workbook.<Order>sheet("Orders")).column("Id", Order::id).write(orders);
+    standardLook(workbook.<Order>sheet("Returns")).column("Id", Order::id).write(returns);
+}
+```
+
+`SheetWriter` cannot be extended outside the library.
+
+The settings of the workbook (`documentProperty`, `headerColor`, `headerFontName`, `headerFontSize`, `headerStyle`,
+`protectWorkbook`, `password`) are written once in the same way: `ExcelWriter` and `ExcelWorkbook` both implement
+`WorkbookOptions<SELF>`.
+
+```java
+static <W extends WorkbookOptions<W>> W teamLook(W writer) {
+    return writer.headerColor(ExcelColor.STEEL_BLUE).headerFontName("Arial").documentProperty("author", "Reporting");
+}
+
+teamLook(ExcelWriter.<Order>create()).column("Id", Order::id);
+teamLook(ExcelWorkbook.create()).sheet("Orders");
+```
+
+What can only be decided when the workbook is created (`rowAccessWindowSize`, `compressTempFiles`, `useSharedStrings`,
+`streaming`) is a `WorkbookInitOptions`, the same for `ExcelWriter.create(opts -> ...)`, `ExcelWriter.forMap(opts -> ..., names)` and
+`ExcelWorkbook.create(opts -> ...)`.
+
+The columns (`column`, `columnIf`, `constColumn`, `constColumnIf`, `rowNumberColumn`) and the settings of how rows are
+written (`rowHeight`, `rowColor`, `rowStyle`, `onProgress`, `autoWidthSampleRows`, `afterData`, `summary`, `table`,
+`defaultStyle`, `writeErrorPolicy`) are one level higher, in `DataRowsWriter<T, SELF>`, which `SheetWriter` extends.
+`TemplateListWriter` (a list written into a sheet of a template that already exists, from `ExcelTemplateWriter.list(...)`)
+extends it as well, so it has the same columns and settings with the same checks, and takes the same
+`Consumer<ColumnConfig<T>>`; it has no sheet settings (frozen panes, filter, rollover...), the template has those already.
 
 ## Map-Based Writing
 

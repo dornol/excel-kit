@@ -16,9 +16,8 @@ import java.util.function.Function;
 /**
  * Shared base for column styling configuration.
  * <p>
- * Used by both {@link ExcelColumn.ExcelColumnBuilder} and
- * {@link ColumnConfig} to eliminate duplicated field
- * declarations and setter methods.
+ * The settings of a column are given as a {@link ColumnConfig}; the fields and setters
+ * live here so that {@code ColumnConfig} and the template writer's column settings share them.
  *
  * <p><b>Why not split into FontStyle, BorderStyle, LayoutConfig, etc.?</b>
  * This class is intentionally kept flat. Although it has many fields, it is a pure
@@ -816,6 +815,8 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
         if (this.fontName == null) this.fontName = defaults.fontName;
         if (this.indentation == null) this.indentation = defaults.indentation;
         if (this.nullValue == null) this.nullValue = defaults.nullValue;
+        if (this.groupNames == null) this.groupNames = defaults.groupNames;
+        if (this.outlineLevel == 0) this.outlineLevel = defaults.outlineLevel;
         if (!this.alignmentSet && defaults.alignmentSet) {
             this.alignment = defaults.alignment;
             this.alignmentSet = true;

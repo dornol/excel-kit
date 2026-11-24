@@ -15,6 +15,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,5 +62,22 @@ class SheetRowLimitTest {
                         .writeTo(OutputStream.nullOutputStream()));
         assertTrue(error.getMessage().contains("is full"), error.getMessage());
         assertTrue(error.getMessage().contains("maxRows"), error.getMessage());
+    }
+
+    @Test
+    void aListInATemplateCannotRollOverSoItDoesNotSuggestMaxRows() throws Exception {
+        var template = new java.io.ByteArrayOutputStream();
+        try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            wb.createSheet("S");
+            wb.write(template);
+        }
+        try (var writer = new ExcelTemplateWriter(new java.io.ByteArrayInputStream(template.toByteArray()))) {
+            var list = writer.<Integer>list(0, 0).column("v", i -> i);
+            ExcelWriteException error = assertThrows(ExcelWriteException.class,
+                    () -> list.write(IntStream.range(0, 1_048_580).boxed()));
+            assertTrue(error.getMessage().contains("is full"), error.getMessage());
+            assertTrue(error.getMessage().contains("template"), error.getMessage());
+            assertFalse(error.getMessage().contains("maxRows"), "TemplateListWriter has no maxRows: " + error.getMessage());
+        }
     }
 }

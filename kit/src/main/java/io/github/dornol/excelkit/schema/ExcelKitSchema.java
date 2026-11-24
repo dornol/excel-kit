@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.schema;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.core.read.CellConversionConfig;
 import io.github.dornol.excelkit.core.read.CellData;
 import io.github.dornol.excelkit.core.read.DuplicateHeaderPolicy;
@@ -7,10 +8,10 @@ import io.github.dornol.excelkit.core.read.ReaderOptions;
 import io.github.dornol.excelkit.core.read.RowData;
 import io.github.dornol.excelkit.csv.CsvReader;
 import io.github.dornol.excelkit.csv.CsvWriter;
-import io.github.dornol.excelkit.excel.ExcelColumn;
+import io.github.dornol.excelkit.excel.ColumnConfig;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
-import io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy;
 import io.github.dornol.excelkit.excel.ExcelWriter;
+import io.github.dornol.excelkit.excel.WorkbookInitOptions;
 import jakarta.validation.Validator;
 
 import org.jspecify.annotations.Nullable;
@@ -50,7 +51,7 @@ public class ExcelKitSchema<T> {
 
     private final List<SchemaColumn<T>> columns;
     private final ReaderOptions readOptions;
-    private final @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
+    private final @Nullable WriteErrorPolicy writeErrorPolicy;
 
     private ExcelKitSchema(List<SchemaColumn<T>> columns, Builder<T> builder) {
         this.columns = Collections.unmodifiableList(columns);
@@ -85,7 +86,7 @@ public class ExcelKitSchema<T> {
      *
      * @since 0.19.0
      */
-    public ExcelWriter<T> excelWriter(Consumer<ExcelWriter.InitOptions> configurer) {
+    public ExcelWriter<T> excelWriter(Consumer<WorkbookInitOptions> configurer) {
         return SchemaWriterFactory.excel(columns, writeErrorPolicy, configurer);
     }
 
@@ -206,7 +207,7 @@ public class ExcelKitSchema<T> {
             String name,
             Function<T, @Nullable Object> writeFunction,
             BiConsumer<T, CellData> readSetter,
-            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer,
+            @Nullable Consumer<ColumnConfig<T>> writeConfigurer,
             List<String> readHeaderNames,
             boolean required
     ) {
@@ -241,7 +242,7 @@ public class ExcelKitSchema<T> {
          */
         public SchemaColumn(String name, Function<T, @Nullable Object> writeFunction,
                             BiConsumer<T, CellData> readSetter,
-                            @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                            @Nullable Consumer<ColumnConfig<T>> writeConfigurer) {
             this(name, writeFunction, readSetter, writeConfigurer, List.of(name), false);
         }
 
@@ -270,7 +271,7 @@ public class ExcelKitSchema<T> {
         private final List<SchemaColumn<T>> columns = new ArrayList<>();
         /** The readers' common settings; the same code, defaults and checks as a reader's own chaining. */
         private final ReaderOptions.Builder readSettings = ReaderOptions.builder();
-        private @Nullable ExcelWriteErrorPolicy writeErrorPolicy;
+        private @Nullable WriteErrorPolicy writeErrorPolicy;
 
         private Builder() {}
 
@@ -336,7 +337,7 @@ public class ExcelKitSchema<T> {
         /**
          * Adds a column definition with Excel write configuration.
          * <p>
-         * The configurer receives an {@link ExcelColumn.ExcelColumnBuilder} to set column properties
+         * The configurer receives an {@link ColumnConfig} to set column properties
          * such as type, format, alignment, width, etc. Only call configuration methods
          * (type, format, alignment, backgroundColor, bold, fontSize, width, minWidth, maxWidth, dropdown)
          * inside the configurer.
@@ -353,7 +354,7 @@ public class ExcelKitSchema<T> {
          * @return This builder for chaining
          */
         public Builder<T> column(String name, Function<T, @Nullable Object> writeFunction, BiConsumer<T, CellData> readSetter,
-                                  Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                  Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer));
             return this;
         }
@@ -371,7 +372,7 @@ public class ExcelKitSchema<T> {
         public Builder<T> column(String name, List<String> readAliases,
                                  Function<T, @Nullable Object> writeFunction,
                                  BiConsumer<T, CellData> readSetter,
-                                 Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                 Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, false));
             return this;
         }
@@ -387,7 +388,7 @@ public class ExcelKitSchema<T> {
          */
         public Builder<T> requiredColumn(String name, Function<T, @Nullable Object> writeFunction,
                                          BiConsumer<T, CellData> readSetter,
-                                         Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                         Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, List.of(name), true));
             return this;
         }
@@ -405,7 +406,7 @@ public class ExcelKitSchema<T> {
         public Builder<T> requiredColumn(String name, List<String> readAliases,
                                          Function<T, @Nullable Object> writeFunction,
                                          BiConsumer<T, CellData> readSetter,
-                                         Consumer<ExcelColumn.ExcelColumnBuilder<T>> writeConfigurer) {
+                                         Consumer<ColumnConfig<T>> writeConfigurer) {
             columns.add(new SchemaColumn<>(name, writeFunction, readSetter, writeConfigurer, readAliases, true));
             return this;
         }
@@ -438,7 +439,7 @@ public class ExcelKitSchema<T> {
             return this;
         }
 
-        public Builder<T> writeErrorPolicy(ExcelWriteErrorPolicy policy) {
+        public Builder<T> writeErrorPolicy(WriteErrorPolicy policy) {
             this.writeErrorPolicy = Objects.requireNonNull(policy, "policy cannot be null");
             return this;
         }

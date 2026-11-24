@@ -76,7 +76,7 @@ class ReadFailureLogContentTest {
     @Test
     void aCsvColumnThatKeepsFailing_logsOnceAtErrorAndTheRestAtDebug() {
         String log = captureStderr(() -> CsvWriter.<String>create()
-                .failOnColumnError(false)
+                .writeErrorPolicy(io.github.dornol.excelkit.core.WriteErrorPolicy.LENIENT)
                 .column("Boom", s -> {
                     throw new IllegalStateException("boom");
                 })

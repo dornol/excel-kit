@@ -79,6 +79,21 @@ class NullArgumentContractTest {
                 return new Receiver(workbook.<String>sheet("S"), workbook);
             }),
             new Target(CsvWriter.class, () -> new Receiver(CsvWriter.<String>create(), NOTHING)),
+            new Target(io.github.dornol.excelkit.excel.TemplateListWriter.class, () -> {
+                try {
+                    var template = new java.io.ByteArrayOutputStream();
+                    try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                        wb.createSheet("S");
+                        wb.write(template);
+                    }
+                    var writer = new io.github.dornol.excelkit.excel.ExcelTemplateWriter(new java.io.ByteArrayInputStream(template.toByteArray()));
+                    return new Receiver(writer.<String>list(0, 0), writer);
+                } catch (java.io.IOException e) {
+                    throw new java.io.UncheckedIOException(e);
+                }
+            }),
+            new Target(io.github.dornol.excelkit.excel.WorkbookInitOptions.class, () -> new Receiver(construct(io.github.dornol.excelkit.excel.WorkbookInitOptions.class), NOTHING)),
+            new Target(io.github.dornol.excelkit.csv.CsvColumnConfig.class, () -> new Receiver(construct(io.github.dornol.excelkit.csv.CsvColumnConfig.class), NOTHING)),
             new Target(CsvReader.class, () -> new Receiver(CsvReader.setter(Object::new), NOTHING)),
             new Target(ExcelReader.class, () -> new Receiver(ExcelReader.setter(Object::new), NOTHING)),
             new Target(io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector.class, () -> new Receiver(

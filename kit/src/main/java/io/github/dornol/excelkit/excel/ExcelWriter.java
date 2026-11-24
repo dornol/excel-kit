@@ -2,23 +2,14 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.read.RowFunction;
-import io.github.dornol.excelkit.core.Cursor;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.jspecify.annotations.Nullable;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -30,21 +21,11 @@ import java.util.stream.StreamSupport;
  * @param <T> The data type of each row to be written into the Excel file
  * @since 0.1.2
  */
-public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
-    private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
-    private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
+public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements WorkbookOptions<ExcelWriter<T>> {
 
-    private final SXSSFWorkbook wb;
-    private final WorkbookSettings settings;
-    private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
-    private @Nullable AfterDataWriter afterAllWriter;
-    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
-    private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
-    private @Nullable ExcelWriteSession<T> execution;
+    private final ExcelWorkbook book;
+    private final ExcelSheetWriter<T> sheet;
     private boolean written;
-
-
 
     /**
      * Creates a new ExcelWriter with default initialization (white header, 1,000,000 max rows, 1000 row window).
@@ -59,7 +40,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     /**
      * Creates a new ExcelWriter with initialization options.
      * <p>
-     * The {@link InitOptions} passed to the configurer contains settings that must be
+     * The {@link WorkbookInitOptions} passed to the configurer contains settings that must be
      * fixed at workbook creation time — currently only {@code rowAccessWindowSize}
      * (SXSSF's in-memory row window, which cannot be changed after the workbook exists).
      * All other configuration (header color, max rows, columns, filters, callbacks, etc.)
@@ -70,12 +51,12 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      *     .rowAccessWindowSize(500));
      * }</pre>
      *
-     * @param configurer consumer that configures {@link InitOptions}
+     * @param configurer consumer that configures {@link WorkbookInitOptions}
      * @param <T>        the row data type
      * @return a new ExcelWriter instance
      */
-    public static <T> ExcelWriter<T> create(Consumer<InitOptions> configurer) {
-        InitOptions opts = new InitOptions();
+    public static <T> ExcelWriter<T> create(Consumer<WorkbookInitOptions> configurer) {
+        WorkbookInitOptions opts = new WorkbookInitOptions();
         configurer.accept(opts);
         return new ExcelWriter<>(opts);
     }
@@ -122,12 +103,12 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
      *     .write(out);
      * }</pre>
      *
-     * @param configurer  consumer that configures {@link InitOptions}
+     * @param configurer  consumer that configures {@link WorkbookInitOptions}
      * @param columnNames the column names (used as both header labels and map keys)
      * @return a new ExcelWriter with the columns registered
      * @since 0.13.0
      */
-    public static ExcelWriter<Map<String, Object>> forMap(Consumer<InitOptions> configurer, String... columnNames) {
+    public static ExcelWriter<Map<String, Object>> forMap(Consumer<WorkbookInitOptions> configurer, String... columnNames) {
         ExcelWriter<Map<String, Object>> writer = create(configurer);
         for (String name : columnNames) {
             writer.column(name, map -> map.get(name));
@@ -161,7 +142,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
     @SafeVarargs
     public static ExcelWriter<Map<String, Object>> forMap(
             String[] columnNames,
-            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>>... configurers) {
+            Consumer<ColumnConfig<Map<String, Object>>>... configurers) {
         if (configurers.length > columnNames.length) {
             throw new IllegalArgumentException(
                     "configurers length (" + configurers.length
@@ -170,110 +151,66 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         ExcelWriter<Map<String, Object>> writer = ExcelWriter.create();
         for (int i = 0; i < columnNames.length; i++) {
             String name = columnNames[i];
-            Consumer<ExcelColumn.ExcelColumnBuilder<Map<String, Object>>> cfg =
+            Consumer<ColumnConfig<Map<String, Object>>> cfg =
                     (i < configurers.length) ? configurers[i] : null;
             writer.column(name, map -> map.get(name), cfg);
         }
         return writer;
     }
 
-    private ExcelWriter(InitOptions opts) {
-        StreamingOptions streaming = opts.state.options();
-        this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
-        this.settings = new WorkbookSettings(wb);
+    private ExcelWriter(WorkbookInitOptions opts) {
+        this(new ExcelWorkbook(opts));
     }
 
-    /**
-     * Initialization options for {@link ExcelWriter}. Passed to the configurer given to
-     * {@link ExcelWriter#create(Consumer)}.
-     * <p>
-     * These options are restricted to settings that cannot be changed after the underlying
-     * {@link SXSSFWorkbook} is constructed (currently just {@code rowAccessWindowSize}).
-     * All other configuration is available as fluent methods on {@link ExcelWriter}.
-     *
-     * @since 0.17.0
-     */
-    public static final class InitOptions {
-        private final StreamingInitOptionsState state = new StreamingInitOptionsState();
-
-        private InitOptions() { }
-
-        public InitOptions rowAccessWindowSize(int size) {
-            state.rowAccessWindowSize(size);
-            return this;
-        }
-
-        public InitOptions compressTempFiles(boolean enabled) {
-            state.compressTempFiles(enabled);
-            return this;
-        }
-
-        public InitOptions useSharedStrings(boolean enabled) {
-            state.useSharedStrings(enabled);
-            return this;
-        }
-
-        public InitOptions streaming(StreamingOptions options) {
-            state.streaming(options);
-            return this;
-        }
+    private ExcelWriter(ExcelWorkbook book) {
+        this(book, book.lazySheet());
     }
 
-    /**
-     * Sets a document property on the generated Excel file.
-     * <p>
-     * Standard keys ({@code title}, {@code subject}, {@code author}, {@code keywords},
-     * {@code description}, {@code category}) are mapped to Excel core properties.
-     * Other keys are stored as custom properties.
-     *
-     * @param key   the property name (case-insensitive for standard keys)
-     * @param value the property value
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.17.0
-     */
+    private ExcelWriter(ExcelWorkbook book, ExcelSheetWriter<T> sheet) {
+        super(sheet.cfg);
+        this.book = book;
+        this.sheet = sheet;
+    }
+
+    @Override
     public ExcelWriter<T> documentProperty(String key, String value) {
-        settings.documentProperty(key, value);
+        book.documentProperty(key, value);
         return this;
     }
-    /**
-     * Sets the header background color. Must be called before {@link #write(Stream)}.
-     * <p>
-     * Use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)}.
-     * Defaults to {@link ExcelColor#WHITE}.
-     *
-     * @param color header color (must not be null)
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.17.0
-     */
+
+    @Override
     public ExcelWriter<T> headerColor(ExcelColor color) {
-        settings.headerColor(color);
+        book.headerColor(color);
         return this;
     }
 
-    /**
-     * Adds a 1-based sequential row-number column (spans all sheets when auto-rolled).
-     *
-     * @param name the column header name (e.g. {@code "No."})
-     * @return this writer for chaining
-     * @since 0.16.11
-     */
-    public ExcelWriter<T> rowNumberColumn(String name) {
-        column(name, (row, cursor) -> cursor.getCurrentTotal(),
-                c -> c.type(ExcelDataType.LONG));
+    @Override
+    public ExcelWriter<T> protectWorkbook(String password) {
+        book.protectWorkbook(password);
         return this;
     }
 
-    /**
-     * Registers a callback that writes custom content once on the last sheet after all data.
-     * <p>
-     * Called only once, on the last sheet, after {@code afterData} (if set).
-     * Useful for writing grand totals or summary rows.
-     *
-     * @param afterAllWriter the callback to invoke after all data is written
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> afterAll(AfterDataWriter afterAllWriter) {
-        this.afterAllWriter = Objects.requireNonNull(afterAllWriter, "afterAllWriter cannot be null");
+    @Override
+    public ExcelWriter<T> password(String password) {
+        book.password(password);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> headerFontName(String fontName) {
+        book.headerFontName(fontName);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> headerFontSize(int fontSize) {
+        book.headerFontSize(fontSize);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> headerStyle(Consumer<HeaderStyleConfig> configurer) {
+        book.headerStyle(configurer);
         return this;
     }
 
@@ -293,244 +230,14 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         return this;
     }
 
-    /**
-     * Protects the workbook structure with the given password.
-     * <p>
-     * When enabled, users cannot add, delete, rename, or reorder sheets.
-     *
-     * @param password the protection password
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> protectWorkbook(String password) {
-        settings.protectWorkbook(password);
-        return this;
-    }
-
-    /**
-     * Sets the file encryption password.
-     * <p>
-     * When set, the resulting Excel file will be encrypted using the "agile" encryption mode,
-     * and {@link ExcelHandler#writeTo(java.io.OutputStream)} will automatically
-     * apply encryption — no need to pass the password to {@link ExcelHandler#writeTo(java.io.OutputStream, String)}.
-     *
-     * @param password the encryption password (must not be null or blank)
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> password(String password) {
-        settings.password(password);
-        return this;
-    }
-
-    /**
-     * Sets the header font name.
-     *
-     * @param fontName the font name (e.g., "Arial", "맑은 고딕")
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> headerFontName(String fontName) {
-        settings.headerFontName(fontName);
-        return this;
-    }
-
-    /**
-     * Sets the header font size in points.
-     *
-     * @param fontSize font size in points (must be positive)
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> headerFontSize(int fontSize) {
-        settings.headerFontSize(fontSize);
-        return this;
-    }
-
-    /**
-     * Configures the global header cell style (alignment, bold, border, wrap text).
-     * <p>
-     * Font name, font size, and background color are set separately via
-     * {@link #headerFontName(String)}, {@link #headerFontSize(int)}, and {@link #headerColor(ExcelColor)}.
-     *
-     * <pre>{@code
-     * writer.headerStyle(h -> h
-     *     .bold(true)
-     *     .alignment(HorizontalAlignment.LEFT)
-     *     .border(ExcelBorderStyle.MEDIUM)
-     *     .wrapText(true));
-     * }</pre>
-     *
-     * @param configurer consumer to configure header style properties
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.17.0
-     */
-    public ExcelWriter<T> headerStyle(Consumer<HeaderStyleConfig> configurer) {
-        settings.headerStyle(configurer);
-        return this;
-    }
-
-    /**
-     * Adds an already-built column to the column list.
-     *
-     * @param column The ExcelColumn to add
-     */
+    @Override
     void addColumn(ExcelColumn<T> column) {
-        this.columns.add(column);
+        sheet.addColumn(column);
     }
 
-    /**
-     * Adds a column with default STRING type using a simple Function.
-     * Useful for schema-based column registration.
-     *
-     * @param name     Column header name
-     * @param function Function to extract cell value from row
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function) {
-        Objects.requireNonNull(function, "function cannot be null");
-        ExcelColumn.ExcelColumnBuilder<T> builder =
-                new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
-        this.columns.add(builder.build());
-        return this;
-    }
-
-    /**
-     * Adds a column with additional configuration using a configurer consumer.
-     * <p>
-     * The configurer receives an {@link ExcelColumn.ExcelColumnBuilder} to set
-     * column properties such as type, format, alignment, width, etc.
-     *
-     * <pre>{@code
-     * writer.column("Price", Book::getPrice, c -> c.type(ExcelDataType.INTEGER).format("#,##0"));
-     * }</pre>
-     *
-     * @param name        Column header name
-     * @param function    Function to extract cell value from row
-     * @param configurer  Consumer to configure column properties
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> column(String name, Function<T, @Nullable Object> function,
-                                  @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
-        Objects.requireNonNull(function, "function cannot be null");
-        ExcelColumn.ExcelColumnBuilder<T> builder =
-                new ExcelColumn.ExcelColumnBuilder<>(this, name, (r, c) -> function.apply(r));
-        if (configurer != null) {
-            configurer.accept(builder);
-        }
-        this.columns.add(builder.build());
-        return this;
-    }
-
-    /**
-     * Adds a column with cursor access using an RowFunction.
-     * Useful when the column value depends on row position (e.g., row number).
-     *
-     * @param name     Column header name
-     * @param function Function to extract cell value from row with cursor access
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
-        ExcelColumn.ExcelColumnBuilder<T> builder =
-                new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
-        this.columns.add(builder.build());
-        return this;
-    }
-
-    /**
-     * Adds a column with cursor access and additional configuration.
-     *
-     * @param name        Column header name
-     * @param function    Function to extract cell value from row with cursor access
-     * @param configurer  Consumer to configure column properties
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> column(String name, RowFunction<T, @Nullable Object> function,
-                                  @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
-        ExcelColumn.ExcelColumnBuilder<T> builder =
-                new ExcelColumn.ExcelColumnBuilder<>(this, name, function);
-        if (configurer != null) {
-            configurer.accept(builder);
-        }
-        this.columns.add(builder.build());
-        return this;
-    }
-
-    /**
-     * Conditionally adds a column with additional configuration.
-     * If condition is false, the column is not added.
-     *
-     * @param name        Column header name
-     * @param condition   Whether to include this column
-     * @param function    Function to extract cell value from row
-     * @param configurer  Consumer to configure column properties
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> columnIf(String name, boolean condition, Function<T, @Nullable Object> function,
-                                    @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
-        if (condition) {
-            column(name, function, configurer);
-        }
-        return this;
-    }
-
-    /**
-     * Conditionally adds a column with cursor access using an RowFunction.
-     * If condition is false, the column is not added.
-     *
-     * @param name      Column header name
-     * @param condition Whether to include this column
-     * @param function  Function to extract cell value from row with cursor access
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function) {
-        if (condition) {
-            column(name, function);
-        }
-        return this;
-    }
-
-    /**
-     * Conditionally adds a column with cursor access and additional configuration.
-     * If condition is false, the column is not added.
-     *
-     * @param name        Column header name
-     * @param condition   Whether to include this column
-     * @param function    Function to extract cell value from row with cursor access
-     * @param configurer  Consumer to configure column properties
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> columnIf(String name, boolean condition, RowFunction<T, @Nullable Object> function,
-                                    @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
-        if (condition) {
-            column(name, function, configurer);
-        }
-        return this;
-    }
-
-    /**
-     * Adds a column with a constant value for all rows, with additional configuration.
-     *
-     * @param name       Column header name
-     * @param value      Constant value to be used in all rows
-     * @param configurer Consumer to configure column properties
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> constColumn(String name, @Nullable Object value,
-                                       @Nullable Consumer<ExcelColumn.ExcelColumnBuilder<T>> configurer) {
-        return column(name, (RowFunction<T, Object>) (r, c) -> value, configurer);
-    }
-
-    /**
-     * Conditionally adds a column with a constant value for all rows.
-     * If condition is false, the column is not added.
-     *
-     * @param name      Column header name
-     * @param condition Whether to include this column
-     * @param value     Constant value to be used in all rows
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> constColumnIf(String name, boolean condition, @Nullable Object value) {
-        if (condition) {
-            constColumn(name, value);
-        }
-        return this;
+    @Override
+    ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
+        return sheet.buildColumn(name, function, config);
     }
 
     /**
@@ -554,111 +261,17 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
             throw new ExcelWriteException("write() has already been called on this writer; "
                     + "a writer builds one workbook, so create a new ExcelWriter for another file");
         }
-        ExcelWriteOptions<T> options = snapshotOptions();
-        validateColumns(options);
+        sheet.check();
         // From here the workbook (and its temp files) is in use; columns also keep per-workbook state.
         written = true;
-        this.execution = new ExcelWriteSession<>(options);
         try {
-            startSheet(options);
-        } catch (RuntimeException e) {
-            // The first sheet may already own a temp file; release it, but keep the original exception.
-            closeWorkbookQuietly();
-            throw e;
-        }
-
-        try {
-            stream.sequential().forEach(rowData -> {
-                this.handleRowData(rowData);
-                consumer.accept(rowData, cursor());
-            });
-            finishWorkbook(options);
-            return new ExcelHandler(this.wb, settings.password());
-        } catch (ExcelWriteException e) {
-            closeWorkbookQuietly();
-            throw e;
-        } catch (RuntimeException e) {
-            closeWorkbookQuietly();
-            throw new ExcelWriteException("Failed to write excel", e);
-        } catch (Error e) {
+            sheet.write(stream, consumer);
+            return book.finish();
+        } catch (RuntimeException | Error e) {
             // An OutOfMemoryError or the like still must not leave the workbook's temp files behind.
-            closeWorkbookQuietly();
+            book.close();
             throw e;
         }
-    }
-
-    /** Rejects missing or duplicate columns before any sheet (and its temp file) exists. */
-    private void validateColumns(ExcelWriteOptions<T> options) {
-        if (options.columns().isEmpty()) {
-            throw new ExcelWriteException("columns setting required");
-        }
-        ExcelWriteSupport.validateUniqueColumnNames(options.columns());
-        ExcelWriteSupport.validateMergeColumns(options.columns(), options.sheetConfig().tableOptions, true);
-        SubtotalTracker.validate(options.sheetConfig());
-        ExcelWriteSupport.validateEmptyMessage(options.sheetConfig());
-    }
-
-    /** Creates the first sheet and writes its preamble, header and sheet options. */
-    private void startSheet(ExcelWriteOptions<T> options) {
-        execution().sheet(createNamedSheet());
-        int headerStartRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
-        execution().cursor(new Cursor(headerStartRow));
-        execution().headerRow(headerStartRow);
-
-        ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
-                options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints,
-                options.sheetConfig().tableOptions != null);
-        // With group headers the column names sit below the group rows: that row is the header row.
-        execution().headerRow(cursor().getRowOfSheet() - 1);
-        applySheetOptions();
-    }
-
-    /** Writes the subtotal row of the group still open at the end of the data of the current sheet. */
-    private void closeSubtotal() {
-        var subtotals = execution().subtotals();
-        if (subtotals != null) subtotals.close(sheet(), cursor(), executionOptions().sheetConfig(), execution().merges(),
-                rowStyleCache, wb);
-    }
-
-    /** Merges the runs of equal values still open at the end of the data of the current sheet. */
-    private void closeMergeRuns() {
-        var merges = execution().merges();
-        if (merges != null) merges.closeRuns(cursor().getRowOfSheet() - 1);
-    }
-
-    /**
-     * Runs everything that follows the last data row: after-data and summary rows, the
-     * {@code afterAll} callback, per-sheet post-processing, workbook protection, the chart and tables.
-     */
-    private void finishWorkbook(ExcelWriteOptions<T> options) {
-        closeSubtotal();
-        execution().dataEndRow(cursor().getRowOfSheet() - 1);
-        closeMergeRuns();
-        // With no row at all the sheet says so; the line is no data row, so a summary below it still ends at the header.
-        int lastDataRow = cursor().getRowOfSheet();
-        if (cursor().getCurrentTotal() == 0) {
-            ExcelWriteSupport.writeEmptyMessage(sheet(), wb, cursor(), options.columns(), options.sheetConfig(), rowStyleCache, null);
-        }
-        int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                options.columns(), headerRowIndex(), options.sheetConfig(), execution().values(), lastDataRow);
-        execution().nextFreeRow(nextRow);
-        if (this.afterAllWriter != null) {
-            this.afterAllWriter.write(new SheetContext(sheet(), wb, nextRow, options.columns(), headerRowIndex()));
-        }
-
-        int writtenSheets = wb.getNumberOfSheets();
-        applyPostProcessingAllSheets();
-        ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
-
-        // One chart per sheet over that sheet's own rows: a chart of only the last sheet would plot just the remainder.
-        if (options.sheetConfig().chartConfig != null) {
-            for (int i = 0; i < writtenSheets; i++) {
-                SXSSFSheet target = wb.getSheetAt(i);
-                ExcelWriteSupport.applyChart(target, options.sheetConfig().chartConfig, execution().headerRow(target),
-                        execution().dataEndRow(target), execution().nextFreeRow(target), options.columns().size());
-            }
-        }
-        applyTables(writtenSheets);
     }
 
     /**
@@ -684,157 +297,10 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         return write(StreamSupport.stream(rows.spliterator(), false));
     }
 
-    /**
-     * Applies the sheet-level settings that belong at the header, such as freeze panes.
-     */
-    private void applySheetOptions() {
-        ExcelWriteOptions<T> options = executionOptions();
-        int headerRowIdx = cursor().getRowOfSheet() - 1;
-        ExcelWriteSupport.applySheetOptions(sheet(), headerRowIdx,
-                options.sheetConfig().freezePaneCols, options.sheetConfig().freezePaneRows);
-    }
-
-    /**
-     * Handles the logic of writing a single row to the sheet, including value mapping and style.
-     *
-     * @param rowData A row of data
-     */
-    void handleRowData(T rowData) {
-        ExcelWriteOptions<T> options = executionOptions();
-        cursor().plusTotal();
-        if (isOverMaxRows()) {
-            StructuredTableWriter.requireRolloverAllowed(options.sheetConfig().tableOptions);
-            closeSubtotal();
-            execution().dataEndRow(cursor().getRowOfSheet() - 1);
-            closeMergeRuns();
-            execution().nextFreeRow(ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
-                    options.columns(), headerRowIndex(), options.sheetConfig(), execution().values()));
-            if (execution().values() != null) execution().values().resetSheet();
-            turnOverSheet();
-            int preambleRow = ExcelWriteSupport.initSheetPreamble(sheet(), wb, options.columns(), options.sheetConfig().beforeHeaderWriter);
-            cursor().setRowOfSheet(preambleRow);
-            ExcelHeaderWriter.write(sheet(), cursor(), options.columns(), settings.headerStyle(), wb, headerStyleCache,
-                    options.sheetConfig().groupComments, options.sheetConfig().headerRowHeightInPoints,
-                    options.sheetConfig().tableOptions != null);
-            execution().headerRow(cursor().getRowOfSheet() - 1);
-            applySheetOptions();
-        }
-        var subtotals = execution().subtotals();
-        if (subtotals != null) subtotals.beforeRow(sheet(), cursor(), rowData, options.sheetConfig(), execution().merges(),
-                rowStyleCache, wb);
-        execution().pageBreaks().beforeRow(sheet(), cursor().getRowOfSheet(), rowData);
-        ExcelRowWriter.write(sheet(), cursor(), rowData, options.columns(), options.sheetConfig(), rowStyleCache, wb,
-                execution().merges(), subtotals, execution().values());
-        ExcelWriteSupport.checkProgress(cursor(), options.sheetConfig().progressInterval, options.sheetConfig().progressCallback);
-    }
-
-    /**
-     * Creates a new sheet with a name determined by the sheet name function (if set).
-     *
-     * @return the newly created sheet
-     */
-    private SXSSFSheet createNamedSheet() {
-        int index = wb.getNumberOfSheets();
-        SheetConfig<T> sheetConfig = execution == null ? cfg : execution.options().sheetConfig();
-        if (sheetConfig.sheetNameFunction != null) {
-            return wb.createSheet(sheetConfig.sheetNameFunction.apply(index));
-        }
-        return wb.createSheet();
-    }
-
-    /**
-     * Creates a new sheet and resets the row index when the current sheet exceeds row limit.
-     */
-    private void turnOverSheet() {
-        execution().sheet(createNamedSheet());
-        cursor().initRow();
-    }
-
-    /**
-     * Checks whether the current sheet has exceeded its max row limit.
-     *
-     * @return true if a sheet needs to turn over; otherwise false
-     */
-    private boolean isOverMaxRows() {
-        int limit = executionOptions().sheetConfig().maxRows;
-        // The total already counts the row about to be written: it starts a new sheet when it is the first
-        // one past a full sheet. (A "% limit == 1" test never holds for limit 1.)
-        long total = cursor().getCurrentTotal();
-        if (total > limit && (total - 1) % limit == 0) return true;
-        // subtotal rows are not data rows: a sheet short of maxRows can still be out of room for them
-        var subtotals = execution().subtotals();
-        return total > 1 && subtotals != null && subtotals.sheetNearlyFull(cursor());
-    }
-
-    private ExcelWriteOptions<T> snapshotOptions() {
-        return new ExcelWriteOptions<>(List.copyOf(columns), new SheetConfig<>(cfg));
-    }
-
-    private ExcelWriteOptions<T> executionOptions() {
-        return execution().options();
-    }
-
-    private ExcelWriteSession<T> execution() {
-        if (execution == null) throw new IllegalStateException("write execution has not started");
-        return execution;
-    }
-
-    private SXSSFSheet sheet() { return execution().sheet(); }
-    private Cursor cursor() { return execution().cursor(); }
-    private int headerRowIndex() { return execution().headerRow(); }
-
-    /**
-     * Applies all post-processing steps (column widths, validations, outlines, hiding,
-     * protection, conditional formatting, print setup, tab color) to every sheet.
-     */
-    private void applyPostProcessingAllSheets() {
-        // post-processing can add a hidden helper sheet (dependent dropdowns); only the sheets written so far are processed
-        int sheets = wb.getNumberOfSheets();
-        for (int i = 0; i < sheets; i++) {
-            SXSSFSheet target = wb.getSheetAt(i);
-            ExcelWriteOptions<T> options = executionOptions();
-            ExcelSheetPostProcessor.apply(target, options.columns(), execution().headerRow(target),
-                    execution().dataEndRow(target), options.sheetConfig(), i);
-        }
-    }
-
-    private void applyTables(int sheets) {
-        TableOptions tableOptions = executionOptions().sheetConfig().tableOptions;
-        if (tableOptions == null) return;
-        List<String> headers = executionOptions().columns().stream().map(ExcelColumn::getName).toList();
-        for (int i = 0; i < sheets; i++) {
-            SXSSFSheet target = wb.getSheetAt(i);
-            int headerRowIndex = execution().headerRow(target);
-            if (target.getLastRowNum() <= headerRowIndex) continue;
-            String name = sheets == 1 ? tableOptions.name() : tableOptions.name() + "_" + (i + 1);
-            StructuredTableWriter.apply(target, name, headerRowIndex, target.getLastRowNum(), headers,
-                    tableOptions.style(), tableOptions.showRowStripes(), executionOptions().sheetConfig().autoFilter);
-        }
-    }
-
-    private void closeWorkbookQuietly() {
-        try {
-            ExcelWorkbookSupport.close(wb);
-        } catch (RuntimeException | IOException e) {
-            log.warn("Failed to close workbook after error", e);
-        }
-    }
-
-    /**
-     * Returns the underlying streaming workbook instance.
-     *
-     * @return SXSSFWorkbook instance
-     */
+    /** The underlying streaming workbook instance. */
     SXSSFWorkbook getWb() {
-        return wb;
+        return book.wb();
     }
 
-    Map<String, CellStyle> getCellStyleCache() {
-        return cellStyleCache;
-    }
-
-    ColumnStyleConfig.@Nullable DefaultStyleConfig<T> getDefaultStyleConfig() {
-        return cfg.defaultStyleConfig;
-    }
 
 }

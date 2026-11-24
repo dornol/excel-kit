@@ -34,9 +34,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p><b>Why not AutoCloseable?</b>
  * The primary usage pattern is {@code ResponseEntity<StreamingResponseBody>},
- * where the handler is captured by a lambda and consumed asynchronously.
- * Implementing {@link AutoCloseable} would cause IDE "resource not closed" warnings
- * in this pattern, requiring {@code @SuppressWarnings("resource")} on every call site.
+ * where the handler is captured by a lambda and consumed asynchronously, after the method that made it has
+ * returned. With {@link AutoCloseable}, {@code try (handler) { return ResponseEntity.ok(handler::writeTo); }} would
+ * release the workbook when the block ends, before the body runs, and the download would fail; the IDE would also
+ * warn "resource not closed" at every call site that does not use try-with-resources.
  * <p>
  * The workbook is closed inside the {@link #writeTo(OutputStream)} overloads. A handler that will not
  * be written must be released with {@link #discard()}. As a safety net, a handler that is garbage
@@ -118,6 +119,7 @@ public final class ExcelHandler implements FileHandler {
      *
      * @since 0.26.0
      */
+    @Override
     public void discard() {
         cleanable.clean();
     }

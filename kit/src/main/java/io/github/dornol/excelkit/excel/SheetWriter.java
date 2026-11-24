@@ -2,9 +2,6 @@ package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
-import io.github.dornol.excelkit.core.Cursor;
-import io.github.dornol.excelkit.core.ProgressCallback;
-import io.github.dornol.excelkit.core.read.RowFunction;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
@@ -13,14 +10,26 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
- * Shared sheet-level configuration methods for {@link ExcelWriter} and {@link ExcelSheetWriter}.
+ * What {@link ExcelWriter} (one sheet, rolled over to more when it is full) and {@link ExcelSheetWriter} (a sheet of an
+ * {@link ExcelWorkbook}) have in common: the columns and everything that configures a sheet (layout, callbacks, styling,
+ * protection, charts, print setup, subtotals...). Only writing differs between the two.
  * <p>
- * Contains all methods that delegate to {@link SheetConfig} — layout, callbacks, styling,
- * protection, charting, print setup, etc. Column registration and write logic remain in
- * the concrete subclasses because they differ between the two writers.
+ * The type is public so that a setting can be written once for both, for example a standard look for the reports of a
+ * company:
+ *
+ * <pre>{@code
+ * static <T, W extends SheetWriter<T, W>> W standardLook(W writer) {
+ *     return writer.stripedRows().autoFilter(true).freezePane(0, 1);
+ * }
+ *
+ * standardLook(ExcelWriter.<Order>create()).column("Id", Order::id);
+ * standardLook(workbook.<Order>sheet("Orders")).column("Id", Order::id);
+ * }</pre>
+ *
+ * A column setting written as a {@code Consumer<ColumnConfig<T>>} takes both as well. It cannot be extended outside
+ * this package: use {@link ExcelWriter} or {@link ExcelSheetWriter}.
  *
  * @param <T>    the row data type
  * @param <SELF> the concrete writer type, for fluent method chaining
@@ -28,58 +37,10 @@ import java.util.function.Predicate;
  * @since 0.17.0
  */
 @SuppressWarnings("unchecked")
-abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>> {
+public abstract class SheetWriter<T, SELF extends SheetWriter<T, SELF>> extends DataRowsWriter<T, SELF> {
 
-    final SheetConfig<T> cfg = new SheetConfig<>();
-
-    private SELF self() {
-        return (SELF) this;
-    }
-
-    // ── Columns shared by every sheet writer ──
-
-    /**
-     * Adds a column using a simple function.
-     *
-     * @param name     the column header
-     * @param function function to extract the cell value
-     * @return this writer for chaining
-     */
-    public abstract SELF column(String name, Function<T, @Nullable Object> function);
-
-    /**
-     * Adds a column whose function also receives the row's {@link Cursor}.
-     *
-     * @param name     the column header
-     * @param function function to extract the cell value
-     * @return this writer for chaining
-     */
-    public abstract SELF column(String name, RowFunction<T, @Nullable Object> function);
-
-    /**
-     * Conditionally adds a column using a simple function. If {@code condition} is false, nothing is added.
-     *
-     * @param name      the column header
-     * @param condition whether to include this column
-     * @param function  function to extract the cell value
-     * @return this writer for chaining
-     */
-    public SELF columnIf(String name, boolean condition, Function<T, @Nullable Object> function) {
-        if (condition) {
-            column(name, function);
-        }
-        return self();
-    }
-
-    /**
-     * Adds a column with a constant value for all rows.
-     *
-     * @param name  the column header
-     * @param value the constant value written in every row
-     * @return this writer for chaining
-     */
-    public SELF constColumn(String name, @Nullable Object value) {
-        return column(name, (RowFunction<T, @Nullable Object>) (r, c) -> value);
+    SheetWriter(SheetConfig<T> cfg) {
+        super(cfg);
     }
 
     // ── Rows per sheet and structured table ──
@@ -99,43 +60,10 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
-    /**
-     * Turns the written range (header and data) into an Excel structured table with default options.
-     *
-     * @param name the table name (letters, digits and underscores; must not look like a cell reference)
-     * @return this writer for chaining
-     * @see TableOptions
-     */
-    public SELF table(String name) {
-        return table(TableOptions.defaults(name));
-    }
 
-    /**
-     * Turns the written range (header and data) into an Excel structured table.
-     *
-     * @param options the table name and style
-     * @return this writer for chaining
-     * @see TableOptions
-     */
-    public SELF table(TableOptions options) {
-        Objects.requireNonNull(options, "options cannot be null");
-        StructuredTableWriter.validateName(options.name());
-        cfg.tableOptions = options;
-        return self();
-    }
 
     // ── Layout ──
 
-    /**
-     * Sets the row height for data rows in points. Defaults to 20.
-     */
-    public SELF rowHeight(float rowHeightInPoints) {
-        if (rowHeightInPoints <= 0) {
-            throw new IllegalArgumentException("rowHeightInPoints must be positive");
-        }
-        cfg.rowHeightInPoints = rowHeightInPoints;
-        return self();
-    }
 
     /**
      * Enables or disables auto-filter on the header row.
@@ -192,96 +120,31 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
         return self();
     }
 
+
     /**
-     * Registers a callback that writes custom content after all data rows on each sheet.
+     * Registers a callback that writes custom content once, on the last sheet, after all data.
+     * <p>
+     * Called once, on the last sheet, after {@link #afterData(AfterDataWriter)} (if set). Useful for
+     * grand totals or summary rows.
+     *
+     * @param afterAllWriter the callback to invoke after all data is written
+     * @return this writer for chaining
      */
-    public SELF afterData(AfterDataWriter afterDataWriter) {
-        cfg.afterDataWriter = Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
+    public SELF afterAll(AfterDataWriter afterAllWriter) {
+        cfg.afterAllWriter = Objects.requireNonNull(afterAllWriter, "afterAllWriter cannot be null");
         return self();
     }
 
     // ── Row styling ──
 
-    /**
-     * Sets a function that determines the background color for each row.
-     * <p>
-     * Every distinct color needs a cell style of its own, and Apache POI looks each new style up in
-     * the styles created so far, so the cost grows with the square of the number of distinct colors:
-     * about 1,000 take a second, 4,000 about ten seconds, 8,000 about forty. An .xlsx workbook holds at
-     * most 64,000 styles. Return a small palette (round values into a few buckets) rather than a
-     * continuous gradient.
-     */
-    public SELF rowColor(Function<T, @Nullable ExcelColor> rowColorFunction) {
-        cfg.rowColorFunction = Objects.requireNonNull(rowColorFunction, "rowColorFunction cannot be null");
-        return self();
-    }
 
-    /**
-     * Adds a conditional row style that applies to all cells in a row when the predicate matches.
-     * <p>
-     * Unlike {@link #rowColor(Function)} which only sets background color, this method supports
-     * bold, font size, font color, italic, strikethrough, and background color.
-     * Multiple row styles can be registered; the first matching predicate wins.
-     *
-     * <pre>{@code
-     * writer.rowStyle(
-     *     product -> product.price() > 10000,
-     *     style -> style.bold(true).backgroundColor(ExcelColor.LIGHT_YELLOW)
-     * );
-     * }</pre>
-     *
-     * @param predicate  condition to test each row
-     * @param configurer style configuration to apply when the condition is true
-     * @return this writer for chaining
-     */
-    public SELF rowStyle(Predicate<T> predicate, Consumer<RowStyleConfig> configurer) {
-        Objects.requireNonNull(predicate, "predicate cannot be null");
-        RowStyleConfig style = new RowStyleConfig();
-        configurer.accept(style);
-        cfg.rowStyleEntries.add(new SheetConfig.RowStyleEntry<>(predicate, style));
-        return self();
-    }
 
     // ── Progress ──
 
-    /**
-     * Registers a progress callback that fires every {@code interval} rows.
-     */
-    public SELF onProgress(int interval, ProgressCallback callback) {
-        if (interval <= 0) {
-            throw new IllegalArgumentException("progress interval must be positive");
-        }
-        cfg.progressInterval = interval;
-        cfg.progressCallback = Objects.requireNonNull(callback, "callback cannot be null");
-        return self();
-    }
 
-    /**
-     * Sets how row value extraction and cell value write failures are handled.
-     * Defaults to {@link ExcelWriteErrorPolicy#FAIL_FAST}.
-     *
-     * @since 0.19.0
-     */
-    public SELF writeErrorPolicy(ExcelWriteErrorPolicy policy) {
-        cfg.writeErrorPolicy = Objects.requireNonNull(policy, "policy must not be null");
-        return self();
-    }
 
     // ── Width ──
 
-    /**
-     * Sets the number of data rows sampled for auto column width calculation. Rows written before the
-     * header (see {@link #beforeHeader}) and the header itself do not count, and the sample is taken
-     * from the first rows of the whole write, not of each rollover sheet.
-     * Defaults to 100. Set to 0 to disable.
-     */
-    public SELF autoWidthSampleRows(int rows) {
-        if (rows < 0) {
-            throw new IllegalArgumentException("autoWidthSampleRows must be non-negative");
-        }
-        cfg.autoWidthSampleRows = rows;
-        return self();
-    }
 
     // ── Styles ──
 
@@ -454,27 +317,9 @@ abstract class AbstractSheetWriter<T, SELF extends AbstractSheetWriter<T, SELF>>
 
     // ── Default style ──
 
-    /**
-     * Sets default column styles that apply to all columns unless overridden per-column.
-     */
-    public SELF defaultStyle(Consumer<ColumnStyleConfig.DefaultStyleConfig<T>> configurer) {
-        ColumnStyleConfig.DefaultStyleConfig<T> config = new ColumnStyleConfig.DefaultStyleConfig<>();
-        configurer.accept(config);
-        cfg.defaultStyleConfig = config;
-        return self();
-    }
 
     // ── Summary ──
 
-    /**
-     * Configures summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
-     */
-    public SELF summary(Consumer<ExcelSummary> configurer) {
-        ExcelSummary summary = new ExcelSummary();
-        configurer.accept(summary);
-        cfg.summaryConfig = summary;
-        return self();
-    }
 
     // ── Empty data ──
 

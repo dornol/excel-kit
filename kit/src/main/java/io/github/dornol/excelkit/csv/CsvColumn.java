@@ -2,6 +2,7 @@ package io.github.dornol.excelkit.csv;
 
 import io.github.dornol.excelkit.core.read.RowFunction;
 import io.github.dornol.excelkit.core.Cursor;
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +22,7 @@ public class CsvColumn<T> {
 
     private final String name;
     private final RowFunction<T, @Nullable Object> function;
+    private final @Nullable Object nullValue;
     private boolean failureLogged;
 
     /**
@@ -31,6 +33,18 @@ public class CsvColumn<T> {
      * @throws IllegalArgumentException if name or function is null
      */
     CsvColumn(String name, RowFunction<T, @Nullable Object> function) {
+        this(name, function, null);
+    }
+
+    /**
+     * Constructs a CSV column definition with a value for the rows where the function gives nothing.
+     *
+     * @param name      The name of the column (used as header)
+     * @param function  A function that maps a row object and cursor to a cell value
+     * @param nullValue What to write when the value is {@code null}, or {@code null} for an empty field
+     * @throws IllegalArgumentException if name or function is null
+     */
+    CsvColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable Object nullValue) {
         if (name == null) {
             throw new IllegalArgumentException("name must not be null");
         }
@@ -39,6 +53,7 @@ public class CsvColumn<T> {
         }
         this.name = name;
         this.function = function;
+        this.nullValue = nullValue;
     }
 
     /**
@@ -46,14 +61,15 @@ public class CsvColumn<T> {
      *
      * @param rowData The current row object
      * @param cursor  The cursor tracking current row index
-     * @param failOnColumnError whether to throw when value extraction fails
-     * @return The column's value for this row, or null when tolerated extraction fails
+     * @param policy  whether a failure of the function aborts the write ({@code FAIL_FAST}) or leaves a missing value
+     * @return The column's value for this row; the null value of the column when there is none or when tolerated extraction fails
      */
-    @Nullable Object applyFunction(T rowData, Cursor cursor, boolean failOnColumnError) {
+    @Nullable Object applyFunction(T rowData, Cursor cursor, WriteErrorPolicy policy) {
         try {
-            return function.apply(rowData, cursor);
+            Object value = function.apply(rowData, cursor);
+            return value != null ? value : nullValue;
         } catch (RuntimeException e) {
-            if (failOnColumnError) {
+            if (policy == WriteErrorPolicy.FAIL_FAST) {
                 throw new CsvWriteException("Failed to extract CSV column '" + name
                         + "' at row " + cursor.getRowOfSheet(), e);
             }
@@ -64,7 +80,7 @@ public class CsvColumn<T> {
             } else {
                 log.debug("Failed to apply function for column '{}' at row {}", name, cursor.getRowOfSheet(), e);
             }
-            return null;
+            return nullValue;
         }
     }
 

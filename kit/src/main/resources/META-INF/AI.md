@@ -42,12 +42,12 @@ reference guide.
 
 | Package | Public types | Use for |
 |---------|--------------|---------|
-| `io.github.dornol.excelkit.core` | `AtomicFileWriter`, `Cursor`, `ExcelKitException`, `FileHandler`, `ProgressCallback`, `RuntimeDependencyGuard` | Shared contracts: `FileHandler` (what a writer returns), progress callbacks, the base exception |
+| `io.github.dornol.excelkit.core` | `AtomicFileWriter`, `Cursor`, `ExcelKitException`, `FileHandler`, `ProgressCallback`, `RuntimeDependencyGuard`, `WriteErrorPolicy` | Shared contracts: `FileHandler` (what a writer returns), progress callbacks, the base exception |
 | `io.github.dornol.excelkit.core.read` | `AbstractReadHandler`, `AbstractReader`, `CancellationToken`, `CellConversionConfig`, `CellData`, `CellError`, `DuplicateHeaderPolicy`, `HeaderPolicy`, `ReadAbortException`, `ReadAbortReason`, `ReadColumn`, `ReadLimitExceededException`, `ReadLimits`, `ReadOptions`, `ReadProgress`, `ReadProgressCallback`, `ReadReport`, `ReadResult`, `ReadSecurityException`, `ReadSecurityPolicy`, `ReadSession`, `ReadStoppedException`, `ReadSummary`, `ReaderOptions`, `RowData`, `RowError`, `RowFunction` | Reading, shared by Excel and CSV: options, limits, security policy, cell/row access, results and errors |
 | `io.github.dornol.excelkit.core.io` | `InputStreamSource`, `TempResourceCleaner`, `TempResourceContainer`, `TempResourceCreateException`, `TempResourceCreator`, `TempWorkspace` | Input sources and temp-file management |
 | `io.github.dornol.excelkit.core.detect` | `DetectionConfidence`, `TabularDetectionResult`, `TabularFileDetector`, `TabularFileType` | Telling an .xlsx from a CSV by content |
-| `io.github.dornol.excelkit.csv` | `CsvAfterDataWriter`, `CsvColumn`, `CsvDialect`, `CsvHandler`, `CsvQuoting`, `CsvReadException`, `CsvReader`, `CsvWriteException`, `CsvWriter` | CSV reading and writing |
-| `io.github.dornol.excelkit.excel` | `AfterDataWriter`, `BeforeHeaderWriter`, `ColumnConfig`, `ColumnStyleConfig`, `ExcelChartConfig`, `ExcelColumn`, `ExcelConditionalRule`, `ExcelDataType`, `ExcelErrorReport`, `ExcelHandler`, `ExcelKitConfig`, `ExcelPrintSetup`, `ExcelRichText`, `ExcelSheetWriter`, `ExcelSubtotal`, `ExcelSummary`, `ExcelTemplateWriter`, `ExcelValidation`, `ExcelWorkbook`, `ExcelWriteErrorPolicy`, `ExcelWriteException`, `ExcelWriter`, `HeaderStyleConfig`, `RowStyleConfig`, `SheetContext`, `StreamingOptions`, `TableOptions`, `TemplateListWriter`, `WriteRowCallback` | Excel writing: `ExcelWriter`, `ExcelWorkbook`, templates, column and sheet configuration |
+| `io.github.dornol.excelkit.csv` | `CsvAfterDataWriter`, `CsvColumn`, `CsvColumnConfig`, `CsvDialect`, `CsvHandler`, `CsvQuoting`, `CsvReadException`, `CsvReader`, `CsvWriteException`, `CsvWriter` | CSV reading and writing |
+| `io.github.dornol.excelkit.excel` | `AfterDataWriter`, `BeforeHeaderWriter`, `ColumnConfig`, `ColumnStyleConfig`, `ColumnsWriter`, `DataRowsWriter`, `ExcelChartConfig`, `ExcelColumn`, `ExcelConditionalRule`, `ExcelDataType`, `ExcelErrorReport`, `ExcelHandler`, `ExcelKitConfig`, `ExcelPrintSetup`, `ExcelRichText`, `ExcelSheetWriter`, `ExcelSubtotal`, `ExcelSummary`, `ExcelTemplateWriter`, `ExcelValidation`, `ExcelWorkbook`, `ExcelWriteException`, `ExcelWriter`, `HeaderStyleConfig`, `RowStyleConfig`, `SheetContext`, `SheetWriter`, `StreamingOptions`, `TableOptions`, `TemplateListWriter`, `WorkbookInitOptions`, `WorkbookOptions`, `WriteRowCallback` | Excel writing: `ExcelWriter`, `ExcelWorkbook`, templates, column and sheet configuration |
 | `io.github.dornol.excelkit.excel.read` | `ExcelReadException`, `ExcelReader`, `ExcelSheetInfo`, `ExcelWorkbookInspector`, `ExcelWorkbookReader`, `SheetFailurePolicy`, `SheetReadReport`, `WorkbookReadReport` | Excel reading: `ExcelReader`, multi-sheet `ExcelWorkbookReader`, sheet metadata |
 | `io.github.dornol.excelkit.excel.style` | `CellColorFunction`, `ExcelBorderStyle`, `ExcelColor`, `ExcelDataFormat` | Colors, borders and number formats |
 | `io.github.dornol.excelkit.excel.feature` | `ExcelCellComment`, `ExcelHyperlink`, `ExcelImage` | Cell content beyond text: comments, hyperlinks, images |
@@ -100,7 +100,7 @@ try (var wb = ExcelWorkbook.create().headerColor(ExcelColor.STEEL_BLUE)) {
 }
 ```
 
-All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.column("Name", fn, cfg -> cfg.type().bold())` pattern.
+The Excel writers (`ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter`) use the same `.column("Name", fn, cfg -> cfg.type().bold())` pattern; `CsvWriter` has no styling, so its configurer is a small `CsvColumnConfig` (`c -> c.nullValue("N/A")`); `rowNumberColumn(name)` exists on it too (format a value in the function). Every Excel writer shares the column methods of `ColumnsWriter<T, SELF>` (`column`, `columnIf`, `constColumn`, `constColumnIf`, `rowNumberColumn`) and, in its subtype `DataRowsWriter<T, SELF>`, how rows are written (`rowHeight`, `rowColor`, `summary`, `table`, `writeErrorPolicy`...; `TemplateListWriter` has them too), and `ExcelWriter` and `ExcelSheetWriter` also share the sheet settings of its subtype `SheetWriter<T, SELF>`, so a setting written once applies to both: `static <T, W extends SheetWriter<T, W>> W standardLook(W w) { return w.stripedRows().autoFilter(true); }`. The column configurer is always a `Consumer<ColumnConfig<T>>` (`style(CellStyle)` included), so `Consumer<ColumnConfig<Row>> money = c -> c.type(ExcelDataType.INTEGER)` can be reused.
 
 ## Key API Notes (v0.16.0+)
 
@@ -129,11 +129,11 @@ All writer APIs (`ExcelWriter`, `ExcelSheetWriter`, `CsvWriter`) use the same `.
 - `rawNumber()` reads the stored XLSX number before display formatting; `rawValues()` on read results and errors returns the source row's values using it
 - `asZonedDateTimeStrict(zone)` rejects local date-times in a DST gap or overlap
 - `ExcelSheetWriter.write()` is single-call — second call throws `ExcelWriteException`
-- `ExcelHandler.discard()` / `CsvHandler.discard()` release an unwritten handler (idempotent, no-op after `writeTo`); an unconsumed handler that is garbage collected is released as a safety net
+- `discard()` (on `FileHandler`, so on `ExcelHandler` and `CsvHandler`) releases an unwritten handler (idempotent, no-op after `writeTo`); neither handler is `AutoCloseable` (a handler is written after the method that made it returns, so `try (handler)` would release it too early); an unconsumed handler that is garbage collected is released as a safety net
 - `ExcelImage.png()/jpeg()` validates non-null, non-empty byte array at creation time
 - `ExcelImage.size(w, h)` sets cell span; `ExcelImage.fromUrl(url)` downloads and auto-detects type
 - `rowStyle(predicate, config)` — conditional row-level bold/font/color (first match wins)
-- `countRows()` on `ExcelReader` — opt-in pre-scan; `cursor.getTotalRows()` in progress callback
+- `countRows()` on `ExcelReader` and `CsvReader` — opt-in pre-scan; `cursor.getTotalRows()` in the progress callback and `ReadProgress.totalRows()` in `onReadProgress` (every event, completion included)
 - CSV injection defense covers leading whitespace + formula characters (e.g., `" =cmd"`)
 
 ## Key API Notes (v0.16.9+)

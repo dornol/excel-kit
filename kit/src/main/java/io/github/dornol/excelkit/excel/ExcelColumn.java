@@ -1,5 +1,6 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.style.CellColorFunction;
 import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
@@ -114,24 +115,24 @@ public class ExcelColumn<T> {
 
     /**
      * Applies the column's function leniently: an exception is logged and {@code null}
-     * (an empty cell) is returned. Writers use {@link #applyFunction(Object, Cursor, ExcelWriteErrorPolicy)}
+     * (an empty cell) is returned. Writers use {@link #applyFunction(Object, Cursor, WriteErrorPolicy)}
      * with their configured policy instead; this shortcut exists for callers that always want
-     * {@link ExcelWriteErrorPolicy#LENIENT}.
+     * {@link WriteErrorPolicy#LENIENT}.
      *
      * @param rowData the current row
      * @param cursor  the current cursor (position)
      * @return the cell value, or {@code null} if the function threw an exception
      */
     @Nullable Object applyFunction(T rowData, Cursor cursor) {
-        return applyFunction(rowData, cursor, ExcelWriteErrorPolicy.LENIENT);
+        return applyFunction(rowData, cursor, WriteErrorPolicy.LENIENT);
     }
 
     /**
      * Applies the column's function to extract a value from the row and cursor.
      * <p>
-     * With {@link ExcelWriteErrorPolicy#FAIL_FAST} (the writers' default) an exception aborts the
+     * With {@link WriteErrorPolicy#FAIL_FAST} (the writers' default) an exception aborts the
      * write as an {@link ExcelWriteException} naming the column. With
-     * {@link ExcelWriteErrorPolicy#LENIENT} the error is logged with the column name, row data, and
+     * {@link WriteErrorPolicy#LENIENT} the error is logged with the column name, row data, and
      * cursor, and {@code null} (an empty cell) is returned so one bad cell does not fail a bulk export.
      *
      * @param rowData the current row
@@ -140,11 +141,11 @@ public class ExcelColumn<T> {
      * @return the cell value, or {@code null} if the function threw and the policy is lenient
      * @throws ExcelWriteException if the function threw and the policy is fail-fast
      */
-    @Nullable Object applyFunction(T rowData, Cursor cursor, ExcelWriteErrorPolicy policy) {
+    @Nullable Object applyFunction(T rowData, Cursor cursor, WriteErrorPolicy policy) {
         try {
             return function.apply(rowData, cursor);
         } catch (RuntimeException e) {
-            if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
+            if (policy == WriteErrorPolicy.FAIL_FAST) {
                 throw new ExcelWriteException("Failed to extract value for column '" + name + "'", e);
             }
             // The row itself is not logged: it may hold personal data, and a failing column repeats this per row.
@@ -182,20 +183,20 @@ public class ExcelColumn<T> {
     /**
      * Writes a value into a given cell leniently: a value that cannot be stored as the column's
      * type is written as text. Writers call
-     * {@link #setColumnData(SXSSFCell, Object, ExcelWriteErrorPolicy)} with their configured policy.
+     * {@link #setColumnData(SXSSFCell, Object, WriteErrorPolicy)} with their configured policy.
      */
     void setColumnData(SXSSFCell cell, @Nullable Object columnData) {
-        setColumnData(cell, columnData, ExcelWriteErrorPolicy.LENIENT);
+        setColumnData(cell, columnData, WriteErrorPolicy.LENIENT);
     }
 
     /**
      * Writes a value into a given cell using the column's setter logic.
-     * With {@link ExcelWriteErrorPolicy#FAIL_FAST} a value that cannot be stored as the column's type
-     * throws {@link ExcelWriteException}; with {@link ExcelWriteErrorPolicy#LENIENT} it is written as text.
+     * With {@link WriteErrorPolicy#FAIL_FAST} a value that cannot be stored as the column's type
+     * throws {@link ExcelWriteException}; with {@link WriteErrorPolicy#LENIENT} it is written as text.
      *
      * @return the style to apply to the cell
      */
-    CellStyle setColumnData(SXSSFCell cell, @Nullable Object columnData, ExcelWriteErrorPolicy policy) {
+    CellStyle setColumnData(SXSSFCell cell, @Nullable Object columnData, WriteErrorPolicy policy) {
         boolean placeholder = false;
         if (columnData == null) {
             if (nullValue != null) {
@@ -240,7 +241,7 @@ public class ExcelColumn<T> {
                 ExcelCellText.write(cell, ExcelCellText.textOf(columnData));
                 return style;
             }
-            if (policy == ExcelWriteErrorPolicy.FAIL_FAST) {
+            if (policy == WriteErrorPolicy.FAIL_FAST) {
                 throw new ExcelWriteException("Failed to write cell value for column '" + name + "' (value "
                         + (columnData == null ? "null" : "of type " + columnData.getClass().getSimpleName())
                         + (dataType == null ? "" : ", column type " + dataType) + "): " + e.getMessage(), e);
@@ -411,58 +412,4 @@ public class ExcelColumn<T> {
     int getCommentHeight() {
         return commentHeight;
     }
-
-    /**
-     * Builder for constructing {@link ExcelColumn} instances using a fluent DSL-style API.
-     *
-     * @param <T> the row data type
-     */
-    public static class ExcelColumnBuilder<T> extends ColumnStyleConfig<T, ExcelColumnBuilder<T>> {
-        private final ExcelWriter<T> writer;
-        private final String name;
-        private final RowFunction<T, @Nullable Object> function;
-        private @Nullable CellStyle style;
-        private @Nullable ExcelColumnSetter columnSetter;
-
-        ExcelColumnBuilder(ExcelWriter<T> writer, String name, RowFunction<T, @Nullable Object> function) {
-            this.writer = writer;
-            this.name = name;
-            this.function = Objects.requireNonNull(function, "function cannot be null");
-        }
-
-        /**
-         * Sets a custom {@link CellStyle} for this column.
-         *
-         * @param style the cell style to apply
-         * @return this instance for chaining
-         */
-        public ExcelColumnBuilder<T> style(CellStyle style) {
-            this.style = style;
-            return this;
-        }
-
-        /**
-         * Builds the column definition with all current configurations.
-         */
-        ExcelColumn<T> build() {
-            var defaults = writer.getDefaultStyleConfig();
-            if (defaults != null) {
-                this.applyDefaults(defaults);
-            }
-            if (this.style == null) {
-                // The type's default format is not written back to dataFormat: the column must still know
-                // whether the format was given explicitly.
-                this.style = ExcelStyleSupporter.cellStyle(
-                        writer.getWb(), styleParams(), writer.getCellStyleCache());
-            }
-            if (this.columnSetter == null) {
-                this.columnSetter = this.dataType != null
-                        ? this.dataType.getSetter() : ExcelDataType.STRING.getSetter();
-            }
-            return new ExcelColumn<>(this.name, this.function, this.style, this.columnSetter, this)
-                    .sharingStylesOf(writer.getCellStyleCache());
-        }
-
-    }
-
 }

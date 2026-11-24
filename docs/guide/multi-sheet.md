@@ -69,7 +69,9 @@ wb.<Product>sheet("Data")
     .write(stream);
 ```
 
-If `sheetName()` is not set, rollover sheets are named `"baseName (2)"`, `"baseName (3)"`, etc.
+If `sheetName()` is not set, rollover sheets are named `"baseName (2)"`, `"baseName (3)"`, etc. An `ExcelWriter` is a workbook with
+one sheet and has no name of its own to start from, so its sheets are `Sheet`, `Sheet (2)`...; `sheetName(function)` names the
+first sheet too (index 0) and `sheetName("Data")` gives `Data`, `Data (2)`.
 
 Both writers roll over after 1,000,000 data rows unless `maxRows(...)` says otherwise. An Excel sheet
 holds 1,048,576 rows in total, so `maxRows` accepts at most 1,048,575, and the rows written before the

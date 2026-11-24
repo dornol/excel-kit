@@ -203,21 +203,10 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private static ExcelReader<Map<String, String>> forMap(@Nullable Set<String> selectedColumns, boolean raw) {
-        Function<RowData, Map<String, String>> mapMapper = row -> {
-            Map<String, String> map = new LinkedHashMap<>();
-            List<String> headers = row.headerNames();
-            int bound = headers.size();
-            for (int i = 0; i < bound; i++) {
-                String header = headers.get(i);
-                if (header == null) continue;
-                if (selectedColumns != null && !selectedColumns.contains(header)) continue;
-                if (row.headerIndexOf(header) != i) continue;
-                CellData cell = row.get(i);
-                var stored = raw ? cell.rawNumber() : null;
-                map.put(header, stored != null ? stored.stripTrailingZeros().toPlainString() : cell.formattedValue());
-            }
-            return map;
-        };
+        Function<RowData, Map<String, String>> mapMapper = rowToMap(selectedColumns, cell -> {
+            var stored = raw ? cell.rawNumber() : null;
+            return stored != null ? stored.stripTrailingZeros().toPlainString() : cell.formattedValue();
+        });
         ExcelReader<Map<String, String>> reader = ExcelReader.mapping(mapMapper);
         reader.enableMapMode(selectedColumns);
         return reader;

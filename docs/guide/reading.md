@@ -425,6 +425,16 @@ ExcelReader.setter(MyDto::new)
     .read(inputStream, result -> { ... });
 ```
 
+`CsvReader` has the same `countRows()`. The newer callback gets the total as well, without the older one:
+`onReadProgress(1000, p -> ... p.processedRows() * 100 / p.totalRows() ...)`; every event, the completion event included, carries
+it (`-1` while it is unknown).
+
+The total is the number of data rows in the file (Excel: the rows after the header, CSV: the records after the header, a
+quoted field with a line break being one record). It is counted before the row policy runs, so with `skipBlankRows()` or a
+`maxRows(...)` that stops the read early the percentage ends below 100. For a CSV the first pass parses the file once more
+without converting values; if it fails (a malformed record, the wrong charset) the total stays unknown and the read reports the
+failure itself.
+
 ## Multi-Sheet Discovery
 
 `ExcelWorkbookInspector` looks at a workbook without reading its rows:
