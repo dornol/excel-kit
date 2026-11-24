@@ -190,6 +190,23 @@ try (var workbook = ExcelWorkbook.create()) {
 
 `SheetWriter` cannot be extended outside the library.
 
+The settings of the workbook (`documentProperty`, `headerColor`, `headerFontName`, `headerFontSize`, `headerStyle`,
+`protectWorkbook`, `password`) are written once in the same way: `ExcelWriter` and `ExcelWorkbook` both implement
+`WorkbookOptions<SELF>`.
+
+```java
+static <W extends WorkbookOptions<W>> W teamLook(W writer) {
+    return writer.headerColor(ExcelColor.STEEL_BLUE).headerFontName("Arial").documentProperty("author", "Reporting");
+}
+
+teamLook(ExcelWriter.<Order>create()).column("Id", Order::id);
+teamLook(ExcelWorkbook.create()).sheet("Orders");
+```
+
+What can only be decided when the workbook is created (`rowAccessWindowSize`, `compressTempFiles`, `useSharedStrings`,
+`streaming`) is a `WorkbookInitOptions`, the same for `ExcelWriter.create(opts -> ...)`, `ExcelWriter.forMap(opts -> ..., names)` and
+`ExcelWorkbook.create(opts -> ...)`.
+
 The columns (`column`, `columnIf`, `constColumn`, `constColumnIf`, `rowNumberColumn`) are one level higher, in
 `ColumnsWriter<T, SELF>`, which `SheetWriter` extends. `TemplateListWriter` (a list written into a sheet of a template that
 already exists, from `ExcelTemplateWriter.list(...)`) extends it as well, so it has the same columns and takes the same

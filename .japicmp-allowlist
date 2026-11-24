@@ -22,3 +22,6 @@ io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy
 io.github.dornol.excelkit.csv.CsvWriter#failOnColumnError(boolean)
 # The schema builder's writeErrorPolicy(...) takes the shared WriteErrorPolicy.
 io.github.dornol.excelkit.schema.ExcelKitSchema$Builder#writeErrorPolicy(io.github.dornol.excelkit.excel.ExcelWriteErrorPolicy)
+# ExcelWriter.InitOptions and ExcelWorkbook.InitOptions became one top-level WorkbookInitOptions; the settings they share are WorkbookOptions.
+io.github.dornol.excelkit.excel.ExcelWriter$InitOptions
+io.github.dornol.excelkit.excel.ExcelWorkbook$InitOptions

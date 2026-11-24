@@ -92,6 +92,7 @@ class NullArgumentContractTest {
                     throw new java.io.UncheckedIOException(e);
                 }
             }),
+            new Target(io.github.dornol.excelkit.excel.WorkbookInitOptions.class, () -> new Receiver(construct(io.github.dornol.excelkit.excel.WorkbookInitOptions.class), NOTHING)),
             new Target(io.github.dornol.excelkit.csv.CsvColumnConfig.class, () -> new Receiver(construct(io.github.dornol.excelkit.csv.CsvColumnConfig.class), NOTHING)),
             new Target(CsvReader.class, () -> new Receiver(CsvReader.setter(Object::new), NOTHING)),
             new Target(ExcelReader.class, () -> new Receiver(ExcelReader.setter(Object::new), NOTHING)),

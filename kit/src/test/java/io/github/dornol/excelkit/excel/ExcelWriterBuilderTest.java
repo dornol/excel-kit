@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for {@link ExcelWriter#create()} / {@link ExcelWriter#create(java.util.function.Consumer)}
  * and the fluent configuration setters that surround them
  * ({@link ExcelWriter#headerColor}, {@link ExcelWriter#maxRows}, and
- * {@link ExcelWriter.InitOptions#rowAccessWindowSize}).
+ * {@link WorkbookInitOptions#rowAccessWindowSize}).
  *
  * <p>Covers:
  * <ul>

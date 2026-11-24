@@ -4,6 +4,7 @@ import io.github.dornol.excelkit.core.WriteErrorPolicy;
 import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ColumnConfig;
 import io.github.dornol.excelkit.excel.ExcelWriter;
+import io.github.dornol.excelkit.excel.WorkbookInitOptions;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -15,7 +16,7 @@ final class SchemaWriterFactory {
 
     static <T> ExcelWriter<T> excel(List<ExcelKitSchema.SchemaColumn<T>> columns,
                                     WriteErrorPolicy writeErrorPolicy,
-                                    Consumer<ExcelWriter.InitOptions> configurer) {
+                                    Consumer<WorkbookInitOptions> configurer) {
         ExcelWriter<T> writer = ExcelWriter.create(configurer);
         if (writeErrorPolicy != null) writer.writeErrorPolicy(writeErrorPolicy);
         for (ExcelKitSchema.SchemaColumn<T> column : columns) {

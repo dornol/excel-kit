@@ -11,6 +11,7 @@ import io.github.dornol.excelkit.csv.CsvWriter;
 import io.github.dornol.excelkit.excel.ColumnConfig;
 import io.github.dornol.excelkit.excel.read.ExcelReader;
 import io.github.dornol.excelkit.excel.ExcelWriter;
+import io.github.dornol.excelkit.excel.WorkbookInitOptions;
 import jakarta.validation.Validator;
 
 import org.jspecify.annotations.Nullable;
@@ -85,7 +86,7 @@ public class ExcelKitSchema<T> {
      *
      * @since 0.19.0
      */
-    public ExcelWriter<T> excelWriter(Consumer<ExcelWriter.InitOptions> configurer) {
+    public ExcelWriter<T> excelWriter(Consumer<WorkbookInitOptions> configurer) {
         return SchemaWriterFactory.excel(columns, writeErrorPolicy, configurer);
     }
 

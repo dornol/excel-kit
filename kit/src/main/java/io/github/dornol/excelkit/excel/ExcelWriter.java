@@ -28,7 +28,7 @@ import java.util.stream.StreamSupport;
  * @param <T> The data type of each row to be written into the Excel file
  * @since 0.1.2
  */
-public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
+public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements WorkbookOptions<ExcelWriter<T>> {
     private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
@@ -56,7 +56,7 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
     /**
      * Creates a new ExcelWriter with initialization options.
      * <p>
-     * The {@link InitOptions} passed to the configurer contains settings that must be
+     * The {@link WorkbookInitOptions} passed to the configurer contains settings that must be
      * fixed at workbook creation time — currently only {@code rowAccessWindowSize}
      * (SXSSF's in-memory row window, which cannot be changed after the workbook exists).
      * All other configuration (header color, max rows, columns, filters, callbacks, etc.)
@@ -67,12 +67,12 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
      *     .rowAccessWindowSize(500));
      * }</pre>
      *
-     * @param configurer consumer that configures {@link InitOptions}
+     * @param configurer consumer that configures {@link WorkbookInitOptions}
      * @param <T>        the row data type
      * @return a new ExcelWriter instance
      */
-    public static <T> ExcelWriter<T> create(Consumer<InitOptions> configurer) {
-        InitOptions opts = new InitOptions();
+    public static <T> ExcelWriter<T> create(Consumer<WorkbookInitOptions> configurer) {
+        WorkbookInitOptions opts = new WorkbookInitOptions();
         configurer.accept(opts);
         return new ExcelWriter<>(opts);
     }
@@ -119,12 +119,12 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
      *     .write(out);
      * }</pre>
      *
-     * @param configurer  consumer that configures {@link InitOptions}
+     * @param configurer  consumer that configures {@link WorkbookInitOptions}
      * @param columnNames the column names (used as both header labels and map keys)
      * @return a new ExcelWriter with the columns registered
      * @since 0.13.0
      */
-    public static ExcelWriter<Map<String, Object>> forMap(Consumer<InitOptions> configurer, String... columnNames) {
+    public static ExcelWriter<Map<String, Object>> forMap(Consumer<WorkbookInitOptions> configurer, String... columnNames) {
         ExcelWriter<Map<String, Object>> writer = create(configurer);
         for (String name : columnNames) {
             writer.column(name, map -> map.get(name));
@@ -174,74 +174,18 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
         return writer;
     }
 
-    private ExcelWriter(InitOptions opts) {
-        StreamingOptions streaming = opts.state.options();
+    private ExcelWriter(WorkbookInitOptions opts) {
+        StreamingOptions streaming = opts.options();
         this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
         this.settings = new WorkbookSettings(wb);
     }
 
-    /**
-     * Initialization options for {@link ExcelWriter}. Passed to the configurer given to
-     * {@link ExcelWriter#create(Consumer)}.
-     * <p>
-     * These options are restricted to settings that cannot be changed after the underlying
-     * {@link SXSSFWorkbook} is constructed (currently just {@code rowAccessWindowSize}).
-     * All other configuration is available as fluent methods on {@link ExcelWriter}.
-     *
-     * @since 0.17.0
-     */
-    public static final class InitOptions {
-        private final StreamingInitOptionsState state = new StreamingInitOptionsState();
-
-        private InitOptions() { }
-
-        public InitOptions rowAccessWindowSize(int size) {
-            state.rowAccessWindowSize(size);
-            return this;
-        }
-
-        public InitOptions compressTempFiles(boolean enabled) {
-            state.compressTempFiles(enabled);
-            return this;
-        }
-
-        public InitOptions useSharedStrings(boolean enabled) {
-            state.useSharedStrings(enabled);
-            return this;
-        }
-
-        public InitOptions streaming(StreamingOptions options) {
-            state.streaming(options);
-            return this;
-        }
-    }
-
-    /**
-     * Sets a document property on the generated Excel file.
-     * <p>
-     * Standard keys ({@code title}, {@code subject}, {@code author}, {@code keywords},
-     * {@code description}, {@code category}) are mapped to Excel core properties.
-     * Other keys are stored as custom properties.
-     *
-     * @param key   the property name (case-insensitive for standard keys)
-     * @param value the property value
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.17.0
-     */
+    @Override
     public ExcelWriter<T> documentProperty(String key, String value) {
         settings.documentProperty(key, value);
         return this;
     }
-    /**
-     * Sets the header background color. Must be called before {@link #write(Stream)}.
-     * <p>
-     * Use presets like {@link ExcelColor#STEEL_BLUE} or custom via {@link ExcelColor#of(int, int, int)}.
-     * Defaults to {@link ExcelColor#WHITE}.
-     *
-     * @param color header color (must not be null)
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.17.0
-     */
+    @Override
     public ExcelWriter<T> headerColor(ExcelColor color) {
         settings.headerColor(color);
         return this;
@@ -277,74 +221,31 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
         return this;
     }
 
-    /**
-     * Protects the workbook structure with the given password.
-     * <p>
-     * When enabled, users cannot add, delete, rename, or reorder sheets.
-     *
-     * @param password the protection password
-     * @return Current ExcelWriter instance for chaining
-     */
+    @Override
     public ExcelWriter<T> protectWorkbook(String password) {
         settings.protectWorkbook(password);
         return this;
     }
 
-    /**
-     * Sets the file encryption password.
-     * <p>
-     * When set, the resulting Excel file will be encrypted using the "agile" encryption mode,
-     * and {@link ExcelHandler#writeTo(java.io.OutputStream)} will automatically
-     * apply encryption — no need to pass the password to {@link ExcelHandler#writeTo(java.io.OutputStream, String)}.
-     *
-     * @param password the encryption password (must not be null or blank)
-     * @return Current ExcelWriter instance for chaining
-     */
+    @Override
     public ExcelWriter<T> password(String password) {
         settings.password(password);
         return this;
     }
 
-    /**
-     * Sets the header font name.
-     *
-     * @param fontName the font name (e.g., "Arial", "맑은 고딕")
-     * @return Current ExcelWriter instance for chaining
-     */
+    @Override
     public ExcelWriter<T> headerFontName(String fontName) {
         settings.headerFontName(fontName);
         return this;
     }
 
-    /**
-     * Sets the header font size in points.
-     *
-     * @param fontSize font size in points (must be positive)
-     * @return Current ExcelWriter instance for chaining
-     */
+    @Override
     public ExcelWriter<T> headerFontSize(int fontSize) {
         settings.headerFontSize(fontSize);
         return this;
     }
 
-    /**
-     * Configures the global header cell style (alignment, bold, border, wrap text).
-     * <p>
-     * Font name, font size, and background color are set separately via
-     * {@link #headerFontName(String)}, {@link #headerFontSize(int)}, and {@link #headerColor(ExcelColor)}.
-     *
-     * <pre>{@code
-     * writer.headerStyle(h -> h
-     *     .bold(true)
-     *     .alignment(HorizontalAlignment.LEFT)
-     *     .border(ExcelBorderStyle.MEDIUM)
-     *     .wrapText(true));
-     * }</pre>
-     *
-     * @param configurer consumer to configure header style properties
-     * @return Current ExcelWriter instance for chaining
-     * @since 0.17.0
-     */
+    @Override
     public ExcelWriter<T> headerStyle(Consumer<HeaderStyleConfig> configurer) {
         settings.headerStyle(configurer);
         return this;

@@ -40,7 +40,7 @@ import java.util.function.Consumer;
  * @author dhkim
  * @since 0.3.0
  */
-public class ExcelWorkbook implements AutoCloseable {
+public class ExcelWorkbook implements AutoCloseable, WorkbookOptions<ExcelWorkbook> {
     private static final Logger log = LoggerFactory.getLogger(ExcelWorkbook.class);
 
     private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
@@ -76,144 +76,59 @@ public class ExcelWorkbook implements AutoCloseable {
      * }
      * }</pre>
      *
-     * @param configurer consumer that configures {@link InitOptions}
+     * @param configurer consumer that configures {@link WorkbookInitOptions}
      * @return a new workbook instance (implements AutoCloseable)
      * @since 0.17.0
      */
-    public static ExcelWorkbook create(Consumer<InitOptions> configurer) {
-        InitOptions opts = new InitOptions();
+    public static ExcelWorkbook create(Consumer<WorkbookInitOptions> configurer) {
+        WorkbookInitOptions opts = new WorkbookInitOptions();
         configurer.accept(opts);
         return new ExcelWorkbook(opts);
     }
 
-    private ExcelWorkbook(InitOptions opts) {
-        StreamingOptions streaming = opts.state.options();
+    private ExcelWorkbook(WorkbookInitOptions opts) {
+        StreamingOptions streaming = opts.options();
         this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
         this.settings = new WorkbookSettings(wb);
     }
 
-    /**
-     * Initialization options for {@link ExcelWorkbook}. Passed to the configurer given to
-     * {@link ExcelWorkbook#create(Consumer)}.
-     * <p>
-     * Restricted to settings that cannot be changed after the underlying SXSSFWorkbook
-     * is constructed (currently just {@code rowAccessWindowSize}).
-     *
-     * @since 0.17.0
-     */
-    public static final class InitOptions {
-        private final StreamingInitOptionsState state = new StreamingInitOptionsState();
-
-        private InitOptions() { }
-
-        public InitOptions rowAccessWindowSize(int size) {
-            state.rowAccessWindowSize(size);
-            return this;
-        }
-
-        public InitOptions compressTempFiles(boolean enabled) {
-            state.compressTempFiles(enabled);
-            return this;
-        }
-
-        public InitOptions useSharedStrings(boolean enabled) {
-            state.useSharedStrings(enabled);
-            return this;
-        }
-
-        public InitOptions streaming(StreamingOptions options) {
-            state.streaming(options);
-            return this;
-        }
-    }
-
-    /**
-     * Sets a document property on the generated Excel file.
-     * <p>
-     * Standard keys ({@code title}, {@code subject}, {@code author}, {@code keywords},
-     * {@code description}, {@code category}) are mapped to Excel core properties.
-     * Other keys are stored as custom properties.
-     *
-     * @param key   the property name (case-insensitive for standard keys)
-     * @param value the property value
-     * @return this workbook for chaining
-     * @since 0.17.0
-     */
+    @Override
     public ExcelWorkbook documentProperty(String key, String value) {
         settings.documentProperty(key, value);
         return this;
     }
 
-    /**
-     * Sets the header background color for all sheets. Must be called before any
-     * {@link #sheet(String)} that relies on the header style.
-     *
-     * @param color header color (must not be null)
-     * @return this workbook for chaining
-     * @since 0.17.0
-     */
+    @Override
     public ExcelWorkbook headerColor(ExcelColor color) {
         settings.headerColor(color);
         return this;
     }
 
-    /**
-     * Protects the workbook structure with the given password.
-     * <p>
-     * When enabled, users cannot add, delete, rename, or reorder sheets.
-     *
-     * @param password the protection password
-     * @return this workbook for chaining
-     */
+    @Override
     public ExcelWorkbook protectWorkbook(String password) {
         settings.protectWorkbook(password);
         return this;
     }
 
-    /**
-     * Sets the file encryption password.
-     * <p>
-     * When set, the resulting Excel file will be encrypted using the "agile" encryption mode,
-     * and {@link ExcelHandler#writeTo(java.io.OutputStream)} will automatically
-     * apply encryption — no need to pass the password to {@link ExcelHandler#writeTo(java.io.OutputStream, String)}.
-     *
-     * @param password the encryption password (must not be null or blank)
-     * @return this workbook for chaining
-     */
+    @Override
     public ExcelWorkbook password(String password) {
         settings.password(password);
         return this;
     }
 
-    /**
-     * Sets the header font name for all sheets.
-     *
-     * @param fontName the font name (e.g., "Arial", "맑은 고딕")
-     * @return this workbook for chaining
-     */
+    @Override
     public ExcelWorkbook headerFontName(String fontName) {
         settings.headerFontName(fontName);
         return this;
     }
 
-    /**
-     * Sets the header font size for all sheets.
-     *
-     * @param fontSize font size in points (must be positive)
-     * @return this workbook for chaining
-     */
+    @Override
     public ExcelWorkbook headerFontSize(int fontSize) {
         settings.headerFontSize(fontSize);
         return this;
     }
 
-    /**
-     * Configures the global header cell style (alignment, bold, border, wrap text).
-     *
-     * @param configurer consumer to configure header style properties
-     * @return this workbook for chaining
-     * @since 0.17.0
-     */
+    @Override
     public ExcelWorkbook headerStyle(Consumer<HeaderStyleConfig> configurer) {
         settings.headerStyle(configurer);
         return this;
