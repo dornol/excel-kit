@@ -45,6 +45,7 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     protected final @Nullable Function<RowData, T> rowMapper;
     private ReaderOptions.Builder settings = ReaderOptions.builder();
     private boolean mapMode;
+    private boolean countRows;
     private @Nullable Set<String> selectedMapColumns;
 
     protected AbstractReader(Supplier<T> instanceSupplier, @Nullable Validator validator) {
@@ -428,6 +429,18 @@ public abstract class AbstractReader<T, SELF extends AbstractReader<T, SELF>> {
     public SELF securityPolicy(ReadSecurityPolicy policy) {
         settings.securityPolicy(policy);
         return self();
+    }
+
+    /** Turns on the first pass that counts the data rows: see the format's {@code countRows()}. */
+    protected final void enableCountRows() {
+        this.countRows = true;
+    }
+
+    /** The settings every format shares, for the format to build its session configuration around. */
+    protected final ReadSessionConfig<T> commonSessionConfig() {
+        return new ReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
+                instanceSupplier, rowMapper, configuredValidator(), configuredHeaderRowIndex(),
+                configuredSelectedMapColumns(), countRows, snapshotReadOptions());
     }
 
     protected ReadOptions snapshotReadOptions() {

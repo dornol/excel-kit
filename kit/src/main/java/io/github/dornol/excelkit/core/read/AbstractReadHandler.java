@@ -54,6 +54,12 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     /** Optional bean validator for row validation. */
     protected final @Nullable Validator validator;
     protected final @Nullable Set<String> selectedMapColumns;
+    /** The columns of setter mode, or {@code null} in mapping mode. */
+    protected final @Nullable List<ReadColumn<T>> columns;
+    /** The 0-based header row. */
+    protected final int headerRowIndex;
+    /** Whether the data rows are counted in a first pass. */
+    protected final boolean countRows;
     protected final ReadOptions readOptions;
     private final ReadLifecycle lifecycle = new ReadLifecycle();
     private final ReadRowPolicy rowPolicy;
@@ -62,18 +68,21 @@ public abstract class AbstractReadHandler<T> extends TempResourceContainer imple
     // initTempFile only uses this class's own temp file accessors, and the only subclasses are the
     // final CSV and Excel handlers of this library, so nothing observes a half-built object.
     @SuppressWarnings("this-escape")
-    protected AbstractReadHandler(InputStream input, @Nullable Supplier<T> supplier,
-            @Nullable Function<RowData, T> mapper, @Nullable Validator validator, String extension,
-            @Nullable Set<String> selectedColumns, ReadOptions readOptions) {
-        if ((supplier == null) == (mapper == null))
-            throw new IllegalArgumentException("Exactly one of supplier or mapper is required");
-        this.instanceSupplier = supplier;
-        this.rowMapper = mapper;
-        this.validator = validator;
-        this.selectedMapColumns = selectedColumns;
-        this.readOptions = Objects.requireNonNull(readOptions, "readOptions cannot be null");
+    protected AbstractReadHandler(InputStream input, String extension, ReadSessionConfig<T> config) {
+        this.instanceSupplier = config.supplier();
+        this.rowMapper = config.mapper();
+        this.validator = config.validator();
+        this.selectedMapColumns = config.selectedColumns();
+        this.columns = config.columns();
+        this.headerRowIndex = config.headerRowIndex();
+        this.countRows = config.countRows();
+        this.readOptions = config.options();
         this.rowPolicy = new ReadRowPolicy(this.readOptions);
         initTempFile(Objects.requireNonNull(input, "input cannot be null"), extension);
+        validateOrClose(() -> {
+            validateHeaderRowIndex(headerRowIndex);
+            if (columns != null) validateColumns(columns);
+        });
     }
 
     protected CellData cellData(int columnIndex, @Nullable String formattedValue) {

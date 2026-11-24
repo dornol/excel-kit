@@ -33,7 +33,6 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     private int sheetIndex = 0;
     private int headerRows = 1;
-    private boolean countRows = false;
     private boolean fillMergedCells = false;
     private @Nullable String password;
     private boolean inputDecrypted;
@@ -272,7 +271,7 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
      * @return this reader for chaining
      */
     public ExcelReader<T> countRows() {
-        this.countRows = true;
+        enableCountRows();
         return this;
     }
 
@@ -340,10 +339,8 @@ public class ExcelReader<T> extends AbstractReader<T, ExcelReader<T>> {
     }
 
     private ExcelReadSessionConfig<T> sessionConfig() {
-        return new ExcelReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
-                instanceSupplier, rowMapper, configuredValidator(), sheetIndex, configuredHeaderRowIndex(), headerRows,
-                inputDecrypted ? null : password, countRows, fillMergedCells,
-                configuredSelectedMapColumns(), snapshotReadOptions());
+        return new ExcelReadSessionConfig<>(commonSessionConfig(), sheetIndex, headerRows,
+                inputDecrypted ? null : password, fillMergedCells);
     }
 
     /** The input size this reader accepts, or -1 when it has no limit. */

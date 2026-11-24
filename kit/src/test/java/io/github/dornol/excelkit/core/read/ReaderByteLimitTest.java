@@ -280,8 +280,8 @@ class ReaderByteLimitTest {
 
     private static final class ProbeHandler extends AbstractReadHandler<String> {
         ProbeHandler(long maximum) {
-            super(InputStream.nullInputStream(), null, row -> "", null, ".csv", null,
-                    options(maximum));
+            super(InputStream.nullInputStream(), ".csv", new ReadSessionConfig<>(null, null, row -> "", null, 0,
+                    null, false, options(maximum)));
         }
         @Override public void read(Consumer<ReadResult<String>> consumer) { }
         @Override public void readWhile(Predicate<ReadResult<String>> predicate) { }

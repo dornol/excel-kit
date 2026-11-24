@@ -79,31 +79,22 @@ final class ExcelReadHandler<T> extends AbstractReadHandler<T> {
 
     private ExcelReadHandler(InputStream input, ExcelReadSessionConfig<T> config,
                              boolean externalPath, @Nullable Path path) {
-        super(input, config.supplier(), config.mapper(), config.validator(), ".xlsx",
-                config.selectedColumns(), config.options());
+        super(input, ".xlsx", config.common());
         validateOrClose(() -> {
-            if (config.columns() != null) validateColumns(config.columns());
             validateSheetIndex(config.sheetIndex());
-            validateHeaderRowIndex(config.headerRowIndex());
             validateHeaderRows(config.headerRows());
         });
-        this.columns = config.columns();
         this.sheetIndex = config.sheetIndex();
-        this.headerRowIndex = config.headerRowIndex();
         this.headerRows = config.headerRows();
         this.password = config.password();
-        this.countRows = config.countRows();
         this.fillMergedCells = config.fillMergedCells();
         if (externalPath) useExternalInput(path);
         validateOrClose(this::validateReadOptions);
     }
 
-    private final @Nullable List<ReadColumn<T>> columns;
     private final int sheetIndex;
-    private final int headerRowIndex;
     private final int headerRows;
     private final @Nullable String password;
-    private final boolean countRows;
     private final boolean fillMergedCells;
     /** The data rows of the sheet, counted before the read when {@code countRows()} is on; {@code -1} when unknown. */
     private long countedRows = -1;

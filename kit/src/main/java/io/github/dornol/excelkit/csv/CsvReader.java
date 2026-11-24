@@ -48,7 +48,6 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
     private char quoteChar = '"';
     private char escapeChar = ICSVParser.NULL_CHARACTER;
     private boolean strictQuotes = false;
-    private boolean countRows = false;
     private boolean ignoreLeadingWhiteSpace = true;
     private int detectionSampleBytes = TabularFileDetector.DEFAULT_SAMPLE_BYTES;
 
@@ -311,7 +310,7 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
      * @since 0.29.0
      */
     public CsvReader<T> countRows() {
-        this.countRows = true;
+        enableCountRows();
         return this;
     }
 
@@ -341,11 +340,8 @@ public class CsvReader<T> extends AbstractReader<T, CsvReader<T>> {
 
     private CsvReadSessionConfig<T> sessionConfig(char sessionDelimiter, Charset sessionCharset) {
         requireDistinctCharacters(sessionDelimiter, quoteChar, escapeChar);
-        return new CsvReadSessionConfig<>(rowMapper == null ? configuredColumns() : null,
-                instanceSupplier, rowMapper, configuredValidator(), configuredHeaderRowIndex(),
-                sessionDelimiter, sessionCharset,
-                configuredSelectedMapColumns(), quoteChar,
-                escapeChar, strictQuotes, ignoreLeadingWhiteSpace, countRows, snapshotReadOptions());
+        return new CsvReadSessionConfig<>(commonSessionConfig(), sessionDelimiter, sessionCharset,
+                quoteChar, escapeChar, strictQuotes, ignoreLeadingWhiteSpace);
     }
 
     /**

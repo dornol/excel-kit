@@ -55,35 +55,24 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
 
     private CsvReadHandler(InputStream input, CsvReadSessionConfig<T> config,
                            boolean externalPath, @Nullable Path path) {
-        super(input, config.supplier(), config.mapper(), config.validator(), ".csv",
-                config.selectedColumns(), config.options());
-        validateOrClose(() -> {
-            validateHeaderRowIndex(config.headerRowIndex());
-            if (config.columns() != null) validateColumns(config.columns());
-        });
-        this.columns = config.columns();
-        this.headerRowIndex = config.headerRowIndex();
+        super(input, ".csv", config.common());
         this.delimiter = config.delimiter();
         this.charset = config.charset();
         this.quoteChar = config.quoteChar();
         this.escapeChar = config.escapeChar();
         this.strictQuotes = config.strictQuotes();
         this.ignoreLeadingWhiteSpace = config.ignoreLeadingWhiteSpace();
-        this.countRows = config.countRows();
         if (externalPath) useExternalInput(path);
         validateOrClose(this::validateReadOptions);
     }
 
     private final List<String> headerNames = new ArrayList<>();
-    private final @Nullable List<ReadColumn<T>> columns;
-    private final int headerRowIndex;
     private final char delimiter;
     private final Charset charset;
     private final char quoteChar;
     private final char escapeChar;
     private final boolean strictQuotes;
     private final boolean ignoreLeadingWhiteSpace;
-    private final boolean countRows;
 
     @Override
     public void read(Consumer<ReadResult<T>> consumer) {
