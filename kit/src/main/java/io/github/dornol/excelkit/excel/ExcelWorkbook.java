@@ -86,7 +86,7 @@ public class ExcelWorkbook implements AutoCloseable, WorkbookOptions<ExcelWorkbo
         return new ExcelWorkbook(opts);
     }
 
-    private ExcelWorkbook(WorkbookInitOptions opts) {
+    ExcelWorkbook(WorkbookInitOptions opts) {
         StreamingOptions streaming = opts.options();
         this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
         this.settings = new WorkbookSettings(wb);
@@ -149,7 +149,24 @@ public class ExcelWorkbook implements AutoCloseable, WorkbookOptions<ExcelWorkbo
         if (!usedSheetNames.add(name)) {
             throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
         }
-        return new ExcelSheetWriter<>(wb, wb.createSheet(name), name, settings.headerStyle(), cellStyleCache, headerStyleCache, rowStyleCache, usedSheetNames);
+        CellStyle headerStyle = settings.headerStyle();
+        return new ExcelSheetWriter<>(wb, wb.createSheet(name), name, () -> headerStyle, cellStyleCache, headerStyleCache, rowStyleCache, usedSheetNames);
+    }
+
+    /**
+     * The one sheet of an {@link ExcelWriter}: created, named and styled when it is written, so that the settings of
+     * the writer can come after it.
+     */
+    <T> ExcelSheetWriter<T> lazySheet() {
+        return new ExcelSheetWriter<>(wb, null, "Sheet", settings::headerStyle, cellStyleCache, headerStyleCache, rowStyleCache, usedSheetNames);
+    }
+
+    SXSSFWorkbook wb() {
+        return wb;
+    }
+
+    Map<String, CellStyle> cellStyleCache() {
+        return cellStyleCache;
     }
 
     /**

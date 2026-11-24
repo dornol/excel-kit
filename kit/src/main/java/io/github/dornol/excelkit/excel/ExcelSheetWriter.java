@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -35,9 +36,9 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
 
     // Shared resources from ExcelWorkbook
     private final SXSSFWorkbook wb;
-    private SXSSFSheet sheet;
+    private @Nullable SXSSFSheet sheet; // null until write() for a sheet that is named late (ExcelWriter)
     private final String baseName;
-    private final CellStyle headerStyle;
+    private final Supplier<CellStyle> headerStyle; // read at write(): ExcelWriter's header settings may come after the writer
     private final Map<String, CellStyle> cellStyleCache;
     private final Set<String> usedSheetNames;
 
@@ -47,11 +48,12 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
     private final Map<String, CellStyle> headerStyleCache;
     private boolean written = false;
 
-    ExcelSheetWriter(SXSSFWorkbook wb, SXSSFSheet sheet, String baseName,
-                     CellStyle headerStyle, Map<String, CellStyle> cellStyleCache,
+    ExcelSheetWriter(SXSSFWorkbook wb, @Nullable SXSSFSheet sheet, String baseName,
+                     Supplier<CellStyle> headerStyle, Map<String, CellStyle> cellStyleCache,
                      Map<String, CellStyle> headerStyleCache,
                      Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache,
                      Set<String> usedSheetNames) {
+        super(new SheetConfig<>());
         this.headerStyleCache = headerStyleCache;
         this.rowStyleCache = rowStyleCache;
         this.wb = wb;
@@ -111,21 +113,64 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
      * @param stream the data stream to write
      */
     public void write(Stream<T> stream) {
+        write(stream, (rowData, cursor) -> {});
+    }
+
+    /**
+     * Writes the data stream to this sheet, calling {@code consumer} after each row with the row and the cursor.
+     * Otherwise as {@link #write(Stream)}.
+     *
+     * @param stream   the data stream to write
+     * @param consumer called after each row is written
+     */
+    public void write(Stream<T> stream, WriteRowCallback<T> consumer) {
         Objects.requireNonNull(stream, "stream cannot be null");
+        Objects.requireNonNull(consumer, "consumer cannot be null");
         if (written) {
             throw new ExcelWriteException("write() has already been called on this sheet");
         }
+        check();
         written = true;
-        SheetWriteEngine.validate(columns, cfg);
-        SheetWriteEngine<T> engine = new SheetWriteEngine<>(wb, columns, cfg, headerStyle, headerStyleCache, rowStyleCache,
-                cellStyleCache, this::createRolloverSheet);
-        engine.start(this.sheet);
-        Iterator<T> it = stream.iterator();
-        while (it.hasNext()) {
-            engine.row(it.next());
+        // What changes while the data is written does not change this sheet: the settings are taken now.
+        List<ExcelColumn<T>> writtenColumns = List.copyOf(columns);
+        SheetConfig<T> config = new SheetConfig<>(cfg);
+        SheetWriteEngine<T> engine = new SheetWriteEngine<>(wb, writtenColumns, config, headerStyle.get(), headerStyleCache,
+                rowStyleCache, cellStyleCache, this::createRolloverSheet);
+        engine.start(firstSheet());
+        try {
+            Iterator<T> it = stream.sequential().iterator();
+            while (it.hasNext()) {
+                T rowData = it.next();
+                engine.row(rowData);
+                consumer.accept(rowData, engine.cursor());
+            }
+            int nextRow = engine.finishData();
+            if (config.afterAllWriter != null) {
+                config.afterAllWriter.write(new SheetContext(engine.sheet(), wb, nextRow, writtenColumns, engine.headerRow()));
+            }
+            engine.finishSheets();
+        } catch (ExcelWriteException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new ExcelWriteException("Failed to write excel", e);
         }
-        engine.finishData();
-        engine.finishSheets();
+    }
+
+    /** The checks that need no data: what {@link #write(Stream)} rejects before it writes anything. */
+    void check() {
+        SheetWriteEngine.validate(columns, cfg);
+    }
+
+    /** The first sheet: created with the workbook, or at the first write when it is named by the writer's settings. */
+    private SXSSFSheet firstSheet() {
+        if (sheet == null) {
+            String name = cfg.sheetNameFunction != null ? cfg.sheetNameFunction.apply(0) : baseName;
+            if (!usedSheetNames.add(name)) {
+                throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
+            }
+            sheet = wb.createSheet(name);
+        }
+        return sheet;
     }
 
     /** Writes rows from an Iterable without copying them. */
@@ -141,10 +186,14 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
         } else {
             name = ExcelWriteSupport.rolloverSheetName(baseName, rolloverIndex);
         }
-        if (usedSheetNames != null && !usedSheetNames.add(name)) {
+        if (!usedSheetNames.add(name)) {
             throw new ExcelWriteException("Duplicate sheet name: '" + name + "'");
         }
         return wb.createSheet(name);
+    }
+
+    List<ExcelColumn<T>> columns() {
+        return columns;
     }
 
     @Override

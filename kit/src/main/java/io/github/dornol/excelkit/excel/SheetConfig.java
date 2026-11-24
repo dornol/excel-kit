@@ -37,6 +37,7 @@ class SheetConfig<T> {
         freezePaneRows = source.freezePaneRows;
         beforeHeaderWriter = source.beforeHeaderWriter;
         afterDataWriter = source.afterDataWriter;
+        afterAllWriter = source.afterAllWriter;
         rowColorFunction = source.rowColorFunction;
         rowStyleEntries.addAll(source.rowStyleEntries);
         progressCallback = source.progressCallback;
@@ -75,6 +76,7 @@ class SheetConfig<T> {
     int freezePaneRows = 0;
     @Nullable BeforeHeaderWriter beforeHeaderWriter;
     @Nullable AfterDataWriter afterDataWriter;
+    @Nullable AfterDataWriter afterAllWriter;
     @Nullable Function<T, @Nullable ExcelColor> rowColorFunction;
     final List<RowStyleEntry<T>> rowStyleEntries = new ArrayList<>();
     @Nullable ProgressCallback progressCallback;

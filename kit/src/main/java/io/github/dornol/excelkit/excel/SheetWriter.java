@@ -42,9 +42,12 @@ import java.util.function.Predicate;
 @SuppressWarnings("unchecked")
 public abstract class SheetWriter<T, SELF extends SheetWriter<T, SELF>> extends ColumnsWriter<T, SELF> {
 
-    SheetWriter() { }
+    SheetWriter(SheetConfig<T> cfg) {
+        this.cfg = cfg;
+    }
 
-    final SheetConfig<T> cfg = new SheetConfig<>();
+    /** The settings of the sheet; {@link ExcelWriter} shares those of the sheet it delegates to. */
+    final SheetConfig<T> cfg;
 
     // ── Rows per sheet and structured table ──
 
@@ -161,6 +164,20 @@ public abstract class SheetWriter<T, SELF extends SheetWriter<T, SELF>> extends 
      */
     public SELF afterData(AfterDataWriter afterDataWriter) {
         cfg.afterDataWriter = Objects.requireNonNull(afterDataWriter, "afterDataWriter cannot be null");
+        return self();
+    }
+
+    /**
+     * Registers a callback that writes custom content once, on the last sheet, after all data.
+     * <p>
+     * Called once, on the last sheet, after {@link #afterData(AfterDataWriter)} (if set). Useful for
+     * grand totals or summary rows.
+     *
+     * @param afterAllWriter the callback to invoke after all data is written
+     * @return this writer for chaining
+     */
+    public SELF afterAll(AfterDataWriter afterAllWriter) {
+        cfg.afterAllWriter = Objects.requireNonNull(afterAllWriter, "afterAllWriter cannot be null");
         return self();
     }
 

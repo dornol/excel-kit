@@ -206,32 +206,32 @@ class PrintSetupDetailsTest {
     @Test
     void repeatedRowsAreWrittenAsTheSheetsPrintTitles() throws Exception {
         try (var workbook = sheet(p -> p.repeatRows(0, 0), w -> { }, 2)) {
-            assertEquals("Sheet0!$1:$1", repeated(workbook, 0));
+            assertEquals("Sheet!$1:$1", repeated(workbook, 0));
         }
         try (var workbook = sheet(p -> p.repeatRows(1, 3), w -> { }, 2)) {
-            assertEquals("Sheet0!$2:$4", repeated(workbook, 0));
+            assertEquals("Sheet!$2:$4", repeated(workbook, 0));
         }
     }
 
     @Test
     void theHeaderRowsRepeatDownToTheColumnNames() throws Exception {
         try (var workbook = sheet(p -> p.repeatHeaderRows(), w -> { }, 2)) {
-            assertEquals("Sheet0!$1:$1", repeated(workbook, 0));
+            assertEquals("Sheet!$1:$1", repeated(workbook, 0));
         }
         // a preamble and a group header are part of what repeats
         try (var workbook = sheet(p -> p.repeatHeaderRows(),
                 w -> w.beforeHeader(ctx -> 3).column("g", Row::name, c -> c.group("Group")), 2)) {
-            assertEquals("Sheet0!$1:$5", repeated(workbook, 0), "3 rows of preamble, the group row and the column names");
+            assertEquals("Sheet!$1:$5", repeated(workbook, 0), "3 rows of preamble, the group row and the column names");
         }
     }
 
     @Test
     void theLastWordOnRepeatedRowsWins() throws Exception {
         try (var workbook = sheet(p -> p.repeatHeaderRows().repeatRows(2, 2), w -> { }, 2)) {
-            assertEquals("Sheet0!$3:$3", repeated(workbook, 0));
+            assertEquals("Sheet!$3:$3", repeated(workbook, 0));
         }
         try (var workbook = sheet(p -> p.repeatRows(2, 2).repeatHeaderRows(), w -> { }, 2)) {
-            assertEquals("Sheet0!$1:$1", repeated(workbook, 0));
+            assertEquals("Sheet!$1:$1", repeated(workbook, 0));
         }
     }
 

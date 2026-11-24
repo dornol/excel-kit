@@ -3,17 +3,10 @@ package io.github.dornol.excelkit.excel;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
 import io.github.dornol.excelkit.core.read.RowFunction;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.jspecify.annotations.Nullable;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -29,19 +22,10 @@ import java.util.stream.StreamSupport;
  * @since 0.1.2
  */
 public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements WorkbookOptions<ExcelWriter<T>> {
-    private static final Logger log = LoggerFactory.getLogger(ExcelWriter.class);
-    private static final int DEFAULT_ROW_ACCESS_WINDOW_SIZE = 1000;
 
-    private final SXSSFWorkbook wb;
-    private final WorkbookSettings settings;
-    private final List<ExcelColumn<T>> columns = new ArrayList<>();
-    private final Map<String, CellStyle> cellStyleCache = new HashMap<>();
-    private @Nullable AfterDataWriter afterAllWriter;
-    private final Map<ExcelWriteSupport.DerivedStyleKey, CellStyle> rowStyleCache = new HashMap<>();
-    private final Map<String, CellStyle> headerStyleCache = new HashMap<>();
+    private final ExcelWorkbook book;
+    private final ExcelSheetWriter<T> sheet;
     private boolean written;
-
-
 
     /**
      * Creates a new ExcelWriter with default initialization (white header, 1,000,000 max rows, 1000 row window).
@@ -175,33 +159,58 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements Wo
     }
 
     private ExcelWriter(WorkbookInitOptions opts) {
-        StreamingOptions streaming = opts.options();
-        this.wb = ExcelWorkbookSupport.streamingWorkbook(streaming);
-        this.settings = new WorkbookSettings(wb);
+        this(new ExcelWorkbook(opts));
+    }
+
+    private ExcelWriter(ExcelWorkbook book) {
+        this(book, book.lazySheet());
+    }
+
+    private ExcelWriter(ExcelWorkbook book, ExcelSheetWriter<T> sheet) {
+        super(sheet.cfg);
+        this.book = book;
+        this.sheet = sheet;
     }
 
     @Override
     public ExcelWriter<T> documentProperty(String key, String value) {
-        settings.documentProperty(key, value);
-        return this;
-    }
-    @Override
-    public ExcelWriter<T> headerColor(ExcelColor color) {
-        settings.headerColor(color);
+        book.documentProperty(key, value);
         return this;
     }
 
-    /**
-     * Registers a callback that writes custom content once on the last sheet after all data.
-     * <p>
-     * Called only once, on the last sheet, after {@code afterData} (if set).
-     * Useful for writing grand totals or summary rows.
-     *
-     * @param afterAllWriter the callback to invoke after all data is written
-     * @return Current ExcelWriter instance for chaining
-     */
-    public ExcelWriter<T> afterAll(AfterDataWriter afterAllWriter) {
-        this.afterAllWriter = Objects.requireNonNull(afterAllWriter, "afterAllWriter cannot be null");
+    @Override
+    public ExcelWriter<T> headerColor(ExcelColor color) {
+        book.headerColor(color);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> protectWorkbook(String password) {
+        book.protectWorkbook(password);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> password(String password) {
+        book.password(password);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> headerFontName(String fontName) {
+        book.headerFontName(fontName);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> headerFontSize(int fontSize) {
+        book.headerFontSize(fontSize);
+        return this;
+    }
+
+    @Override
+    public ExcelWriter<T> headerStyle(Consumer<HeaderStyleConfig> configurer) {
+        book.headerStyle(configurer);
         return this;
     }
 
@@ -222,48 +231,13 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements Wo
     }
 
     @Override
-    public ExcelWriter<T> protectWorkbook(String password) {
-        settings.protectWorkbook(password);
-        return this;
-    }
-
-    @Override
-    public ExcelWriter<T> password(String password) {
-        settings.password(password);
-        return this;
-    }
-
-    @Override
-    public ExcelWriter<T> headerFontName(String fontName) {
-        settings.headerFontName(fontName);
-        return this;
-    }
-
-    @Override
-    public ExcelWriter<T> headerFontSize(int fontSize) {
-        settings.headerFontSize(fontSize);
-        return this;
-    }
-
-    @Override
-    public ExcelWriter<T> headerStyle(Consumer<HeaderStyleConfig> configurer) {
-        settings.headerStyle(configurer);
-        return this;
-    }
-
-    /**
-     * Adds an already-built column to the column list.
-     *
-     * @param column The ExcelColumn to add
-     */
-    @Override
     void addColumn(ExcelColumn<T> column) {
-        this.columns.add(column);
+        sheet.addColumn(column);
     }
 
     @Override
     ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function, @Nullable ColumnConfig<T> config) {
-        return ExcelWriteSupport.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
+        return sheet.buildColumn(name, function, config);
     }
 
     /**
@@ -287,52 +261,17 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements Wo
             throw new ExcelWriteException("write() has already been called on this writer; "
                     + "a writer builds one workbook, so create a new ExcelWriter for another file");
         }
-        List<ExcelColumn<T>> writtenColumns = List.copyOf(columns);
-        SheetConfig<T> config = new SheetConfig<>(cfg);
-        SheetWriteEngine.validate(writtenColumns, config);
+        sheet.check();
         // From here the workbook (and its temp files) is in use; columns also keep per-workbook state.
         written = true;
-        SheetWriteEngine<T> engine = new SheetWriteEngine<>(wb, writtenColumns, config, settings.headerStyle(),
-                headerStyleCache, rowStyleCache, null, index -> createNamedSheet(config, index));
         try {
-            engine.start(createNamedSheet(config, 0));
-        } catch (RuntimeException e) {
-            // The first sheet may already own a temp file; release it, but keep the original exception.
-            closeWorkbookQuietly();
-            throw e;
-        }
-
-        try {
-            stream.sequential().forEach(rowData -> {
-                engine.row(rowData);
-                consumer.accept(rowData, engine.cursor());
-            });
-            int nextRow = engine.finishData();
-            if (this.afterAllWriter != null) {
-                this.afterAllWriter.write(new SheetContext(engine.sheet(), wb, nextRow, writtenColumns, engine.headerRow()));
-            }
-            engine.finishSheets();
-            ExcelWorkbookSupport.applyProtection(wb, settings.workbookPassword());
-            return new ExcelHandler(this.wb, settings.password());
-        } catch (ExcelWriteException e) {
-            closeWorkbookQuietly();
-            throw e;
-        } catch (RuntimeException e) {
-            closeWorkbookQuietly();
-            throw new ExcelWriteException("Failed to write excel", e);
-        } catch (Error e) {
+            sheet.write(stream, consumer);
+            return book.finish();
+        } catch (RuntimeException | Error e) {
             // An OutOfMemoryError or the like still must not leave the workbook's temp files behind.
-            closeWorkbookQuietly();
+            book.close();
             throw e;
         }
-    }
-
-    /** Creates a sheet of the list: the name function of the writer names it by its index, else POI does. */
-    private SXSSFSheet createNamedSheet(SheetConfig<T> config, int index) {
-        if (config.sheetNameFunction != null) {
-            return wb.createSheet(config.sheetNameFunction.apply(index));
-        }
-        return wb.createSheet();
     }
 
     /**
@@ -358,25 +297,13 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> implements Wo
         return write(StreamSupport.stream(rows.spliterator(), false));
     }
 
-    private void closeWorkbookQuietly() {
-        try {
-            ExcelWorkbookSupport.close(wb);
-        } catch (RuntimeException | IOException e) {
-            log.warn("Failed to close workbook after error", e);
-        }
-    }
-
-    /**
-     * Returns the underlying streaming workbook instance.
-     *
-     * @return SXSSFWorkbook instance
-     */
+    /** The underlying streaming workbook instance. */
     SXSSFWorkbook getWb() {
-        return wb;
+        return book.wb();
     }
 
     Map<String, CellStyle> getCellStyleCache() {
-        return cellStyleCache;
+        return book.cellStyleCache();
     }
 
     ColumnStyleConfig.@Nullable DefaultStyleConfig<T> getDefaultStyleConfig() {

@@ -16,7 +16,7 @@ class NamedRangeTest {
         var handler = ExcelWriter.<String>create()
                 .column("Category", s -> s)
                 .afterData(ctx -> {
-                    ctx.namedRange("Categories", "Sheet0!$A$2:$A$4");
+                    ctx.namedRange("Categories", "Sheet!$A$2:$A$4");
                     return ctx.getCurrentRow();
                 })
                 .write(Stream.of("A", "B", "C"));
@@ -27,7 +27,7 @@ class NamedRangeTest {
         try (var wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
             var name = wb.getName("Categories");
             assertNotNull(name, "Named range 'Categories' should exist");
-            assertEquals("Sheet0!$A$2:$A$4", name.getRefersToFormula());
+            assertEquals("Sheet!$A$2:$A$4", name.getRefersToFormula());
         }
     }
 

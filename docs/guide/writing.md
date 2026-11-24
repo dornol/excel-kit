@@ -171,7 +171,8 @@ settings of the column still apply.
 
 ## Settings shared by `ExcelWriter` and `ExcelSheetWriter`
 
-`ExcelWriter` (one sheet, rolled over when full) and `ExcelSheetWriter` (a sheet of an `ExcelWorkbook`) have the same
+`ExcelWriter` (a workbook with one sheet, rolled over when full) and `ExcelSheetWriter` (a sheet of an `ExcelWorkbook`)
+write the same way (`ExcelWriter` hands its settings to an `ExcelSheetWriter` and its workbook) and have the same
 columns and sheet settings: they extend `SheetWriter<T, SELF>`, which is public so that a setting is written once. For
 example a standard look for the reports of a team:
 
