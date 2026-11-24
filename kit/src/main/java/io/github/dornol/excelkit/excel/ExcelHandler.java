@@ -353,14 +353,22 @@ public final class ExcelHandler implements FileHandler {
     private void encryptAndWrite(OutputStream outputStream, String password) throws IOException {
         markConsumed();
 
+        try {
+            encryptConsumed(outputStream, password);
+        } finally {
+            // A failure before the plain copy was written (no disk, no permission) must not leave the workbook open.
+            closeConsumedWorkbook();
+        }
+    }
+
+    private void encryptConsumed(OutputStream outputStream, String password) throws IOException {
         try (TempWorkspace workspace = TempWorkspace.create()) {
             Path plainFile = workspace.newFile("excel-plain", ".tmp");
             // Write the workbook to a temp file first, so the SXSSF window is released before encrypting.
             try (OutputStream plainOut = Files.newOutputStream(plainFile)) {
                 writeWorkbookTo(plainOut);
-            } finally {
-                closeConsumedWorkbook();
             }
+            closeConsumedWorkbook();
 
             // The encrypted OLE container is built in a file, not in heap: a POIFSFileSystem created over a file
             // keeps its blocks there, and the cipher works through the plain file in small chunks. Memory use

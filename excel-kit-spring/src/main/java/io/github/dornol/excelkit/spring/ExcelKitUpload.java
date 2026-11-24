@@ -5,6 +5,7 @@ import io.github.dornol.excelkit.core.read.ReadLimits;
 import io.github.dornol.excelkit.core.detect.TabularFileDetector;
 import io.github.dornol.excelkit.core.detect.TabularFileType;
 import jakarta.validation.Validator;
+import org.jspecify.annotations.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -112,7 +113,7 @@ public final class ExcelKitUpload {
      * @return the collected result
      */
     public static <T> UploadResult<T> excel(MultipartFile file, ExcelKitSchema<T> schema,
-            Supplier<T> supplier, Validator validator, ReadLimits limits) {
+            Supplier<T> supplier, @Nullable Validator validator, ReadLimits limits) {
         return readDetected("Excel", TabularFileType.XLSX, file, (input, consumer) ->
                 schema.excelReader(supplier, validator).limits(limits).read(input, consumer));
     }
@@ -135,7 +136,7 @@ public final class ExcelKitUpload {
             MultipartFile file,
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
-            Validator validator) {
+            @Nullable Validator validator) {
         return excel(file, schema, supplier, validator, ReadLimits.UPLOAD);
     }
 
@@ -167,7 +168,7 @@ public final class ExcelKitUpload {
      * @return the collected result
      */
     public static <T> UploadResult<T> csv(MultipartFile file, ExcelKitSchema<T> schema,
-            Supplier<T> supplier, Validator validator, ReadLimits limits) {
+            Supplier<T> supplier, @Nullable Validator validator, ReadLimits limits) {
         return readDetected("CSV", TabularFileType.CSV, file, (input, consumer) ->
                 schema.csvReader(supplier, validator).limits(limits).read(input, consumer));
     }
@@ -190,7 +191,7 @@ public final class ExcelKitUpload {
             MultipartFile file,
             ExcelKitSchema<T> schema,
             Supplier<T> supplier,
-            Validator validator) {
+            @Nullable Validator validator) {
         return csv(file, schema, supplier, validator, ReadLimits.UPLOAD);
     }
 }
