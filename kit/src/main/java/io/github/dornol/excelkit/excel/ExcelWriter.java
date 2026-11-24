@@ -637,7 +637,7 @@ public class ExcelWriter<T> extends AbstractSheetWriter<T, ExcelWriter<T>> {
         // With no row at all the sheet says so; the line is no data row, so a summary below it still ends at the header.
         int lastDataRow = cursor().getRowOfSheet();
         if (cursor().getCurrentTotal() == 0) {
-            ExcelWriteSupport.writeEmptyMessage(sheet(), wb, cursor(), options.columns(), options.sheetConfig(), rowStyleCache);
+            ExcelWriteSupport.writeEmptyMessage(sheet(), wb, cursor(), options.columns(), options.sheetConfig(), rowStyleCache, null);
         }
         int nextRow = ExcelWriteSupport.writeAfterDataAndSummary(sheet(), wb, cursor().getRowOfSheet(),
                 options.columns(), headerRowIndex(), options.sheetConfig(), execution().values(), lastDataRow);

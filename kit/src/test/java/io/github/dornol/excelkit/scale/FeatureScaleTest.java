@@ -148,6 +148,73 @@ class FeatureScaleTest {
     }
 
     @Test
+    void aComboChartOnEverySheetOfAMillionRowsHoldsNothingPerRow() throws IOException {
+        Path file = dir.resolve("combo.xlsx");
+        AtomicLong peak = new AtomicLong();
+        ExcelWriter.<Line>create().sheetName("Data").maxRows(400_000)
+                .column("Name", Line::name)
+                .column("Id", Line::id)
+                .column("Twice", l -> l.id() * 2)
+                .column("Third", l -> l.id() % 100)
+                .chart(c -> c.type(io.github.dornol.excelkit.excel.ExcelChartConfig.ChartType.BAR).categoryColumn(0)
+                        .valueColumn(1, "Id").lineColumn(2, "Twice").secondaryLineColumn(3, "Third"))
+                .onProgress(250_000, (total, cursor) -> peak.accumulateAndGet(usedMiB(), Math::max))
+                .write(LongStream.range(0, ROWS).mapToObj(Line::new))
+                .writeTo(file);
+        int sheets = 0;
+        try (ZipFile zip = new ZipFile(file.toFile())) {
+            while (zip.getEntry("xl/worksheets/sheet" + (sheets + 1) + ".xml") != null) sheets++;
+            long charts = zip.stream().filter(e -> e.getName().matches("xl/charts/chart\\d+\\.xml")).count();
+            assertEquals(sheets, charts, "one chart for every sheet, and no more");
+            for (int c = 1; c <= charts; c++) {
+                String xml = new String(zip.getInputStream(zip.getEntry("xl/charts/chart" + c + ".xml")).readAllBytes());
+                assertEquals(3, xml.split("<c:ser>", -1).length - 1, "three series on chart " + c);
+                assertTrue(xml.contains("<c:barChart>") && xml.contains("<c:lineChart>"), "bars and lines on chart " + c);
+            }
+        }
+        System.out.printf("[scale] %,d rows over %d sheets with a combo chart each, peak heap after gc %d MiB%n",
+                ROWS, sheets, peak.get());
+        assertTrue(sheets >= 3, "the rows are spread over several sheets: " + sheets);
+        assertTrue(peak.get() < 200, "the charts held " + peak.get() + " MiB");
+        Files.delete(file);
+    }
+
+    @Test
+    void anEmptyMessageIsWrittenOnlyWhereThereAreNoRowsAndCostsNoStylePerSheet() throws IOException {
+        Path file = dir.resolve("empty.xlsx");
+        int emptySheets = 300;
+        try (var workbook = io.github.dornol.excelkit.excel.ExcelWorkbook.create()) {
+            for (int i = 0; i < emptySheets; i++) {
+                workbook.<Line>sheet("Empty " + i).column("Name", Line::name).column("Id", Line::id)
+                        .emptyMessage("No data for " + i).write(java.util.List.<Line>of());
+            }
+            // a big sheet that has rows: it gets no message
+            workbook.<Line>sheet("Big").column("Name", Line::name).column("Id", Line::id).emptyMessage("never shown")
+                    .write(LongStream.range(0, ROWS / 4).mapToObj(Line::new));
+            workbook.finish().writeTo(file);
+        }
+        try (ZipFile zip = new ZipFile(file.toFile())) {
+            String styles = new String(zip.getInputStream(zip.getEntry("xl/styles.xml")).readAllBytes());
+            int cellXfs = styles.split("<cellXfs", -1).length > 1
+                    ? styles.substring(styles.indexOf("<cellXfs")).split("<xf ", -1).length - 1 : 0;
+            assertTrue(cellXfs < 40, "the message style is shared by every sheet: " + cellXfs + " cell formats");
+            assertEquals(emptySheets, countOccurrencesOf(zip, "<mergeCell "), "one merged line per empty sheet, none on the big one");
+        }
+        Files.delete(file);
+    }
+
+    private static long countOccurrencesOf(ZipFile zip, String needle) throws IOException {
+        long total = 0;
+        for (int i = 1; zip.getEntry("xl/worksheets/sheet" + i + ".xml") != null; i++) {
+            String xml = new String(zip.getInputStream(zip.getEntry("xl/worksheets/sheet" + i + ".xml")).readAllBytes(),
+                    java.nio.charset.StandardCharsets.ISO_8859_1);
+            int from = 0;
+            while ((from = xml.indexOf(needle, from)) >= 0) { total++; from += needle.length(); }
+        }
+        return total;
+    }
+
+    @Test
     void fillMergedCellsReadsABigSheetWithManyRegionsInBoundedHeap() throws IOException {
         Path file = dir.resolve("merged-read.xlsx");
         long rows = Math.min(ROWS, 1_000_000L);

@@ -267,6 +267,37 @@ class EmptyMessageTest {
         }
 
         @Test
+        void theSheetsOfAWorkbookShareOneStyleForTheLine() throws IOException {
+            int one = cellFormats(workbookOfEmptySheets(1));
+            int fifty = cellFormats(workbookOfEmptySheets(50));
+            assertEquals(one, fifty, "fifty sheets with the line need no more cell formats than one");
+        }
+
+        @Test
+        void sharedStyleStillGivesEverySheetItsOwnHeightColumnsAndText() throws IOException {
+            try (var workbook = ExcelWorkbook.create()) {
+                workbook.<Row>sheet("Two").column("Name", Row::name).column("Amount", Row::amount)
+                        .rowHeight(30).emptyMessage("two columns").write(NONE);
+                workbook.<Row>sheet("Three").column("Name", Row::name).column("Amount", Row::amount).column("Qty", Row::qty)
+                        .rowHeight(18).emptyMessage("three columns").write(NONE);
+                workbook.<Row>sheet("One").column("Name", Row::name).emptyMessage("one column").write(NONE);
+                try (var wb = open(workbook.finish())) {
+                    assertEquals("A2:B2", wb.getSheetAt(0).getMergedRegion(0).formatAsString());
+                    assertEquals(30f, wb.getSheetAt(0).getRow(1).getHeightInPoints(), 0.01);
+                    assertEquals("A2:C2", wb.getSheetAt(1).getMergedRegion(0).formatAsString());
+                    assertEquals(18f, wb.getSheetAt(1).getRow(1).getHeightInPoints(), 0.01);
+                    assertEquals(0, wb.getSheetAt(2).getNumMergedRegions());
+                    assertEquals("one column", wb.getSheetAt(2).getRow(1).getCell(0).getStringCellValue());
+                    var a = (XSSFCellStyle) wb.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
+                    var c = (XSSFCellStyle) wb.getSheetAt(1).getRow(1).getCell(0).getCellStyle();
+                    assertEquals(a.getIndex(), c.getIndex(), "one shared style");
+                    assertEquals(HorizontalAlignment.CENTER, c.getAlignment());
+                    assertTrue(wb.getFontAt(c.getFontIndex()).getItalic());
+                }
+            }
+        }
+
+        @Test
         void aFileWithTheLineReadsBackWithItAsARow() throws IOException {
             var out = new ByteArrayOutputStream();
             writer().emptyMessage("No data").write(NONE).writeTo(out);
@@ -280,6 +311,24 @@ class EmptyMessageTest {
             try (var wb = open(writer().write(NONE))) {
                 assertEquals(0, wb.getSheetAt(0).getLastRowNum());
             }
+        }
+    }
+
+    private static byte[] workbookOfEmptySheets(int sheets) throws IOException {
+        try (var workbook = ExcelWorkbook.create()) {
+            for (int i = 0; i < sheets; i++) {
+                workbook.<Row>sheet("S" + i).column("Name", Row::name).column("Amount", Row::amount)
+                        .emptyMessage("No data").write(NONE);
+            }
+            var out = new ByteArrayOutputStream();
+            workbook.finish().writeTo(out);
+            return out.toByteArray();
+        }
+    }
+
+    private static int cellFormats(byte[] file) throws IOException {
+        try (var wb = new XSSFWorkbook(new ByteArrayInputStream(file))) {
+            return wb.getNumCellStyles();
         }
     }
 }

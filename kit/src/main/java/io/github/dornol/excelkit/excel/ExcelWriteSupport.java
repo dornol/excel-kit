@@ -95,28 +95,36 @@ class ExcelWriteSupport {
         }
     }
 
+    private static final String EMPTY_MESSAGE_STYLE = "excel-kit:empty-message";
+
+    private static <T> CellStyle emptyMessageStyle(SXSSFWorkbook wb, SheetConfig<T> cfg) {
+        CellStyle created = createDerivedStyle(wb, cfg.maxCellStyles);
+        XSSFFont font = (XSSFFont) wb.createFont();
+        font.setItalic(true);
+        font.setColor(new XSSFColor(new byte[]{(byte) 128, (byte) 128, (byte) 128}));
+        created.setFont(font);
+        created.setAlignment(HorizontalAlignment.CENTER);
+        created.setVerticalAlignment(VerticalAlignment.CENTER);
+        return created;
+    }
+
     /**
      * Writes the line of an empty sheet below the header: the text centered over all the columns, in gray italics.
      * It takes a row of the sheet but is no data row.
      */
     static <T> void writeEmptyMessage(SXSSFSheet sheet, SXSSFWorkbook wb, Cursor cursor, List<ExcelColumn<T>> columns,
-                                      SheetConfig<T> cfg, Map<DerivedStyleKey, CellStyle> styleCache) {
+                                      SheetConfig<T> cfg, Map<DerivedStyleKey, CellStyle> styleCache,
+                                      @Nullable Map<String, CellStyle> workbookStyles) {
         String text = cfg.emptyMessage;
         if (text == null) return;
         int rowIndex = cursor.getRowOfSheet();
         if (rowIndex >= ExcelLimits.SHEET_ROW_CAPACITY) {
             throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: no room for the empty message");
         }
-        CellStyle style = styleCache.computeIfAbsent(new DerivedStyleKey(-1, -1, "empty-message"), k -> {
-            CellStyle created = createDerivedStyle(wb, cfg.maxCellStyles);
-            XSSFFont font = (XSSFFont) wb.createFont();
-            font.setItalic(true);
-            font.setColor(new XSSFColor(new byte[]{(byte) 128, (byte) 128, (byte) 128}));
-            created.setFont(font);
-            created.setAlignment(HorizontalAlignment.CENTER);
-            created.setVerticalAlignment(VerticalAlignment.CENTER);
-            return created;
-        });
+        // The style does not depend on the columns, so the sheets of a workbook share one.
+        CellStyle style = workbookStyles != null
+                ? workbookStyles.computeIfAbsent(EMPTY_MESSAGE_STYLE, k -> emptyMessageStyle(wb, cfg))
+                : styleCache.computeIfAbsent(new DerivedStyleKey(-1, -1, "empty-message"), k -> emptyMessageStyle(wb, cfg));
         SXSSFRow row = sheet.createRow(rowIndex);
         row.setHeightInPoints(cfg.rowHeightInPoints);
         cursor.plusRow();
