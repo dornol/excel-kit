@@ -220,7 +220,7 @@ early-stop state, and elapsed time. `readReport(input, maxCollectedErrors)` adds
 error sample and an `errorsTruncated` indicator.
 
 `TabularFileDetector.detect(path)` distinguishes XLSX, XLS, CSV, and unknown content by
-signature. `detectDetailed(input)` also reports confidence, charset, delimiter, and whether
+signature (an OLE2 container is always `XLS`, a password-protected `.xlsx` too: read that without detection, with `password(...)`). `detectDetailed(input)` also reports confidence, charset, delimiter, and whether
 excel-kit supports reading the detected format. Caller-provided streams remain caller-owned.
 
 ## Files that are not an .xlsx

@@ -576,7 +576,9 @@ Only `.xlsx` workbooks (and CSV, with `CsvReader`) are read. A file that is some
 | another OLE2 document, text, a CSV, an image | it is not an Excel workbook (and why: an `.xlsx` is a ZIP archive) |
 | empty | it is empty |
 
-`TabularFileDetector` tells the same kinds apart by signature when you want to check before reading.
+`TabularFileDetector` tells CSV, XLSX and the OLE2 containers apart by signature when you want to check before reading;
+an `.xls` and a password-protected `.xlsx` are both OLE2 containers, which it reports alike as `XLS`, so read a
+password-protected workbook without detection, giving the reader its `password(...)`.
 
 ## External workbook compatibility
 
