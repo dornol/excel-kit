@@ -78,6 +78,17 @@ class ReadHeaderOptionsTest {
     }
 
     @Test
+    void csvReader_blankFirstHeaderCell_readsTheSameWithAndWithoutBom() {
+        for (String bom : new String[]{"", "\uFEFF"}) {
+            List<Map<String, String>> rows = new ArrayList<>();
+
+            CsvReader.forMap().read(csv(bom + ",Name\n1,a\n"), r -> rows.add(r.data()));
+
+            assertEquals(List.of(Map.of("Name", "a")), rows, "bom=" + !bom.isEmpty());
+        }
+    }
+
+    @Test
     void csvReader_strictHeaders_failsWhenPositionalColumnHasNoHeader() {
         String csv = "Name\nAlice\n";
 

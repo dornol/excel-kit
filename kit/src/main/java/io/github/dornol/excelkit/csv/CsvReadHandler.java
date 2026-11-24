@@ -273,7 +273,9 @@ final class CsvReadHandler<T> extends AbstractReadHandler<T> {
     private void prepareColumnHeaders(String[] line) {
         if (line.length > 0 && line[0] != null && line[0].startsWith("\uFEFF")) {
             line[0] = line[0].substring(1);
-            if (line[0].isEmpty()) {
+            // A file that is only a BOM has no header. A blank first cell next to others is as valid with a BOM as
+            // without one (an index column of a pivot export).
+            if (line.length == 1 && line[0].isEmpty()) {
                 throw new CsvReadException("First header column is empty after BOM removal");
             }
         }
