@@ -13,6 +13,25 @@ CsvHandler ch = CsvWriter.<Row>create()
 ch.writeTo(Path.of("rows.csv"));
 ```
 
+### Columns
+
+The column methods are those of `ExcelWriter`, with the settings a text file can have: `column`, `columnIf`, `constColumn`,
+`constColumnIf` and `rowNumberColumn`. A column takes a configurer, `CsvColumnConfig`, with `nullValue(...)`: what to write
+where the value is `null` (an empty field without it).
+
+```java
+CsvWriter.<Item>create()
+    .rowNumberColumn("No.")                                       // 1, 2, 3, ...
+    .column("Name", Item::name)
+    .column("Status", Item::status, c -> c.nullValue("N/A"))      // null -> N/A
+    .column("Qty", Item::qty, c -> c.nullValue(0))
+    .write(items);
+```
+
+The placeholder goes through the same rules as any value: it is quoted when it has to be, and with the injection
+defense on (below) a text that starts with `=`, `+`, `-` or `@` gets a leading `'`, so use `"N/A"` rather than `"-"`.
+A CSV has no styles or types: format a date or a number in the function.
+
 ### Options
 
 ```java

@@ -79,6 +79,7 @@ class NullArgumentContractTest {
                 return new Receiver(workbook.<String>sheet("S"), workbook);
             }),
             new Target(CsvWriter.class, () -> new Receiver(CsvWriter.<String>create(), NOTHING)),
+            new Target(io.github.dornol.excelkit.csv.CsvColumnConfig.class, () -> new Receiver(construct(io.github.dornol.excelkit.csv.CsvColumnConfig.class), NOTHING)),
             new Target(CsvReader.class, () -> new Receiver(CsvReader.setter(Object::new), NOTHING)),
             new Target(ExcelReader.class, () -> new Receiver(ExcelReader.setter(Object::new), NOTHING)),
             new Target(io.github.dornol.excelkit.excel.read.ExcelWorkbookInspector.class, () -> new Receiver(
