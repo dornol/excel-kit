@@ -27,7 +27,9 @@ import java.util.stream.StreamSupport;
  * Writes tabular (list) data into an existing template sheet starting at a given row.
  * <p>
  * Created by {@link ExcelTemplateWriter#list(int)} or {@link ExcelTemplateWriter#list(int, int)}.
- * Reuses the same column definition and write utilities as {@link ExcelSheetWriter}.
+ * The columns are those of every writer ({@link ColumnsWriter}: {@code column}, {@code columnIf}, {@code constColumn},
+ * {@code rowNumberColumn}...), written with the same utilities as {@link ExcelSheetWriter}. The sheet settings of a
+ * {@link SheetWriter} (frozen panes, filter, chart, rollover...) are not here: the template sheet has them already.
  *
  * <pre>{@code
  * writer.<Item>list(5)
@@ -45,7 +47,7 @@ import java.util.stream.StreamSupport;
  * @author dhkim
  * @since 0.8.2
  */
-public class TemplateListWriter<T> {
+public class TemplateListWriter<T> extends ColumnsWriter<T, TemplateListWriter<T>> {
 
     private final ExcelTemplateWriter parent;
     private final SXSSFWorkbook wb;
@@ -69,60 +71,15 @@ public class TemplateListWriter<T> {
     }
 
     /**
-     * Adds a column using a simple function.
+     * Sets how row value extraction and cell value write failures are handled.
+     * Defaults to {@link ExcelWriteErrorPolicy#FAIL_FAST}.
      *
-     * @param name the column header
-     * @param function function to extract the cell value
+     * @param policy what to do with a value that cannot be written
      * @return this writer for chaining
+     * @since 0.29.0
      */
-    public TemplateListWriter<T> column(String name, Function<T, @Nullable Object> function) {
-        Objects.requireNonNull(function, "function cannot be null");
-        columns.add(buildColumn(name, (r, c) -> function.apply(r), null));
-        return this;
-    }
-
-    /**
-     * Adds a column with additional configuration.
-     *
-     * @param name the column header
-     * @param function function to extract the cell value
-     * @param cfg consumer to configure column styling
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> column(String name, Function<T, @Nullable Object> function,
-                                         Consumer<ColumnConfig<T>> cfg) {
-        Objects.requireNonNull(function, "function cannot be null");
-        ColumnConfig<T> config = new ColumnConfig<>();
-        cfg.accept(config);
-        columns.add(buildColumn(name, (r, c) -> function.apply(r), config));
-        return this;
-    }
-
-    /**
-     * Adds a column using a row function with cursor support.
-     *
-     * @param name the column header
-     * @param function function to extract the cell value
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> column(String name, RowFunction<T, @Nullable Object> function) {
-        columns.add(buildColumn(name, function, null));
-        return this;
-    }
-
-    /**
-     * Adds a column using a row function with cursor support and additional configuration.
-     *
-     * @param name the column header
-     * @param function function to extract the cell value
-     * @param cfg consumer to configure column styling
-     * @return this writer for chaining
-     */
-    public TemplateListWriter<T> column(String name, RowFunction<T, @Nullable Object> function,
-                                         Consumer<ColumnConfig<T>> cfg) {
-        ColumnConfig<T> config = new ColumnConfig<>();
-        cfg.accept(config);
-        columns.add(buildColumn(name, function, config));
+    public TemplateListWriter<T> writeErrorPolicy(ExcelWriteErrorPolicy policy) {
+        cfg.writeErrorPolicy = Objects.requireNonNull(policy, "policy must not be null");
         return this;
     }
 
@@ -308,6 +265,7 @@ public class TemplateListWriter<T> {
     }
 
     private ExcelTemplateWriter writeInternal(Stream<T> stream, boolean writeHeaders) {
+        Objects.requireNonNull(stream, "stream cannot be null");
         try {
             return writeRows(stream, writeHeaders);
         } catch (ExcelKitException e) {
@@ -377,7 +335,13 @@ public class TemplateListWriter<T> {
         return parent;
     }
 
-    private ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
+    @Override
+    void addColumn(ExcelColumn<T> column) {
+        columns.add(column);
+    }
+
+    @Override
+    ExcelColumn<T> buildColumn(String name, RowFunction<T, @Nullable Object> function,
                                        @Nullable ColumnConfig<T> config) {
         return ExcelWriteSupport.buildColumn(wb, cellStyleCache, cfg.defaultStyleConfig, name, function, config);
     }

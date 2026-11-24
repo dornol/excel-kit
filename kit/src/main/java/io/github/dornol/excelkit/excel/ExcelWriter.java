@@ -251,19 +251,6 @@ public class ExcelWriter<T> extends SheetWriter<T, ExcelWriter<T>> {
     }
 
     /**
-     * Adds a 1-based sequential row-number column (spans all sheets when auto-rolled).
-     *
-     * @param name the column header name (e.g. {@code "No."})
-     * @return this writer for chaining
-     * @since 0.16.11
-     */
-    public ExcelWriter<T> rowNumberColumn(String name) {
-        column(name, (row, cursor) -> cursor.getCurrentTotal(),
-                c -> c.type(ExcelDataType.LONG));
-        return this;
-    }
-
-    /**
      * Registers a callback that writes custom content once on the last sheet after all data.
      * <p>
      * Called only once, on the last sheet, after {@code afterData} (if set).

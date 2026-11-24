@@ -102,16 +102,6 @@ public class ExcelSheetWriter<T> extends SheetWriter<T, ExcelSheetWriter<T>> {
     }
 
     /**
-     * Adds a 1-based sequential row-number column.
-     *
-     * @since 0.16.11
-     */
-    public ExcelSheetWriter<T> rowNumberColumn(String name) {
-        return column(name, (row, cursor) -> cursor.getCurrentTotal(),
-                c -> c.type(ExcelDataType.LONG));
-    }
-
-    /**
      * Writes the data stream to this sheet (with optional auto-rollover).
      *
      * <p>

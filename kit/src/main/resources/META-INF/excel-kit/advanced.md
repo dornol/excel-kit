@@ -343,11 +343,17 @@ writer.afterData(ctx -> {
 try (var tw = new ExcelTemplateWriter(templateInputStream)) {
     tw.cell("B2", "Report Title");
     tw.cell("B3", LocalDate.now());
-    tw.<Product>list("Name", Product::name)
-        .list("Price", Product::price)
-        .write(productStream, outputStream);
+    tw.<Product>list(5)                                   // the list starts at the 6th row (0-based row 5)
+        .rowNumberColumn("No.")
+        .column("Name", Product::name)
+        .column("Price", Product::price, c -> c.type(ExcelDataType.INTEGER))
+        .write(productStream);
+    tw.finish().writeTo(outputStream);
 }
 ```
+
+The list has the columns of every writer (`column`, `columnIf`, `constColumn`, `constColumnIf`, `rowNumberColumn`) and
+`writeErrorPolicy(...)`; the sheet settings (frozen panes, filter, rollover) are the template's.
 
 A template the application did not make itself (an upload) may be unusable. A stream that is not a usable `.xlsx`
 (not OOXML, damaged, without sheets) fails with `ExcelWriteException` ("Failed to read the template ...", the cause

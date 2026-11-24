@@ -8,6 +8,7 @@
 # against 0.28.0 must be recompiled.
 io.github.dornol.excelkit.excel.ExcelWriter
 io.github.dornol.excelkit.excel.ExcelSheetWriter
+io.github.dornol.excelkit.excel.TemplateListWriter
 io.github.dornol.excelkit.excel.ExcelColumn$ExcelColumnBuilder
 # ReadOptions gained the uniqueKey component, so its canonical constructor has one more parameter (use ReaderOptions.Builder).
 io.github.dornol.excelkit.core.read.ReadOptions
