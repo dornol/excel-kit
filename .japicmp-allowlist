@@ -25,3 +25,8 @@ io.github.dornol.excelkit.schema.ExcelKitSchema$Builder#writeErrorPolicy(io.gith
 # ExcelWriter.InitOptions and ExcelWorkbook.InitOptions became one top-level WorkbookInitOptions; the settings they share are WorkbookOptions.
 io.github.dornol.excelkit.excel.ExcelWriter$InitOptions
 io.github.dornol.excelkit.excel.ExcelWorkbook$InitOptions
+# AbstractReadHandler takes one ReadSessionConfig instead of the supplier, mapper, validator, selected columns and ReadOptions as separate
+# constructor parameters; its only subclasses are the final CSV and Excel handlers of this library.
+io.github.dornol.excelkit.core.read.AbstractReadHandler
+# SchemaColumn.writeConfigurer() is a Consumer<ColumnConfig<T>> now that ExcelColumn.ExcelColumnBuilder is gone.
+io.github.dornol.excelkit.schema.ExcelKitSchema$SchemaColumn
