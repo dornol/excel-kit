@@ -171,7 +171,7 @@ public final class ExcelSamples {
                 "opens: no repair prompt",
                 "chart sheet=Report count=1 topLeftRowGreaterThan=7; chart sheet=\"Report (2)\" count=1 topLeftRowGreaterThan=7; chart sheet=\"Report (3)\" count=1 topLeftRowGreaterThan=5",
                 "visual: each chart plots the 4 / 4 / 2 items of its sheet",
-                "cellText sheet=\"Report (3)\" cell=B4 text=17 (Sum of 8 and 9, #,##0); cellText sheet=\"Report (3)\" cell=B5 text=8.50 (Average: 8.5, not 9, although the Qty cells are whole numbers)",
+                "cellText sheet=\"Report (3)\" cell=B4 text=17 (Sum of 8 and 9, #,##0); cellText sheet=\"Report (3)\" cell=B5 text=8.5 (Average: 8.5, not 9, although the Qty cells are whole numbers; an average of 3 reads 3, not 3.00)",
                 "chartAxis sheet=Report majorUnit=1 (valueAxisMajorUnit(1)); the value axis labels of the first chart read 0 1 2 3, not 0 1 1 2 2 3 3 4 (the Qty cells have the whole-number format #,##0 and Excel would choose 0.5)");
 
         // 6. encryption

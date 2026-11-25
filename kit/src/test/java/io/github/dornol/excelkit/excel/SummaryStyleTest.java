@@ -128,7 +128,7 @@ class SummaryStyleTest {
         try (var wb = open(writer().summary(s -> s.label("Total").sum("Qty").average("Qty").min("Qty").max("Qty")).write(rows))) {
             var sheet = wb.getSheetAt(0);
             assertEquals("#,##0", sheet.getRow(3).getCell(2).getCellStyle().getDataFormatString(), "sum");
-            assertEquals("#,##0.00", sheet.getRow(4).getCell(2).getCellStyle().getDataFormatString(), "8.5 must not read 9");
+            assertEquals("#,##0.0", sheet.getRow(4).getCell(2).getCellStyle().getDataFormatString(), "8.5 must not read 9");
             assertEquals("#,##0", sheet.getRow(5).getCell(2).getCellStyle().getDataFormatString(), "min");
             assertEquals("#,##0", sheet.getRow(6).getCell(2).getCellStyle().getDataFormatString(), "max");
             assertEquals(8.5, new org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator(wb)
@@ -147,16 +147,25 @@ class SummaryStyleTest {
 
     @Test
     void formatOfTellsWhatEachOperationTakes() {
-        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.SUM, "#,##0"));
-        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.MIN, "#,##0.00"));
-        assertEquals("#,##0", ExcelSummary.formatOf(ExcelSummary.Op.COUNT, "#,##0.00"));
-        assertEquals("#,##0", ExcelSummary.formatOf(ExcelSummary.Op.COUNTA, "yyyy-mm-dd"));
-        assertEquals("#,##0.00", ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "#,##0"));
-        assertEquals("0.00", ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "0"));
-        assertEquals("0.00%", ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "0%"));
-        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "#,##0.00"), "decimals already");
-        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "General"));
-        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "yyyy-mm-dd"));
+        var sum = ExcelSummary.Op.SUM;
+        assertNull(ExcelSummary.formatOf(sum, "#,##0", 1.0));
+        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.MIN, "#,##0.00", 1.0));
+        assertEquals("#,##0", ExcelSummary.formatOf(ExcelSummary.Op.COUNT, "#,##0.00", 2.0));
+        assertEquals("#,##0", ExcelSummary.formatOf(ExcelSummary.Op.COUNTA, "yyyy-mm-dd", 2.0));
+        var avg = ExcelSummary.Op.AVERAGE;
+        // the decimals the average has, up to two: none for 3, one for 8.5, two for 8.25
+        assertNull(ExcelSummary.formatOf(avg, "#,##0", 3.0), "3 stays #,##0: no .00");
+        assertEquals("#,##0.0", ExcelSummary.formatOf(avg, "#,##0", 8.5));
+        assertEquals("#,##0.00", ExcelSummary.formatOf(avg, "#,##0", 8.25));
+        assertEquals("#,##0.00", ExcelSummary.formatOf(avg, "#,##0", 8.333333333));
+        assertNull(ExcelSummary.formatOf(avg, "#,##0", 8.001), "8.001 rounds to 8.00, which is 8");
+        assertEquals("0.0", ExcelSummary.formatOf(avg, "0", 2.5));
+        assertEquals("0.0%", ExcelSummary.formatOf(avg, "0%", 0.125), "12.5%");
+        assertNull(ExcelSummary.formatOf(avg, "0%", 0.12), "12%");
+        assertEquals("#,##0.00", ExcelSummary.formatOf(avg, "#,##0", null), "unknown value: two decimals");
+        assertNull(ExcelSummary.formatOf(avg, "#,##0.00", 3.0), "decimals already");
+        assertNull(ExcelSummary.formatOf(avg, "General", 8.5));
+        assertNull(ExcelSummary.formatOf(avg, "yyyy-mm-dd", 8.5));
     }
 
     @Test

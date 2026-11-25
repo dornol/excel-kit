@@ -124,7 +124,7 @@ class ExcelSamplesTest {
             // the last sheet holds the items 8 and 9: the average is 8.5 and reads so, the sum 17
             XSSFSheet last = wb.getSheetAt(2);
             assertEquals("#,##0", last.getRow(3).getCell(1).getCellStyle().getDataFormatString());
-            assertEquals("#,##0.00", last.getRow(4).getCell(1).getCellStyle().getDataFormatString());
+            assertEquals("#,##0.0", last.getRow(4).getCell(1).getCellStyle().getDataFormatString());
             var evaluator = wb.getCreationHelper().createFormulaEvaluator();
             assertEquals(17, evaluator.evaluate(last.getRow(3).getCell(1)).getNumberValue());
             assertEquals(8.5, evaluator.evaluate(last.getRow(4).getCell(1)).getNumberValue());

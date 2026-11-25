@@ -180,20 +180,36 @@ public class ExcelSummary {
     /**
      * The number format a summary cell takes instead of its column's, or {@code null} for the column's own. A sum, a
      * minimum and a maximum read in the unit of the column; a count is a number of cells, whatever the column holds
-     * (not "$2.00" or a date); an average of whole numbers has decimals (8.5, not 9).
+     * (not "$2.00" or a date); an average of whole numbers shows the decimals it has, up to two (8.5, not 9; 3, not 3.00).
+     *
+     * @param calculated the result written next to the formula, or {@code null} when it is not known
      */
-    static @Nullable String formatOf(Op op, String columnFormat) {
+    static @Nullable String formatOf(Op op, String columnFormat, @Nullable Double calculated) {
         return switch (op) {
             case COUNT, COUNTA -> "#,##0";
-            case AVERAGE -> withDecimals(columnFormat);
+            case AVERAGE -> withDecimals(columnFormat, calculated);
             default -> null;
         };
     }
 
-    /** {@code #,##0} becomes {@code #,##0.00}, {@code 0%} becomes {@code 0.00%}; a format with decimals, text or dates is kept. */
-    private static @Nullable String withDecimals(String format) {
+    /**
+     * A whole-number format ({@code #,##0}, {@code 0}, {@code 0%}) with the decimals the value needs, up to two, so that
+     * 3 stays {@code 3}, 8.5 reads {@code 8.5} and 8.25 reads {@code 8.25}; without a known value, two decimals. The
+     * format is fixed when the file is written: an average that a later edit turns fractional shows the decimals of the
+     * one written. A format with decimals, text or dates is kept ({@code null}).
+     */
+    private static @Nullable String withDecimals(String format, @Nullable Double calculated) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("([#0,]+)(%?)").matcher(format);
-        return m.matches() ? m.group(1) + ".00" + m.group(2) : null;
+        if (!m.matches()) return null;
+        int decimals = 2;
+        if (calculated != null && Double.isFinite(calculated)) {
+            double shown = calculated * (m.group(2).isEmpty() ? 1 : 100); // a percent format shows the value times 100
+            java.math.BigDecimal rounded = java.math.BigDecimal.valueOf(shown).setScale(2, java.math.RoundingMode.HALF_UP)
+                    .stripTrailingZeros();
+            decimals = Math.max(0, rounded.scale());
+        }
+        if (decimals == 0) return null;
+        return m.group(1) + "." + "0".repeat(decimals) + m.group(2);
     }
 
     Map<Op, List<String>> entries() {
@@ -268,8 +284,9 @@ public class ExcelSummary {
                     String formula = subtotals ? "SUBTOTAL(" + ExcelSubtotal.functionNumber(op) + "," + range + ")"
                             : op.name() + "(" + range + ")";
                     SXSSFCell cell = summaryRow.getCell(colIdx);
-                    ExcelDataType.setFormula(cell, formula, values == null ? null : values.sheetValue(colIdx, op));
-                    String format = formatOf(op, columns.get(colIdx).getStyle().getDataFormatString());
+                    Double calculated = values == null ? null : values.sheetValue(colIdx, op);
+                    ExcelDataType.setFormula(cell, formula, calculated);
+                    String format = formatOf(op, columns.get(colIdx).getStyle().getDataFormatString(), calculated);
                     if (format != null) {
                         cell.setCellStyle(ExcelStyleSupporter.resolveRowStyle(columns.get(colIdx).getStyle(), style.backgroundColor,
                                 locked, styleCache, ctx.getWorkbook(), maxStyles, format));

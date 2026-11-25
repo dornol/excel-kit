@@ -108,8 +108,9 @@ it is, and without a label a row is named after its operation (`Sum`, `Average`)
 
 **Style.** The summary rows are bold on light gray, like the subtotal rows, and every cell of a row takes the number format and
 alignment of its column, so a total reads as the numbers above it (`1,234,570.39`, not `1234570.391`). `count` and `countA`
-are numbers of cells and read `#,##0` whatever the column holds, and an `average` of a whole-number column gets two decimals
-(8.5, not 9). The cells are locked
+are numbers of cells and read `#,##0` whatever the column holds, and an `average` of a whole-number column shows the decimals it has, up to two
+(`3`, `8.5`, `8.25`; not `9` for 8.5). The format is chosen from the result written next to the formula, so an average that
+a later edit in Excel turns fractional keeps the decimals of the one written. The cells are locked
 under `protectSheet(...)`. `style(...)` changes the look; to get plain rows, clear what the default sets:
 
 ```java
