@@ -198,12 +198,14 @@ public final class ExcelSamples {
                 .column("Double", x -> 1234.5, c -> c.type(ExcelDataType.DOUBLE))
                 .column("Text number", x -> "0012", c -> c.format(io.github.dornol.excelkit.excel.style.ExcelDataFormat.TEXT))
                 .column("Formula", x -> "E2*2", c -> c.type(ExcelDataType.FORMULA))
+                .column("Formula with result", x -> io.github.dornol.excelkit.excel.feature.ExcelFormula.of("E2*2", 2469134),
+                        c -> c.format("#,##0"))
                 .write(List.of(new Object())));
         add("09-formats-and-dates.xlsx", "number and date display",
-                "Dates, a date after the 1900 leap-day quirk, a moment, a moment with milliseconds, grouped integers and decimals, a text that looks like a number in the Text format (so that editing the cell does not turn 0012 into 12), and a formula calculated when the file is opened.",
+                "Dates, a date after the 1900 leap-day quirk, a moment, a moment with milliseconds, grouped integers and decimals, a text that looks like a number in the Text format (so that editing the cell does not turn 0012 into 12), a formula calculated when the file is opened (H2 carries no result: in Protected View it shows empty until editing is enabled), and a formula that carries its result (I2: it shows 2,469,134 in Protected View too).",
                 "opens: no repair prompt",
                 "cellText sheet=Report cell=A2 text=2024-02-29; cellText sheet=Report cell=B2 text=1900-03-01; cellText sheet=Report cell=C2 text=\"2024-12-31 23:59:58\"; cellText sheet=Report cell=D2 text=\"2024-12-31 23:59:58.123\"",
-                "cellText sheet=Report cell=E2 text=1,234,567; cellText sheet=Report cell=F2 text=1,234.50; cellText sheet=Report cell=G2 text=0012 (text, not 12); cellFormat sheet=Report cell=G2 numberFormat=@; edit sheet=Report cell=G2: enter the cell for editing (F2 or Range.Value2 = Range.Value2, then Enter) and report the value: it must still be the text 0012, not 12 (the Text format keeps it); cell sheet=Report cell=H2 value=2469134");
+                "cellText sheet=Report cell=E2 text=1,234,567; cellText sheet=Report cell=F2 text=1,234.50; cellText sheet=Report cell=G2 text=0012 (text, not 12); cellFormat sheet=Report cell=G2 numberFormat=@; edit sheet=Report cell=G2: enter the cell for editing (F2 or Range.Value2 = Range.Value2, then Enter) and report the value: it must still be the text 0012, not 12 (the Text format keeps it); cell sheet=Report cell=H2 value=2469134; cell sheet=Report cell=I2 value=2469134; cellText sheet=Report cell=I2 text=2,469,134; protectedView: open the file in Protected View (a download, or an attachment): I2 reads 2,469,134 although nothing was calculated, H2 is empty or 0 until Enable Editing");
 
         // 8. protection
         save("10-protection.xlsx", ExcelWriter.<Item>create().sheetName("Report").protectSheet("lock").protectWorkbook("book")

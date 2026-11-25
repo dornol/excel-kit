@@ -294,6 +294,7 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 |----------|-----------|
 | Column DSL | Type, format, alignment, width, font, color, rotation, indentation |
 | Summary rows | `summary(s -> s.label("Total").sum("Qty").style(...))`: formulas below the data in the number format of their column, bold on light gray by default |
+| Formulas | `type(FORMULA)` strings, or `ExcelFormula.of("B2*C2", result)` to store the result next to the formula (shown in Protected View and previews) |
 | Formats | `format(ExcelDataFormat.X)` presets for numbers, percents, dates and currencies, and `ExcelDataFormat.TEXT` to keep leading zeros (`0012`) when a cell is edited |
 | Styling | Row/cell conditional colors (`cellColor`, `rowColor`), striped rows (`stripedRows()`), conditional row style (`rowStyle`: bold/font/color), borders (per-side), bold, strikethrough, underline; `maxCellStyles(int)` caps the styles those colors may create |
 | Layout | Empty-sheet message (`emptyMessage("No data")`), group subtotal rows (`groupSubtotal(key, ...)`, `SUBTOTAL` formulas), auto-filter, freeze panes (row + column), merge equal values (`mergeSameValues()`), sheet zoom, hidden sheets (`hideSheet()`), page breaks (`rowBreakEvery`, `pageBreakOnChange`), multi-level group headers, column outline, hiding |

@@ -1,6 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
 import io.github.dornol.excelkit.core.WriteErrorPolicy;
+import io.github.dornol.excelkit.excel.feature.ExcelFormula;
 import io.github.dornol.excelkit.excel.feature.ExcelHyperlink;
 import io.github.dornol.excelkit.excel.feature.ExcelImage;
 import io.github.dornol.excelkit.excel.style.ExcelDataFormat;
@@ -115,6 +116,9 @@ public enum ExcelDataType {
      * <p>
      * Example: {@code "SUM(A2:A100)"} or {@code "AVERAGE(B2:B50)"}
      * <p>
+     * A plain string is written without a result: Excel calculates it when it opens the file, and a viewer that does not
+     * calculate (Protected View, a preview) shows the cell empty. An {@link ExcelFormula} carries the result too.
+     * <p>
      * <b>Security warning:</b> Do not pass untrusted user input as formula values.
      * DDE formulas (e.g., {@code cmd|'/c calc'}) can execute arbitrary commands
      * when the Excel file is opened. Always use hardcoded or validated formula strings.
@@ -124,7 +128,13 @@ public enum ExcelDataType {
      * Reuters). Blocking pipe characters would break these use cases. Input validation
      * is the caller's responsibility.
      */
-    FORMULA((cell, value) -> setUncalculatedFormula(cell, String.valueOf(value)), null),
+    FORMULA((cell, value) -> {
+        if (value instanceof ExcelFormula formula) {
+            setFormula(cell, formula);
+        } else {
+            setUncalculatedFormula(cell, String.valueOf(value));
+        }
+    }, null),
 
     /**
      * Hyperlink type. Creates a clickable URL link in the cell.
@@ -252,6 +262,30 @@ public enum ExcelDataType {
         if (!workbook.getForceFormulaRecalculation()) workbook.setForceFormulaRecalculation(true);
     }
 
+    /** Writes the formula of an {@link ExcelFormula} with its result, when it has one the file can keep. */
+    static void setFormula(Cell cell, ExcelFormula formula) {
+        Object result = formula.result();
+        if (result instanceof Double number) {
+            setFormula(cell, formula.formula(), number);
+        } else if (result instanceof Boolean flag) {
+            cell.setCellFormula(formula.formula());
+            cell.setCellValue(flag);
+            forceRecalculation(cell);
+        } else if (result instanceof String text && !text.isEmpty() && ExcelCellText.encode(text).equals(text)) {
+            // (an empty result is left out of the sheet by SXSSF; a text that needs escaping is not stored as a result)
+            cell.setCellFormula(formula.formula());
+            cell.setCellValue(text);
+            forceRecalculation(cell);
+        } else {
+            setUncalculatedFormula(cell, formula.formula());
+        }
+    }
+
+    private static void forceRecalculation(Cell cell) {
+        var workbook = cell.getSheet().getWorkbook();
+        if (!workbook.getForceFormulaRecalculation()) workbook.setForceFormulaRecalculation(true);
+    }
+
     static void setUncalculatedFormula(Cell cell, String formula) {
         cell.setCellFormula(formula);
         // SXSSF leaves the cached value out of the sheet XML for an empty string result.
@@ -339,6 +373,7 @@ public enum ExcelDataType {
         if (value instanceof LocalDateTime) return DATETIME;
         if (value instanceof LocalDate) return DATE;
         if (value instanceof LocalTime) return TIME;
+        if (value instanceof ExcelFormula) return FORMULA;
         if (value instanceof ExcelHyperlink) return HYPERLINK;
         if (value instanceof ExcelImage) return IMAGE;
         if (value instanceof ExcelRichText) return RICH_TEXT;

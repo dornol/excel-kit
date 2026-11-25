@@ -50,7 +50,7 @@ reference guide.
 | `io.github.dornol.excelkit.excel` | `AfterDataWriter`, `BeforeHeaderWriter`, `ColumnConfig`, `ColumnStyleConfig`, `ColumnsWriter`, `DataRowsWriter`, `ExcelChartConfig`, `ExcelColumn`, `ExcelConditionalRule`, `ExcelDataType`, `ExcelErrorReport`, `ExcelHandler`, `ExcelKitConfig`, `ExcelPrintSetup`, `ExcelRichText`, `ExcelSheetWriter`, `ExcelSubtotal`, `ExcelSummary`, `ExcelTemplateWriter`, `ExcelValidation`, `ExcelWorkbook`, `ExcelWriteException`, `ExcelWriter`, `HeaderStyleConfig`, `RowStyleConfig`, `SheetContext`, `SheetWriter`, `StreamingOptions`, `TableOptions`, `TemplateListWriter`, `WorkbookInitOptions`, `WorkbookOptions`, `WriteRowCallback` | Excel writing: `ExcelWriter`, `ExcelWorkbook`, templates, column and sheet configuration |
 | `io.github.dornol.excelkit.excel.read` | `ExcelReadException`, `ExcelReader`, `ExcelSheetInfo`, `ExcelWorkbookInspector`, `ExcelWorkbookReader`, `SheetFailurePolicy`, `SheetReadReport`, `WorkbookReadReport` | Excel reading: `ExcelReader`, multi-sheet `ExcelWorkbookReader`, sheet metadata |
 | `io.github.dornol.excelkit.excel.style` | `CellColorFunction`, `ExcelBorderStyle`, `ExcelColor`, `ExcelDataFormat` | Colors, borders and number formats |
-| `io.github.dornol.excelkit.excel.feature` | `ExcelCellComment`, `ExcelHyperlink`, `ExcelImage` | Cell content beyond text: comments, hyperlinks, images |
+| `io.github.dornol.excelkit.excel.feature` | `ExcelCellComment`, `ExcelFormula`, `ExcelHyperlink`, `ExcelImage` | Cell content beyond text: comments, formulas with their result, hyperlinks, images |
 | `io.github.dornol.excelkit.schema` | `ExcelKitSchema` | One column definition for both reading and writing, Excel or CSV |
 | `io.github.dornol.excelkit.spring` | `CellErrorResponse`, `DownloadFileType`, `ErrorReportRow`, `ExcelKitErrorResponse`, `ExcelKitMultipartFile`, `ExcelKitResponse`, `ExcelKitTemplateResponse`, `ExcelKitUpload`, `ExcelKitUploadException`, `UploadCollectionLimits`, `UploadError`, `UploadReader`, `UploadResult`, `UploadSummary` | Spring MVC download and upload helpers (`excel-kit-spring` artifact) |
 
@@ -257,6 +257,8 @@ the cells below the first keep their values; rejected with `table(...)` and on `
 `reader.uniqueKey("Employee ID")` (`ExcelReader`, `CsvReader`, also `ReaderOptions`) fails every row whose key (one or several
 headers) was seen in an earlier row: `VALIDATION` `RowError` `Duplicate key [..]; first seen at row N`, key cells in
 `cellErrors()`. Empty key cells are not checked; keys are held in memory.
+
+`ExcelFormula.of("B2*C2", result)` (also `of(formula)`, `of(formula, "text")`, `of(formula, true)`) as a column value writes the formula with its result, so Protected View and previews show it (a formula given as a string has no result); the type is inferred (`FORMULA`).
 
 `summary(s -> ...style(r -> ...))`: summary rows are bold on light gray (like subtotal rows) in the number format of their column; `style(r -> r.bold(false).backgroundColor(null))` for plain rows.
 

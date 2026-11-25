@@ -31,6 +31,8 @@ You can set a type explicitly via `.type(...)`, for example `ExcelDataType.INTEG
 | `IMAGE` | ExcelImage | — |
 | `BOOLEAN` | Boolean | — |
 
+A formula column: a string with `type(ExcelDataType.FORMULA)` has no result in the file (empty in Protected View and previews until Excel recalculates); `ExcelFormula.of("B2*C2", result)` writes the formula with the result you give.
+
 Custom format: `.format("#,##0.00")` or a preset, `.format(ExcelDataFormat.CURRENCY_KRW)`. For an id, postal code or phone number with leading zeros use `.format(ExcelDataFormat.TEXT)`: in a cell with the General format Excel turns `0012` into the number 12 when the cell is edited.
 
 ## Column Styling Methods

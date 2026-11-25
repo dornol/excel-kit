@@ -26,6 +26,19 @@ writer.afterData(ctx -> {
 
 > Do not pass untrusted user input as formula values — use `STRING` type for user-supplied data.
 
+A formula given as a string has **no result in the file**: Excel calculates it when it opens the file, but a viewer that
+does not calculate (Excel's Protected View for a download or an attachment, a preview pane, a program reading the file)
+shows the cell empty. `ExcelFormula` carries the result too, which you give (the library does not calculate it):
+
+```java
+.column("Total", o -> ExcelFormula.of("B2*C2", o.price() * o.qty()), c -> c.format("#,##0"))  // number
+.column("Label", o -> ExcelFormula.of("A2&\"!\"", o.name() + "!"))                           // text
+.column("Paid",  o -> ExcelFormula.of("D2>0", o.amount() > 0))                                // true/false
+```
+
+The column's type is inferred (`FORMULA`). Excel still recalculates when the file is opened, so a wrong result shows only
+until then. In a CSV file the value is its result, or the formula when it has none.
+
 ## Hyperlink Columns
 
 ```java

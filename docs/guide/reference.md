@@ -19,7 +19,7 @@
 | `TIME` | LocalTime | `hh:mm:ss` |
 | `BIG_DECIMAL_TO_DOUBLE` | BigDecimal | `#,##0.00` |
 | `BIG_DECIMAL_TO_LONG` | BigDecimal | `#,##0` |
-| `FORMULA` | String (formula) | — |
+| `FORMULA` | String (formula) or `ExcelFormula` (formula with its result) | — |
 | `HYPERLINK` | String or `ExcelHyperlink` | — |
 | `IMAGE` | `ExcelImage` | — |
 | `RICH_TEXT` | `ExcelRichText` | — |
@@ -102,7 +102,7 @@ Every public type and the package it lives in. Each package depends only on the 
 | `io.github.dornol.excelkit.excel` | `AfterDataWriter`, `BeforeHeaderWriter`, `ColumnConfig`, `ColumnStyleConfig`, `ColumnsWriter`, `DataRowsWriter`, `ExcelChartConfig`, `ExcelColumn`, `ExcelConditionalRule`, `ExcelDataType`, `ExcelErrorReport`, `ExcelHandler`, `ExcelKitConfig`, `ExcelPrintSetup`, `ExcelRichText`, `ExcelSheetWriter`, `ExcelSubtotal`, `ExcelSummary`, `ExcelTemplateWriter`, `ExcelValidation`, `ExcelWorkbook`, `ExcelWriteException`, `ExcelWriter`, `HeaderStyleConfig`, `RowStyleConfig`, `SheetContext`, `SheetWriter`, `StreamingOptions`, `TableOptions`, `TemplateListWriter`, `WorkbookInitOptions`, `WorkbookOptions`, `WriteRowCallback` | Excel writing: `ExcelWriter`, `ExcelWorkbook`, templates, column and sheet configuration |
 | `io.github.dornol.excelkit.excel.read` | `ExcelReadException`, `ExcelReader`, `ExcelSheetInfo`, `ExcelWorkbookInspector`, `ExcelWorkbookReader`, `SheetFailurePolicy`, `SheetReadReport`, `WorkbookReadReport` | Excel reading: `ExcelReader`, multi-sheet `ExcelWorkbookReader`, sheet metadata |
 | `io.github.dornol.excelkit.excel.style` | `CellColorFunction`, `ExcelBorderStyle`, `ExcelColor`, `ExcelDataFormat` | Colors, borders and number formats |
-| `io.github.dornol.excelkit.excel.feature` | `ExcelCellComment`, `ExcelHyperlink`, `ExcelImage` | Cell content beyond text: comments, hyperlinks, images |
+| `io.github.dornol.excelkit.excel.feature` | `ExcelCellComment`, `ExcelFormula`, `ExcelHyperlink`, `ExcelImage` | Cell content beyond text: comments, formulas with their result, hyperlinks, images |
 | `io.github.dornol.excelkit.schema` | `ExcelKitSchema` | One column definition for both reading and writing, Excel or CSV |
 | `io.github.dornol.excelkit.spring` | `CellErrorResponse`, `DownloadFileType`, `ErrorReportRow`, `ExcelKitErrorResponse`, `ExcelKitMultipartFile`, `ExcelKitResponse`, `ExcelKitTemplateResponse`, `ExcelKitUpload`, `ExcelKitUploadException`, `UploadCollectionLimits`, `UploadError`, `UploadReader`, `UploadResult`, `UploadSummary` | Spring MVC download and upload helpers (`excel-kit-spring` artifact) |
 
