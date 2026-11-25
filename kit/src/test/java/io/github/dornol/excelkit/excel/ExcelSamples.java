@@ -164,13 +164,14 @@ public final class ExcelSamples {
 
         // 5. chart per rolled-over sheet, below the summary rows
         save("06-chart-rollover-summary.xlsx", report().maxRows(4).summary(s -> s.sum("Qty").average("Qty"))
-                .chart(ch -> ch.type(ExcelChartConfig.ChartType.BAR).title("Qty").categoryColumn(0).valueColumn(1, "Qty"))
+                .chart(ch -> ch.type(ExcelChartConfig.ChartType.BAR).title("Qty").categoryColumn(0).valueColumn(1, "Qty").valueAxisMajorUnit(1))
                 .write(items(10)));
         add("06-chart-rollover-summary.xlsx", "one chart per sheet, below the summary",
                 "Three sheets, each with a bar chart of its own rows that starts BELOW its Sum/Average rows and covers no cell with data.",
                 "opens: no repair prompt",
                 "chart sheet=Report count=1 topLeftRowGreaterThan=7; chart sheet=\"Report (2)\" count=1 topLeftRowGreaterThan=7; chart sheet=\"Report (3)\" count=1 topLeftRowGreaterThan=5",
-                "visual: each chart plots the 4 / 4 / 2 items of its sheet");
+                "visual: each chart plots the 4 / 4 / 2 items of its sheet",
+                "chartAxis sheet=Report majorUnit=1 (valueAxisMajorUnit(1)); the value axis labels of the first chart read 0 1 2 3, not 0 1 1 2 2 3 3 4 (the Qty cells have the whole-number format #,##0 and Excel would choose 0.5)");
 
         // 6. encryption
         save("07-encrypted-password-secret.xlsx", ExcelWriter.<Item>create().sheetName("Report").password("secret")

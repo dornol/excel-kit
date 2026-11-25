@@ -217,7 +217,7 @@ The Excel writers (`ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter`) use 
   list's `write` and saving fail with `ExcelWriteException` too, never with POI's own exceptions.
 - **Rich text** — unformatted text and every formatted segment start from the column's font; `ExcelTemplateWriter.cell`
   accepts `ExcelRichText`. A `char[]` value is written as its characters.
-- **Charts** — with `maxRows()` rollover each sheet gets its own chart; `position(...)` and the chart's columns are
+- **Charts** — `valueAxisMajorUnit(1)` / `valueAxisNumberFormat("0.0")` set the value axis labels (an integer column from 0 to 3 can read `0 1 1 2 2 3 3 4` otherwise); with `maxRows()` rollover each sheet gets its own chart; `position(...)` and the chart's columns are
   validated.
 - **Spring** — downloads send `Cache-Control: private, max-age=N`; `ExcelKitMultipartFile.requireExcelOrCsvContent`
   checks the real ZIP signature and that a `.csv` is UTF-8 text.

@@ -237,6 +237,8 @@ With `maxRows()` rollover each sheet gets its own chart over that sheet's rows. 
 backwards column pair and two given rows that run upwards; a category or value column that is not among the columns fails
 with `ExcelWriteException`.
 
+Value axis labels follow the cell format and Excel's own distance (an integer column from 0 to 3 can read `0 1 1 2 2 3 3 4`): `.valueAxisMajorUnit(1)` fixes the distance, `.valueAxisNumberFormat("0.0")` gives the labels a format of their own (not for the secondary axis, pie or doughnut).
+
 Combination chart: `.lineColumn(col, title)` draws a line over a vertical `BAR`/`LINE`/`AREA` chart on the same value axis;
 `.secondaryLineColumn(col, title)` on a second axis on the right (`.secondaryValueAxisTitle("Growth")`). Needs at least one
 `valueColumn`; refused with pie, doughnut, scatter and horizontal bars.

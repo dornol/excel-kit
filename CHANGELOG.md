@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `valueAxisMajorUnit(double)` and `valueAxisNumberFormat(String)` on `ExcelChartConfig` set the distance between the labels of the value axis and their number format. The labels follow the format of the cells, and Excel chooses the distance itself: for whole numbers from 0 to 3 it chooses 0.5, which an integer format shows as `0 1 1 2 2 3 3 4`. `valueAxisMajorUnit(1)` fixes it. Bar, line, area and scatter charts (the vertical axis); not the secondary axis.
 - `ExcelDataFormat.TEXT` (`@`), the Text format, for ids, postal codes and phone numbers with leading zeros: a text such as `0012` in a cell with the General format (the default) becomes the number 12 when it is edited in Excel, in a `TEXT` cell it stays as it is. `format(ExcelDataFormat)` on columns takes a preset directly (`format(ExcelDataFormat.TEXT)`), next to `format(String)`. New presets: `NUMBER_PLAIN`, `PERCENT_0`, `PERCENT_1`, `DATETIME_HM`, `DATE_DOT`, `DATE_SLASH`, `DATE_KR`, `YEAR_MONTH`, `TIME_HM`, `CURRENCY_EUR` and `CURRENCY_JPY`.
 - `ExcelConditionalRule.includeSubtotalRows()` puts the subtotal rows of `groupSubtotal(...)` back under a conditional formatting rule (see Changed).
 - `ExcelKitMultipartFile.requireExcelOrCsvContent(file, charset)` checks a CSV upload against the given encoding (for example `MS949`, which a Korean Excel saves as "CSV") instead of UTF-8 only; the one-argument form is unchanged.

@@ -123,6 +123,8 @@ public class ExcelChartConfig {
     private int anchorRow2 = -1;
     private @Nullable String categoryAxisTitle;
     private @Nullable String valueAxisTitle;
+    private double valueAxisMajorUnit;
+    private @Nullable String valueAxisNumberFormat;
     private @Nullable LegendPosition legendPosition;
     private boolean showDataLabels = false;
     private BarGrouping barGrouping = BarGrouping.STANDARD;
@@ -264,6 +266,42 @@ public class ExcelChartConfig {
      */
     public ExcelChartConfig categoryAxisTitle(@Nullable String title) {
         this.categoryAxisTitle = title;
+        return this;
+    }
+
+    /**
+     * Sets the distance between the labels and grid lines of the value axis (Y-axis), in the unit of the values. Excel
+     * picks the distance itself, and for small values it picks a fraction (0.5 for values from 0 to 3): when the axis
+     * labels take the whole-number format of an integer column, that shows as {@code 0 1 1 2 2 3 3 4}. Setting
+     * {@code 1} for whole-number data gives {@code 0 1 2 3}. Not for the secondary axis, a pie or a doughnut chart.
+     *
+     * @param majorUnit the distance, above 0
+     * @return this config for chaining
+     * @throws IllegalArgumentException if it is not a positive, finite number
+     * @since 0.29.0
+     */
+    public ExcelChartConfig valueAxisMajorUnit(double majorUnit) {
+        if (!(majorUnit > 0) || !Double.isFinite(majorUnit)) {
+            throw new IllegalArgumentException("valueAxisMajorUnit must be a positive, finite number, got " + majorUnit);
+        }
+        this.valueAxisMajorUnit = majorUnit;
+        return this;
+    }
+
+    /**
+     * Sets the number format of the labels of the value axis (Y-axis), such as {@code "#,##0"} or
+     * {@code "0.0%"}. Without it the labels take the format of the cells the series come from. Not for the secondary
+     * axis, a pie or a doughnut chart.
+     *
+     * @param format an Excel number format
+     * @return this config for chaining
+     * @throws IllegalArgumentException if the format is blank
+     * @since 0.29.0
+     */
+    public ExcelChartConfig valueAxisNumberFormat(String format) {
+        Objects.requireNonNull(format, "format cannot be null");
+        if (format.isBlank()) throw new IllegalArgumentException("valueAxisNumberFormat cannot be blank");
+        this.valueAxisNumberFormat = format;
         return this;
     }
 
@@ -425,6 +463,7 @@ public class ExcelChartConfig {
         valueAxis.setCrossBetween(AxisCrossBetween.BETWEEN);
 
         applyAxisTitles(categoryAxis, valueAxis);
+        applyValueAxisScale(chart, valueAxis);
 
         XDDFBarChartData data = (XDDFBarChartData) chart.createData(
                 ChartTypes.BAR, categoryAxis, valueAxis);
@@ -445,6 +484,7 @@ public class ExcelChartConfig {
         valueAxis.setCrosses(AxisCrosses.AUTO_ZERO);
 
         applyAxisTitles(categoryAxis, valueAxis);
+        applyValueAxisScale(chart, valueAxis);
 
         XDDFLineChartData data = (XDDFLineChartData) chart.createData(
                 ChartTypes.LINE, categoryAxis, valueAxis);
@@ -470,6 +510,7 @@ public class ExcelChartConfig {
 
         if (categoryAxisTitle != null) xAxis.setTitle(categoryAxisTitle);
         if (valueAxisTitle != null) yAxis.setTitle(valueAxisTitle);
+        applyValueAxisScale(chart, yAxis);
 
         XDDFScatterChartData data = (XDDFScatterChartData) chart.createData(
                 ChartTypes.SCATTER, xAxis, yAxis);
@@ -501,6 +542,7 @@ public class ExcelChartConfig {
         valueAxis.setCrosses(AxisCrosses.AUTO_ZERO);
 
         applyAxisTitles(categoryAxis, valueAxis);
+        applyValueAxisScale(chart, valueAxis);
 
         XDDFAreaChartData data = (XDDFAreaChartData) chart.createData(
                 ChartTypes.AREA, categoryAxis, valueAxis);
@@ -545,6 +587,22 @@ public class ExcelChartConfig {
             XDDFLineChartData lines = (XDDFLineChartData) chart.createData(ChartTypes.LINE, secondCategoryAxis, secondValueAxis);
             addSeries(lines, secondary, categories, sheet, dataStart, dataEnd);
             chart.plot(lines);
+        }
+    }
+
+    /** The distance and the number format of the labels of the value axis, when they are set. */
+    private void applyValueAxisScale(XSSFChart chart, XDDFValueAxis valueAxis) {
+        if (valueAxisMajorUnit > 0) {
+            valueAxis.setMajorUnit(valueAxisMajorUnit);
+        }
+        if (valueAxisNumberFormat != null) {
+            valueAxis.setNumberFormat(valueAxisNumberFormat);
+            // POI links the format to the cells; the one given is meant, not the cells'.
+            for (var ctAxis : chart.getCTChart().getPlotArea().getValAxList()) {
+                if (ctAxis.getAxId().getVal() == valueAxis.getId() && ctAxis.isSetNumFmt()) {
+                    ctAxis.getNumFmt().setSourceLinked(false);
+                }
+            }
         }
     }
 

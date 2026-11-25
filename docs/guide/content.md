@@ -132,6 +132,16 @@ With `maxRows()` rollover each sheet gets its own chart over that sheet's rows. 
 backwards column pair and two given rows that run upwards; a category or value column that is not among the columns fails
 with `ExcelWriteException`.
 
+**Value axis labels.** The labels of the value axis take the format of the cells the series come from, and Excel chooses the
+distance between them. With small whole numbers (0 to 3) it chooses 0.5, and an integer format (`#,##0`) then shows
+`0 1 1 2 2 3 3 4`. `valueAxisMajorUnit(1)` fixes the distance, and `valueAxisNumberFormat("0.0")` gives the labels a format
+of their own instead of the cells' one (neither applies to the secondary axis, a pie or a doughnut chart):
+
+```java
+.chart(chart -> chart.type(ExcelChartConfig.ChartType.BAR).categoryColumn(0).valueColumn(1, "Qty")
+    .valueAxisMajorUnit(1))
+```
+
 **Heap for many chart sheets.** The rows of a sheet are streamed, but Apache POI keeps the chart of every sheet in memory
 until the workbook is written: about 90 KB of heap per sheet with a chart, against about 30 KB per sheet without one
 (measured with `ExcelWorkbook`, which is the same as plain Apache POI). A workbook of thousands of chart sheets therefore
