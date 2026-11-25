@@ -123,6 +123,43 @@ class SummaryStyleTest {
     }
 
     @Test
+    void anAverageOfWholeNumbersHasDecimalsAndTheOtherOperationsKeepTheColumnFormat() throws Exception {
+        var rows = List.of(new Row("A", 1.0, 8), new Row("B", 2.0, 9));
+        try (var wb = open(writer().summary(s -> s.label("Total").sum("Qty").average("Qty").min("Qty").max("Qty")).write(rows))) {
+            var sheet = wb.getSheetAt(0);
+            assertEquals("#,##0", sheet.getRow(3).getCell(2).getCellStyle().getDataFormatString(), "sum");
+            assertEquals("#,##0.00", sheet.getRow(4).getCell(2).getCellStyle().getDataFormatString(), "8.5 must not read 9");
+            assertEquals("#,##0", sheet.getRow(5).getCell(2).getCellStyle().getDataFormatString(), "min");
+            assertEquals("#,##0", sheet.getRow(6).getCell(2).getCellStyle().getDataFormatString(), "max");
+            assertEquals(8.5, new org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator(wb)
+                    .evaluate(sheet.getRow(4).getCell(2)).getNumberValue());
+        }
+    }
+
+    @Test
+    void aCountIsANumberOfCellsWhateverTheColumnHolds() throws Exception {
+        try (var wb = open(writer().summary(s -> s.label("Total").count("Amount").countA("Dept")).write(ROWS))) {
+            var sheet = wb.getSheetAt(0);
+            assertEquals("#,##0", sheet.getRow(3).getCell(1).getCellStyle().getDataFormatString(), "not #,##0.00 like the amounts");
+            assertEquals("#,##0", sheet.getRow(4).getCell(0).getCellStyle().getDataFormatString());
+        }
+    }
+
+    @Test
+    void formatOfTellsWhatEachOperationTakes() {
+        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.SUM, "#,##0"));
+        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.MIN, "#,##0.00"));
+        assertEquals("#,##0", ExcelSummary.formatOf(ExcelSummary.Op.COUNT, "#,##0.00"));
+        assertEquals("#,##0", ExcelSummary.formatOf(ExcelSummary.Op.COUNTA, "yyyy-mm-dd"));
+        assertEquals("#,##0.00", ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "#,##0"));
+        assertEquals("0.00", ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "0"));
+        assertEquals("0.00%", ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "0%"));
+        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "#,##0.00"), "decimals already");
+        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "General"));
+        assertNull(ExcelSummary.formatOf(ExcelSummary.Op.AVERAGE, "yyyy-mm-dd"));
+    }
+
+    @Test
     void styleRefusesNull() {
         assertThrows(NullPointerException.class, () -> new ExcelSummary().style(null));
     }

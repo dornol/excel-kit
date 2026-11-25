@@ -279,11 +279,19 @@ class ExcelStyleSupporter {
     static CellStyle resolveRowStyle(CellStyle baseStyle, @Nullable ExcelColor bgColor,
                                       RowStyleConfig rowStyle, Map<DerivedStyleKey, CellStyle> cache,
                                       SXSSFWorkbook wb, int maxStyles) {
+        return resolveRowStyle(baseStyle, bgColor, rowStyle, cache, wb, maxStyles, null);
+    }
+
+    /** @param dataFormat the number format to give the style instead of the base style's, or {@code null} to keep it */
+    static CellStyle resolveRowStyle(CellStyle baseStyle, @Nullable ExcelColor bgColor,
+                                      RowStyleConfig rowStyle, Map<DerivedStyleKey, CellStyle> cache,
+                                      SXSSFWorkbook wb, int maxStyles, @Nullable String dataFormat) {
         DerivedStyleKey key = new DerivedStyleKey(baseStyle.getIndex(), DerivedStyleKey.rgb(bgColor),
-                rowStyle.cacheKey());
+                dataFormat == null ? rowStyle.cacheKey() : rowStyle.cacheKey() + "|fmt=" + dataFormat);
         return cache.computeIfAbsent(key, k -> {
             CellStyle style = createDerivedStyle(wb, maxStyles);
             style.cloneStyleFrom(baseStyle);
+            if (dataFormat != null) style.setDataFormat(wb.createDataFormat().getFormat(dataFormat));
 
             // Background color
             if (bgColor != null) {

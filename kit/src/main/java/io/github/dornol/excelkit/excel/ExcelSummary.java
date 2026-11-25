@@ -177,6 +177,25 @@ public class ExcelSummary {
         return this;
     }
 
+    /**
+     * The number format a summary cell takes instead of its column's, or {@code null} for the column's own. A sum, a
+     * minimum and a maximum read in the unit of the column; a count is a number of cells, whatever the column holds
+     * (not "$2.00" or a date); an average of whole numbers has decimals (8.5, not 9).
+     */
+    static @Nullable String formatOf(Op op, String columnFormat) {
+        return switch (op) {
+            case COUNT, COUNTA -> "#,##0";
+            case AVERAGE -> withDecimals(columnFormat);
+            default -> null;
+        };
+    }
+
+    /** {@code #,##0} becomes {@code #,##0.00}, {@code 0%} becomes {@code 0.00%}; a format with decimals, text or dates is kept. */
+    private static @Nullable String withDecimals(String format) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("([#0,]+)(%?)").matcher(format);
+        return m.matches() ? m.group(1) + ".00" + m.group(2) : null;
+    }
+
     Map<Op, List<String>> entries() {
         return entries;
     }
@@ -250,6 +269,11 @@ public class ExcelSummary {
                             : op.name() + "(" + range + ")";
                     SXSSFCell cell = summaryRow.getCell(colIdx);
                     ExcelDataType.setFormula(cell, formula, values == null ? null : values.sheetValue(colIdx, op));
+                    String format = formatOf(op, columns.get(colIdx).getStyle().getDataFormatString());
+                    if (format != null) {
+                        cell.setCellStyle(ExcelStyleSupporter.resolveRowStyle(columns.get(colIdx).getStyle(), style.backgroundColor,
+                                locked, styleCache, ctx.getWorkbook(), maxStyles, format));
+                    }
                 }
 
                 row++;

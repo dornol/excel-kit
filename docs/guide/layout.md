@@ -107,7 +107,9 @@ With several operations each row needs its own name, so a label is followed by t
 it is, and without a label a row is named after its operation (`Sum`, `Average`).
 
 **Style.** The summary rows are bold on light gray, like the subtotal rows, and every cell of a row takes the number format and
-alignment of its column, so a total reads as the numbers above it (`1,234,570.39`, not `1234570.391`). The cells are locked
+alignment of its column, so a total reads as the numbers above it (`1,234,570.39`, not `1234570.391`). `count` and `countA`
+are numbers of cells and read `#,##0` whatever the column holds, and an `average` of a whole-number column gets two decimals
+(8.5, not 9). The cells are locked
 under `protectSheet(...)`. `style(...)` changes the look; to get plain rows, clear what the default sets:
 
 ```java
