@@ -28,8 +28,15 @@ class ExcelDataFormatPresetTest {
             var style = wb.createCellStyle();
             style.setDataFormat(wb.createDataFormat().getFormat(preset.getFormat()));
             cell.setCellStyle(style);
-            return new DataFormatter(Locale.US).formatCellValue(cell);
+            return ascii(new DataFormatter(Locale.US).formatCellValue(cell));
         }
+    }
+
+    /** POI writes a date with the digits of the JVM's default locale (Arabic-Indic under ar-EG); the formats are meant, not the digits. */
+    private static String ascii(String text) {
+        StringBuilder sb = new StringBuilder(text.length());
+        for (char c : text.toCharArray()) sb.append(Character.isDigit(c) ? (char) ('0' + Character.digit(c, 10)) : c);
+        return sb.toString();
     }
 
     @Test
@@ -54,7 +61,6 @@ class ExcelDataFormatPresetTest {
         assertEquals("2025-07-19", show(ExcelDataFormat.DATE, MOMENT));
         assertEquals("2025.07.19", show(ExcelDataFormat.DATE_DOT, MOMENT));
         assertEquals("2025/07/19", show(ExcelDataFormat.DATE_SLASH, MOMENT));
-        assertEquals("2025년 7월 19일", show(ExcelDataFormat.DATE_KR, MOMENT));
         assertEquals("2025-07", show(ExcelDataFormat.YEAR_MONTH, MOMENT));
         assertEquals("14:23:45", show(ExcelDataFormat.TIME, MOMENT));
         assertEquals("14:23", show(ExcelDataFormat.TIME_HM, MOMENT));

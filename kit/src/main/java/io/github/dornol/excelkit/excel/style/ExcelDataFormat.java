@@ -60,9 +60,6 @@ public enum ExcelDataFormat {
     /** Date with slashes (e.g., 2025/07/19) */
     DATE_SLASH("yyyy/mm/dd"),
 
-    /** Korean date (e.g., 2025년 7월 19일) */
-    DATE_KR("yyyy\"년\" m\"월\" d\"일\""),
-
     /** Year and month (e.g., 2025-07) */
     YEAR_MONTH("yyyy-mm"),
 

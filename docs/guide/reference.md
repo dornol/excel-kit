@@ -44,7 +44,6 @@ Use with `.format(ExcelDataFormat.NUMBER)` (a preset) or `.format("#,##0")` (any
 | `DATE` | `yyyy-mm-dd` | 2025-07-19 |
 | `DATE_DOT` | `yyyy.mm.dd` | 2025.07.19 |
 | `DATE_SLASH` | `yyyy/mm/dd` | 2025/07/19 |
-| `DATE_KR` | `yyyy"년" m"월" d"일"` | 2025년 7월 19일 |
 | `YEAR_MONTH` | `yyyy-mm` | 2025-07 |
 | `TIME` | `hh:mm:ss` | 14:23:45 |
 | `TIME_HM` | `hh:mm` | 14:23 |
