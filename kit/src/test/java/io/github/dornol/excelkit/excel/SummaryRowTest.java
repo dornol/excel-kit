@@ -217,7 +217,8 @@ class SummaryRowTest {
             assertNotNull(summaryRow, "Summary row should exist even with no data");
             assertEquals("Total", summaryRow.getCell(0).getStringCellValue());
             // No data rows: no formula is written, since B2:B1 would include the header row
-            assertNull(summaryRow.getCell(1));
+            assertEquals(org.apache.poi.ss.usermodel.CellType.BLANK, summaryRow.getCell(1).getCellType(),
+                    "a blank, styled cell: the band runs across the row");
         }
     }
 }

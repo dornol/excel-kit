@@ -309,6 +309,10 @@ class ExcelSamplesTest {
             assertEquals("A", sheet.getRow(3).getCell(0).getStringCellValue(), "the subtotal row shows its key");
             assertEquals("A total", sheet.getRow(3).getCell(1).getStringCellValue());
             assertEquals("A1:C7", filter(sheet));
+            var total = sheet.getRow(7).getCell(2);
+            assertEquals("#,##0", total.getCellStyle().getDataFormatString(), "the total takes the format of its column");
+            assertTrue(wb.getFontAt(total.getCellStyle().getFontIndex()).getBold(), "the total row is bold");
+            assertTrue(wb.getFontAt(sheet.getRow(7).getCell(0).getCellStyle().getFontIndex()).getBold(), "across the whole row");
             assertEquals(2, sheet.getDataValidations().size());
             assertEquals(1, sheet.getSheetConditionalFormatting().getNumConditionalFormattings());
             var ranges = sheet.getSheetConditionalFormatting().getConditionalFormattingAt(0).getFormattingRanges();

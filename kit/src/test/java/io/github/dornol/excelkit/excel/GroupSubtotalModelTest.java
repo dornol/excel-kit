@@ -76,6 +76,7 @@ class GroupSubtotalModelTest {
                         actual.add("S:" + name + ":" + (long) value);
                     } else if (first.equals("Total")) {
                         var cell = row.getCell(2);
+                        if (cell != null && cell.getCellType() == CellType.BLANK) cell = null; // a styled blank cell: no formula
                         // Without data rows a summary has a label and no formula.
                         if (cell != null) assertCached(cell, evaluator.evaluate(cell).getNumberValue(), context + " sheet " + s + " summary row " + r);
                         actual.add(cell == null ? "T:none" : "T:" + (long) evaluator.evaluate(cell).getNumberValue());

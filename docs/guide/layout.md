@@ -106,6 +106,16 @@ With several operations each row needs its own name, so a label is followed by t
 `sum` and `average` gives the rows `Total - Sum` and `Total - Average`. With one operation the row carries the label as
 it is, and without a label a row is named after its operation (`Sum`, `Average`).
 
+**Style.** The summary rows are bold on light gray, like the subtotal rows, and every cell of a row takes the number format and
+alignment of its column, so a total reads as the numbers above it (`1,234,570.39`, not `1234570.391`). The cells are locked
+under `protectSheet(...)`. `style(...)` changes the look; to get plain rows, clear what the default sets:
+
+```java
+.summary(s -> s.label("Total").sum("Price")
+    .style(r -> r.backgroundColor(ExcelColor.LIGHT_YELLOW).fontColor(ExcelColor.DARK_BLUE)))   // another look
+.summary(s -> s.label("Total").sum("Price").style(r -> r.bold(false).backgroundColor(null))) // plain
+```
+
 A summary covers the rows of its own sheet: when the data rolls over (`maxRows`, or a full sheet), every sheet ends with a
 summary of its own rows, and there is no total over all the sheets. The same holds for `groupSubtotal(...)`.
 

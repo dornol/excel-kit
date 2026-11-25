@@ -1,5 +1,7 @@
 package io.github.dornol.excelkit.excel;
 
+import io.github.dornol.excelkit.excel.style.ExcelColor;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.xssf.streaming.SXSSFCell;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.jspecify.annotations.Nullable;
@@ -10,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * Fluent DSL for adding summary (footer) rows with formulas such as SUM, AVERAGE, COUNT, MIN, MAX.
@@ -29,8 +32,26 @@ import java.util.Objects;
  */
 public class ExcelSummary {
 
+    /** The look of the summary rows: bold on light gray, like the subtotal rows, until {@link #style(Consumer)} changes it. */
+    private final RowStyleConfig style = new RowStyleConfig().bold(true).backgroundColor(ExcelColor.LIGHT_GRAY);
+
     /** Creates a new summary configuration. */
     public ExcelSummary() {}
+
+    /**
+     * Styles the summary rows (bold on light gray by default, as the subtotal rows of {@code groupSubtotal(...)} are).
+     * Every cell of a summary row takes the number format and alignment of its column, so a total reads as the
+     * numbers above it, and is locked under {@code protectSheet(...)}. To get plain rows as before, clear what the
+     * default sets: {@code style(r -> r.bold(false).backgroundColor(null))}.
+     *
+     * @param configurer changes the default style
+     * @return this summary for chaining
+     * @since 0.29.0
+     */
+    public ExcelSummary style(Consumer<RowStyleConfig> configurer) {
+        Objects.requireNonNull(configurer, "configurer cannot be null").accept(style);
+        return this;
+    }
 
     /**
      * Supported summary operations.
@@ -168,12 +189,16 @@ public class ExcelSummary {
     /**
      * Converts this summary configuration into an {@link AfterDataWriter} callback.
      */
-    AfterDataWriter toAfterDataWriter() {
-        return toAfterDataWriter(false, null);
-    }
-
-    /** @param subtotals whether the data holds subtotal rows: then {@code SUBTOTAL} counts every row once */
-    AfterDataWriter toAfterDataWriter(boolean subtotals, @Nullable FormulaValues values) {
+    /**
+     * @param subtotals    whether the data holds subtotal rows: then {@code SUBTOTAL} counts every row once
+     * @param columns      the columns of the sheet: a summary cell takes the number format and alignment of its column
+     * @param styleCache   the styles derived from the columns' ones, shared with the data rows
+     * @param maxStyles    the cap on cell styles of the workbook
+     */
+    AfterDataWriter toAfterDataWriter(boolean subtotals, @Nullable FormulaValues values, List<? extends ExcelColumn<?>> columns,
+                                      Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache, int maxStyles) {
+        // Locked, so that a column a person may edit does not let them overwrite a formula.
+        RowStyleConfig locked = style.lockedCopy();
         return ctx -> {
             List<String> columnNames = ctx.getColumnNames();
             int headerRow = ctx.getHeaderRowIndex();
@@ -189,6 +214,13 @@ public class ExcelSummary {
                 List<String> cols = entry.getValue();
 
                 SXSSFRow summaryRow = ctx.getSheet().createRow(row);
+                // every cell of the row, so that the band runs across the whole width of the sheet
+                CellStyle[] styles = new CellStyle[columns.size()];
+                for (int i = 0; i < styles.length; i++) {
+                    styles[i] = ExcelStyleSupporter.resolveRowStyle(columns.get(i).getStyle(), style.backgroundColor, locked,
+                            styleCache, ctx.getWorkbook(), maxStyles);
+                    summaryRow.createCell(i).setCellStyle(styles[i]);
+                }
 
                 // Label
                 int labelIdx = 0;
@@ -203,7 +235,7 @@ public class ExcelSummary {
                 // followed by the operation ("Total - Sum"). Without a label the operation names the row.
                 String text = labelText == null ? operation
                         : entries.size() > 1 ? labelText + " - " + operation : labelText;
-                ExcelCellText.write(summaryRow.createCell(labelIdx), text);
+                ExcelCellText.write(summaryRow.getCell(labelIdx), text);
 
                 // Formulas
                 for (String colName : cols) {
@@ -216,7 +248,7 @@ public class ExcelSummary {
                     String range = colLetter + dataStartRow + ":" + colLetter + dataEndRow;
                     String formula = subtotals ? "SUBTOTAL(" + ExcelSubtotal.functionNumber(op) + "," + range + ")"
                             : op.name() + "(" + range + ")";
-                    SXSSFCell cell = summaryRow.createCell(colIdx);
+                    SXSSFCell cell = summaryRow.getCell(colIdx);
                     ExcelDataType.setFormula(cell, formula, values == null ? null : values.sheetValue(colIdx, op));
                 }
 

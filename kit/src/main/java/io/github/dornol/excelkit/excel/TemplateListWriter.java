@@ -184,7 +184,8 @@ public class TemplateListWriter<T> extends DataRowsWriter<T, TemplateListWriter<
             SheetWriteEngine.checkProgress(cursor, cfg.progressInterval, cfg.progressCallback);
         });
 
-        int nextRow = SheetWriteEngine.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values);
+        int nextRow = SheetWriteEngine.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRowIndex, cfg, values,
+                rowStyleCache);
 
         if (tableOptions != null) {
             int tableHeaderRow = writeHeaders ? startRow : startRow - 1;

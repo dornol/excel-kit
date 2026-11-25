@@ -258,6 +258,8 @@ the cells below the first keep their values; rejected with `table(...)` and on `
 headers) was seen in an earlier row: `VALIDATION` `RowError` `Duplicate key [..]; first seen at row N`, key cells in
 `cellErrors()`. Empty key cells are not checked; keys are held in memory.
 
+`summary(s -> ...style(r -> ...))`: summary rows are bold on light gray (like subtotal rows) in the number format of their column; `style(r -> r.bold(false).backgroundColor(null))` for plain rows.
+
 `c.format(ExcelDataFormat.TEXT)` keeps ids, postal codes and phone numbers with leading zeros (`0012`) as text when a cell is edited in Excel (the default General format turns them into 12); `ExcelDataFormat` has presets for numbers, percents, dates and currencies, and `format(ExcelDataFormat)` takes them directly.
 
 `c.requiredMark()` shows `*` after a column's header text (a number format `@" *"`: the header cell keeps the plain

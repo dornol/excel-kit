@@ -82,7 +82,7 @@ class ExcelSummaryTest {
         @Test
         void toAfterDataWriter_returnsNonNull() {
             ExcelSummary s = new ExcelSummary().sum("Amount");
-            AfterDataWriter writer = s.toAfterDataWriter();
+            AfterDataWriter writer = s.toAfterDataWriter(false, null, java.util.List.of(), new java.util.HashMap<>(), 100);
             assertNotNull(writer);
         }
     }

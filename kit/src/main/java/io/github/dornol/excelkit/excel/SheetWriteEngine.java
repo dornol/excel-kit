@@ -124,7 +124,7 @@ final class SheetWriteEngine<T> {
             StructuredTableWriter.requireRolloverAllowed(cfg.tableOptions);
             closeData();
             setCurrent(nextFreeRows, SheetWriteEngine.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns,
-                    headerRow(), cfg, values));
+                    headerRow(), cfg, values, rowStyleCache));
             if (values != null) values.resetSheet();
             sheet = nextSheet.apply(sheets.size());
             sheets.add(sheet);
@@ -169,7 +169,7 @@ final class SheetWriteEngine<T> {
             SheetWriteEngine.writeEmptyMessage(sheet, wb, cursor, columns, cfg, rowStyleCache, sharedStyles);
         }
         int nextRow = SheetWriteEngine.writeAfterDataAndSummary(sheet, wb, cursor.getRowOfSheet(), columns, headerRow(),
-                cfg, values, lastDataRow);
+                cfg, values, lastDataRow, rowStyleCache);
         setCurrent(nextFreeRows, nextRow);
         return nextRow;
     }
@@ -223,8 +223,9 @@ final class SheetWriteEngine<T> {
     /** @param values what the summary formulas calculate for the sheet, or {@code null} when they are not tracked */
     static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
                                              List<ExcelColumn<T>> columns, int headerRowIndex,
-                                             SheetConfig<T> cfg, @Nullable FormulaValues values) {
-        return writeAfterDataAndSummary(sheet, wb, startRow, columns, headerRowIndex, cfg, values, startRow);
+                                             SheetConfig<T> cfg, @Nullable FormulaValues values,
+                                             Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache) {
+        return writeAfterDataAndSummary(sheet, wb, startRow, columns, headerRowIndex, cfg, values, startRow, styleCache);
     }
 
     /**
@@ -234,14 +235,15 @@ final class SheetWriteEngine<T> {
      */
     static <T> int writeAfterDataAndSummary(SXSSFSheet sheet, SXSSFWorkbook wb, int startRow,
                                              List<ExcelColumn<T>> columns, int headerRowIndex,
-                                             SheetConfig<T> cfg, @Nullable FormulaValues values, int dataEndRow) {
+                                             SheetConfig<T> cfg, @Nullable FormulaValues values, int dataEndRow,
+                                             Map<ExcelStyleSupporter.DerivedStyleKey, CellStyle> styleCache) {
         int row = startRow;
         if (cfg.afterDataWriter != null) {
             row = cfg.afterDataWriter.write(new SheetContext(sheet, wb, row, columns, headerRowIndex));
         }
         if (cfg.summaryConfig != null) {
             // The summary covers the data rows only, not whatever afterData wrote below them.
-            row = cfg.summaryConfig.toAfterDataWriter(cfg.subtotalKey != null, values).write(
+            row = cfg.summaryConfig.toAfterDataWriter(cfg.subtotalKey != null, values, columns, styleCache, cfg.maxCellStyles).write(
                     new SheetContext(sheet, wb, row, columns, headerRowIndex, dataEndRow));
         }
         return row;

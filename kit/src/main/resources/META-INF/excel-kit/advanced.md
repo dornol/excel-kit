@@ -255,6 +255,8 @@ writer
 
 Operations: `sum`, `average`, `count` (numbers only), `countA` (every non-empty cell, text included), `min`, `max`
 
+Summary rows are bold on light gray (like subtotal rows), take the number format and alignment of their column and are locked under `protectSheet(...)`; `.style(r -> ...)` changes the look, `.style(r -> r.bold(false).backgroundColor(null))` gives plain rows.
+
 A summary covers its own sheet only: over rolled-over sheets each one gets a summary of its own rows (no total over all
 sheets); the same holds for `groupSubtotal(...)`.
 
