@@ -165,8 +165,10 @@ default bold-on-gray look; `label(column, key -> text)` sets the column of the t
 - A subtotal row is always locked under `protectSheet(...)`, even in a column set to `locked(false)`, and its label counts
   for the column's automatic width (within `autoWidthSampleRows`). It takes the number format and alignment of its column;
   `cellColor`, `rowColor` and `rowStyle` do not apply to it (use `style(...)`).
-- Conditional formatting rules and column validations (`dropdown`, `validation`) run over the subtotal rows too, as they
-  run over every row of the data block.
+- Conditional formatting rules (comparisons, `dataBar`, `iconSet`) skip the subtotal rows: a subtotal is a sum, so a threshold
+  rule would colour it for its size and a data bar would scale every data row against it. The rule covers one range per run of
+  data rows (`C2:C3 C5:C6`); `includeSubtotalRows()` on the rule puts the subtotal rows back under it. Column validations
+  (`dropdown`, `validation`) still run over the subtotal rows, as they run over every row of the data block.
 - Cannot be combined with `table(...)`, `chart(...)` or `namedRange(...)` (the write fails with `ExcelWriteException`).
 - A subtotal and a `summary(...)` formula carry their result next to the formula (worked out while the rows are written
   from the cells as they are stored: text does not count for `sum`, a date is a number), so Protected View, previews and

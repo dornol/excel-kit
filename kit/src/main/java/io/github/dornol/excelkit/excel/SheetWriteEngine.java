@@ -181,7 +181,9 @@ final class SheetWriteEngine<T> {
      */
     void finishSheets() {
         for (int i = 0; i < sheets.size(); i++) {
-            ExcelSheetPostProcessor.apply(sheets.get(i), columns, headerRows.get(i), dataEndRows.get(i), cfg, i);
+            SXSSFSheet target = sheets.get(i);
+            ExcelSheetPostProcessor.apply(target, columns, headerRows.get(i), dataEndRows.get(i), cfg, i,
+                    subtotals == null ? new int[0] : subtotals.subtotalRows(target));
         }
         TableOptions tableOptions = cfg.tableOptions;
         if (tableOptions != null) {

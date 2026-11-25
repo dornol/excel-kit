@@ -8,6 +8,8 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +34,9 @@ final class SubtotalTracker<T> {
     /** Rows the summary writes below the data of a sheet, which must still fit after the last subtotal row. */
     private final int summaryRows;
     private final @Nullable FormulaValues values;
+
+    /** The 0-based rows of the subtotal rows of every sheet written, in order: what a rule over the data must skip. */
+    private final Map<SXSSFSheet, List<Integer>> subtotalRowsBySheet = new IdentityHashMap<>();
 
     private @Nullable SXSSFSheet currentSheet;
     private long dataRowsInSheet;
@@ -126,6 +131,12 @@ final class SubtotalTracker<T> {
         }
     }
 
+    /** The 0-based rows of the subtotal rows of a sheet, ascending. */
+    int[] subtotalRows(SXSSFSheet sheet) {
+        List<Integer> rows = subtotalRowsBySheet.get(sheet);
+        return rows == null ? new int[0] : rows.stream().mapToInt(Integer::intValue).toArray();
+    }
+
     /** The 0-based position, among the data rows of its sheet, of the row {@link #beforeRow} was last called for. */
     long dataIndex() {
         return dataRowsInSheet - 1;
@@ -143,6 +154,7 @@ final class SubtotalTracker<T> {
             throw new ExcelWriteException("Sheet '" + sheet.getSheetName() + "' is full: no room for the subtotal row. "
                     + "Lower maxRows(...) so the writer rolls over to a new sheet earlier.");
         }
+        subtotalRowsBySheet.computeIfAbsent(sheet, k -> new ArrayList<>()).add(cursor.getRowOfSheet());
         SXSSFRow target = sheet.createRow(cursor.getRowOfSheet());
         target.setHeightInPoints(cfg.rowHeightInPoints);
         cursor.plusRow();

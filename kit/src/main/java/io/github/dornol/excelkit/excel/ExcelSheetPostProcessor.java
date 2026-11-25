@@ -29,9 +29,10 @@ final class ExcelSheetPostProcessor {
      * @param dataEndRow the last data row of this sheet; conditional formatting stops there so that
      *                   summary and {@code afterData} rows are not formatted (or scaled) as data
      * @param sheetIndex 0 for the first sheet of a write, 1 for its first rollover sheet, ...
+     * @param subtotalRows the 0-based subtotal rows of the sheet, ascending: they are no data rows, so a conditional rule skips them
      */
     static <T> void apply(SXSSFSheet sheet, List<ExcelColumn<T>> columns,
-                          int headerRowIndex, int dataEndRow, SheetConfig<T> config, int sheetIndex) {
+                          int headerRowIndex, int dataEndRow, SheetConfig<T> config, int sheetIndex, int[] subtotalRows) {
         applyColumnWidths(sheet, columns);
         applyDataValidations(sheet, columns, headerRowIndex);
         applyColumnOutline(sheet, columns);
@@ -44,7 +45,7 @@ final class ExcelSheetPostProcessor {
         }
         if (config.sheetPassword != null) sheet.protectSheet(config.sheetPassword);
         if (config.conditionalRules != null) for (ExcelConditionalRule rule : config.conditionalRules)
-            rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow);
+            rule.apply(sheet, headerRowIndex, columns.size(), dataEndRow, subtotalRows);
         if (config.printSetup != null) config.printSetup.apply(sheet, headerRowIndex, dataEndRow);
         requirePageBreaksWithinLimit(sheet);
         ExcelSheetPostProcessor.applyTabColor(sheet, config.tabColor);

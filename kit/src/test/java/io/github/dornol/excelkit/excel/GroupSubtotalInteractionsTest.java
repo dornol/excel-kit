@@ -185,14 +185,37 @@ class GroupSubtotalInteractionsTest {
             }
         }
 
+        private static java.util.List<String> ruleRanges(org.apache.poi.xssf.usermodel.XSSFWorkbook wb) {
+            var formatting = wb.getSheetAt(0).getSheetConditionalFormatting();
+            assertEquals(1, formatting.getNumConditionalFormattings());
+            return java.util.Arrays.stream(formatting.getConditionalFormattingAt(0).getFormattingRanges())
+                    .map(org.apache.poi.ss.util.CellRangeAddress::formatAsString).toList();
+        }
+
         @Test
-        void aConditionalFormatRuleCoversTheSubtotalRowsToo() throws IOException {
+        void aConditionalFormatRuleSkipsTheSubtotalRows() throws IOException {
             var w = base().conditionalFormatting(c -> c.columns(2).greaterThan("15", ExcelColor.LIGHT_YELLOW));
             try (var wb = open(w.write(ROWS))) {
-                var formatting = wb.getSheetAt(0).getSheetConditionalFormatting();
-                assertEquals(1, formatting.getNumConditionalFormattings());
-                var range = formatting.getConditionalFormattingAt(0).getFormattingRanges()[0];
-                assertEquals("C2:C6", range.formatAsString(), "from the first data row to the last subtotal row, as one block");
+                assertEquals(java.util.List.of("C2:C3", "C5"), ruleRanges(wb),
+                        "the data rows of each group; the subtotal rows 4 and 6 are no data");
+            }
+        }
+
+        @Test
+        void includeSubtotalRowsPutsTheSubtotalRowsBackUnderTheRule() throws IOException {
+            var w = base().conditionalFormatting(c -> c.columns(2).includeSubtotalRows()
+                    .greaterThan("15", ExcelColor.LIGHT_YELLOW));
+            try (var wb = open(w.write(ROWS))) {
+                assertEquals(java.util.List.of("C2:C6"), ruleRanges(wb), "from the first data row to the last subtotal row");
+            }
+        }
+
+        @Test
+        void aRuleOnASheetWithoutSubtotalsIsOneRangeAsBefore() throws IOException {
+            var w = ExcelWriter.<Row>create().column("Dept", Row::dept).column("Name", Row::name).column("Amount", Row::amount)
+                    .conditionalFormatting(c -> c.columns(2).greaterThan("15", ExcelColor.LIGHT_YELLOW));
+            try (var wb = open(w.write(ROWS))) {
+                assertEquals(java.util.List.of("C2:C4"), ruleRanges(wb));
             }
         }
 

@@ -104,8 +104,18 @@ class GroupSubtotalModelTest {
         if (cf && !body.isEmpty()) {
             var formatting = sheet.getSheetConditionalFormatting();
             assertEquals(1, formatting.getNumConditionalFormattings(), at + ": rules");
-            assertEquals("C2:C" + (lastRow + 1), formatting.getConditionalFormattingAt(0).getFormattingRanges()[0].formatAsString(),
-                    at + ": rule range stops below the last subtotal, above the summary");
+            // the rule covers the data rows only: one range per run of them, none over a subtotal row or the summary
+            List<String> wantRanges = new ArrayList<>();
+            for (int i = 0; i < body.size(); i++) {
+                if (!body.get(i).startsWith("D:")) continue;
+                int end = i;
+                while (end + 1 < body.size() && body.get(end + 1).startsWith("D:")) end++;
+                wantRanges.add(end == i ? "C" + (i + 2) : "C" + (i + 2) + ":C" + (end + 2));
+                i = end;
+            }
+            List<String> gotRanges = java.util.Arrays.stream(formatting.getConditionalFormattingAt(0).getFormattingRanges())
+                    .map(org.apache.poi.ss.util.CellRangeAddress::formatAsString).toList();
+            assertEquals(wantRanges, gotRanges, at + ": rule ranges are the runs of data rows");
         }
 
         // runs of data rows, from the model: [first line index, last line index] (0-based within the body)

@@ -120,6 +120,8 @@ If `columns()` is not set, rules apply to all columns.
 
 Also available: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights.
 
+With `groupSubtotal(...)` the rules skip the subtotal rows (a subtotal is a sum, not a data row); call `.includeSubtotalRows()` on the rule to cover them too.
+
 ## Required Columns (Reading)
 
 See [Reading — Required Columns](reading.md#required-columns).

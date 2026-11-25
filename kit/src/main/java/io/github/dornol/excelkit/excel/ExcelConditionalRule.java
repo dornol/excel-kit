@@ -77,6 +77,7 @@ public class ExcelConditionalRule {
     private final List<RuleEntry> rules = new ArrayList<>();
     private int @Nullable [] columnIndices;
     private int startRow = -1;
+    private boolean includeSubtotalRows;
     private @Nullable ExcelColor dataBarColor;
     private @Nullable IconSetType iconSetType;
 
@@ -100,6 +101,20 @@ public class ExcelConditionalRule {
      */
     public ExcelConditionalRule startRow(int startRow) {
         this.startRow = startRow;
+        return this;
+    }
+
+    /**
+     * Applies the rules to the subtotal rows of {@code groupSubtotal(...)} too. By default they are skipped: a subtotal is
+     * a sum, no data row, so a threshold rule would colour it for its size and a data bar or an icon set would scale every
+     * data row against it. {@code rowNumberColumn}, {@code stripedRows} and {@code maxRows} skip subtotal rows the same
+     * way. It has no effect on a sheet without subtotals.
+     *
+     * @return this rule for chaining
+     * @since 0.29.0
+     */
+    public ExcelConditionalRule includeSubtotalRows() {
+        this.includeSubtotalRows = true;
         return this;
     }
 
@@ -253,7 +268,7 @@ public class ExcelConditionalRule {
      * Applies all configured rules to the given sheet.
      * Package-private, called by the writer.
      */
-    void apply(SXSSFSheet sheet, int headerRowIndex, int columnCount, int lastDataRow) {
+    void apply(SXSSFSheet sheet, int headerRowIndex, int columnCount, int lastDataRow, int[] subtotalRows) {
         if (rules.isEmpty() && dataBarColor == null && iconSetType == null) return;
 
         XSSFSheet xssfSheet = SXSSFSheetHelper.getXSSFSheet(sheet);
@@ -264,9 +279,8 @@ public class ExcelConditionalRule {
         int[] cols = (columnIndices != null) ? columnIndices : defaultColumnRange(columnCount);
 
         for (int colIdx : cols) {
-            CellRangeAddress[] ranges = {
-                    new CellRangeAddress(dataStartRow, endRow, colIdx, colIdx)
-            };
+            CellRangeAddress[] ranges = ranges(dataStartRow, endRow, colIdx, includeSubtotalRows ? new int[0] : subtotalRows);
+            if (ranges.length == 0) continue;
 
             for (RuleEntry entry : rules) {
                 ConditionalFormattingRule rule = scf.createConditionalFormattingRule(
@@ -287,11 +301,28 @@ public class ExcelConditionalRule {
         }
     }
 
+    /** The rows from {@code first} to {@code last} of the column, without the given rows (ascending): one range per run of rows left. */
+    private static CellRangeAddress[] ranges(int first, int last, int column, int[] skipped) {
+        List<CellRangeAddress> ranges = new ArrayList<>();
+        int runStart = first;
+        for (int row : skipped) {
+            if (row < first || row > last) continue;
+            if (row > runStart) ranges.add(new CellRangeAddress(runStart, row - 1, column, column));
+            runStart = row + 1;
+        }
+        if (runStart <= last) ranges.add(new CellRangeAddress(runStart, last, column, column));
+        return ranges.toArray(CellRangeAddress[]::new);
+    }
+
+    private static List<String> sqref(CellRangeAddress[] ranges) {
+        return java.util.Arrays.stream(ranges).map(CellRangeAddress::formatAsString).toList();
+    }
+
     private void applyDataBar(XSSFSheet xssfSheet, CellRangeAddress[] ranges) {
         try {
             CTWorksheet ctSheet = xssfSheet.getCTWorksheet();
             CTConditionalFormatting cf = ctSheet.addNewConditionalFormatting();
-            cf.setSqref(List.of(ranges[0].formatAsString()));
+            cf.setSqref(sqref(ranges));
 
             CTCfRule ctRule = cf.addNewCfRule();
             ctRule.setType(STCfType.DATA_BAR);
@@ -319,7 +350,7 @@ public class ExcelConditionalRule {
         try {
             CTWorksheet ctSheet = xssfSheet.getCTWorksheet();
             CTConditionalFormatting cf = ctSheet.addNewConditionalFormatting();
-            cf.setSqref(List.of(ranges[0].formatAsString()));
+            cf.setSqref(sqref(ranges));
 
             CTCfRule ctRule = cf.addNewCfRule();
             ctRule.setType(STCfType.ICON_SET);

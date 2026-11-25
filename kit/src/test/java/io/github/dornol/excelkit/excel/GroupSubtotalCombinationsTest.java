@@ -207,13 +207,28 @@ class GroupSubtotalCombinationsTest {
             }
         }
 
+        private static String sqref(org.apache.poi.xssf.usermodel.XSSFWorkbook wb, int rule) {
+            var cf = wb.getSheetAt(0).getCTWorksheet().getConditionalFormattingArray(rule);
+            return String.join(" ", cf.getSqref().stream().map(Object::toString).toList());
+        }
+
         @Test
-        void aDataBarAndAnIconSetCoverTheSubtotalRowsToo() throws IOException {
+        void aDataBarAndAnIconSetSkipTheSubtotalRows() throws IOException {
             var w = writer(ExcelWriter.<Row>create())
-                    .conditionalFormatting(c -> c.columns(2).dataBar(ExcelColor.STEEL_BLUE));
+                    .conditionalFormatting(c -> c.columns(2).dataBar(ExcelColor.STEEL_BLUE).iconSet(
+                            ExcelConditionalRule.IconSetType.ARROWS_3));
             try (var wb = open(w.write(ROWS))) {
-                var range = wb.getSheetAt(0).getSheetConditionalFormatting().getConditionalFormattingAt(0).getFormattingRanges()[0];
-                assertEquals("C2:C7", range.formatAsString(), "the bars scale over the subtotals as well (documented)");
+                assertEquals("C2:C3 C5:C6", sqref(wb, 0), "the bars scale over the data rows only");
+                assertEquals("C2:C3 C5:C6", sqref(wb, 1));
+            }
+        }
+
+        @Test
+        void includeSubtotalRowsLetsTheBarsScaleOverTheSubtotalsToo() throws IOException {
+            var w = writer(ExcelWriter.<Row>create())
+                    .conditionalFormatting(c -> c.columns(2).includeSubtotalRows().dataBar(ExcelColor.STEEL_BLUE));
+            try (var wb = open(w.write(ROWS))) {
+                assertEquals("C2:C7", sqref(wb, 0));
             }
         }
 

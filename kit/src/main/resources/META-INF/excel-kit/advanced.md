@@ -148,7 +148,7 @@ writer
 
 Operators: `greaterThan`, `greaterThanOrEqual`, `lessThan`, `lessThanOrEqual`, `equalTo`, `notEqualTo`, `between`, `notBetween`
 
-Also: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights.
+Also: `.dataBar()` for gradient bars, `.iconSet()` for arrows/traffic lights. With `groupSubtotal(...)` a rule skips the subtotal rows (one range per run of data rows); `.includeSubtotalRows()` covers them too.
 
 ## Data Validation
 

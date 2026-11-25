@@ -310,6 +310,9 @@ class ExcelSamplesTest {
             assertEquals("A1:C7", filter(sheet));
             assertEquals(2, sheet.getDataValidations().size());
             assertEquals(1, sheet.getSheetConditionalFormatting().getNumConditionalFormattings());
+            var ranges = sheet.getSheetConditionalFormatting().getConditionalFormattingAt(0).getFormattingRanges();
+            assertEquals(java.util.List.of("C2:C3", "C5:C6"), java.util.Arrays.stream(ranges)
+                    .map(org.apache.poi.ss.util.CellRangeAddress::formatAsString).toList(), "the rule skips the subtotal rows");
         }
     }
 
