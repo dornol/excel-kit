@@ -56,7 +56,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(32, samples.size());
+        assertEquals(33, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -335,6 +335,18 @@ class ExcelSamplesTest {
             assertEquals("item 0", rows.getRow(1).getCell(0).getStringCellValue());
             assertEquals(0, rows.getNumMergedRegions());
             assertEquals(3, rows.getLastRowNum());
+        }
+    }
+
+    @Test
+    void theLongValidationFormulaSampleHoldsOneFormulaUnderTheLimitAndOneOver() throws Exception {
+        try (XSSFWorkbook wb = open("33-long-validation-formula.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            var validations = sheet.getDataValidations();
+            assertEquals(2, validations.size());
+            int[] lengths = validations.stream().mapToInt(v -> v.getValidationConstraint().getFormula1().length()).sorted().toArray();
+            assertTrue(lengths[0] <= 255, "one formula is under Excel's limit: " + lengths[0]);
+            assertTrue(lengths[1] > 255, "one formula is over it: " + lengths[1]);
         }
     }
 

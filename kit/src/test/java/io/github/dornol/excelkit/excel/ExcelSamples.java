@@ -110,6 +110,13 @@ public final class ExcelSamples {
         return out.toByteArray();
     }
 
+    /** An always-true custom validation formula of about the given length: {@code AND(LEN(A2)>=0,...,TRUE)}. */
+    private static String longValidationFormula(int length) {
+        StringBuilder sb = new StringBuilder("AND(");
+        while (sb.length() + "LEN(A2)>=0,TRUE)".length() <= length) sb.append("LEN(A2)>=0,");
+        return sb.append("TRUE)").toString();
+    }
+
     // ---- the samples -------------------------------------------------------------------------------------
 
     private void write() throws Exception {
@@ -593,6 +600,26 @@ public final class ExcelSamples {
                 "cellFormat sheet=Empty cell=A2 horizontalAlignment=xlCenter(-4108) fontItalic=True fontColor=808080",
                 "autoFilter sheet=Empty range=A1:C1 (the header only; Excel may extend it over the rows directly below it, so report the range it shows); freezePanes sheet=Empty rows=1",
                 "cell sheet=Empty cell=B3 value=(empty): no SUM over the line of text");
+
+        // 33. custom validation formulas around Excel's limit of 255 characters for a validation formula
+        String shortFormula = longValidationFormula(240);
+        String longFormula = longValidationFormula(300);
+        save("33-long-validation-formula.xlsx", ExcelWriter.<Item>create().sheetName("Report")
+                .column("Name", Item::name, c -> c.validation(ExcelValidation.formula(shortFormula)))
+                .column("Qty", Item::qty, c -> c.type(ExcelDataType.INTEGER).validation(ExcelValidation.formula(longFormula)))
+                .write(items(3)));
+        add("33-long-validation-formula.xlsx", "custom validation formulas of " + shortFormula.length() + " and "
+                        + longFormula.length() + " characters",
+                "Sheet Report: a header and three rows. Column A holds a custom validation whose formula is "
+                        + shortFormula.length() + " characters, column B one of " + longFormula.length()
+                        + " characters (Excel documents 255 as the limit of a validation formula). Both formulas are always true "
+                        + "(AND of LEN(...)>=0 terms), so any value is accepted. This file decides whether the library has to refuse "
+                        + "a validation formula over 255 characters: report exactly what Excel does with the second one.",
+                "opens: no repair prompt for column A (under the limit); report whether column B opens clean, is repaired, or has its validation dropped",
+                "validation sheet=Report cell=A2 type=custom formula1.length=" + shortFormula.length(),
+                "validation sheet=Report cell=B2 type=custom formula1.length=" + longFormula.length()
+                        + " (report whether the validation is still there after Excel opens the file, and its formula1 length)",
+                "typing: type any text into Report!A5 and Report!B5 (Range.Value2): both must be accepted");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {
