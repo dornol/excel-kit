@@ -121,7 +121,7 @@ You can still set types explicitly, for example `ExcelDataType.INTEGER` or `Exce
 | `IMAGE` | ExcelImage | — |
 | `BOOLEAN` | Boolean | — |
 
-Custom format: `.format("#,##0.00")` or use `ExcelDataFormat` presets.
+Custom format: `.format("#,##0.00")` or a preset, `.format(ExcelDataFormat.CURRENCY_KRW)`. For an id, postal code or phone number with leading zeros use `.format(ExcelDataFormat.TEXT)`: in a cell with the General format Excel turns `0012` into the number 12 when the cell is edited.
 
 Full type table: [Reference](reference.md#excelDataType-reference)
 

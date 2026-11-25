@@ -258,6 +258,8 @@ the cells below the first keep their values; rejected with `table(...)` and on `
 headers) was seen in an earlier row: `VALIDATION` `RowError` `Duplicate key [..]; first seen at row N`, key cells in
 `cellErrors()`. Empty key cells are not checked; keys are held in memory.
 
+`c.format(ExcelDataFormat.TEXT)` keeps ids, postal codes and phone numbers with leading zeros (`0012`) as text when a cell is edited in Excel (the default General format turns them into 12); `ExcelDataFormat` has presets for numbers, percents, dates and currencies, and `format(ExcelDataFormat)` takes them directly.
+
 `c.requiredMark()` shows `*` after a column's header text (a number format `@" *"`: the header cell keeps the plain
 name, so the file reads back by the same names). A schema `requiredColumn(...)` marks its header automatically.
 

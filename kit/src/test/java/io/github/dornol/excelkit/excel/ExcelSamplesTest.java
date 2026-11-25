@@ -149,6 +149,7 @@ class ExcelSamplesTest {
             assertEquals("#,##0.00", row.getCell(5).getCellStyle().getDataFormatString());
             assertEquals(CellType.STRING, row.getCell(6).getCellType());
             assertEquals("0012", row.getCell(6).getStringCellValue());
+            assertEquals("@", row.getCell(6).getCellStyle().getDataFormatString(), "the Text format keeps 0012 when the cell is edited");
             assertEquals(CellType.FORMULA, row.getCell(7).getCellType());
             assertEquals("E2*2", row.getCell(7).getCellFormula());
             assertEquals(1234567.0, row.getCell(4).getNumericCellValue());

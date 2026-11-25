@@ -125,6 +125,17 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     }
 
     /**
+     * Sets the column's Excel cell data format to one of the presets, such as
+     * {@link io.github.dornol.excelkit.excel.style.ExcelDataFormat#TEXT} for an id with leading zeros.
+     *
+     * @param dataFormat the preset
+     * @return this instance for chaining
+     */
+    public SELF format(io.github.dornol.excelkit.excel.style.ExcelDataFormat dataFormat) {
+        return format(java.util.Objects.requireNonNull(dataFormat, "dataFormat cannot be null").getFormat());
+    }
+
+    /**
      * Sets the column's horizontal text alignment.
      *
      * @param alignment the horizontal alignment

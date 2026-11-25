@@ -26,20 +26,37 @@
 
 ## ExcelDataFormat Presets
 
-Use with `.format(ExcelDataFormat.NUMBER.getFormat())`:
+Use with `.format(ExcelDataFormat.NUMBER)` (a preset) or `.format("#,##0")` (any Excel format string):
 
-| Preset | Format String |
-|--------|---------------|
-| `NUMBER` | `#,##0` |
-| `NUMBER_1` | `#,##0.0` |
-| `NUMBER_2` | `#,##0.00` |
-| `NUMBER_4` | `#,##0.0000` |
-| `PERCENT` | `0.00%` |
-| `DATETIME` | `yyyy-mm-dd hh:mm:ss` |
-| `DATE` | `yyyy-mm-dd` |
-| `TIME` | `hh:mm:ss` |
-| `CURRENCY_KRW` | `#,##0"원"` |
-| `CURRENCY_USD` | `"$"#,##0.00` |
+| Preset | Format String | Shows |
+|--------|---------------|-------|
+| `TEXT` | `@` | text: keeps `0012` as it is, also when the cell is edited (see below) |
+| `NUMBER_PLAIN` | `0` | 1235 |
+| `NUMBER` | `#,##0` | 1,235 |
+| `NUMBER_1` | `#,##0.0` | 1,234.6 |
+| `NUMBER_2` | `#,##0.00` | 1,234.57 |
+| `NUMBER_4` | `#,##0.0000` | 1,234.5670 |
+| `PERCENT_0` | `0%` | 12% |
+| `PERCENT_1` | `0.0%` | 12.3% |
+| `PERCENT` | `0.00%` | 12.34% |
+| `DATETIME` | `yyyy-mm-dd hh:mm:ss` | 2025-07-19 14:23:45 |
+| `DATETIME_HM` | `yyyy-mm-dd hh:mm` | 2025-07-19 14:23 |
+| `DATE` | `yyyy-mm-dd` | 2025-07-19 |
+| `DATE_DOT` | `yyyy.mm.dd` | 2025.07.19 |
+| `DATE_SLASH` | `yyyy/mm/dd` | 2025/07/19 |
+| `DATE_KR` | `yyyy"년" m"월" d"일"` | 2025년 7월 19일 |
+| `YEAR_MONTH` | `yyyy-mm` | 2025-07 |
+| `TIME` | `hh:mm:ss` | 14:23:45 |
+| `TIME_HM` | `hh:mm` | 14:23 |
+| `CURRENCY_KRW` | `#,##0"원"` | 1,235원 |
+| `CURRENCY_USD` | `"$"#,##0.00` | $1,234.57 |
+| `CURRENCY_EUR` | `"€"#,##0.00` | €1,234.57 |
+| `CURRENCY_JPY` | `"¥"#,##0` | ¥1,235 |
+
+**Leading zeros (`TEXT`).** A string such as `0012` is written as text, but in a cell with the General format (the default)
+Excel parses what is typed into it when the cell is edited, so the value becomes the number 12. Give a text column that holds
+ids, postal codes or phone numbers `.format(ExcelDataFormat.TEXT)`. Use it on text columns only: a number typed into a
+text-formatted cell stays text and is no longer added up or sorted as a number.
 
 ## ExcelKitSchema — Unified Read/Write
 
