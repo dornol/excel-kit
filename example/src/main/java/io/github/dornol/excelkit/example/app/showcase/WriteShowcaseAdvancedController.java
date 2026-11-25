@@ -2,7 +2,9 @@ package io.github.dornol.excelkit.example.app.showcase;
 
 import io.github.dornol.excelkit.spring.ExcelKitResponse;
 import io.github.dornol.excelkit.example.app.dto.ProductDto;
+import io.github.dornol.excelkit.excel.feature.ExcelFormula;
 import io.github.dornol.excelkit.excel.style.ExcelBorderStyle;
+import io.github.dornol.excelkit.excel.style.ExcelDataFormat;
 import io.github.dornol.excelkit.excel.feature.ExcelCellComment;
 import io.github.dornol.excelkit.excel.ExcelChartConfig;
 import io.github.dornol.excelkit.excel.style.ExcelColor;
@@ -563,5 +565,54 @@ public class WriteShowcaseAdvancedController {
         String password = "demo123";
         return ExcelKitResponse.excel("late-password-demo")
                 .body(os -> handler.writeTo(os, password));
+    }
+
+    /**
+     * Formats and formulas: ids with leading zeros that stay text when a cell is edited, presets for numbers, percents
+     * and dates, a formula that carries its result (it shows in Protected View and previews), and a styled summary row.
+     */
+    @GetMapping("/formats-and-formulas")
+    public ResponseEntity<StreamingResponseBody> downloadFormatsAndFormulas() {
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Formats and Formulas")
+                .freezeRows(1)
+                // "0012" is text; in a General cell Excel turns it into the number 12 when the cell is edited
+                .column("Code", p -> String.format("%04d", p.price() / 1000), c -> c.format(ExcelDataFormat.TEXT))
+                .column("Name", ProductDto::name)
+                .column("Price", ProductDto::price, c -> c.type(ExcelDataType.INTEGER).format(ExcelDataFormat.NUMBER))
+                .column("Discount", ProductDto::discount, c -> c.type(ExcelDataType.DOUBLE).format(ExcelDataFormat.PERCENT_1))
+                .column("Quantity", ProductDto::quantity, c -> c.type(ExcelDataType.INTEGER))
+                // the formula with its result: Protected View and previews show the number; Excel recalculates when it opens the file
+                // in a (row, cursor) function cursor.getRowOfSheet() is the row as Excel numbers it, so a formula can point at its own row
+                .column("Value (formula + result)", (p, cursor) -> ExcelFormula.of(
+                        "C" + cursor.getRowOfSheet() + "*E" + cursor.getRowOfSheet(), (long) p.price() * p.quantity()),
+                        c -> c.format(ExcelDataFormat.NUMBER))
+                .column("Value (formula only)", (p, cursor) -> ExcelFormula.of(
+                        "C" + cursor.getRowOfSheet() + "*E" + cursor.getRowOfSheet()), c -> c.format(ExcelDataFormat.NUMBER))
+                .summary(s -> s.label("Name", "Total").sum("Price").sum("Quantity").average("Price")
+                        .style(r -> r.backgroundColor(ExcelColor.LIGHT_YELLOW)))
+                .write(sampleProducts().stream());
+
+        return ExcelKitResponse.excel("formats-and-formulas-demo")
+                .body(handler::writeTo);
+    }
+
+    /** Axis labels of a chart over small whole numbers: the value axis is told to step by 1, not 0.5 (0 1 1 2 2 3 3 4). */
+    @GetMapping("/chart-axis")
+    public ResponseEntity<StreamingResponseBody> downloadChartAxis() {
+        var handler = ExcelWriter.<ProductDto>create().headerColor(ExcelColor.STEEL_BLUE)
+                .sheetName("Chart Axis")
+                .column("Name", ProductDto::name)
+                .column("Quantity", p -> p.quantity() % 4, c -> c.type(ExcelDataType.INTEGER))
+                .chart(ch -> ch
+                        .type(ExcelChartConfig.ChartType.BAR)
+                        .title("Quantity (axis step 1)")
+                        .categoryColumn(0)
+                        .valueColumn(1, "Quantity")
+                        .valueAxisMajorUnit(1))
+                .write(sampleProducts().stream());
+
+        return ExcelKitResponse.excel("chart-axis-demo")
+                .body(handler::writeTo);
     }
 }

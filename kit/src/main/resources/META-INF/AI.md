@@ -195,7 +195,7 @@ The Excel writers (`ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter`) use 
 - **Header style config** — `headerStyle(cfg -> cfg.alignment(...).border(...).bold(...).wrapText(...))`
   on `ExcelWriter` / `ExcelWorkbook`. Overrides default header alignment/bold/border/wrap.
 
-## Key API Notes (v0.28.0+)
+## Key API Notes (v0.29.0+)
 
 - **Schema package** — `ExcelKitSchema` lives in `io.github.dornol.excelkit.schema` (it moved from `core`, which no
   longer depends on `excel`/`csv`). Register a schema reader in a workbook reader with
@@ -221,6 +221,13 @@ The Excel writers (`ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter`) use 
   validated.
 - **Spring** — downloads send `Cache-Control: private, max-age=N`; `ExcelKitMultipartFile.requireExcelOrCsvContent`
   checks the real ZIP signature and that a `.csv` is UTF-8 text.
+
+Names added in 0.29.0, one line each:
+
+- Formats: `ExcelDataFormat` presets `TEXT`, `NUMBER_PLAIN`, `PERCENT_0`, `PERCENT_1`, `DATETIME_HM`, `DATE_DOT`, `DATE_SLASH`, `YEAR_MONTH`, `TIME_HM`, `CURRENCY_EUR`, `CURRENCY_JPY`; `format(ExcelDataFormat)` takes a preset.
+- Summaries: `summary(...)` operations `average`, `count`, `countA`, `min`, with `style(...)`; `includeSubtotalRows()` on a conditional rule covers subtotal rows (skipped by default).
+- Charts: `valueColumn`, `lineColumn`, `secondaryLineColumn`, `secondaryValueAxisTitle`, `valueAxisMajorUnit`, `valueAxisNumberFormat`.
+- `ExcelErrorReport`: `rowColumnName`, `errorColumnName`, `errorColor`, `sheetName`. `ExcelWorkbook` / `ExcelWriter`: `protectWorkbook`; `onProgress` and `onReadProgress` for progress.
 
 ## Spring response compatibility
 

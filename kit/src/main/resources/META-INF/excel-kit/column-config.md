@@ -35,6 +35,14 @@ A formula column: a string with `type(ExcelDataType.FORMULA)` has no result in t
 
 Custom format: `.format("#,##0.00")` or a preset, `.format(ExcelDataFormat.CURRENCY_KRW)`. For an id, postal code or phone number with leading zeros use `.format(ExcelDataFormat.TEXT)`: in a cell with the General format Excel turns `0012` into the number 12 when the cell is edited.
 
+## Number formats (`ExcelDataFormat`)
+
+`.format(ExcelDataFormat.X)` takes a preset, `.format("#,##0.00")` any Excel format string. Presets: `TEXT` (keeps `0012` as text
+when a cell is edited), `NUMBER_PLAIN` (`0`), `NUMBER`, `NUMBER_1`, `NUMBER_2`, `NUMBER_4`, `PERCENT_0`, `PERCENT_1`, `PERCENT`,
+`DATETIME`, `DATETIME_HM`, `DATE`, `DATE_DOT`, `DATE_SLASH`, `YEAR_MONTH`, `TIME`, `TIME_HM`, `CURRENCY_KRW`, `CURRENCY_USD`,
+`CURRENCY_EUR`, `CURRENCY_JPY`. A column function receives its settings through a `Consumer<ColumnConfig<T>>`; the style of
+a summary or subtotal row is a `RowStyleConfig`.
+
 ## Column Styling Methods
 
 All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`, and `CsvWriter`:

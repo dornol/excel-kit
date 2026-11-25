@@ -28,15 +28,15 @@ integrations you use, using versions compatible with the rest of your applicatio
 
 **Gradle — Excel**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.28.0")
-implementation("io.github.dornol:excel-kit-spring:0.28.0") // optional Spring MVC helpers
+implementation("io.github.dornol:excel-kit:0.29.0")
+implementation("io.github.dornol:excel-kit-spring:0.29.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:6.0.0")      // Excel read/write
 implementation("org.slf4j:slf4j-api:2.0.20")          // logging facade
 ```
 
 **Gradle — CSV**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.28.0")
+implementation("io.github.dornol:excel-kit:0.29.0")
 implementation("com.opencsv:opencsv:5.12.0")
 implementation("org.slf4j:slf4j-api:2.0.20")
 ```
@@ -51,12 +51,12 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.28.0</version>
+  <version>0.29.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit-spring</artifactId>
-  <version>0.28.0</version>
+  <version>0.29.0</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
@@ -327,6 +327,20 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 
 Reader configurations are reusable. Each `read()`, `readWhile()`, or `readStrict()` call creates
 an independent one-shot session for its input.
+
+### New in 0.29.0
+
+| Area | What |
+|------|------|
+| Writing | `ExcelWriter` is a workbook with one sheet (`ExcelSheetWriter`, `SheetWriter`); `TemplateListWriter` has `columnIf`, `constColumn`, `constColumnIf`, `rowNumberColumn` and `writeErrorPolicy`; `CsvWriter` has `rowNumberColumn` and per-column `CsvColumnConfig` settings; `FileHandler.discard()` releases an unwritten `ExcelHandler` or `CsvHandler`; one `WorkbookInitOptions` |
+| Forms | `ExcelValidation.list(...)` and `dependentList(...)` with `inputTitle`, `inputMessage` and `allowBlank`; `dependentDropdown(...)` cascading lists; `veryHideSheet()`; `pageBreakWhen(...)`; `namedRange(...)`; `headerFontName` and `headerFontSize`; `ExcelErrorReport` (`rowColumnName`, `errorColumnName`, `errorColor`, `sheetName`); `protectWorkbook` and `documentProperty`; `headerStyle` |
+| Summaries | `summary(...)` (`ExcelSummary`) and `ExcelSubtotal` (`groupSubtotal`, `keyColumn`) with `sum`, `average`, `count`, `countA`, `min` and `max`, styled with `RowStyleConfig`; rules skip subtotal rows unless `includeSubtotalRows()` |
+| Charts | `valueColumn`, `lineColumn` and `secondaryLineColumn` combination charts with `secondaryValueAxisTitle`; `valueAxisMajorUnit` and `valueAxisNumberFormat` |
+| Formats | `ExcelDataFormat.TEXT` and presets `NUMBER_PLAIN`, `PERCENT_0`, `PERCENT_1`, `DATETIME_HM`, `DATE_DOT`, `DATE_SLASH`, `YEAR_MONTH`, `TIME_HM`, `CURRENCY_EUR`, `CURRENCY_JPY` |
+| Reading | `uniqueKey(...)`, `fillMergedCells()`, `countRows()` for CSV too (`Cursor.getTotalRows()`, `ReadProgress.totalRows()`, `onReadProgress`, `onProgress`) |
+| Errors | `ExcelWriteException` for a value or a width Excel cannot hold; your own callback's exception reaches you unchanged |
+| Spring | `requireExcelOrCsvContent(file, charset)` for CSV uploads that are not UTF-8 |
+| Types | `ColumnsWriter`, `ColumnConfig`, `ExcelChartConfig`, `CsvHandler`, `Cursor` |
 
 ## Performance
 

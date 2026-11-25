@@ -393,6 +393,15 @@ extraction/conversion `writeErrorPolicy` (default `FAIL_FAST`; `LENIENT` writes 
 Structured-table column names are preserved after streaming header rows are flushed.
 Template lists using existing headers retain the template's header names.
 
+## Types and names at a glance
+
+`ColumnsWriter` and `TemplateListWriter` (a list written into a template) take the same column methods as the other writers
+(`columnIf`, `constColumn`, `rowNumberColumn`). `ExcelSummary` (`summary(...)`) and `ExcelSubtotal` (`groupSubtotal(...)`) are
+styled with a `RowStyleConfig`. `documentProperty(key, value)` and `headerStyle(...)` are workbook settings. `FileHandler` is
+what `ExcelHandler` and `CsvHandler` share (`writeTo`, `discard`), and `Cursor` carries the position and, with `countRows()`,
+the total of a read (`getTotalRows()`). Spring: `ExcelKitMultipartFile.requireExcelOrCsvContent(file, charset)` checks a CSV
+upload that is not UTF-8 (for example CP949).
+
 ## Spring response compatibility
 
 Spring responses accept an explicit `Duration` for cache max-age through

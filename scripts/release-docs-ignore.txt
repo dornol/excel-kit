@@ -15,3 +15,16 @@ excelkit
 spring
 InputStream
 InputStreamSource
+# Names in the 0.29.0 "### Added" entries that are no API to document on its own: a JDK type, an enum constant described by its
+# type, a placeholder or a charset.
+n
+NullPointerException
+VALIDATION
+Builder
+_excelkit_dep_N
+MS949
+ExcelColumnBuilder
+COUNTA
+BAR
+LINE
+AREA

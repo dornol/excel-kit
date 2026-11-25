@@ -18,6 +18,9 @@ import java.util.Objects;
  *       .column("Plain", order -> ExcelFormula.of("B2*C2"))      // no result, as a string formula
  *       .write(stream);
  * }</pre>
+ * In a column function that takes the row and the cursor, {@code cursor.getRowOfSheet()} is the number of the row as Excel
+ * numbers it, so a formula can point at its own row: {@code "B" + cursor.getRowOfSheet() + "*2"}.
+ * <p>
  * The result is yours to give: the library does not calculate it, and a wrong one shows until the file is recalculated.
  * <p>
  * <b>Security warning:</b> do not build the formula from untrusted input, as for

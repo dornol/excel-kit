@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.29.0] - 2026-11-25
 
 ### Added
 - `ExcelFormula` (`excel.feature`), a column value that carries a formula and its result: `ExcelFormula.of("E2*2", 2469134)`, `of(formula, "text")`, `of(formula, true)`, or `of(formula)` without a result. A formula given as a string has no result in the file, so a viewer that does not calculate (Protected View, a preview, a reader of the file) shows the cell empty; with a result it shows the result, and Excel still recalculates on open. The result is the caller's: the library does not calculate it. The column type is inferred (`FORMULA`); in CSV the value is its result, or the formula without one.
