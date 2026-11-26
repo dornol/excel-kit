@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-11-26
+
 ### Added
 - `id(String)` on columns gives a column a key that `summary(...)`, `groupSubtotal(...)` and `dependentDropdown(...)` refer to it by, in place of its name: `.column("Amount", Row::q1, c -> c.group("Q1").id("q1"))`, then `.summary(s -> s.sum("q1"))`. A reference is looked up by id first and by name second, so a name that is unique keeps working. An id must be unique in the sheet and must not be the name of another column. It is not part of a `defaultStyle(...)` (`id(...)` there throws `UnsupportedOperationException`).
 

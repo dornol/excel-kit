@@ -28,3 +28,5 @@ COUNTA
 BAR
 LINE
 AREA
+# Names in the 0.30.0 "### Added" entries that are a JDK type.
+UnsupportedOperationException

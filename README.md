@@ -28,15 +28,15 @@ integrations you use, using versions compatible with the rest of your applicatio
 
 **Gradle — Excel**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.29.0")
-implementation("io.github.dornol:excel-kit-spring:0.29.0") // optional Spring MVC helpers
+implementation("io.github.dornol:excel-kit:0.30.0")
+implementation("io.github.dornol:excel-kit-spring:0.30.0") // optional Spring MVC helpers
 implementation("org.apache.poi:poi-ooxml:6.0.0")      // Excel read/write
 implementation("org.slf4j:slf4j-api:2.0.20")          // logging facade
 ```
 
 **Gradle — CSV**
 ```kotlin
-implementation("io.github.dornol:excel-kit:0.29.0")
+implementation("io.github.dornol:excel-kit:0.30.0")
 implementation("com.opencsv:opencsv:5.12.0")
 implementation("org.slf4j:slf4j-api:2.0.20")
 ```
@@ -51,12 +51,12 @@ implementation("jakarta.validation:jakarta.validation-api:3.1.1") // optional Be
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit</artifactId>
-  <version>0.29.0</version>
+  <version>0.30.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.dornol</groupId>
   <artifactId>excel-kit-spring</artifactId>
-  <version>0.29.0</version>
+  <version>0.30.0</version>
 </dependency>
 <dependency>
   <groupId>org.apache.poi</groupId>
@@ -327,6 +327,12 @@ Every public type by package is listed in the [reference guide](docs/guide/refer
 
 Reader configurations are reusable. Each `read()`, `readWhile()`, or `readStrict()` call creates
 an independent one-shot session for its input.
+
+### New in 0.30.0
+
+| Area | What |
+|------|------|
+| Headers | The same column name under different header groups (`group("Q1")` / `group("Q2")` may both hold `Amount`); `id(...)` on a column is the key that `summary`, `groupSubtotal` and `dependentDropdown` use instead of its name, and lets columns of one group share a name; `table(...)` rejects equal headers |
 
 ### New in 0.29.0
 
