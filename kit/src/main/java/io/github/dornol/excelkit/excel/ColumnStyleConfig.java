@@ -92,6 +92,7 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     // ── Grouping ──
     /** Group header levels from outermost to innermost. Empty = no grouping. */
     String @Nullable [] groupNames;
+    @Nullable String id;
     int outlineLevel;
 
     // ── Null handling ──
@@ -330,6 +331,31 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
      */
     public SELF group(String @Nullable ... levels) {
         this.groupNames = (levels == null || levels.length == 0) ? null : levels.clone();
+        return self();
+    }
+
+    /**
+     * Gives this column an id: the key that summaries, subtotals and dependent dropdowns use to refer to it, in place
+     * of its name. The name is then only the header text, so columns of different groups may share it while each is
+     * still addressable.
+     *
+     * <pre>{@code
+     * .column("Amount", Row::q1, c -> c.group("Q1").id("q1Amount"))
+     * .column("Amount", Row::q2, c -> c.group("Q2").id("q2Amount"))
+     * .summary(s -> s.sum("q1Amount"))
+     * }</pre>
+     *
+     * A reference is looked up by id first and by name second. The id must be unique in the sheet and must not equal
+     * the name of another column. Columns of the same group that share a name are accepted only when each has an id.
+     *
+     * @param id the id; not blank
+     * @return this instance for chaining
+     * @throws IllegalArgumentException if the id is blank
+     */
+    public SELF id(String id) {
+        Objects.requireNonNull(id, "id cannot be null");
+        if (id.isBlank()) throw new IllegalArgumentException("id must not be blank");
+        this.id = id;
         return self();
     }
 
@@ -882,6 +908,19 @@ public abstract class ColumnStyleConfig<T, SELF extends ColumnStyleConfig<T, SEL
     public static class DefaultStyleConfig<T> extends ColumnStyleConfig<T, DefaultStyleConfig<T>> {
         /** Creates a new default style configuration. */
         public DefaultStyleConfig() {}
+
+        /**
+         * Not supported: an id names one column, so a default shared by every column cannot carry it.
+         *
+         * @param id ignored
+         * @return never returns
+         * @throws UnsupportedOperationException always
+         */
+        @Override
+        public DefaultStyleConfig<T> id(String id) {
+            throw new UnsupportedOperationException("A column id identifies one column and cannot be a default: "
+                    + "set it with column(name, function, c -> c.id(...))");
+        }
     }
 
     /**

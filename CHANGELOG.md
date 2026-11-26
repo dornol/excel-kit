@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `id(String)` on columns gives a column a key that `summary(...)`, `groupSubtotal(...)` and `dependentDropdown(...)` refer to it by, in place of its name: `.column("Amount", Row::q1, c -> c.group("Q1").id("q1"))`, then `.summary(s -> s.sum("q1"))`. A reference is looked up by id first and by name second, so a name that is unique keeps working. An id must be unique in the sheet and must not be the name of another column. It is not part of a `defaultStyle(...)` (`id(...)` there throws `UnsupportedOperationException`).
+
+### Changed
+- The same column name is allowed under different header groups (`group("Home")` and `group("Work")` may both hold a `Name`); only a name with the same group path is a duplicate. Two columns of the same group and name are accepted when both have an id. A column without a group and one with a group are different, and so are two group paths that differ at any level.
+- A reference by name that matches more than one column (`sum("Amount")` with two `Amount` columns) in a summary, a subtotal or a dependent dropdown fails with `ExcelWriteException` and asks for an id, instead of taking the first column. A dependent dropdown whose parent name is shared prefers the parent in its own group.
+- `table(...)` rejects two columns with the same header, also under different groups and also in `TemplateListWriter` (Excel does not allow it and repairs the file); the comparison ignores case. The message is `Duplicate table header`.
+
 ## [0.29.0] - 2026-11-25
 
 ### Added

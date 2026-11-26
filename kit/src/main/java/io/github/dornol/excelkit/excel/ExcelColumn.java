@@ -52,6 +52,7 @@ public class ExcelColumn<T> {
     private final String @Nullable [] dropdownOptions;
     private final @Nullable CellColorFunction<T> cellColorFunction;
     private final String @Nullable [] groupNames;
+    private final @Nullable String id;
     private final int outlineLevel;
     private final @Nullable Function<T, @Nullable String> commentFunction;
     private final @Nullable ExcelBorderStyle borderStyle;
@@ -96,6 +97,7 @@ public class ExcelColumn<T> {
         this.dropdownOptions = config.dropdownOptions;
         this.cellColorFunction = config.cellColorFunction;
         this.groupNames = config.groupNames;
+        this.id = config.id;
         this.outlineLevel = config.outlineLevel;
         this.commentFunction = config.commentFunction;
         this.borderStyle = config.borderStyle;
@@ -363,6 +365,11 @@ public class ExcelColumn<T> {
 
     @Nullable CellColorFunction<T> getCellColorFunction() {
         return cellColorFunction;
+    }
+
+    /** The id other settings refer to this column by, or {@code null} when it has none. */
+    @Nullable String getId() {
+        return id;
     }
 
     /**

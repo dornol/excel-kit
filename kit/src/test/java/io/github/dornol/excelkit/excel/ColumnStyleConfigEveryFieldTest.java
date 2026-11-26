@@ -65,6 +65,7 @@ class ColumnStyleConfigEveryFieldTest {
         for (Field field : fields) {
             field.setAccessible(true);
             if (field.getName().equals("alignment")) continue; // follows alignmentSet, below
+            if (field.getName().equals("id")) continue; // identifies one column: a shared default would repeat it
             var defaults = new ColumnStyleConfig.DefaultStyleConfig<Object>();
             Object value = valueFor(field);
             field.set(defaults, value);

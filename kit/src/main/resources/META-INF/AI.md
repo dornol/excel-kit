@@ -142,6 +142,12 @@ The Excel writers (`ExcelWriter`, `ExcelSheetWriter`, `TemplateListWriter`) use 
   `.column("Q1", Row::q1, c -> c.group("Financial", "Revenue", "2025"))` produces 3 group rows + 1 header row.
   Source-compatible with single-level `.group("X")`. Reflective readers: field renamed `groupName` → `groupNames`,
   getter `getGroupNames()` replaces `getGroupName()`.
+- **Same name in different groups, column ids** — a column name is unique per group path (`group("Q1")` and `group("Q2")`
+  may both hold `Amount`); the same name in the same group fails unless both columns have `id(...)`. `summary`,
+  `groupSubtotal` and `dependentDropdown` look a column up by `id(...)` first, then by name; a name shared by several
+  columns fails with `ExcelWriteException` (use ids): `.column("Amount", f, c -> c.group("Q1").id("q1"))`,
+  `.summary(s -> s.sum("q1"))`. `table(...)` still rejects equal headers (case-insensitive). `id(...)` is not allowed in
+  `defaultStyle(...)`.
 - **Header customization** (writer-level):
   - `.headerRowHeight(float points)` — applies to every header row including group rows; `0` = default
   - `.headerFontName(String)` / `.headerFontSize(int)`

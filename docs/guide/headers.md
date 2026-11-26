@@ -138,6 +138,27 @@ Produces 3 header rows (2 group + 1 column):
 - Columns with fewer levels merge vertically into the column header cell.
 - Columns with no group span the full header depth.
 
+### Same Name in Different Groups
+
+A column name only has to be unique within its group path, so two groups may each have an `Amount`:
+
+```java
+ExcelWriter.<Row>create()
+    .column("Name", Row::name)
+    .column("Amount", Row::q1, c -> c.group("Q1").id("q1"))
+    .column("Amount", Row::q2, c -> c.group("Q2").id("q2"))
+    .summary(s -> s.label("Name", "Sum").sum("q2"))
+    .write(data);
+```
+
+- Two columns with the same name **and** the same group path are a duplicate and fail with `ExcelWriteException`,
+  unless both have an `id(...)`.
+- `summary(...)`, `groupSubtotal(...)` and `dependentDropdown(...)` refer to a column by its `id(...)` first and by its
+  name second. A name shared by several columns is ambiguous and fails; give the columns ids and use those.
+- An id is unique in the sheet and is not the name of another column. It cannot be set in `defaultStyle(...)`.
+- A `table(...)` cannot hold two columns with the same header (Excel repairs such a file), ids or not.
+- The file reads back by header text: a reader's `DuplicateHeaderPolicy` decides what the repeated `Amount` means.
+
 ### Group Header Comments (v0.16.11+)
 
 Attach a comment to a merged group header cell by path (outermost first):

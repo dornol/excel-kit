@@ -90,6 +90,9 @@ writer
     .write(data);
 ```
 
+Columns are referred to by name, or by `id(...)` when several columns share a name (see
+[Same Name in Different Groups](headers.md#same-name-in-different-groups)); a name that matches more than one column fails.
+
 Multiple operations create multiple rows:
 ```java
 .summary(s -> s

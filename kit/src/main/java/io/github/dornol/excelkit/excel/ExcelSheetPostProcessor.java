@@ -115,8 +115,16 @@ final class ExcelSheetPostProcessor {
 
     private static <T> int parentIndex(List<ExcelColumn<T>> columns, int self, String parentColumn) {
         for (int j = 0; j < columns.size(); j++) {
-            if (j != self && columns.get(j).getName().equals(parentColumn)) return j;
+            if (j != self && parentColumn.equals(columns.get(j).getId())) return j;
         }
+        int fallback = -1;
+        String[] selfGroups = columns.get(self).getGroupNames();
+        for (int j = 0; j < columns.size(); j++) {
+            if (j == self || !columns.get(j).getName().equals(parentColumn)) continue;
+            if (java.util.Arrays.equals(columns.get(j).getGroupNames(), selfGroups)) return j; // 같은 그룹 우선
+            if (fallback < 0) fallback = j;
+        }
+        if (fallback >= 0) return fallback;
         throw new ExcelWriteException("The dependent dropdown of column '" + columns.get(self).getName()
                 + "' names the parent column '" + parentColumn + "', which is not another column of the sheet");
     }

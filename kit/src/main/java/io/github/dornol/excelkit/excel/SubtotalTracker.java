@@ -56,11 +56,11 @@ final class SubtotalTracker<T> {
         this.columns = columns;
         List<String> names = columns.stream().map(ExcelColumn::getName).toList();
         String labelColumn = config.labelColumn();
-        this.labelIndex = labelColumn == null ? 0 : names.indexOf(labelColumn);
+        this.labelIndex = labelColumn == null ? 0 : SheetWriteEngine.indexOfColumn(columns, labelColumn);
         if (labelIndex < 0) throw new ExcelWriteException("Subtotal label column not found: '" + labelColumn
                 + "'. Columns: " + names);
         String keyColumn = config.keyColumn();
-        this.keyIndex = keyColumn == null ? -1 : names.indexOf(keyColumn);
+        this.keyIndex = keyColumn == null ? -1 : SheetWriteEngine.indexOfColumn(columns, keyColumn);
         if (keyColumn != null && keyIndex < 0) throw new ExcelWriteException("Subtotal key column not found: '"
                 + keyColumn + "'. Columns: " + names);
         if (keyIndex >= 0 && keyIndex == labelIndex) throw new ExcelWriteException("Subtotal key column '"
@@ -68,7 +68,7 @@ final class SubtotalTracker<T> {
         this.opOfColumn = new ExcelSummary.Op[columns.size()];
         for (var entry : config.entries().entrySet()) {
             for (String name : entry.getValue()) {
-                int index = names.indexOf(name);
+                int index = SheetWriteEngine.indexOfColumn(columns, name);
                 if (index < 0) throw new ExcelWriteException("Subtotal column not found: '" + name
                         + "'. Columns: " + names);
                 if (index == labelIndex) throw new ExcelWriteException("Subtotal column '" + name

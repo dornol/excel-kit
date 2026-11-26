@@ -625,6 +625,21 @@ public final class ExcelSamples {
                 "validation sheet=Report cell=B2 type=custom formula1.length=" + longFormula.length()
                         + " (report whether the validation is still there after Excel opens the file, and its formula1 length)",
                 "typing: type any text into Report!A5 and Report!B5 (Range.Value2): both must be accepted");
+
+        // 34. the same column name under different groups, told apart by an id
+        save("34-same-name-different-groups.xlsx", ExcelWriter.<Item>create().sheetName("Report").autoFilter(true)
+                .column("Name", Item::name)
+                .column("Amount", Item::qty, c -> c.group("Q1").id("q1"))
+                .column("Amount", i -> i.qty() * 10, c -> c.group("Q2").id("q2"))
+                .summary(s -> s.label("Name", "Sum").sum("q2"))
+                .write(items(3)));
+        add("34-same-name-different-groups.xlsx", "the same header text under two groups, a filter and a summary of one of them",
+                "Row 1 holds the merged-over group headers Q1 (B1) and Q2 (C1); row 2 holds the column names Name, Amount, Amount (the same text twice). Rows 3-5 are data, row 6 is the summary: Sum with a total under the SECOND Amount only (the first Amount is not summed).",
+                "opens: no repair prompt (two equal header texts outside a table are plain cells)",
+                "cellText sheet=Report cell=B2 text=Amount; cellText sheet=Report cell=C2 text=Amount; cellText sheet=Report cell=B1 text=Q1; cellText sheet=Report cell=C1 text=Q2",
+                "autoFilter sheet=Report range=A2:C5 (the buttons are on the column names row, row 2; Excel may extend the range over the summary row below, so report the range it shows)",
+                "filterRows sheet=Report column=3 criteria=\"10\" expectVisibleDataRows=1 (the second Amount holds 0, 10, 20); the first Amount is not touched",
+                "cell sheet=Report cell=A6 text=Sum; cell sheet=Report cell=C6 value=30 (0+10+20); cell sheet=Report cell=B6 value=(empty)");
     }
 
     private void save(String file, ExcelHandler handler, String password) throws IOException {

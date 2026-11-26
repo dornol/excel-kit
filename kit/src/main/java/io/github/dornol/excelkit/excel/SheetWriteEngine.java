@@ -82,6 +82,7 @@ final class SheetWriteEngine<T> {
         }
         SheetWriteEngine.validateUniqueColumnNames(columns);
         SheetWriteEngine.validateMergeColumns(columns, cfg.tableOptions, true);
+        SheetWriteEngine.validateTableHeaders(columns, cfg.tableOptions);
         SubtotalTracker.validate(cfg);
         SheetWriteEngine.validateEmptyMessage(cfg);
     }
@@ -303,11 +304,55 @@ final class SheetWriteEngine<T> {
         }
     }
 
+    /**
+     * Index of the column a setting refers to, -1 if none: a column id first, then a column name. Columns of different
+     * header groups may share a name, so a name that matches several columns cannot pick one of them: it is rejected
+     * instead of silently taking the first, and the message says how to tell them apart.
+     */
+    static int indexOfColumn(List<? extends ExcelColumn<?>> columns, String reference) {
+        for (int i = 0; i < columns.size(); i++) {
+            if (reference.equals(columns.get(i).getId())) return i;
+        }
+        int first = -1;
+        for (int i = 0; i < columns.size(); i++) {
+            if (!reference.equals(columns.get(i).getName())) continue;
+            if (first >= 0) throw new ExcelWriteException("Column name '" + reference + "' matches more than one "
+                    + "column; give the columns an id with column(..., c -> c.id(...)) and refer to that");
+            first = i;
+        }
+        return first;
+    }
+
+    static <T> void validateTableHeaders(List<ExcelColumn<T>> columns, @Nullable TableOptions tableOptions) {
+        if (tableOptions != null) StructuredTableWriter.requireUniqueHeaders(columns.stream().map(ExcelColumn::getName).toList());
+    }
+
     static <T> void validateUniqueColumnNames(List<ExcelColumn<T>> columns) {
-        Set<String> seen = new HashSet<>();
+        Set<String> ids = new HashSet<>();
         for (ExcelColumn<T> col : columns) {
-            if (!seen.add(col.getName())) {
-                throw new ExcelWriteException("Duplicate column name: '" + col.getName() + "'");
+            String id = col.getId();
+            if (id == null) continue;
+            if (!ids.add(id)) throw new ExcelWriteException("Duplicate column id: '" + id + "'");
+        }
+        for (ExcelColumn<T> col : columns) {
+            String id = col.getId();
+            if (id == null) continue;
+            for (ExcelColumn<T> other : columns) {
+                if (other != col && id.equals(other.getName()))
+                    throw new ExcelWriteException("Column id '" + id + "' is also the name of another column");
+            }
+        }
+        // The same name under different group paths is a different column; the same path needs an id on both.
+        java.util.Map<List<String>, ExcelColumn<T>> seen = new java.util.HashMap<>();
+        for (ExcelColumn<T> col : columns) {
+            List<String> key = new java.util.ArrayList<>(java.util.Arrays.asList(col.getGroupNames()));
+            key.add(col.getName());
+            ExcelColumn<T> previous = seen.put(key, col);
+            if (previous != null && (previous.getId() == null || col.getId() == null)) {
+                String[] groups = col.getGroupNames();
+                throw new ExcelWriteException("Duplicate column name: '" + col.getName() + "'"
+                        + (groups.length > 0 ? " in group " + String.join(" > ", groups) : "")
+                        + "; give each of them an id to keep both");
             }
         }
     }

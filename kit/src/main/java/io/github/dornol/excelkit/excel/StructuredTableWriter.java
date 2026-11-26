@@ -50,10 +50,21 @@ final class StructuredTableWriter {
      * @param filterButtons whether the table shows filter buttons in its header row; Excel keeps them in the table
      *                      itself, so this is a table setting and not a filter of the sheet
      */
+    /** Excel requires table column names to be unique (case-insensitive); otherwise it repairs the file. */
+    static void requireUniqueHeaders(List<String> headers) {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (String header : headers) {
+            if (!seen.add(header.toLowerCase(java.util.Locale.ROOT)))
+                throw new ExcelWriteException("Duplicate table header: '" + header + "'. Excel does not allow "
+                        + "two columns of a table(...) with the same name, even in different groups");
+        }
+    }
+
     static void apply(SXSSFSheet sheet, String name, int headerRow, int lastRow, List<String> headers,
                       String style, boolean rowStripes, boolean filterButtons) {
         int columns = headers.size();
         if (columns == 0 || lastRow <= headerRow) return;
+        requireUniqueHeaders(headers);
         XSSFSheet xssf = SXSSFSheetHelper.getXSSFSheet(sheet);
         var workbook = sheet.getWorkbook().getXSSFWorkbook();
         for (int i = 0; i < workbook.getNumberOfSheets(); i++)

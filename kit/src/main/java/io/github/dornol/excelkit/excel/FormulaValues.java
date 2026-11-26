@@ -90,14 +90,13 @@ final class FormulaValues {
 
     /** The values of the formulas the configuration writes, or {@code null} when it writes none. */
     static <T> @Nullable FormulaValues of(SheetConfig<T> cfg, List<ExcelColumn<T>> columns) {
-        List<String> names = columns.stream().map(ExcelColumn::getName).toList();
         Accumulator[] group = new Accumulator[columns.size()];
         Accumulator[] sheet = new Accumulator[columns.size()];
         boolean any = false;
         if (cfg.subtotalConfig != null) {
             for (List<String> columnNames : cfg.subtotalConfig.entries().values()) {
                 for (String name : columnNames) {
-                    int index = names.indexOf(name);
+                    int index = SheetWriteEngine.indexOfColumn(columns, name);
                     if (index >= 0) {
                         group[index] = new Accumulator();
                         any = true;
@@ -108,7 +107,7 @@ final class FormulaValues {
         if (cfg.summaryConfig != null) {
             for (Map.Entry<ExcelSummary.Op, List<String>> entry : cfg.summaryConfig.entries().entrySet()) {
                 for (String name : entry.getValue()) {
-                    int index = names.indexOf(name);
+                    int index = SheetWriteEngine.indexOfColumn(columns, name);
                     if (index >= 0) {
                         sheet[index] = new Accumulator();
                         any = true;

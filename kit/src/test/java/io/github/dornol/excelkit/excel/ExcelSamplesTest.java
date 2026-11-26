@@ -56,7 +56,7 @@ class ExcelSamplesTest {
     void everySampleHasADescriptionInTheManifestAndTheChecklist() throws Exception {
         String manifest = Files.readString(dir.resolve("manifest.json"));
         String checklist = Files.readString(dir.resolve("CHECKLIST.md"));
-        assertEquals(33, samples.size());
+        assertEquals(34, samples.size());
         for (var sample : samples) {
             assertTrue(Files.exists(dir.resolve(sample.file())), sample.file());
             assertTrue(manifest.contains("\"" + sample.file() + "\""), sample.file());
@@ -535,6 +535,23 @@ class ExcelSamplesTest {
                 assertEquals("F2F2F2", fill(sheet.getRow(2).getCell(2)), "sheet " + i + " C3");
                 assertEquals("none", fill(sheet.getRow(1).getCell(2)), "sheet " + i + " C2");
             }
+        }
+    }
+
+    @Test
+    void theSameNameSampleHoldsTheTwoHeadersAndSumsTheSecondColumn() throws Exception {
+        try (XSSFWorkbook wb = open("34-same-name-different-groups.xlsx")) {
+            XSSFSheet sheet = wb.getSheet("Report");
+            assertEquals("Q1", sheet.getRow(0).getCell(1).getStringCellValue());
+            assertEquals("Q2", sheet.getRow(0).getCell(2).getStringCellValue());
+            assertEquals("Amount", sheet.getRow(1).getCell(1).getStringCellValue());
+            assertEquals("Amount", sheet.getRow(1).getCell(2).getStringCellValue());
+            assertEquals("A2:C5", filter(sheet));
+            var evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            var summary = sheet.getRow(5);
+            assertEquals("Sum", summary.getCell(0).getStringCellValue());
+            assertEquals(30, evaluator.evaluate(summary.getCell(2)).getNumberValue());
+            assertTrue(summary.getCell(1) == null || summary.getCell(1).getCellType() == CellType.BLANK);
         }
     }
 }

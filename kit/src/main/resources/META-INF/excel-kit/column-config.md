@@ -90,6 +90,7 @@ All methods available via lambda configurer on `ExcelWriter`, `ExcelSheetWriter`
 | `.headerBackgroundColor(null)` | Fall back to writer-level `headerColor` |
 | `.headerComment(String)` | Static comment on the column's header cell |
 | `.group(String... levels)` | Group header (merged rows above). N levels = N group rows (v0.16.9+) |
+| `.id(String)` | Key that `summary` / `groupSubtotal` / `dependentDropdown` use for this column instead of its name (looked up before the name). Unique in the sheet; lets columns of one group share a name; not allowed in `defaultStyle` |
 
 ### Data & Behavior
 | Method | Description |
